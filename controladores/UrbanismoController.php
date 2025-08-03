@@ -49,8 +49,6 @@ function crearUrbanismo() {
     try {
         $database = new Database();
         $conexion = $database->getConnection();
-
-        // Verificar duplicados
         $urbanismoModel = new Urbanismo($conexion);
 
         // Verificar urbanismo duplicado
@@ -68,37 +66,21 @@ function crearUrbanismo() {
         // Configurar datos del urbanismo
         $urbanismoModel->urbanismo = $urbanismo;
 
-        // Iniciar transacción
-        $conexion->beginTransaction();
-
-        try {
-            // Guardar urbanismo
-            $idUrbanismo = $urbanismoModel->guardar();
-            if (!$idUrbanismo) {
-                throw new Exception("Error al guardar el urbanismo");
-            }
-
-            // Confirmar transacción
-            $conexion->commit();
-
-            $_SESSION['alert'] = 'success';
-            $_SESSION['success_message'] = 'Urbanismo creado exitosamente';
-            header("Location: ../vistas/registros/urbanismo/urbanismo.php");
-            exit();
-
-        } catch (Exception $e) {
-            $conexion->rollBack();
-            error_log("Error al crear urbanismo: " . $e->getMessage());
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'Error al crear el urbanismo';
-            header("Location: ../vistas/registros/urbanismo/nuevo_urbanismo.php");
-            exit();
+        // Guardar urbanismo
+        $idUrbanismo = $urbanismoModel->guardar();
+        if (!$idUrbanismo) {
+            throw new Exception("Error al guardar el urbanismo");
         }
 
+        $_SESSION['alert'] = 'success';
+        $_SESSION['success_message'] = 'Urbanismo creado exitosamente';
+        header("Location: ../vistas/registros/urbanismo/urbanismo.php");
+        exit();
+
     } catch (Exception $e) {
-        error_log("Error general al crear urbanismo: " . $e->getMessage());
+        error_log("Error al crear urbanismo: " . $e->getMessage());
         $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Error interno del servidor';
+        $_SESSION['error_message'] = 'Error al crear el urbanismo: ' . $e->getMessage();
         header("Location: ../vistas/registros/urbanismo/nuevo_urbanismo.php");
         exit();
     }
@@ -123,23 +105,22 @@ function editarUrbanismo() {
     }
 
     // Validar campos requeridos
-    $required = ['urbanismo'];
-    foreach ($required as $field) {
-        if (empty($_POST[$field])) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = "El campo $field es requerido";
-            header("Location: ../vistas/registros/urbanismo/editar_urbanismo.php?id=$id");
-            exit();
-        }
+    $urbanismo = trim($_POST['urbanismo'] ?? '');
+    if (empty($urbanismo)) {
+        $_SESSION['alert'] = 'error';
+        $_SESSION['error_message'] = "El campo urbanismo es requerido";
+        header("Location: ../vistas/registros/urbanismo/editar_urbanismo.php?id=$id");
+        exit();
     }
 
     try {
         $database = new Database();
         $conexion = $database->getConnection();
+        $urbanismoModel = new Urbanismo($conexion);
 
         // Verificar que el urbanismo existe
-        $urbanismoModel = new Urbanismo($conexion);
-        if (!$urbanismoModel->obtenerPorId($id)) {
+        $urbanismoExistente = $urbanismoModel->obtenerPorId($id);
+        if (!$urbanismoExistente) {
             $_SESSION['alert'] = 'error';
             $_SESSION['error_message'] = 'Urbanismo no encontrado';
             header("Location: ../vistas/registros/urbanismo/urbanismo.php");
@@ -147,8 +128,6 @@ function editarUrbanismo() {
         }
 
         // Verificar duplicados (excluyendo al urbanismo actual)
-        $urbanismo = trim($_POST['urbanismo']);
-
         $stmt = $conexion->prepare("SELECT IdUrbanismo FROM urbanismo WHERE urbanismo = :urbanismo AND IdUrbanismo != :id");
         $stmt->bindParam(':urbanismo', $urbanismo);
         $stmt->bindParam(':id', $id);
@@ -162,38 +141,23 @@ function editarUrbanismo() {
         }
 
         // Configurar datos actualizados
-        $urbanismoModel->urbanismo = trim($_POST['urbanismo']);
+        $urbanismoModel->IdUrbanismo = $id;
+        $urbanismoModel->urbanismo = $urbanismo;
 
-        // Iniciar transacción PRINCIPAL (solo esta)
-        $conexion->beginTransaction();
-
-        try {
-            // 1. Actualizar datos básicos
-            if (!$urbanismoModel->actualizar()) {
-                throw new Exception("Error al actualizar datos básicos");
-            }
-
-            // Confirmar transacción PRINCIPAL
-            $conexion->commit();
-
-            $_SESSION['alert'] = 'success';
-            $_SESSION['success_message'] = 'Urbanismo actualizado correctamente';
-            header("Location: ../vistas/registros/urbanismo/editar_urbanismo.php?id=$id");
-            exit();
-
-        } catch (Exception $e) {
-            $conexion->rollBack();
-            error_log("Error en transacción de actualización: " . $e->getMessage());
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = $e->getMessage();
-            header("Location: ../vistas/registros/urbanismo/editar_urbanismo.php?id=$id");
-            exit();
+        // Actualizar datos
+        if (!$urbanismoModel->actualizar()) {
+            throw new Exception("Error al actualizar datos básicos");
         }
 
+        $_SESSION['alert'] = 'success';
+        $_SESSION['success_message'] = 'Urbanismo actualizado correctamente';
+        header("Location: ../vistas/registros/urbanismo/editar_urbanismo.php?id=$id");
+        exit();
+
     } catch (Exception $e) {
-        error_log("Error general en edición: " . $e->getMessage());
+        error_log("Error en edición: " . $e->getMessage());
         $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Error interno del servidor';
+        $_SESSION['error_message'] = 'Error al actualizar: ' . $e->getMessage();
         header("Location: ../vistas/registros/urbanismo/editar_urbanismo.php?id=$id");
         exit();
     }
@@ -202,54 +166,59 @@ function editarUrbanismo() {
 function eliminarUrbanismo() {
     // Solo permitir método GET
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-        header("Location: ../vistas/registros/urbanismo/urbanismo.php?error=metodo_no_permitido");
+        $_SESSION['alert'] = 'error';
+        $_SESSION['error_message'] = 'Método no permitido';
+        header("Location: ../vistas/registros/urbanismo/urbanismo.php");
         exit();
     }
 
     // Obtener ID
     $id = $_GET['id'] ?? 0;
     if ($id <= 0) {
-        header("Location: ../vistas/registros/urbanismo/urbanismo.php?error=id_invalido");
+        $_SESSION['alert'] = 'error';
+        $_SESSION['error_message'] = 'ID inválido';
+        header("Location: ../vistas/registros/urbanismo/urbanismo.php");
         exit();
     }
 
     try {
         $database = new Database();
         $conexion = $database->getConnection();
+        $urbanismoModel = new Urbanismo($conexion);
 
         // Verificar que el urbanismo existe
-        $urbanismoModel = new Urbanismo($conexion);
-        if (!$urbanismoModel->obtenerPorId($id)) {
-            header("Location: ../vistas/registros/urbanismo/urbanismo.php?error=urbanismo_no_encontrado");
+        $urbanismoExistente = $urbanismoModel->obtenerPorId($id);
+        if (!$urbanismoExistente) {
+            $_SESSION['alert'] = 'error';
+            $_SESSION['error_message'] = 'Urbanismo no encontrado';
+            header("Location: ../vistas/registros/urbanismo/urbanismo.php");
             exit();
         }
 
-        // Iniciar transacción
-        $conexion->beginTransaction();
-
-        try {
-
-            // 3. Eliminar el urbanismo
-            if (!$urbanismoModel->eliminar()) {
-                throw new Exception("Error al eliminar el urbanismo");
-            }
-
-            // Confirmar transacción
-            $conexion->commit();
-
-            header("Location: ../vistas/registros/urbanismo/urbanismo.php?deleted=1");
-            exit();
-
-        } catch (Exception $e) {
-            $conexion->rollBack();
-            error_log("Error al eliminar usuario: " . $e->getMessage());
-            header("Location: ../vistas/registros/urbanismo/urbanismo.php?error=operacion_fallida");
+        // Configurar ID
+        $urbanismoModel->IdUrbanismo = $id;
+        
+        // Verificar dependencias primero
+        if ($urbanismoModel->tieneDependencias()) {
+            $_SESSION['alert'] = 'dependency_error'; // Nuevo tipo de alerta
+            header("Location: ../vistas/registros/urbanismo/urbanismo.php");
             exit();
         }
+
+        // Intentar eliminar
+        if (!$urbanismoModel->eliminar()) {
+            throw new Exception("Error al eliminar el urbanismo");
+        }
+
+        $_SESSION['alert'] = 'deleted';
+        header("Location: ../vistas/registros/urbanismo/urbanismo.php");
+        exit();
 
     } catch (Exception $e) {
-        error_log("Error general al eliminar usuario: " . $e->getMessage());
-        header("Location: ../vistas/registros/urbanismo/urbanismo.php?error=error_interno");
+        error_log("Error al eliminar urbanismo: " . $e->getMessage());
+        $_SESSION['alert'] = 'error';
+        $_SESSION['error_message'] = 'Error al eliminar: ' . $e->getMessage();
+        header("Location: ../vistas/registros/urbanismo/urbanismo.php");
         exit();
     }
 }

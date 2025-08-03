@@ -59,6 +59,9 @@ if ($alert) {
         case 'deleted':
             $alerta = Notificaciones::exito("El urbanismo se eliminó correctamente.");
             break;
+        case 'dependency_error':
+            $alerta = Notificaciones::advertencia("No se puede eliminar el urbanismo porque está siendo utilizado por una o más personas.");
+            break;
         case 'error':
             $alerta = Notificaciones::advertencia("Este urbanismo ya existe, verifique por favor.");
             break;
@@ -229,7 +232,7 @@ if ($alert) {
             denyButtonText: "No, Volver"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '../../../controladores/PersonaController.php?action=eliminar&id=' + id;
+                window.location.href = '../../../controladores/UrbanismoController.php?action=eliminar&id=' + id;
             } else if (result.isDenied) {
                 Swal.fire("No se eliminó el urbanismo", "", "info");
             }
