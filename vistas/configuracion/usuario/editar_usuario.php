@@ -14,7 +14,7 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
                 confirmButtonText: "Aceptar",
                 confirmButtonColor: "#c90000"
             }).then(() => {
-                window.location.href = "../login/login.php";
+                window.location.href = "../../login/login.php";
             });
         });
     </script>';

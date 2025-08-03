@@ -94,7 +94,7 @@ try {
                 <li><a href="#">Secciones</a></li>
                 <li><a href="#">Aulas</a></li>
                 <li><a href="#">Requisitos</a></li>
-                <li><a href="#">Urbanismos</a></li>
+                <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
                 <li><a href="#">Condiciones</a></li>
                 <li><a href="#">Parentescos</a></li>
                 <li><a href="#">Materias</a></li>
