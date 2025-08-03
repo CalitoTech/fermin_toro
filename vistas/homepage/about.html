@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <!-- basic -->
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <!-- mobile metas -->
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+      <!-- site metas -->
+      <title>UECFT Araure</title>
+      <meta name="keywords" content="">
+      <meta name="description" content="">
+      <meta name="author" content="">
+      <!-- bootstrap css -->
+      <link rel="stylesheet" href="css/bootstrap.min.css">
+      <!-- style css -->
+      <link rel="stylesheet" href="css/style.css">
+      <!-- Responsive-->
+      <link rel="stylesheet" href="css/responsive.css">
+      <!-- fevicon -->
+      <link rel="icon" href="images/fermin.png"/>
+      <!-- Scrollbar Custom CSS -->
+      <link rel="stylesheet" href="css/jquery.mCustomScrollbar.min.css">
+      <!-- Tweaks for older IEs-->
+      <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" media="screen">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+      <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
+      <style>
+         /* Estilos generales */
+         .navbar-custom {
+            background-color: #FF0000; /* Rojo intenso */
+            padding: 0.5rem 1rem; /* Espaciado interno del navbar */
+         }
+
+         .navbar-custom .navbar-brand,
+         .navbar-custom .nav-link,
+         .navbar-custom .navbar-text,
+         .navbar-custom .navbar-text a {
+            color: #FFFFFF !important; /* Letras blancas */
+         }
+
+         .navbar-custom .navbar-text a {
+            text-decoration: underline; /* Subrayado para el enlace */
+         }
+
+         /* Estilos para el menú del header */
+         .header-nav {
+            flex-direction: row; /* Por defecto, en fila */
+         }
+
+         /* Ajustes para móviles */
+         @media (max-width: 991.98px) {
+            .navbar-brand {
+               display: none; /* Ocultar "UECFT Araure" en móviles */
+            }
+            .navbar-text {
+               font-size: 12px; /* Reducir tamaño del texto en móviles */
+               margin-right: auto; /* Mover el texto a la izquierda */
+               white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+               padding-right: 1rem; /* Espacio entre el texto y los íconos */
+            }
+            .header-nav {
+               flex-direction: column; /* Cambiar a columna en móviles */
+               width: 100%; /* Ocupar todo el ancho */
+            }
+            .header-nav .nav-link {
+               font-size: 14px; /* Reducir tamaño de los íconos en móviles */
+               padding: 0.5rem 1rem; /* Espaciado entre opciones */
+               text-align: left; /* Alinear texto a la izquierda */
+            }
+            .header-nav .dropdown-menu {
+               position: static; /* Mostrar sub-menús en línea con el menú principal */
+               float: none; /* Evitar que los sub-menús floten */
+               width: 100%; /* Ocupar todo el ancho disponible */
+               background-color: transparent; /* Fondo transparente */
+               border: none; /* Sin bordes */
+            }
+            .header-nav .dropdown-item {
+               padding: 0.5rem 1rem; /* Espaciado entre opciones */
+               color: #FFFFFF !important; /* Letras blancas */
+            }
+            .header-nav .dropdown-item:hover {
+               background-color: rgba(255, 255, 255, 0.1); /* Fondo claro al pasar el mouse */
+            }
+         }
+
+         /* Ajustes para pantallas grandes */
+         @media (min-width: 992px) {
+            .navbar-text {
+               margin-right: auto; /* Mover el texto a la izquierda */
+            }
+            .header-nav {
+               flex-direction: row; /* Mostrar íconos en línea */
+               margin-left: auto; /* Mover los íconos a la derecha */
+            }
+         }
+
+         /* Estilos para el menú del footer (no cambian) */
+         .navbar-custom .navbar-nav {
+            flex-direction: row; /* Siempre en fila */
+         }
+      </style>
+   </head>
+   <!-- body -->
+   <body class="main-layout">
+      <!-- loader  -->
+      <div class="loader_bg">
+         <div class="loader"><img src="images/loading.gif" alt="#" /></div>
+      </div>
+      <!-- end loader -->
+      <!-- header -->
+      <header>
+         <!-- header inner -->
+         <div class="header">
+            <div class="container-fluid">
+               <div class="row">
+                  <div class="col-xl-3 col-lg-3 col-md-3 col-sm-3 col logo_section">
+                     <div class="full">
+                        <div class="center-desk">
+                           <div class="logo">
+                              <a href="index.html"><img src="images/fermin.jpg" alt="#" /></a>
+                           </div>
+                           <div class="logo2">
+                              <a href="index.html">UECFT Araure</a>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="col-xl-9 col-lg-9 col-md-9 col-sm-9">
+                     <div class="header_information">
+                        <nav class="navigation navbar navbar-expand-md navbar-dark ">
+                           <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+                           <span class="navbar-toggler-icon"></span>
+                           </button>
+                           <div class="collapse navbar-collapse" id="navbarsExample04">
+                              <ul class="navbar-nav mr-auto">
+                                 <li class="nav-item active">
+                                    <a class="nav-link" href="about.html">¿Quiénes Somos?</a>
+                                 </li> 
+                                 <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownNiveles" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Niveles E.</a>
+                                    <div class="dropdown-menu" aria-labelledby="navbarDropdownNiveles">
+                                       <a class="dropdown-item" href="#">Preescolar</a>
+                                       <a class="dropdown-item" href="#">Primaria</a>
+                                       <a class="dropdown-item" href="#">Media General</a>
+                                    </div>
+                                 </li> 
+                                 <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMultimedia" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Multimedia</a>
+                                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMultimedia">
+                                       <a class="dropdown-item" href="nuestravoz.html">Nuestra Voz</a>
+                                    </div>
+                                 </li>
+                                 <li class="nav-item">
+                                    <a class="nav-link" href="solicitud_cupo.php">Solicitud de Cupo</a>
+                                 </li>
+                              </ul>
+                              <div class="sign_btn"><a href="../login/login.php">Iniciar Sesión</a></div>
+                           </div>
+                        </nav>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </header>
+      <!-- end header inner -->
+      <!-- end header -->
+    
+      <!-- about -->
+      <div id="about"  class="about">
+         <div class="container">
+            <div class="row d_flex">
+               <div class="col-md-7">
+                  <div class="titlepage">
+                     <h2 style="text-align: justify;">Misión</h2>
+                     <span></span>
+                     <p style="text-align: justify;">
+                        "Consolidar la integración de la comunidad educativa conformada por personas innovadoras,
+                        emprendedoras, comprometidas e identificadas con un propósito común, que a través de su
+                        acción, favorezca la formación integral de nuestros estudiantes conforme a la pedagogía
+                        y los lineamientos orientados, hacia la construcción de la paz y una sociedad verdaderamente
+                        democrática y con sentido de pertinencia".
+                     </p>
+                  </div>
+               </div>
+               <div class="col-md-5">
+                  <div class="about_img">
+                     <figure><img src="images/mision.png" alt="#"/></figure>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- end about -->
+      <div id="mobile"  class="mobile">
+         <div class="container">
+            <div class="row d_flex">
+               <div class="col-md-5">
+                  <div class="mobile_img">
+                     <figure><img src="images/vision.png" alt="#"/></figure>
+                  </div>
+               </div>
+               <div class="col-md-7">
+                  <div class="titlepage">
+                     <h2 style="text-align: justify;">Visión</h2>
+                     <span></span>
+                     <p style="text-align: justify;">
+                        "Promover la participación de los distintos actores educativos en un trabajo conjunto,
+                        encaminado a fomentar centro y norte de la labor pedagógica, en función del bien común,
+                        y en la búsqueda de la transformación hacia una sociedad más justa y tolerante".
+                     </p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- about -->
+      <div id="about"  class="about">
+         <div class="container">
+            <div class="row d_flex">
+               <div class="col-md-7">
+                  <div class="titlepage">
+                     <h2 style="text-align: justify;">Reseña Histórica</h2>
+                     <span></span>
+                     <p style="text-align: justify;">
+                        La Unidad Educativa Colegio Privado Fermin Toro ubicada en la Av. Eduardo Cholett con 
+                        Calle 5 Araure, construida en una moderna y amplia estructura fisica compuesta por 38
+                        aulas, oficinas administrativas, canchas y espacios de areas verdes.
+                     </p>
+                     <p style="text-align: justify;">
+                        Su creación se da el 13 de Septiembre de 2010, para el Año Escolar 2010-2011 abre sus
+                        puertas con Educación Básica I y II Etapa, en horario comprendido de 7:00 a.m. a 
+                        12:00 m. bajo la dirección del Prof. Manuel Herrera Zubillaga, Prof. Rosaalba Yépez 
+                        Hurtado Subdirectora, Prof. Olimpia Travieso Coordinadora de I y II Etapa, 07 Docentes
+                        de Aula, 1 Docente especialista de Inglés y 1 Docente especialista de Deportes 1 
+                        secretaria y obreros y niños y niñas.
+                     </p>
+                     <p style="text-align: justify;">
+                        Para el Año Escolar 2011-2012 debido a la demanda de cupo crece la matricula de 
+                        estudiantes, pues se crea Educación Inicial con 6 secciones, 3 para niños y niñas 
+                        de 4 años y 3 secciones para niños y niñas de 5 años, bajo la coordinación de la 
+                        Prof. Amelia Quero, incorporando docentes de Educación inicial y auxillares docentes.
+                        En este mismo año se crea también Educación Media General con secciones de fer. 
+                        Año y estudiantes coordinadas por el Prof. Oswaldo Rangel.
+                     </p>
+                  </div>
+               </div>
+               <div class="col-md-5">
+                  <div class="about_img">
+                     <figure><img src="images/escuela.png" alt="#"/></figure>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      <!-- end about -->
+      <div id="mobile"  class="mobile">
+         <div class="container">
+            <div class="row d_flex">
+               <div class="col-md-5">
+                  <div class="mobile_img">
+                     <figure><img src="images/fermintoro.png" alt="#"/></figure>
+                  </div>
+               </div>
+               <div class="col-md-7">
+                  <div class="titlepage">
+                     <h2 style="text-align: justify;">¿Quién fue Fermín Toro?</h2>
+                     <span></span>
+                     <p style="text-align: justify;">
+                        Fermín Toro Nace en Caracas el 1806 y muere en 1865. Fue un Escritor, diplomático y político venezolano. De formación autodidacta, 
+                        con sólidos y amplios conocimientos en 1828 ingresó en la administración pública 
+                        y desempeñó cargos aduaneros en La Guaira y Margarita. Fue diputado al Congreso 
+                        Nacional en 1831.
+                     </p>
+                     <p style="text-align: justify;">
+                        A partir de 1837 empezó a escribir en el diario caraqueño El Liberal con los 
+                        seudónimos de Emiro Kastos y Jocasias. Viajó a Londres en 1839 como secretario 
+                        de la misión diplomática presidida por Alejo Fortique, producto de su experiencia 
+                        londinense fue la publicación por entregas de su novela Los mártires (1842), 
+                        considerada la primera de su género en el pais, posteriormente publicaria otras novelas.
+                     </p>
+                     <p style="text-align: justify;">
+                        A partir de 1844 desempeñó varias misiones diplomáticas en España, Francia e 
+                        Inglaterra, de regreso al pais, en 1847 fue nombrado ministro de Hacienda. Designado 
+                        diputado por Caracas al Congreso Nacional, renunció a esta representación tras los 
+                        sucesos del 24 de enero de 1848, y no regresó hasta 1858, año en que, derrocado Monagas. presidió la Convención Nacional de Valencia. Nuevas misiones diplomáticas lo llevaron de regreso a Europa en 1860. Ya retirado de la actividad pública, se dedico al estudio de la botánica y de las lenguas indigenas.
+                     </p>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      
+      <!-- clients -->
+      <div class="clients" style="padding: -400px;">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-6 offset-md-3">
+                  <div class="titlepage">
+                     <h2>Organigrama</h2>
+                     <span></span>
+                  </div>
+               </div>
+            </div>
+            <div class="row" style="margin-top: -100px;">
+               <div class="col-md-12">
+                  <div class="jonu">
+                     <img src="images/organigrama.png" alt="#"/>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <!-- end clients -->
+
+      <!-- clients -->
+      <div class="clients" style="padding: -400px;">
+         <div class="container">
+            <div class="row">
+               <div class="col-md-6 offset-md-3">
+                  <div class="titlepage">
+                     <h2>Ubicación</h2>
+                     <span></span>
+                  </div>
+               </div>
+            </div>
+            <div class="row">
+               <div class="col-md-12">
+                  <div class="map-responsive">
+                     <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d245.88905517961018!2d-69.21740503436605!3d9.57587370276925!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e7dc1bd0e7236b5%3A0x7f13f75bffb690b3!2sUNIDAD%20EDUC%20COLEGIO%20P.%20FERMIN%20TORO!5e0!3m2!1ses-419!2sve!4v1742329046514!5m2!1ses-419!2sve" width="600" height="432" style="border:0; width:100%" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                   </div>
+             </div>
+            </div>
+         </div>
+      </div>
+      <!-- end clients -->
+       
+      <!--  footer -->
+      <nav class="navbar navbar-custom" id="redes">
+         <div class="container-fluid">
+            <div class="d-flex w-100">
+               <p class="navbar-text mb-0">
+                  © 2025 Derechos Reservados.
+               </p>
+               <ul class="navbar-nav ms-auto"> <!-- Este menú sigue usando navbar-nav sin cambios -->
+                  <li class="nav-item">
+                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.instagram.com/uecftaraure/"><i class="fab fa-instagram"></i></a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.youtube.com/@NuestraVozRadioyTv"><i class="fab fa-youtube"></i></a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="mailto:fermin.toro.araure@gmail.com"><i class="fab fa-google"></i></a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://api.whatsapp.com/send?phone=584145641168"><i class="fab fa-whatsapp"></i></a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://maps.app.goo.gl/XRBXfB6ygZDZaS3t7"><i class="fas fa-map-marker-alt"></i></a>
+                  </li>
+                  <li class="nav-item">
+                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.uefermintoroaraure.com/nuestravoz.html"><i class="fas fa-microphone"></i></a>
+                  </li>
+               </ul>
+            </div>
+         </div>
+      </nav>
+      <!-- end footer -->
+      <!-- Javascript files-->
+      <script src="js/jquery.min.js"></script>
+      <script src="js/popper.min.js"></script>
+      <script src="js/bootstrap.bundle.min.js"></script>
+      <script src="js/jquery-3.0.0.min.js"></script>
+    
+      <!-- sidebar -->
+      <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
+      <script src="js/custom.js"></script>
+      <script src="https:cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js"></script>
+      <script>
+         $('a[href^="#"]').on('click', function(event) {
+         
+          var target = $(this.getAttribute('href'));
+         
+          if( target.length ) {
+              event.preventDefault();
+              $('html, body').stop().animate({
+                  scrollTop: target.offset().top
+              }, 2000);
+          }
+         
+         });
+      </script>
+      <script>
+         // This example adds a marker to indicate the position of Bondi Beach in Sydney,
+         // Australia.
+         function initMap() {
+           var map = new google.maps.Map(document.getElementById('map'), {
+             zoom: 11,
+             center: {lat: 9.575831, lng: -69.217387},
+             });
+         
+         var image = 'images/maps-and-flags.png';
+         var beachMarker = new google.maps.Marker({
+             position: {lat: 9.575831, lng: -69.217387},
+             map: map,
+             icon: image
+           });
+         }
+      </script>
+      <!-- google map js -->
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA8eaHt9Dh5H57Zh0xVTqxVdBFCvFMqFjQ&callback=initMap"></script>
+      <!-- end google map js --> 
+   </body>
+</html>
+

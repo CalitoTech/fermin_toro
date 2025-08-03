@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <!-- basic -->
+   <meta charset="utf-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <!-- mobile metas -->
+   <meta name="viewport" content="width=device-width, initial-scale=1">
+   <meta name="viewport" content="initial-scale=1, maximum-scale=1">
+   <!-- site metas -->
+   <title>UECFT Araure</title>
+   <meta name="keywords" content="">
+   <meta name="description" content="">
+   <meta name="author" content="">
+   <!-- bootstrap css -->
+   <link rel="stylesheet" href="css/bootstrap.min.css">
+   <!-- style css -->
+   <link rel="stylesheet" href="css/style.css">
+   <!-- Responsive-->
+   <link rel="stylesheet" href="css/responsive.css">
+   <!-- fevicon -->
+   <link rel="icon" href="images/fermin.png"/>
+   <!-- Scrollbar Custom CSS -->
+   <link rel="stylesheet" href="css/jquery.mCustomScrollbar.min.css">
+   <!-- Tweaks for older IEs-->
+   <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.css" media="screen">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+   <style>
+      /* Estilos generales */
+      .navbar-custom {
+         background-color: #FF0000; /* Rojo intenso */
+         padding: 0.5rem 1rem; /* Espaciado interno del navbar */
+      }
+
+      .navbar-custom .navbar-brand,
+      .navbar-custom .nav-link,
+      .navbar-custom .navbar-text,
+      .navbar-custom .navbar-text a {
+         color: #FFFFFF !important; /* Letras blancas */
+      }
+
+      .navbar-custom .navbar-text a {
+         text-decoration: underline; /* Subrayado para el enlace */
+      }
+
+      /* Estilos para los títulos de los programas */
+      .program-title {
+         font-weight: bold; /* Texto en negritas */
+         text-align: center; /* Centrar el texto */
+         color: #FF0000; /* Color rojo para resaltar */
+         margin-bottom: 15px; /* Espacio debajo del título */
+         font-size: 1.5rem; /* Tamaño de fuente más grande */
+      }
+
+      /* Estilos para los nombres de los locutores */
+      .locutor {
+         font-weight: bold; /* Texto en negritas */
+         color: #003366; /* Color azul oscuro */
+         font-size: 1.1rem; /* Tamaño de fuente ligeramente mayor */
+      }
+
+      /* Estilos para el menú del header */
+      .header-nav {
+         flex-direction: row; /* Por defecto, en fila */
+      }
+
+      /* Ajustes para móviles */
+      @media (max-width: 991.98px) {
+         .navbar-brand {
+            display: none; /* Ocultar "UECFT Araure" en móviles */
+         }
+         .navbar-text {
+            font-size: 12px; /* Reducir tamaño del texto en móviles */
+            margin-right: auto; /* Mover el texto a la izquierda */
+            white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+            padding-right: 1rem; /* Espacio entre el texto y los íconos */
+         }
+         .header-nav {
+            flex-direction: column; /* Cambiar a columna en móviles */
+            width: 100%; /* Ocupar todo el ancho */
+         }
+         .header-nav .nav-link {
+            font-size: 14px; /* Reducir tamaño de los íconos en móviles */
+            padding: 0.5rem 1rem; /* Espaciado entre opciones */
+            text-align: left; /* Alinear texto a la izquierda */
+         }
+         .header-nav .dropdown-menu {
+            position: static; /* Mostrar sub-menús en línea con el menú principal */
+            float: none; /* Evitar que los sub-menús floten */
+            width: 100%; /* Ocupar todo el ancho disponible */
+            background-color: transparent; /* Fondo transparente */
+            border: none; /* Sin bordes */
+         }
+         .header-nav .dropdown-item {
+            padding: 0.5rem 1rem; /* Espaciado entre opciones */
+            color: #FFFFFF !important; /* Letras blancas */
+         }
+         .header-nav .dropdown-item:hover {
+            background-color: rgba(255, 255, 255, 0.1); /* Fondo claro al pasar el mouse */
+         }
+      }
+
+      /* Ajustes para pantallas grandes */
+      @media (min-width: 992px) {
+         .navbar-text {
+            margin-right: auto; /* Mover el texto a la izquierda */
+         }
+         .header-nav {
+            flex-direction: row; /* Mostrar íconos en línea */
+            margin-left: auto; /* Mover los íconos a la derecha */
+         }
+      }
+
+      /* Estilos para el menú del footer (no cambian) */
+      .navbar-custom .navbar-nav {
+         flex-direction: row; /* Siempre en fila */
+      }
+   </style>
+</head>
+
+<body class="main-layout">
+   <!-- loader  -->
+   <div class="loader_bg">
+      <div class="loader"><img src="images/loading.gif" alt="#" /></div>
+   </div>
+   <!-- end loader -->
+   <!-- header -->
+   <header>
+      <!-- header inner -->
+      <div class="header">
+         <div class="container-fluid">
+            <div class="row">
+               <div class="col-xl-3 col-lg-3 col-md-3 col-sm-3 col logo_section">
+                  <div class="full">
+                     <div class="center-desk">
+                        <div class="logo">
+                           <a href="index.html"><img src="images/fermin.jpg" alt="#" /></a>
+                        </div>
+                        <div class="logo2">
+                           <a href="index.html">UECFT Araure</a>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="col-xl-9 col-lg-9 col-md-9 col-sm-9">
+                  <div class="header_information">
+                     <nav class="navigation navbar navbar-expand-md navbar-dark ">
+                        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarsExample04">
+                           <ul class="navbar-nav mr-auto">
+                              <li class="nav-item active">
+                                 <a class="nav-link" href="about.html">¿Quiénes Somos?</a>
+                              </li> 
+                              <li class="nav-item dropdown">
+                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownNiveles" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Niveles E.</a>
+                                 <div class="dropdown-menu" aria-labelledby="navbarDropdownNiveles">
+                                    <a class="dropdown-item" href="#">Preescolar</a>
+                                    <a class="dropdown-item" href="#">Primaria</a>
+                                    <a class="dropdown-item" href="#">Media General</a>
+                                 </div>
+                              </li> 
+                              <li class="nav-item dropdown">
+                                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMultimedia" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Multimedia</a>
+                                 <div class="dropdown-menu" aria-labelledby="navbarDropdownMultimedia">
+                                    <a class="dropdown-item" href="nuestravoz.html">Nuestra Voz</a>
+                                 </div>
+                              </li>
+                              <li class="nav-item">
+                                 <a class="nav-link" href="solicitud_cupo.php">Solicitud de Cupo</a>
+                              </li>
+                           </ul>
+                           <div class="sign_btn"><a href="../login/login.php">Iniciar Sesión</a></div>
+                        </div>
+                     </nav>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </header>
+   <!-- end header inner -->
+   <!-- end header -->
+
+   <!-- main content -->
+   <main id="main">
+      <section class="h-100" style="margin-top: 100px;">
+         <div class="container h-100">
+            <div class="row justify-content-sm-center h-100">
+               <div class="col-xxl-4 col-xl-5 col-lg-5 col-md-7 col-sm-9">
+                  <div class="card shadow-lg">
+                     <!-- Contenedor de la imagen con texto superpuesto -->
+                     <div class="card-img-top position-relative">
+                        <img src="images/radio3.png" alt="Nuestra Voz Radio" class="img-fluid">
+                        <!-- Texto superpuesto -->
+                        <div class="position-absolute top-0 start-0 p-3">
+                           <h1 class="fs-4 card-title fw-bold mb-0 text-white">Sonando Nuestra Voz Radio</h1>
+                        </div>
+                     </div>
+                     <!-- Reproductor de audio -->
+                     <div class="card-footer py-3 border-0">
+                        <div class="text-center">
+                           <audio id="stream" controls preload="none" style="width: 100%;">
+                              <source src="https://guri.tepuyserver.net/8070/stream" type="audio/mpeg">
+                           </audio>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+      <br>
+      <br>
+      <section class="wrapper">
+         <div class="container-fostrap">
+            <div class="titlepage">
+               <h2 style="text-align: center;">Programación</h2>
+               <span style="margin-left: 50%"></span>
+            </div>
+            <div class="content">
+               <div class="container">
+                  <div class="row">
+                     <!---------------- PROGRAMA 1 ---------------------------->
+                     <div class="col-xs-12 col-sm-4">
+                        <div class="card">
+                           <a class="img-card" href="#">
+                              <img src="images/es_musica.jpg" alt="Es Música" class="img-fluid">
+                           </a>
+                           <div class="card-content" style="padding: 10px; text-align: justify;">
+                              <h4 class="card-title program-title">Es Música</h4>
+                              <p class="">Especial de 30 minutos dedicado a tu artista o agrupación favorita.</p>
+                              <p style="text-align: center;"><strong class="locutor">Estefanía Rivero</strong>.</p>
+                           </div>
+                           <div class="card-read-more">
+                              <a href="#" target="_blank" class="btn btn-link btn-block">31/01/2024</a>
+                              <a href="#" target="_blank" class="btn btn-link btn-block">07/02/2024</a>
+                           </div>
+                        </div>
+                     </div>
+                     <!---------------- PROGRAMA 2 ---------------------------->
+                     <div class="col-xs-12 col-sm-4">
+                        <div class="card">
+                           <a class="img-card" href="#">
+                              <img src="images/la_otra_cara.jpg" alt="La Otra Cara" class="img-fluid">
+                           </a>
+                           <div class="card-content" style="padding: 10px; text-align: justify;">
+                              <h4 class="card-title program-title">La Otra Cara</h4>
+                              <p class="">Programa que muestra la cara desconocida de los miembros de la familia fermintoriana.</p>
+                              <p style="text-align: center;"><strong class="locutor">Salomón Rangel</strong>.</p>
+                           </div>
+                           <div class="card-read-more">
+                              <a href="#" target="_blank" class="btn btn-link btn-block">03/02/2024</a>
+                              <a href="#" target="_blank" class="btn btn-link btn-block">10/02/2024</a>
+                           </div>
+                        </div>
+                     </div>
+                     <!---------------- PROGRAMA 3 ---------------------------->
+                     <div class="col-xs-12 col-sm-4">
+                        <div class="card">
+                           <a class="img-card" href="#">
+                              <img src="images/nuestra_psique.webp" alt="Nuestra Psique" class="img-fluid">
+                           </a>
+                           <div class="card-content" style="padding: 10px; text-align: justify;">
+                              <h4 class="card-title program-title">Nuestra Psique</h4>
+                              <p class="">Programa dedicado a abordar los temas relacionados con el bienestar mental.</p>
+                              <p style="text-align: center;"><strong class="locutor">Anderson Bastidas y Alicia Berbesí</strong>.</p>
+                           </div>
+                           <div class="card-read-more">
+                              <a href="https://www.youtube.com/watch?v=W5zpin6hHRY" target="_blank" class="btn btn-link btn-block">12/01/2024</a>
+                              <a href="https://www.youtube.com/watch?v=eRUDdzxElEw" target="_blank" class="btn btn-link btn-block">19/01/2024</a>
+                              <a href="https://www.youtube.com/watch?v=m755dLgQEkg" target="_blank" class="btn btn-link btn-block">26/01/2024</a>
+                           </div>
+                        </div>
+                     </div>
+                     <!------------------------------------------->
+                  </div>
+               </div>
+            </div>
+         </div>
+      </section>
+   </main>
+   <!-- end main content -->
+
+   <!--  footer -->
+   <nav class="navbar navbar-custom" id="redes">
+      <div class="container-fluid">
+         <div class="d-flex w-100">
+            <p class="navbar-text mb-0">
+               © 2025 Derechos Reservados.
+            </p>
+            <ul class="navbar-nav ms-auto"> <!-- Este menú sigue usando navbar-nav sin cambios -->
+               <li class="nav-item">
+                  <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.instagram.com/uecftaraure/"><i class="fab fa-instagram"></i></a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.youtube.com/@NuestraVozRadioyTv"><i class="fab fa-youtube"></i></a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="mailto:fermin.toro.araure@gmail.com"><i class="fab fa-google"></i></a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://api.whatsapp.com/send?phone=584145641168"><i class="fab fa-whatsapp"></i></a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://maps.app.goo.gl/XRBXfB6ygZDZaS3t7"><i class="fas fa-map-marker-alt"></i></a>
+               </li>
+               <li class="nav-item">
+                  <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.uefermintoroaraure.com/nuestravoz.html"><i class="fas fa-microphone"></i></a>
+               </li>
+            </ul>
+         </div>
+      </div>
+   </nav>
+   <!-- end footer -->
+
+   <!-- Javascript files-->
+   <script src="js/jquery.min.js"></script>
+   <script src="js/popper.min.js"></script>
+   <script src="js/bootstrap.bundle.min.js"></script>
+   <script src="js/jquery-3.0.0.min.js"></script>
+
+   <!-- sidebar -->
+   <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
+   <script src="js/custom.js"></script>
+   <script src="https:cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js"></script>
+</body>
+
+</html>
