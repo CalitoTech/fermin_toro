@@ -86,8 +86,8 @@ try {
                 <a href="#">
                     <i class='bx bxs-graduation'></i>
                     <span class="link_name">Registro</span>
-                    <i class='bx bxs-chevron-down arrow'></i>
                 </a>
+                <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
                 <li><a href="#">Cursos</a></li>
@@ -109,8 +109,8 @@ try {
                 <a href="#">
                     <i class='bx bx-edit'></i>
                     <span class="link_name">Estudiantes</span>
-                    <i class='bx bxs-chevron-down arrow'></i>
                 </a>
+                <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
                 <li><a href="#">Estudiantes</a></li>
@@ -127,8 +127,8 @@ try {
                 <a href="#">
                     <i class='bx bx-line-chart'></i>
                     <span class="link_name">Inscripciones</span>
-                    <i class='bx bxs-chevron-down arrow'></i>
                 </a>
+                <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
                 <li><a href="#">Inscripciones</a></li>
@@ -145,8 +145,8 @@ try {
                 <a href="#">
                     <i class='bx bx-cog'></i>
                     <span class="link_name">Configuración</span>
-                    <i class='bx bxs-chevron-down arrow'></i>
                 </a>
+                <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
                 <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
