@@ -317,7 +317,7 @@ try {
             // Crear inscripción
             $inscripcion = new Inscripcion($conexion);
             $inscripcion->IdEstudiante = $idEstudiante;
-            $inscripcion->fecha_inscripcion = date('Y-m-d');
+            $inscripcion->fecha_inscripcion = date('Y-m-d H:i:s');
             $inscripcion->ultimo_plantel = $_POST['ultimoPlantel'] ?? '';
             $inscripcion->nro_hermanos = $_POST['nroHermanos'] ?? 0;
             if (!$idRelacionRepresentante) {

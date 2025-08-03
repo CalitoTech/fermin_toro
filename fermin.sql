@@ -24,10 +24,10 @@ CREATE TABLE tabla (
 
 CREATE TABLE permiso (
     IdPermiso int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    permiso_leer int NOT NULL,
-    permiso_guardar int NOT NULL,
-    permiso_modificar int NOT NULL,
-    permiso_eliminar int NOT NULL,
+    permiso_leer BOOLEAN NOT NULL DEFAULT FALSE,
+    permiso_guardar BOOLEAN NOT NULL DEFAULT FALSE,
+    permiso_modificar BOOLEAN NOT NULL DEFAULT FALSE,
+    permiso_eliminar BOOLEAN NOT NULL DEFAULT FALSE,
     IdTabla int NOT NULL,
     IdPerfil int NOT NULL,
     FOREIGN KEY (IdTabla) REFERENCES tabla(IdTabla),
@@ -226,6 +226,17 @@ CREATE TABLE persona (
 INSERT INTO `persona` (`IdPersona`, `IdNacionalidad`, `cedula`, `nombre`, `apellido`, `fecha_nacimiento`, `fecha_egreso`, `correo`, `usuario`, `password`, `direccion`, `lugar_trabajo`, `IdSexo`, `IdUrbanismo`, `IdCondicion`, `IdAula`) VALUES
 (1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', NULL, 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', 'Av. Sucre, Calle 3, Casa #152', 'CorpoEureka', 1, 1, NULL, NULL);
 
+CREATE TABLE fecha_escolar (
+    IdFecha_Escolar int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    fecha_escolar varchar(50) NOT NULL,
+    activa BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+INSERT INTO `fecha_escolar` (`IdFecha_Escolar`, `fecha_escolar`, `activa`) VALUES
+(1, '2023-2024', False),
+(2, '2024-2025', False),
+(3, '2025-2026', True);
+
 CREATE TABLE historial_aula (
     IdHistorial_Aula int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdPersona int NOT NULL,
@@ -261,22 +272,11 @@ CREATE TABLE representante (
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona)
 );
 
-CREATE TABLE fecha_escolar (
-    IdFecha_Escolar int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    fecha_escolar varchar(50) NOT NULL,
-    activa BOOLEAN NOT NULL DEFAULT FALSE
-);
-
-INSERT INTO `fecha_escolar` (`IdFecha_Escolar`, `fecha_escolar`, `activa`) VALUES
-(1, '2023-2024', False),
-(2, '2024-2025', False),
-(3, '2025-2026', True);
-
 CREATE TABLE inscripcion (
     IdInscripcion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     codigo_inscripcion varchar(20) NOT NULL,
     IdEstudiante int NOT NULL,
-    fecha_inscripcion date NOT NULL,
+    fecha_inscripcion datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     ultimo_plantel varchar(100) DEFAULT NULL,
     nro_hermanos int DEFAULT 0,
     responsable_inscripcion int NOT NULL,
@@ -320,8 +320,8 @@ INSERT INTO `tipo_telefono` (`IdTipo_Telefono`, `tipo_telefono`) VALUES
 
 CREATE TABLE telefono (
     IdTelefono int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    numero_telefono varchar(50) NOT NULL,
     IdTipo_Telefono int NOT NULL,
+    numero_telefono varchar(50) NOT NULL,
     IdPersona int NOT NULL,
     FOREIGN KEY (IdTipo_Telefono) REFERENCES tipo_telefono(IdTipo_Telefono),
     FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona)
@@ -369,12 +369,13 @@ CREATE TABLE tipo_grupo_creacion (
     nombre_grupo varchar(50) NOT NULL,
     descripcion varchar(255) DEFAULT NULL,
     capacidad_maxima int NOT NULL,
+    inscripcion_activa BOOLEAN NOT NULL DEFAULT FALSE,
     IdNivel int NOT NULL,
     FOREIGN KEY (IdNivel) REFERENCES nivel(IdNivel)
 );
 
 CREATE TABLE grupo_creacion (
-    IdGrupoCreacion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdGrupo_Creacion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdTipoGrupo int NOT NULL,
     IdProfesor int NOT NULL,
     IdAula int NOT NULL,
@@ -387,10 +388,10 @@ CREATE TABLE grupo_creacion (
 );
 
 CREATE TABLE inscripcion_grupo_creacion (
-    IdInscripcionGrupo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    IdGrupoCreacion int NOT NULL,
+    IdInscripcion_Grupo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdGrupo_Creacion int NOT NULL,
     IdEstudiante int NOT NULL,
-    fecha_inscripcion datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (IdGrupoCreacion) REFERENCES grupo_creacion(IdGrupoCreacion),
+    fecha_ingreso_grupo datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (IdGrupo_Creacion) REFERENCES grupo_creacion(IdGrupo_Creacion),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona)
 );
