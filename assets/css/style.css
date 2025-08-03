@@ -1,0 +1,346 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background: #f8f9fa;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--clr-light);
+    overflow-x: hidden;
+}
+
+:root {
+    --clr-primary: #c90000; /* Rojo principal */
+    --clr-light: #f8f9fa;
+    --clr-white: #ffffff;
+    --clr-black: #212529;
+    --clr-danger: #c90000;
+    --clr-hover: #a80000;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Contraseña */
+.home-section .home-content {
+    padding: 15px 20px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.input-group-text {
+    background-color: #f8f9fa;
+    color: #c90000;
+}
+.form-control:focus {
+    border-color: #c90000;
+    box-shadow: 0 0 0 0.2rem rgba(201, 0, 0, 0.25);
+}
+
+/* ----- -----  Estilos para Validacion ----- ----- */
+.añadir__input-error {
+	font-size: 12px;
+	display: none;
+    margin-top: 0.25rem; /* Cambiado de -25px a 0.25rem */
+}
+
+.añadir__input-error-activo {
+	display: block;
+}
+
+.añadir__validacion-estado {
+	z-index: 100;
+	font-size: 16px;
+	opacity: 0;
+}
+
+.añadir__grupo-terminos, 
+.añadir__mensaje,
+.añadir__grupo-btn-enviar {
+	grid-column: span 2;
+}
+
+.añadir__mensaje {
+	height: 45px;
+	line-height: 45px;
+	background: #F66060;
+	padding: 0 15px;
+	border-radius: 3px;
+	display: none;
+}
+
+.añadir__mensaje-activo {
+	display: block;
+}
+
+.añadir__mensaje p {
+	margin-top: 0;
+}
+
+.añadir__grupo-btn-enviar {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.añadir__btn {
+	height: 45px;
+	line-height: 45px;
+	width: 30%;
+	background: #000;
+	color: #fff;
+	font-weight: bold;
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	transition: .1s ease all;
+}
+
+.añadir__btn:hover {
+	box-shadow: 3px 0px 30px rgba(163,163,163, 1);
+}
+
+.añadir__mensaje-exito {
+	font-size: 14px;
+	color: #119200;
+	display: none;
+}
+
+.añadir__mensaje-exito-activo {
+	display: block;
+}
+
+.añadir__grupo-correcto .añadir__validacion-estado {
+	color: #1ed12d;
+	opacity: 1;
+    margin-left: 5px;
+    margin-top: 8px;
+}
+
+.añadir__grupo-incorrecto label {
+	color: #bb2929;
+}
+
+.añadir__grupo-incorrecto .añadir__validacion-estado {
+	color: #bb2929;
+	opacity: 1;
+    margin-left: 5px;
+    margin-top: 8px;
+}
+
+.añadir__grupo-incorrecto input {
+	border: 3px solid #bb2929;
+}
+
+/* ============================================================
+	UNIVERSAL CRUD TABLE CODE - APLICA PARA TODAS LAS TABLAS DEL SISTEMA
+	Este código es compartido y reutilizable para la gestión CRUD
+	de todas las tablas dentro del sistema. No modificar sin revisar
+	el impacto global. 
+	============================================================ */
+
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background-color: var(--clr-primary);
+    color: white;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+}
+
+.btn-danger {
+    background-color: var(--clr-primary);
+    border-color: var(--clr-primary);
+}
+
+.btn-danger:hover {
+    background-color: var(--clr-hover);
+    border-color: var(--clr-hover);
+}
+
+.btn-imprimir {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.btn-imprimir:hover {
+    background-color: #218838;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.search-input {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+}
+
+.pagination > .active > button {
+    background-color: var(--clr-primary) !important;
+    color: white !important;
+    border-color: var(--clr-primary) !important;
+}
+
+
+#pagination {
+    display: flex !important;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 1rem;
+    padding: 0.5rem 0;
+}
+
+#pagination button {
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 0.9rem;
+}
+
+#pagination button.active {
+    background-color: #c90000 !important;
+    color: white !important;
+    border-color: #c90000 !important;
+}
+
+/* Efecto hover en todos los grupos de campos */
+.añadir__grupo .input-group:hover .form-control,
+.añadir__grupo .input-group:hover .form-select,
+.añadir__grupo .input-group:hover .input-group-text {
+    border-color: #c90000 !important;
+    box-shadow: 0 0 0 0.1rem rgba(201, 0, 0, 0.25);
+    transition: all 0.3s ease;
+}
+
+/* Efecto hover en el input-group completo */
+.añadir__grupo .input-group:hover {
+    border-color: #c90000;
+}
+
+/* Foco (cuando se hace clic) */
+.añadir__input:focus,
+.form-select:focus {
+    border-color: #c90000 !important;
+    box-shadow: 0 0 0 0.2rem rgba(201, 0, 0, 0.25) !important;
+    z-index: 2;
+}
+
+#nacionalidad {
+    border-right: 1px solid #ddd;
+}
+
+/* Estilo para el select múltiple */
+#añadir__grupo#grupo__roles .form-control[multiple] {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+#añadir__grupo#grupo__roles .form-control[multiple]:focus {
+    border-color: #c90000;
+    box-shadow: 0 0 0 0.2rem rgba(201, 0, 0, 0.25);
+    z-index: 3;
+}
+
+/* Indicador de selección */
+#añadir__grupo#grupo__roles .input-group-text {
+    background-color: #f8f9fa;
+    color: #c90000;
+}
+
+/* Estilo para las etiquetas (chips) */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    background-color: #c90000;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    margin: 2px 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.chip:hover {
+    background-color: #a80000;
+}
+
+.chip span {
+    margin-right: 6px;
+}
+
+.chip i {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+/* Ocultar flecha del select múltiple */
+#añadir__grupo#grupo__roles .input-group select {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Contenedor de chips */
+.chips-container {
+    position: relative; /* 🔑 Esencial para que el dropdown se posicione bien */
+    flex-grow: 1;
+    min-height: 45px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+/* Estilos para los campos de teléfono */
+.telefono-item {
+    position: relative;
+}
+
+.btn-agregar-telefono,
+.btn-eliminar-telefono {
+    width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-color: #ddd;
+}
+
+.btn-agregar-telefono:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.btn-eliminar-telefono:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.tipo-telefono {
+    border-right: none;
+}
+
+.numero-telefono {
+    flex-grow: 1;
+}

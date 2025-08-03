@@ -1,0 +1,830 @@
+/* Fondo suave */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: var(--clr-light);
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    position: relative;
+}
+
+html {
+    height: 100%;
+}
+/* footer {
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    line-height: 60px;
+    background: #212529;
+    color: white;
+    text-align: center;
+    font-size: 14px;
+    z-index: 10;
+} */
+/* Contenido principal centrado */
+.main-content {
+    min-height: calc(100vh - 56px - 50px); /* altura total - navbar - footer */
+}
+
+/* Logo grande */
+.img-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Botones con mejor espaciado */
+.btn-group .btn {
+    margin: 0 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-danger {
+    background-color: #c90000;
+    border-color: #c90000;
+}
+
+.btn-danger:hover {
+    background-color: #a80000;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .main-content {
+        padding: 2rem 1rem;
+    }
+    .img-logo {
+        width: 100px;
+        height: 100px;
+    }
+    .btn-group .btn {
+        display: block;
+        width: 100%;
+        margin: 8px 0;
+    }
+}
+/* Variables */
+:root {
+    --clr-primary: #c90000; /* Rojo principal */
+    --clr-light: #f8f9fa;
+    --clr-white: #ffffff;
+    --clr-black: #212529;
+    --clr-danger: #c90000;
+    --clr-hover: #a80000;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 278px;
+    background: var(--clr-primary);
+    padding: 10px 14px;
+    z-index: 99;
+    transition: all 0.5s ease;
+}
+
+
+/* Ocultar barra de desplazamiento */
+.sidebar::-webkit-scrollbar {
+    width: 0px;
+}
+
+.sidebar.close {
+    width: 80px;
+    padding: 10px 8px;
+}
+
+/* Logo y texto */
+.sidebar .logo-details {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    color: var(--clr-white);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.sidebar .logo-details img {
+    width: 42px; /* Aumentado sin romper layout */
+    height: 42px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    object-fit: cover;
+}
+
+.sidebar .logo-details .logo_name {
+    font-size: 18px;
+    font-weight: 600;
+    opacity: 1;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+}
+
+/* Ocultar texto cuando está cerrado */
+.sidebar.close .logo-details .logo_name {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Ajustar logo cuando está cerrado */
+.sidebar.close .logo-details img {
+    margin-left: 12px;
+}
+
+/* Nav Links */
+.sidebar .nav-links {
+    padding: 30px 0;
+    list-style: none;
+}
+
+.sidebar .nav-links li {
+    position: relative;
+    list-style: none;
+    margin: 4px 0;
+}
+
+.sidebar .nav-links a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--clr-white);
+    border-radius: 6px;
+    white-space: nowrap;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+}
+
+.sidebar .nav-links a:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(2px);
+}
+
+.sidebar .nav-links i {
+    height: 40px;
+    min-width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--clr-white);
+}
+
+.sidebar .nav-links .link_name {
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
+/* Centrar iconos cuando está cerrado */
+.sidebar.close .nav-links .link_name {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Mostrar texto principal en hover cuando el menú está cerrado */
+.sidebar.close .nav-links li:hover .link_name {
+    opacity: 1;
+    pointer-events: auto;
+    position: absolute;
+    left: 65px;
+    top: 0;
+    transform: none;
+    background: var(--clr-primary);
+    color: var(--clr-white);
+    padding: 10px 16px;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 1100;
+    min-width: 200px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+}
+
+@keyframes fadeInRight {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Submenús */
+.sidebar .nav-links .sub-menu {
+    display: none;
+    padding: 6px 0 6px 70px;
+    margin-top: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+/* Mostrar submenús al hacer hover cuando el menú está cerrado */
+.sidebar.close .nav-links li:hover .sub-menu {
+    display: block;
+    position: absolute;
+    left: 65px;
+    top: 40px; /* Alineado debajo del link_name (40px de altura) */
+    min-width: 200px;
+    background: var(--clr-primary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    padding: 6px 0;
+    margin: 0;
+    opacity: 1;
+}
+
+/* Estilo de los enlaces del submenú */
+.sidebar.close .nav-links li:hover .sub-menu a {
+    color: rgba(255, 255, 255, 0.7); /* Semi-opaco */
+    padding: 8px 12px;
+    display: block;
+    background: transparent;
+    border-radius: 4px;
+    margin: 2px 8px;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.2s ease;
+}
+
+.sidebar.close .nav-links li:hover .sub-menu a:hover {
+    color: var(--clr-white);
+    background: rgba(255, 255, 255, 0.1);
+    padding-left: 15px;
+}
+
+.sidebar .nav-links li.showMenu .sub-menu {
+    display: block;
+}
+
+.sidebar .nav-links .sub-menu a {
+    color: var(--clr-white);
+    font-size: 14px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin: 2px 0;
+}
+
+.sidebar .nav-links .sub-menu a:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Flecha de despliegue */
+.sidebar .nav-links .arrow {
+    position: absolute;
+    right: 20px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    line-height: 40px;
+    color: var(--clr-white);
+    z-index: 100;
+    cursor: pointer;
+}
+
+/* Ocultar flechas cuando está cerrado */
+.sidebar.close .nav-links .arrow {
+    display: none;
+}
+
+/* Rotar flecha al desplegar */
+.sidebar .nav-links li.showMenu .arrow {
+    transform: rotate(-180deg);
+}
+
+/* Home Section */
+.home-section {
+    position: relative;
+    background: var(--clr-light);
+    top: 0;
+    left: 278px;
+    width: calc(100% - 278px);
+    transition: all 0.5s ease;
+    /* Aseguramos que el contenido no se corte */
+    overflow: hidden;
+    padding-bottom: 10px; /* Espacio para el footer */
+}
+
+.sidebar.close ~ .home-section {
+    left: 80px;
+    width: calc(100% - 80px);
+}
+/* Home Content - Diseño mejorado */
+.home-section .home-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: var(--clr-white);
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.home-section .home-content .left-section,
+.home-section .home-content .right-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.home-section .home-content .text {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--clr-black);
+}
+
+/* Icono del menú */
+.home-section .home-content .bx-menu {
+    cursor: pointer;
+    font-size: 24px;
+    color: var(--clr-primary);
+    margin-right: 10px;
+}
+
+/* Fecha y Hora */
+.home-section .datetime {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--clr-black);
+    font-weight: 500;
+}
+
+.home-section .datetime i {
+    color: #007bff;
+}
+
+/* Año Escolar */
+.home-section .school-year {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #28a745;
+    font-weight: 500;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.home-section .school-year i {
+    color: #28a745;
+}
+
+/* Notificaciones */
+.home-section .notification {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.home-section .notification:hover {
+    background: rgba(201, 0, 0, 0.1);
+    transform: scale(1.1);
+}
+
+.home-section .notification i {
+    font-size: 18px;
+    color: var(--clr-black);
+}
+
+/* Badge de notificaciones */
+.home-section .notification .badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: #c90000;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* Panel de Notificaciones */
+.notification-panel {
+    position: fixed; /* Cambiado de absolute a fixed */
+    top: 70px; /* Ajustado debajo del header */
+    right: 20px;
+    width: 350px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: none;
+    z-index: 2000; /* Mucho más alto que cualquier otro elemento */
+    animation: slideDown 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--clr-primary);
+    color: white;
+}
+
+.panel-header h4 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.panel-header i {
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.panel-body {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+
+.notification-item {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f1f1;
+    transition: background 0.2s ease;
+}
+
+.notification-item:hover {
+    background: #f8f9fa;
+}
+
+.notif-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 16px;
+}
+
+.bg-blue { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+.bg-green { background: rgba(40, 167, 69, 0.1); color: #28a745; }
+.bg-orange { background: rgba(255, 133, 27, 0.1); color: #fd7e14; }
+
+.notif-content p {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    color: var(--clr-black);
+}
+
+.notif-content small {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.panel-footer {
+    padding: 10px 16px;
+    text-align: center;
+    border-top: 1px solid #f1f1f1;
+}
+
+.panel-footer a {
+    color: var(--clr-primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.panel-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Perfil de usuario */
+.profile-details {
+    padding: 15px 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 40px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+}
+
+.profile-details .profile-content {
+    flex-shrink: 0;
+}
+
+.profile-details .profile-content img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--clr-white);
+}
+
+.profile-details .name-job {
+    flex-grow: 1;
+    margin-left: 10px;
+    overflow: hidden;
+}
+
+.profile-details .profile_name,
+.profile-details .job {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--clr-white);
+    font-size: 14px;
+}
+
+.profile-details .profile_name {
+    font-weight: 600;
+}
+
+.profile-details a {
+    color: var(--clr-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.profile-details a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.sidebar.close .profile-details a {
+    display: none !important;
+}
+
+/* Home Content - Versión Responsive */
+.home-section .home-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--clr-white);
+    border-bottom: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap; /* Permite que los elementos se ajusten */
+}
+
+.home-section .home-content .left-section,
+.home-section .home-content .right-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Menú y Texto */
+.home-section .home-content .bx-menu {
+    cursor: pointer;
+    font-size: 24px;
+    color: var(--clr-primary);
+    margin-right: 0; /* Reducimos espacio */
+}
+
+.home-section .home-content .text {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--clr-black);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Sección Derecha */
+.home-section .right-section {
+    gap: 8px; /* Reducimos espacio entre elementos */
+}
+
+/* Fecha y Hora - Ocultar en móviles */
+.home-section .datetime {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--clr-black);
+    font-weight: 500;
+}
+
+.home-section .datetime i {
+    color: #007bff;
+}
+
+/* Año Escolar - Versión compacta */
+.home-section .school-year {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #28a745;
+    font-weight: 500;
+    background: rgba(40, 167, 69, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Notificaciones - Siempre visible */
+.home-section .notification {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+/* Panel de Notificaciones - Ajuste para móviles */
+.notification-panel {
+    width: 300px;
+    right: 10px;
+    max-height: calc(100vh - 80px); /* Ajusta altura máxima */
+}
+.mobile-menu-toggle {
+    position: fixed;
+    left: 15px;
+    top: 15px;
+    z-index: 100;
+    background: var(--clr-primary);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Versión móvil del sidebar */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    .sidebar.open {
+        width: 278px;
+        padding: 10px 14px;
+    }
+    
+    .sidebar.close {
+        width: 0;
+        padding: 0;
+    }
+    
+    .home-section {
+        left: 0 !important;
+        width: 100% !important;
+    }
+    
+    /* Botón para abrir/cerrar sidebar en móviles */
+    .mobile-menu-toggle {
+        display: block !important;
+        position: fixed;
+        left: 10px;
+        top: 10px;
+        z-index: 100;
+        background: var(--clr-primary);
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
+    }
+    .sidebar.open .logo-details {
+        margin-top: 20px; /* Menos espacio cuando está abierto */
+    }
+    
+    .mobile-menu-toggle {
+        left: 10px;
+        top: 10px;
+    }
+}
+
+/* Mostrar tooltips en móviles cuando sidebar está cerrado */
+@media (max-width: 768px) {
+    .sidebar.close .nav-links li:hover .link_name,
+    .sidebar.close .nav-links li:hover .sub-menu {
+        display: none !important; /* Desactivamos los hover effects en móviles */
+    }
+}
+
+/* Media Queries para Responsive */
+@media (max-width: 992px) {
+    .home-section .home-content .text {
+        max-width: 150px;
+        font-size: 15px;
+    }
+    
+    .home-section .school-year span {
+        display: none; /* Ocultamos el texto, solo muestra icono */
+    }
+    
+    .home-section .school-year {
+        padding: 4px 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .home-section .home-content {
+        padding: 10px 12px;
+    }
+    
+    .home-section .home-content .text {
+        display: none; /* Ocultamos completamente el texto en móviles */
+    }
+    
+    .home-section .datetime {
+        display: none; /* Ocultamos fecha/hora en móviles */
+    }
+    
+    .home-section .school-year {
+        background: transparent;
+        padding: 0;
+    }
+    
+    .home-section .school-year i {
+        font-size: 20px; /* Icono más grande para mejor visibilidad */
+    }
+    
+    /* Ajustamos el panel de notificaciones para móviles */
+    .notification-panel {
+        width: 280px;
+        right: 5px;
+    }
+}
+@media (max-width: 480px) {
+    /* Ocultar completamente el año escolar en móviles */
+    .home-section .school-year {
+        display: none !important;
+    }
+    
+    /* Ajustar espacios en el home-content */
+    .home-section .home-content {
+        padding: 8px 10px;
+    }
+    
+    .home-section .right-section {
+        gap: 6px;
+    }
+    
+    /* Asegurar que el menú hamburguesa sea accesible */
+    .home-section .bx-menu {
+        font-size: 20px;
+        margin-right: 5px;
+    }
+}
+
