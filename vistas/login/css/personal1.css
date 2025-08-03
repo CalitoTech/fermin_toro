@@ -1,0 +1,2323 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: #f0f0f0;
+}
+
+article{
+    max-width: 1200px;
+    margin: 20px 0px 0px 80px;
+    padding: 40px;
+    background: white;
+    text-align: center;
+    height: 100%;
+}
+
+article h1{
+    padding: 0px;
+    text-align: center;
+}
+
+/*Página de Registro*/
+.habitos-table {
+    width: 100%;                         /* Ancho completo */
+    border-collapse: collapse;           /* Colapsar bordes */
+}
+
+.habitos-table th, .habitos-table td {
+    border: 1px solid #ddd;              /* Bordes de las celdas */
+    padding: 10px;                       /* Espaciado interno */
+    text-align: left;                    /* Alinear texto a la izquierda */
+}
+
+.habitos-table th {
+    background-color: #f2f2f2;           /* Color de fondo para el encabezado */
+}
+
+.habitos-table tr:nth-child(even) {
+    background-color: #f9f9f9;           /* Color de fondo alternativo para filas pares */
+}
+
+.habitos-table input[type="text"] {
+    width: 100%;                         /* Ancho completo para los inputs */
+    height: 30px;                        /* Altura fija para los inputs */
+    padding: 5px;                        /* Espaciado interno */
+    border: 1px solid #ccc;              /* Borde de los inputs */
+    border-radius: 5px;                  /* Bordes redondeados */
+    box-sizing: border-box;               /* Incluir padding en el ancho total */
+}
+
+.form-container {
+    display: grid;                          /* Usar grid para organizar los elementos */
+    grid-template-columns: auto 1fr;       /* Dos columnas: una para el label y otra para el input */
+    gap: 15px;                              /* Espacio entre filas */
+    margin: 20px;                           /* Margen alrededor del contenedor */
+}
+
+.form-item {
+    display: contents;                       /* Permitir que los elementos hijos ocupen el espacio de la cuadrícula */
+}
+
+label {
+    font-weight: bold;                      /* Negrita para los labels */
+    margin-bottom: 5px;                    /* Espacio inferior para los labels */
+}
+
+.input5 input[type="text"], 
+.input5 input[type="date"] {
+    width: 100%; /* O el estilo que desees */
+    padding: 10px; 
+    border: 1px solid #ccc; 
+    border-radius: 5px; 
+    box-sizing: border-box; 
+}
+
+.radio-group {
+    display: flex;                          /* Usar flexbox para organizar los radio buttons */
+    gap: 10px;                              /* Espacio entre los radio buttons */
+    align-items: center;                    
+}
+
+.check {
+    color: green;
+    font-weight: bold;
+}
+.x-roja {
+    color: red;
+    font-weight: bold;
+}
+
+.imprimir {
+    position: absolute;
+    top: 210px;
+    left: 150px;
+    background: rgb(248, 26, 26);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 0;
+}
+
+.imprimir:hover{
+    transform: scale(1.1);
+    background: rgb(177, 11, 11);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.historial {
+    position: absolute;
+    top: 210px;
+    left: 350px;
+    background: rgb(248, 152, 26);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    border: 2px solid black;
+    padding: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 0;
+}
+
+.historial:hover{
+    transform: scale(1.1);
+    background: rgb(177, 100, 11);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.fecha1 {
+    position: absolute;
+    top: 35%;
+    right: 25%;
+}
+
+.fecha1 input[type="date"], 
+.fecha2 input[type="date"] {
+    /* Estilos específicos para los inputs de fecha */
+    width: 130px; /* Ajusta según necesites */
+    height: 28px;
+    padding: 5px; 
+    border: 1px solid #7e7e7e; 
+    box-sizing: border-box; 
+}
+
+.fecha2 {
+    position: absolute;
+    top: 35%;
+    right: 10%;
+}
+
+.fecha3 {
+    position: absolute;
+    top: 260px;
+    right: 240px;
+}
+
+.input1 {
+    width: 130px;
+}
+
+
+.mes {
+    position: absolute;
+    top: 30%;
+    right: 15%;
+}
+
+.motivo {
+    position: absolute;
+    top: 47%;
+    right: 49%;
+}
+
+.motivo1 {
+    position: absolute;
+    top: 52%;
+    right: 48%;
+    overflow-x: auto; /* Permitir el desplazamiento horizontal */
+}
+
+.motivo1 select {
+    width: 100px;
+    white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+}
+
+.departamento {
+    position: absolute;
+    top: 47%;
+    right: 37%;
+}
+
+.departamento1 {
+    position: absolute;
+    top: 52%;
+    right: 38%;
+    overflow-x: auto; /* Permitir el desplazamiento horizontal */
+}
+
+.departamento1 select {
+    width: 100px;
+    white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+}
+
+.tipo_paciente {
+    position: absolute;
+    top: 47%;
+    right: 25%;
+}
+
+.tipo_paciente1 {
+    position: absolute;
+    top: 52%;
+    right: 26%;
+}
+
+.tipo_paciente1 select {
+    width: 100px;
+    white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+}
+
+.sistema {
+    position: absolute;
+    top: 47%;
+    right: 16%;
+}
+
+.sistema1 {
+    position: absolute;
+    top: 52%;
+    right: 15%;
+}
+
+.sistema1 select {
+    width: 100px;
+    white-space: nowrap; /* Evitar que el texto se divida en varias líneas */
+}
+
+
+.nuevo {
+    position: absolute;
+    top: 210px;
+    right: 180px;
+    background: #0074C7;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    border-radius: 8px;
+    padding-top: 15px;
+    width: 200px;
+}
+
+.nuevo:hover{
+    transform: scale(1.1);
+    background: rgb(0, 69, 126);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.nuevo2 {
+    position: absolute;
+    top: 300px;
+    left: 380px;
+    background: #0074C7;
+    color: white;
+    transition: all 300ms ease;
+    height: 40px;
+    border-radius: 8px;
+    padding-top: 5px;
+    width: 40px;
+    font-size: 20px;
+    text-align: center;
+}
+
+.nuevo2:hover{
+    transform: scale(1.1);
+    background: rgb(0, 69, 126);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.ver {
+    background: rgb(87, 17, 218);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 25px;
+}
+
+.ver:hover{
+    transform: scale(1.1);
+    background: rgb(65, 13, 161);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.editar {
+    background: rgb(209, 212, 5);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 25px;
+}
+
+.editar:hover{
+    transform: scale(1.1);
+    background: rgb(172, 175, 6);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.eliminar {
+    background: rgb(248, 26, 26);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 25px;
+}
+
+.eliminar:hover{
+    transform: scale(1.1);
+    background: rgb(177, 11, 11);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.constancia {
+    background: rgb(21, 206, 21);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 25px;
+}
+
+.constancia:hover{
+    transform: scale(1.1);
+    background: rgb(10, 160, 10);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.consulta {
+    background: rgb(21, 206, 206);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 25px;
+}
+
+.consulta:hover{
+    transform: scale(1.1);
+    background: rgb(10, 155, 160);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.eliminar2 {
+    background: rgb(248, 26, 26);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    font-size: 25px;
+    width: 60px;
+    height: 40px;
+}
+
+.eliminar2:hover{
+    transform: scale(1.1);
+    background: rgb(177, 11, 11);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.activar {
+    background: rgb(7, 190, 16);
+    color: white;
+    transition: all 300ms ease;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 25px;
+}
+
+.activar:hover{
+    transform: scale(1.1);
+    background: rgb(5, 124, 1);
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+/* Ajustar la tabla para que ocupe menos espacio */
+.table-goniometria {
+    width: 100%; /* Ancho completo */
+    border-collapse: collapse; /* Colapsar bordes */
+}
+
+/* Estilos para las celdas de la tabla */
+.table-goniometria th, .table-goniometria td {
+    border: 1px solid #ddd; /* Bordes de las celdas */
+    text-align: center; /* Centrar texto */
+    padding: 8px; /* Espaciado interno */
+}
+
+/* Fijar el encabezado de la tabla */
+.table-goniometria th {
+    position: sticky;
+    top: 0; /* Fija el encabezado en la parte superior */
+    background-color: #f2f2f2; /* Color de fondo para el encabezado */
+    z-index: 10; /* Asegúrate de que el encabezado se mantenga sobre las filas */
+}
+
+/* Estilo para el contenedor de la tabla de goniometría */
+.goniometria-scroll {
+    max-height: 500px; /* Ajusta la altura como desees */
+    overflow-y: auto; /* Agrega un scroll vertical */
+    border: 1px solid #ccc; /* Opcional: agrega un borde al contenedor */
+    margin-top: 10px; /* Opcional: agrega un margen superior */
+}
+
+/* Fijar la primera celda de la primera fila y columna */
+.table-goniometria th:first-child,
+.table-goniometria td:first-child {
+    position: sticky;
+    left: 0; /* Fija la celda a la izquierda */
+    background-color: #f2f2f2; /* Color de fondo para la celda fija */
+    z-index: 11; /* Asegúrate de que la celda se mantenga sobre las filas */
+}
+
+/* Fijar ancho y alto para los th a partir de la segunda columna */
+.table-goniometria th:nth-child(n+2) {
+    width: 50px; /* Ancho fijo */
+    height: 120px; /* Altura fija */
+    writing-mode: vertical-rl; /* Escribe el texto de abajo hacia arriba */
+    transform: rotate(180deg); /* Rota el texto para que se vea bien */
+}
+
+/* Asegurarse de que las celdas y los inputs sean cuadrados */
+.table-goniometria td {
+    width: 50px; /* Ancho fijo para todas las celdas */
+    height: 50px; /* Altura fija para todas las celdas */
+    padding: 0; /* Eliminar padding para que los inputs ocupen el máximo espacio */
+    background-color: white; /* Color de fondo blanco para las celdas */
+}
+
+/* Estilo para los inputs */
+.table-goniometria td input {
+    width: 100%; /* Ancho completo de la celda */
+    height: 100%; /* Altura completa de la celda */
+    box-sizing: border-box; /* Incluir padding y border en el tamaño total */
+    margin: 0; /* Eliminar margen */
+    text-align: center; /* Centrar el texto dentro del input */
+    border: 1px solid #d1caca; /* Bordes de los inputs */
+    border-radius: 4px; /* Bordes redondeados */
+}
+
+/* Anular cualquier estilo de fondo alternativo para esta tabla */
+.table-goniometria tr:nth-child(even) {
+    background-color: white !important; /* Asegura que las filas pares tengan fondo blanco */
+}
+
+.table-asistencia {
+    width: 100%; /* Mantener el ancho completo */
+    border-collapse: collapse; /* Colapsar bordes */
+    margin-top: 20px; /* Espacio superior */
+}
+
+.table-asistencia th, .table-asistencia td {
+    border: 1px solid #ddd; /* Bordes de las celdas */
+    padding: 8px; /* Espaciado interno */
+    text-align: center; /* Centrar texto */
+}
+
+.table-asistencia th {
+    background-color: #f2f2f2; /* Color de fondo de encabezados */
+}
+
+.table-asistencia td .cedula2 {
+    width: 200px; /* Ajusta el ancho según lo necesites */
+    min-width: 200px; /* Asegúrate de que no se reduzca demasiado */
+    max-width: 300px; /* Limita el ancho máximo si es necesario */
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+}
+
+/* Otros estilos como antes */
+.table-asistencia td .buscar {
+    width: 100%; /* Ancho completo */
+    box-sizing: border-box; /* Incluir padding en el ancho total */
+}
+
+.table-asistencia td input[type="text"] {
+    width: calc(100% - 16px); /* Mantener el ancho completo menos padding */
+    box-sizing: border-box; /* Incluir padding en el ancho total */
+}
+
+.table-asistencia td select, 
+.table-asistencia td input[type="time"] {
+    width: 100%; /* Ancho completo */
+    box-sizing: border-box; /* Incluir padding en el ancho total */
+}
+
+
+/* Estilizar el botón para agregar una nueva fila */
+#addRowBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#addRowBtn:hover {
+    background-color: #0056b3;
+}
+
+#addPatologiaBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#addPatologiaBtn:hover {
+    background-color: #0056b3;
+}
+
+.addRowBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.addRowBtn:hover {
+    background-color: #0056b3;
+}
+
+#addAntecedenteRowBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#addAntecedenteRowBtn:hover {
+    background-color: #0056b3;
+}
+#addExamRowBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+#addExamRowBtn:hover {
+    background-color: #0056b3;
+}
+
+.add-row-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-row-btn:hover {
+    background-color: #0056b3;
+}
+
+table {
+    width: 105%;
+    border-collapse: collapse;
+}
+
+table tr:nth-child(even) {
+    background-color: rgb(221, 221, 221);
+    border-radius: 8px;
+}
+
+table tr td {
+    padding: 8px 5px;
+    text-align: center;
+}
+
+.riesgos {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los cuadros se ajusten a múltiples filas */
+    gap: 20px; /* Espacio entre los cuadros */
+    justify-content: center;
+    text-align: left;
+}
+
+.tipo-riesgo {
+    background-color: #f0f0f0; /* Color de fondo claro */
+    border: 1px solid #ccc; /* Borde gris */
+    border-radius: 5px; /* Bordes redondeados */
+    width: 300px; /* Ancho fijo del cuadro */
+    height: 200px; /* Alto fijo del cuadro */
+    overflow-y: auto; /* Agrega scroll vertical si excede el alto */
+    padding: 10px; /* Espaciado interno */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Sombra para un efecto de elevación */
+}
+
+h3 {
+    margin: 0 0 10px 0; /* Margen para el título */
+    font-size: 1.2em; /* Tamaño de fuente del título */
+    text-align: center; /* Centrar el texto del título */
+}
+
+.riesgo {
+    margin: 5px 0; /* Margen entre cada riesgo */
+}
+
+/* Estilo para los checkboxes */
+.checkbox {
+    margin-right: 5px; /* Espacio entre el checkbox y el texto */
+}
+
+.resultados2 {
+    position: absolute;
+    background-color: #fff;
+    
+    border-radius: 5px; 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+    z-index: 1000; 
+    width: calc(45% - 20px); 
+    max-height: 200px; 
+    overflow-y: auto; 
+    margin-left: 0px;
+    display: block;
+}
+ 
+.resultados2 div {
+    padding: 10px; 
+    cursor: pointer; 
+    transition: background-color 0.3s ease; 
+}
+.resultados2 div:hover {
+    background-color: #f0f0f0;
+}
+
+.resultados3 {
+    position: absolute;
+    background-color: #fff;
+    
+    border-radius: 5px; 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+    z-index: 1000; 
+    width: calc(45% - 20px); 
+    max-height: 200px; 
+    overflow-y: auto; 
+    margin-left: -10px;
+    display: block;
+}
+ 
+.resultados3 div {
+    padding: 10px; 
+    cursor: pointer; 
+    transition: background-color 0.3s ease; 
+}
+.resultados3 div:hover {
+    background-color: #f0f0f0;
+}
+
+.contenedor1 {
+    margin: 25px 0;
+    background-color: rgb(221, 221, 221);
+    padding: 25px;
+    border-radius: 8px;
+}
+
+.contenedor2 {
+    background-color: rgb(221, 221, 221);
+    border-radius: 8px;
+    height: 100%;
+    padding-top: 5px;
+    padding-left: 5px;
+    width: 50%;
+}
+
+.contenedor2 .buscar {
+    padding: 0px 20px;
+    border-radius: 5px;
+    border: none;
+    background-color: #fff;
+    width: 50%;
+}
+
+
+.contenedor4 {
+    background-color: rgb(221, 221, 221);
+    border-radius: 8px;
+    height: 90%;
+    padding-top: 5px;
+    padding-left: 5px;
+    width: 90%;
+}
+
+.contenedor4 .buscar {
+    padding: 0px 20px;
+    border-radius: 5px;
+    border: none;
+    background-color: #fff;
+    width: 90%;
+}
+
+.contenedor3 {
+    background-color: rgb(221, 221, 221);
+    border-radius: 8px;
+    height: 20%;
+    padding-top: 5px;
+    padding-left: 5px;
+    width: 50%;
+}
+
+.contenedor3 .buscar {
+    padding: 12px 20px;
+    border-radius: 5px;
+    border: none;
+    background-color: #fff;
+    width: 50%;
+}
+
+.contenedor1 .buscar {
+    padding: 12px 20px;
+    border-radius: 5px;
+    border: none;
+    background-color: #fff;
+    width: 40%;
+    margin-left: -650px;
+}
+
+.bold {
+    font-weight: bold;
+    color: red;
+}
+
+.resultados {
+    background-color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    margin-left: -50px;
+}
+
+.paginacion {
+    margin-bottom: 5px;
+}
+
+.pagination {
+    margin-top: 20px;
+}
+
+.pagination button {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: none;
+    background-color: #007BFF;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.pagination button:hover {
+    background-color: #0056b3;
+}
+
+.pagination button.active {
+    background-color: royalblue;
+    scale: 1.3;
+}
+/* Ver Persona*/
+
+.caja {
+    text-align: left;
+}
+
+.titulos {
+    font-size: 20px;
+    color: black;
+}
+
+.texto {
+    color: rgb(138, 138, 138);
+}
+
+.volver1 {
+    font-size: 20px;
+    background: #0074C7;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: -100px;
+}
+
+.volver1:hover{
+    transform: scale(1.1);
+    background: #023877;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.volver1:active {
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+
+/*Nueva Persona*/
+
+.edad {
+    grid-area: edad;
+}
+
+.tiempo {
+    grid-area: tiempo;
+}
+
+.anio-escolar {
+    position: absolute;
+    top: 220px;
+    right: 100px;
+    padding: 10px;
+    color: #1b2020;
+    border: 1px solid #1f2222;
+    border-radius: 5px;
+}
+
+form p {
+    font-size: 15px;
+}
+
+.añadir {
+    text-align: left;
+    margin-bottom: 100px;
+}
+
+.añadir label {
+    font-size: 25px;
+}
+
+.añadir input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir2 {
+    text-align: left;
+    margin-bottom: 100px;
+}
+
+.añadir2 label {
+    font-size: 25px;
+}
+
+.añadir2 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir2 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir2 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir2 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir1 {
+    text-align: left;
+    margin-bottom: 100px;
+}
+
+.añadir1 label {
+    font-size: 25px;
+}
+
+.añadir1 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir1 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir1 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir1 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir3 {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.añadir3 label {
+    font-size: 20px;
+}
+
+.añadir3 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir3 input[type="search"]{
+    width: 80%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir6 input[type="search"]{
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir4 input[type="search"]{
+    width: 50%;
+    height: 30px;
+    font-size: 16px;
+}
+
+
+.añadir3 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir3 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir3 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+
+.añadir10 {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.añadir10 label {
+    font-size: 20px;
+}
+
+.añadir10 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir10 input[type="search"]{
+    width: 80%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+
+.añadir12 {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.añadir12 label {
+    font-size: 20px;
+}
+
+.añadir12 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir6 input[type="search"]{
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir4 input[type="search"]{
+    width: 50%;
+    height: 30px;
+    font-size: 16px;
+}
+
+
+.añadir10 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir10 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir10 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+
+.añadir11 {
+    text-align: left;
+    margin-bottom: 10px;
+}
+
+.añadir11 label {
+    font-size: 20px;
+}
+
+.añadir11 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir11 input[type="search"]{
+    width: 80%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir6 input[type="search"]{
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir4 input[type="search"]{
+    width: 50%;
+    height: 30px;
+    font-size: 16px;
+}
+
+
+.añadir11 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir11 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir11 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 90%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir4 {
+    text-align: left;
+    margin-bottom: 100px;
+    margin-top: 20px; /* Añadir un margen superior para separar del contenido anterior */
+}
+
+.añadir4 label {
+    font-size: 25px;
+    display: block; /* Asegúrate de que los labels ocupen toda la línea */
+    margin-bottom: 10px; /* Espacio entre el label y el input */
+}
+
+.añadir4 input, .añadir4 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 50%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 20px; /* Reducir el margen inferior para mayor compactación */
+    font-size: 16px;
+    padding-left: 5px; /* Añadir un poco de espacio interno */
+}
+
+.añadir4 .checkboxes {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los checkboxes se envuelvan en varias líneas */
+    margin-bottom: 20px; /* Espacio debajo del grupo de checkboxes */
+}
+
+.añadir4 .checkboxes label {
+    margin-right: 20px; /* Espacio entre checkboxes */
+    font-size: 18px; /* Ajustar el tamaño de fuente */
+}
+ 
+.añadir4 .dia-semana {
+    display: none; /* Ocultar por defecto y mostrar cuando se seleccione el checkbox */
+    margin-top: 40px; /* Espacio entre los días y el resto del formulario */
+}
+
+.añadir4 .caja {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px; /* Espacio inferior entre elementos */
+}
+
+.dia-semana label {
+    color: black;
+}
+
+.añadir5 {
+    text-align: left;
+    margin-bottom: 100px;
+}
+
+.añadir5 label {
+    font-size: 25px;
+}
+
+.añadir5 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir5 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir5 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir5 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir6 {
+    text-align: left;
+    margin-bottom: 100px;
+}
+
+.añadir6 label {
+    font-size: 25px;
+}
+
+.añadir6 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir6 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir6 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir6 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir7 {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.añadir7 label {
+    font-size: 20px;
+}
+
+.añadir7 input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.añadir7 .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.añadir7 .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.añadir7 select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.interconsulta {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+
+.interconsulta input {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 20px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.interconsulta .nacionalidad {
+    height: 30px;
+    width: 40px;
+    grid-area: nacionalidad;
+}
+
+.interconsulta .prefijo {
+    height: 30px;
+    width: 65px;
+}
+
+.interconsulta select {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    width: 80%;
+    height: 30px;
+    margin-top: 5px;
+    margin-bottom: 40px;
+    font-size: 16px;
+}
+
+.botones {
+    margin-top: 10px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 200px 50px 200px 1fr;
+    grid-auto-rows: 0x;
+    grid-area: botones;
+    grid-template-areas:
+    ". . boton . ."
+    ". volver . validar ."
+    "hola hola hola hola hola"
+}
+
+.botones2 {
+    margin-top: 30px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 200px 50px 200px 1fr;
+    grid-auto-rows: 0x;
+    grid-area: botones;
+    grid-template-areas:
+    ". volver . validar ."
+    "hola hola hola hola hola"
+}
+
+.botones3 {
+    margin-top: 20px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 200px 50px 200px 1fr;
+    grid-auto-rows: 0x;
+    grid-area: botones;
+    grid-template-areas:
+    ". volver . validar ."
+    "hola hola hola hola hola"
+}
+
+.botones4 {
+    margin-top: -50px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: 0x;
+    grid-area: botones;
+    grid-template-areas:
+    ". validar ."
+    "hola hola hola"
+} 
+
+
+.botones6 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: 0x;
+    grid-area: botones;
+    grid-template-areas:
+    ". volver ."
+    "hola hola hola"
+} 
+ 
+.botones5 {
+    position: absolute;
+    bottom: 0;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 200px 50px 200px 1fr;
+    grid-auto-rows: 0x;
+    grid-area: botones;
+    grid-template-areas:
+    ". volver . validar ."
+    "hola hola hola hola hola"
+}
+
+.volver {
+    grid-area: volver;
+    font-size: 20px;
+    background: #0074C7;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.volver:hover{
+    transform: scale(1.1);
+    background: #023877;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.volver:active {
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+
+.boton {
+    grid-area: validar;
+    font-size: 20px;
+    background: #023877;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    border-radius: 8px;
+    padding: 10px 0px 0px 40px;
+    cursor: pointer;
+}
+
+.boton:hover{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.boton:active{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+.boton3 {
+    display: inline-block; /* Hace que el botón se trate como un bloque en línea */
+    width: 300px; /* Ajusta el ancho como desees */
+    height: 50px; /* Altura del botón */
+    background: #023877; /* Color de fondo */
+    color: white; /* Color del texto */
+    text-align: center; /* Centrar el texto dentro del botón */
+    line-height: 50px; /* Centrar verticalmente el texto */
+    border-radius: 8px; /* Bordes redondeados */
+    transition: all 300ms ease; /* Transición suave */
+    cursor: pointer; /* Cambiar cursor al pasar sobre el botón */
+    margin: 20px auto; /* Centrando el botón */
+    font-size: 20px; /* Tamaño de fuente */
+    box-sizing: border-box; /* Incluir padding y border en el tamaño total */
+    justify-content: space-between;
+}
+
+.boton3:hover {
+    background: #0074C7; /* Cambia el color en hover */
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5); /* Sombra en hover */
+}
+
+.boton3 i {
+    margin-right: 8px; /* Ajusta este valor para aumentar o disminuir el espacio */
+}
+
+
+.boton3:active{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+
+.volver2 {
+    grid-area: volver2;
+    font-size: 20px;
+    background: #0074C7;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.volver2:hover{
+    transform: scale(1.1);
+    background: #023877;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.volver2:active {
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+
+.boton2 {
+    flex: 1;
+    font-size: 20px;
+    background: #023877;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    border-radius: 8px;
+    padding: 10px 0px 0px 40px;
+}
+
+.boton2:hover{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+}
+
+.boton2:active{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+
+
+.exito {
+    height: 80px;
+    grid-area: hola;
+    margin-top: 5px; 
+    margin-bottom: -60px;
+    font-size: 20px;
+}
+
+.error {
+    height: 80px;
+    grid-area: hola;
+    margin-top: 10px;
+    margin-bottom: -30px;
+    font-size: 20px;
+}
+
+.añadir__input-error {
+	font-size: 12px;
+	margin-top: -25px;
+	display: none;
+}
+
+.añadir__input-error-activo {
+	display: block;
+}
+
+.añadir__validacion-estado {
+	z-index: 100;
+	font-size: 16px;
+	opacity: 0;
+}
+
+.añadir__grupo-terminos, 
+.añadir__mensaje,
+.añadir__grupo-btn-enviar {
+	grid-column: span 2;
+}
+
+.añadir__mensaje {
+	height: 45px;
+	line-height: 45px;
+	background: #F66060;
+	padding: 0 15px;
+	border-radius: 3px;
+	display: none;
+}
+
+.añadir__mensaje-activo {
+	display: block;
+}
+
+.añadir__mensaje p {
+	margin-top: 0;
+}
+
+.añadir__grupo-btn-enviar {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.añadir__btn {
+	height: 45px;
+	line-height: 45px;
+	width: 30%;
+	background: #000;
+	color: #fff;
+	font-weight: bold;
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	transition: .1s ease all;
+}
+
+.añadir__btn:hover {
+	box-shadow: 3px 0px 30px rgba(163,163,163, 1);
+}
+
+.añadir__mensaje-exito {
+	font-size: 14px;
+	color: #119200;
+	display: none;
+}
+
+.añadir__mensaje-exito-activo {
+	display: block;
+}
+
+/* ----- -----  Estilos para Validacion ----- ----- */
+.añadir__grupo-correcto .añadir__validacion-estado {
+	color: #1ed12d;
+	opacity: 1;
+}
+
+.añadir__grupo-incorrecto label {
+	color: #bb2929;
+}
+
+.añadir__grupo-incorrecto .añadir__validacion-estado {
+	color: #bb2929;
+	opacity: 1;
+}
+
+.añadir__grupo-incorrecto input {
+	border: 3px solid #bb2929;
+}
+
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    padding-top: 60px;
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+.check {
+    color: green;
+    font-weight: bold;
+}
+.x-roja {
+    color: red;
+    font-weight: bold;
+}
+.btn-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+}
+
+select {
+    border: 2px solid #ccc; /* Color por defecto */
+}
+
+select.red {
+    /* Color rojo para la opción "Seleccione" */
+    border: 4px solid red;
+    color: red;
+}
+
+select.green {
+     /* Color verde para la opción "Presente" */
+    border: 4px solid green;
+    color: green;
+}
+
+.porcentaje-inasistencias {
+    display: flex; /* Usar flexbox para centrar */
+    justify-content: center; /* Centrar horizontalmente */
+    margin: 20px 0; /* Espaciado superior e inferior */
+}
+
+.tabla-porcentaje {
+    width: auto; /* Ajusta el ancho a los datos */
+    border-collapse: collapse; /* Colapsar bordes */
+    margin: 0; /* Eliminar margen para centrar */
+    max-width: 100%; /* Asegurar que no exceda el ancho del contenedor */
+    overflow: auto; /* Permitir desplazamiento si es necesario */
+}
+
+.tabla-porcentaje th, .tabla-porcentaje td {
+    border: 1px solid #ddd; /* Bordes sutiles */
+    padding: 10px; /* Espaciado interno */
+    text-align: center; /* Centrado de texto */
+}
+
+.tabla-porcentaje th {
+    background-color: #f2f2f2; /* Color de fondo de encabezados */
+    color: #333; /* Color del texto de encabezados */
+    font-weight: bold; /* Negrita en encabezados */
+}
+
+.tabla-porcentaje tr:nth-child(even) {
+    background-color: #f9f9f9; /* Color de fondo alternativo para filas */
+}
+
+.tabla-porcentaje tr:hover {
+    background-color: #e2e2e2; /* Color al pasar el mouse */
+}
+
+.table-checkbox {
+    width: 100%; /* Para que la tabla ocupe el ancho completo */
+    border-spacing: 10px; /* Espacio entre las celdas */
+    margin-bottom: 20px; /* Margen inferior para separar de la siguiente sección */
+}
+
+.table-checkbox th {
+    text-align: center; /* Centrar el texto en el encabezado */
+    padding: 10px; /* Espacio en el encabezado */
+    background-color: #f0f0f0; /* Color de fondo para el encabezado */
+}
+
+.table-checkbox td {
+    text-align: left; /* Alinear el texto a la izquierda */
+    vertical-align: middle; /* Alinear verticalmente los contenidos al centro */
+}
+
+/* Ajustar el ancho de las columnas */
+.table-checkbox td:nth-child(1),
+.table-checkbox td:nth-child(3),
+.table-checkbox td:nth-child(5) {
+    width: 20px; /* Ancho reducido para las columnas de checkbox */
+}
+
+.table-checkbox td:nth-child(2),
+.table-checkbox td:nth-child(4),
+.table-checkbox td:nth-child(6) {
+    width: auto; /* Ancho automático para las columnas de texto */
+}
+
+.añadir6 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 0px 1fr;
+    grid-auto-rows: 50px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 . texto2"
+    "caja1 . caja2"
+    "texto3 . texto4"
+    "caja3 . caja4"
+    "texto5 . texto6"
+    "caja5 . caja6"
+    "texto7 . texto8"
+    "caja7 . caja8"
+    "edad . ."
+    "texto9 . texto10"
+    "caja9 . caja10"
+    "texto11 . texto12"
+    "caja11 . caja12"
+    "texto13 . texto14"
+    "caja13 . caja14"
+    "texto15 . texto16"
+    "caja15 . caja16"
+    "texto17 . texto18"
+    "caja17 . caja18"
+    "texto19 . texto20"
+    "caja19 . caja20"
+    "texto21 . texto22"
+    "caja21 . caja22"
+    "texto23 . ."
+    "caja23 . ."
+}
+
+.añadir7 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 0px 1fr;
+    grid-auto-rows: 35px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 . texto2"
+    "caja1 . caja2"
+    "texto3 . texto4"
+    "caja3 . caja4"
+    "texto5 . texto6"
+    "caja5 . caja6"
+    "texto7 . texto8"
+    "caja7 . caja8"
+}
+
+.añadir3 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 100px 1fr;
+    grid-auto-rows: 35px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 . texto2"
+    "caja1 . caja2"
+    "texto3 . texto4"
+    "caja3 . caja4"
+    "texto5 . texto6"
+    "caja5 . caja6"
+    ". . edad"
+    "hr hr hr"
+    "texto7 . texto8"
+    "caja7 . caja8"
+    "texto9 . texto10"
+    "caja9 . caja10"
+}
+
+.añadir10 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: 35px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 . ."
+    "caja1 . ."
+}
+
+.añadir11 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 35px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 texto2"
+    "caja1 caja2"
+}
+
+
+.añadir12 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 35px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 texto2 texto3"
+    "caja1 caja2 caja3"
+}
+
+.añadir5 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 0px 1fr;
+    grid-auto-rows: 48px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 . texto2"
+    "caja1 . caja2"
+    "texto3 . texto4"
+    "caja3 . caja4"
+    "texto5 . texto6"
+    "caja5 . caja6"
+    "texto7 . texto8"
+    "caja7 . caja8"
+    "texto9 . texto10"
+    "caja9 . caja10"
+    "texto11 . ."
+    "caja11 . ."
+}
+
+.añadir2 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: 0x;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 texto2 texto3"
+    "caja1 caja2 caja3"
+    "texto4 texto5 texto6"
+    "caja4 caja5 caja6"
+    "texto7 texto8 texto9"
+    "caja7 caja8 caja9"
+    "texto10 texto11 texto12"
+    "caja10 caja11 caja12"
+    "texto13 texto14 texto15"
+    "caja13 caja14 caja15"
+    "texto16 texto17 texto18"
+    "caja16 caja17 caja18"
+    "texto19 texto20 texto21"
+    "caja19 caja20 caja21"
+    "texto22 . ."
+    "caja22 . ."
+}
+
+.añadir1 {
+    margin-top: 0px;
+    justify-content: space-between;
+    display: grid;
+    
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    grid-auto-rows: 0x;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 texto2 texto3 texto4 texto5"
+    "caja1 caja2 caja3 caja4 caja5"
+    ". . . . ."
+     "texto6 texto7 texto8 texto9 texto10"
+    "caja6 caja7 caja8 caja9 caja10"
+     "texto11 texto12 texto13 texto14 texto15"
+    "caja11 caja12 caja13 caja14 caja15"
+     "texto16 texto17 texto18 texto19 texto20"
+    "caja16 caja17 caja18 caja19 caja20"
+}
+
+.label {
+    font-size: 25px;
+    margin-top: 50px;
+    text-align: left;
+}
+
+.reposo {
+font-size: 20px; /* Tamaño de fuente igual al título */
+margin-left: 0; /* Alinear a la izquierda */
+display: flex; /* Usar flexbox para alinear los elementos */
+align-items: center; /* Centrar verticalmente */
+}
+
+.checkbox {
+margin-right: 10px; /* Espacio entre checkbox y texto */
+width: 30px;
+height: 30px;
+margin-left: 20px;
+}
+
+.checkbox-container {
+display: flex; /* Usar flexbox para alinear los checkboxes */
+align-items: center; /* Centrar verticalmente los checkboxes */
+font-size: 20px;
+}
+.validacion-checkbox-container {
+    display: flex; /* Hacer que la caja contenedora sea flexible */
+    align-items: center; /* Centrar verticalmente los checkboxes */
+    margin-top: 10px; /* Espacio superior para separar del título */
+}
+
+.validacion-checkbox-container label {
+    margin-right: 20px; /* Espacio entre los checkboxes */
+    font-size: 20px; /* Tamaño de fuente para los labels */
+    display: flex; /* Hace que el label sea un contenedor flexible */
+    align-items: center; /* Alinea el texto y el checkbox verticalmente */
+}
+
+.validacion-checkbox-container input[type="checkbox"] {
+    margin-right: 5px; /* Espacio entre el checkbox y el texto */
+    vertical-align: middle; /* Alinear verticalmente */
+    width: 20px;
+    height: 20px;
+    margin-top: 40px;
+}
+
+/* Ajustar la posición del texto */
+.validacion-checkbox-container label {
+    transform: translateY(-45px); /* Ajusta este valor para mover el texto hacia arriba */
+}
+
+
+.observaciones {
+    height: 100px;
+}
+
+textarea {
+    clear: both;
+    min-width: 100%;
+    min-height: 100px;
+}
+
+.valor_examen {
+    clear: both;
+    min-width: 100%;
+    min-height: 30px;
+}
+
+.hr {
+    grid-area: hr;
+    width: 100%;
+    background: rgb(163, 163, 163);
+    height: 4px;
+}
+.texto1 {
+    grid-area: texto1;
+}
+
+.texto2 {
+    grid-area: texto2;
+}
+
+.texto3 {
+    grid-area: texto3;
+}
+
+.texto4 {
+    grid-area: texto4;
+}
+
+.texto5 {
+    grid-area: texto5;
+}
+
+.texto6 {
+    grid-area: texto6;
+}
+
+.texto7 {
+    grid-area: texto7;
+}
+
+.texto8 {
+    grid-area: texto8;
+}
+
+.texto9 {
+    grid-area: texto9;
+}
+
+.texto10 {
+    grid-area: texto10;
+}
+
+.texto11 {
+    grid-area: texto11;
+}
+
+.texto12 {
+    grid-area: texto12;
+}
+
+.texto13 {
+    grid-area: texto13;
+}
+
+.texto14 {
+    grid-area: texto14;
+}
+
+.texto15 {
+    grid-area: texto15;
+}
+
+.texto16 {
+    grid-area: texto16;
+}
+
+.texto17 {
+    grid-area: texto17;
+}
+
+.texto18 {
+    grid-area: texto18;
+}
+
+.texto19 {
+    grid-area: texto19;
+}
+
+.texto20 {
+    grid-area: texto20;
+}
+
+.texto21 {
+    grid-area: texto21;
+}
+
+.texto22 {
+    grid-area: texto22;
+}
+
+.texto23 {
+    grid-area: texto23;
+}
+
+.texto24 {
+    grid-area: texto24;
+}
+
+.caja1 {
+    grid-area: caja1;
+}
+
+.caja2 {
+    grid-area: caja2;
+}
+
+.caja3 {
+    grid-area: caja3;
+}
+
+.caja4 {
+    grid-area: caja4;
+}
+
+.caja5 {
+    grid-area: caja5;
+}
+
+.caja6 {
+    grid-area: caja6;
+}
+
+.caja7 {
+    grid-area: caja7;
+}
+
+.caja8 {
+    grid-area: caja8;
+}
+
+.caja9 {
+    grid-area: caja9;
+}
+
+.caja10 {
+    grid-area: caja10;
+}
+
+.caja11 {
+    grid-area: caja11;
+}
+
+.caja12 {
+    grid-area: caja12;
+}
+
+.caja13 {
+    grid-area: caja13;
+}
+
+.caja14 {
+    grid-area: caja14;
+}
+
+.caja15 {
+    grid-area: caja15;
+}
+
+.caja16 {
+    grid-area: caja16;
+}
+
+.caja17 {
+    grid-area: caja17;
+}
+
+.caja18 {
+    grid-area: caja18;
+}
+
+.caja19 {
+    grid-area: caja19;
+}
+
+.caja20 {
+    grid-area: caja20;
+}
+
+.caja21 {
+    grid-area: caja21;
+}
+
+.caja22 {
+    grid-area: caja22;
+}
+
+.caja23 {
+    grid-area: caja23;
+}
+
+.caja24 {
+    grid-area: caja24;
+}

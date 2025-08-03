@@ -1,0 +1,214 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: #f0f0f0;
+}
+
+article{
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 40px;
+    background: white;
+    text-align: center;
+    height: 600px;
+}
+
+article h1{
+    padding: 0px;
+}
+
+form {
+    text-align: center;
+    justify-content: center;
+    line-height: 80px;
+}
+
+.añadir {
+    font-weight: bold;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-auto-rows: 50px;
+    grid-area: añadir;
+    grid-template-areas:
+    "texto1 texto2 texto3"
+    "caja1 caja2 caja3"
+    "texto4 texto5 texto6"
+    "caja4 caja5 caja6"
+    "texto7 texto8 texto9"
+    "caja7 caja8 caja9"
+    "texto10 texto11 texto12"
+    "caja10 caja11 caja12"
+    "texto13 texto14 texto15"
+    "caja13 caja14 caja15"
+    "volver validar"
+    "hola hola hola"
+}
+
+.añadir input {
+    border: 2px solid black;
+    width: 150px;
+}
+
+.añadir select {
+    border: 2px solid black;
+    width: 150px;
+}
+
+.volver {
+    grid-area: volver;
+}
+
+.boton {
+    grid-area: validar;
+    font-size: 20px;
+    background: #023877;
+    color: white;
+    transition: all 300ms ease;
+    height: 50px;
+    margin-top: -50px;
+}
+
+
+.s {
+    grid-area: hola;
+}
+
+.boton:hover{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px; rgba(0,0,0,0.5);
+}
+
+.boton:active{
+    color: white;
+    transform: scale(1.1);
+    background: #0074C7;
+    box-shadow: 0px 0px 10px 0px; rgba(0,0,0,0.5);
+    border: 4px solid white;
+}
+
+.texto1 {
+    grid-area: texto1;
+}
+
+.texto2 {
+    grid-area: texto2;
+}
+
+.texto3 {
+    grid-area: texto3;
+}
+
+.texto4 {
+    grid-area: texto4;
+}
+
+.texto5 {
+    grid-area: texto5;
+}
+
+.texto6 {
+    grid-area: texto6;
+}
+
+.texto7 {
+    grid-area: texto7;
+}
+
+.texto8 {
+    grid-area: texto8;
+}
+
+.texto9 {
+    grid-area: texto9;
+}
+
+.texto10 {
+    grid-area: texto10;
+}
+
+.texto11 {
+    grid-area: texto11;
+}
+
+.texto12 {
+    grid-area: texto12;
+}
+
+.texto13 {
+    grid-area: texto13;
+}
+
+.texto14 {
+    grid-area: texto14;
+}
+
+.texto15 {
+    grid-area: texto15;
+}
+
+.caja1 {
+    grid-area: caja1;
+}
+
+.caja2 {
+    grid-area: caja2;
+}
+
+.caja3 {
+    grid-area: caja3;
+}
+
+.caja4 {
+    grid-area: caja4;
+}
+
+.caja5 {
+    grid-area: caja5;
+}
+
+.caja6 {
+    grid-area: caja6;
+}
+
+.caja7 {
+    grid-area: caja7;
+}
+
+.caja8 {
+    grid-area: caja8;
+}
+
+.caja9 {
+    grid-area: caja9;
+}
+
+.caja10 {
+    grid-area: caja10;
+}
+
+.caja11 {
+    grid-area: caja11;
+}
+
+.caja12 {
+    grid-area: caja12;
+}
+
+.caja13 {
+    grid-area: caja13;
+}
+
+.caja14 {
+    grid-area: caja14;
+}
+
+.caja15 {
+    grid-area: caja15;
+}

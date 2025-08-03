@@ -1,0 +1,43 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+main{
+    background: #f0f0f0;
+    padding: 40px 20px;
+    margin-top: 0px;
+    margin-bottom: 0;
+    height: 100%;
+}
+
+article{
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 40px;
+    background: white;
+    text-align: center;
+    height: 100%;
+}
+
+article h1{
+    padding: 0px;
+}
+
+article p{
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: 300px;
+}
+
+article a{
+    font-size: 25px;
+}
+
+article img{
+    margin-right: 30px;
+    width: 180px;
+    height: 180px;
+}
