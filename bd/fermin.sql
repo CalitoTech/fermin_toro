@@ -316,10 +316,10 @@ CREATE TABLE inscripcion (
     nro_hermanos int DEFAULT 0,
     responsable_inscripcion int NOT NULL,
     IdFecha_Escolar int NOT NULL,
-    IdEstado_Inscripcion int NOT NULL,
+    IdStatus int NOT NULL,
     IdCurso_Seccion int NOT NULL,
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
-    FOREIGN KEY (IdEstado_Inscripcion) REFERENCES estado_inscripcion(IdEstado_Inscripcion),
+    FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
     FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante)
