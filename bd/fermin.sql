@@ -100,7 +100,7 @@ CREATE TABLE seccion (
 );
 
 INSERT INTO `seccion` (`IdSeccion`, `seccion`) VALUES
-(1, 'A'), (2, 'B'), (3, 'C'), (4, 'Inscripcion');
+(1, 'Inscripcion'), (2, 'A'), (3, 'B'), (4, 'C');
 
 CREATE TABLE curso_seccion (
     IdCurso_Seccion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -287,8 +287,16 @@ CREATE TABLE tipo_discapacidad (
     tipo_discapacidad varchar(50) NOT NULL
 );
 
+INSERT INTO `tipo_discapacidad` (IdTipo_Discapacidad, tipo_discapacidad) VALUES
+(1, 'Visual'),
+(2, 'Auditiva'),
+(3, 'Motora'),
+(4, 'Alergia'),
+(5, 'Enfermedad');
+
 CREATE TABLE discapacidad (
     IdDiscapacidad int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    discapacidad varchar(50) NOT NULL,
     IdPersona int NOT NULL,
     IdTipo_Discapacidad int NOT NULL,
     FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona),
