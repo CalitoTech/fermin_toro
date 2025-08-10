@@ -66,16 +66,16 @@ try {
     $roles = []; // Dejar vacío si hay error
 }
 
-// === Cargar Condiciones desde la base de datos ===
-$condiciones = [];
+// === Cargar Status desde la base de datos ===
+$statuses = [];
 
 try {
-    require_once __DIR__ . '/../../../modelos/Condicion.php'; // Asumo que tienes un modelo Condicion
-    $condicionModel = new Condicion($conexion);
-    $condiciones = $condicionModel->obtenerTodos();
+    require_once __DIR__ . '/../../../modelos/Status.php'; // Asumo que tienes un modelo Status
+    $statusModel = new Status($conexion);
+    $statuses = $statusModel->obtenerTodos();
 } catch (Exception $e) {
-    error_log("Error al cargar condiciones en nuevo_usuario.php: " . $e->getMessage());
-    $condiciones = [];
+    error_log("Error al cargar statuses en nuevo_usuario.php: " . $e->getMessage());
+    $statuses = [];
 }
 
 // Después de cargar los roles, añade esto:
@@ -274,25 +274,25 @@ try {
                                             <p class="añadir__input-error">Las contraseñas deben coincidir.</p>
                                         </div>
 
-                                        <!-- Condición -->
-                                        <div class="añadir__grupo" id="grupo__condicion">
-                                            <label for="condicion" class="form-label">Condición *</label>
+                                        <!-- Status -->
+                                        <div class="añadir__grupo" id="grupo__status">
+                                            <label for="status" class="form-label">Status *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-star'></i></span>
                                                 <select 
                                                     class="form-control añadir__input" 
-                                                    name="condicion" 
-                                                    id="condicion" 
+                                                    name="status" 
+                                                    id="status" 
                                                     required>
-                                                    <?php foreach ($condiciones as $cond): ?>
-                                                        <option value="<?= $cond['IdCondicion'] ?>" <?= $cond['IdCondicion'] == 1 ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($cond['condicion']) ?>
+                                                    <?php foreach ($statuses as $status): ?>
+                                                        <option value="<?= $status['IdStatus'] ?>" <?= $status['IdStatus'] == 1 ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($status['status']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">Debe seleccionar una condición.</p>
+                                            <p class="añadir__input-error">Debe seleccionar un status.</p>
                                         </div>
                                     </div>
 
@@ -404,7 +404,7 @@ try {
         }
     }
 
-    document.getElementById('condicion').addEventListener('mousedown', function(e) {
+    document.getElementById('status').addEventListener('mousedown', function(e) {
         e.preventDefault();
         this.blur();
         return false;

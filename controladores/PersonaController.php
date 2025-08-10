@@ -40,14 +40,24 @@ function crearUsuario() {
     // Obtener datos
     $cedula = trim($_POST['cedula'] ?? '');
     $usuario = trim($_POST['usuario'] ?? '');
-    $condicion = $_POST['condicion'] ?? 1;
+    $password = trim($_POST['password'] ?? '');
+    $password2 = trim($_POST['password2'] ?? '');
+    $status = $_POST['status'] ?? 1;
     $roles = $_POST['roles'] ?? [];
     $telefonos = $_POST['telefonos'] ?? [];
 
     // Validar campos requeridos
-    if (empty($cedula) || empty($usuario) || empty($roles)) {
+    if (empty($cedula) || empty($usuario) || empty($password) || empty($password2) || empty($roles)) {
         $_SESSION['alert'] = 'error';
         $_SESSION['error_message'] = 'Campos requeridos faltantes';
+        header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
+        exit();
+    }
+
+    // Validar que las contraseñas coincidan
+    if ($password !== $password2) {
+        $_SESSION['alert'] = 'error';
+        $_SESSION['error_message'] = 'Las contraseñas no coinciden';
         header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
         exit();
     }
@@ -89,21 +99,28 @@ function crearUsuario() {
         $persona->nombre = trim($_POST['nombre'] ?? '');
         $persona->apellido = trim($_POST['apellido'] ?? '');
         $persona->correo = !empty($_POST['correo']) ? trim($_POST['correo']) : null;
-        $persona->usuario = $usuario;
-        $persona->password = $_POST['password'] ?? '';
-        $persona->IdCondicion = $condicion;
+        $persona->direccion = null; // Opcional si no se recibe
+        $persona->IdSexo = null; // Opcional si no se recibe
+        $persona->IdUrbanismo = null; // Opcional si no se recibe
+        $persona->IdStatus = 1; // Activo por defecto
+        $persona->IdStatus = $status;
 
         // Iniciar transacción
         $conexion->beginTransaction();
 
         try {
-            // Guardar persona
+            // 1. Guardar datos básicos de la persona (sin credenciales)
             $idPersona = $persona->guardar();
             if (!$idPersona) {
                 throw new Exception("Error al guardar la persona");
             }
 
-            // Guardar roles
+            // 2. Crear credenciales de usuario
+            if (!$persona->crearCredenciales($idPersona, $usuario, $password)) {
+                throw new Exception("Error al crear credenciales de usuario");
+            }
+
+            // 3. Guardar roles
             $detallePerfil = new DetallePerfil($conexion);
             foreach ($roles as $idPerfil) {
                 $detallePerfil->IdPersona = $idPersona;
@@ -113,7 +130,7 @@ function crearUsuario() {
                 }
             }
 
-            // Guardar teléfonos
+            // 4. Guardar teléfonos
             if (!empty($telefonos)) {
                 $telefonoModel = new Telefono($conexion);
                 foreach ($telefonos as $tel) {
@@ -141,7 +158,7 @@ function crearUsuario() {
             $conexion->rollBack();
             error_log("Error al crear usuario: " . $e->getMessage());
             $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'Error al crear el usuario';
+            $_SESSION['error_message'] = 'Error al crear el usuario: ' . $e->getMessage();
             header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
             exit();
         }
@@ -174,7 +191,7 @@ function editarUsuario() {
     }
 
     // Validar campos requeridos
-    $required = ['nombre', 'apellido', 'cedula', 'usuario', 'condicion', 'roles'];
+    $required = ['nombre', 'apellido', 'cedula', 'usuario', 'status', 'roles'];
     foreach ($required as $field) {
         if (empty($_POST[$field])) {
             $_SESSION['alert'] = 'error';
@@ -221,7 +238,7 @@ function editarUsuario() {
         $persona->apellido = trim($_POST['apellido']);
         $persona->correo = !empty($_POST['correo']) ? trim($_POST['correo']) : null;
         $persona->usuario = $usuario;
-        $persona->IdCondicion = (int)$_POST['condicion'];
+        $persona->IdStatus = (int)$_POST['status'];
         $roles = $_POST['roles'];
         $telefonos = $_POST['telefonos'] ?? [];
         $password = $_POST['password'] ?? '';

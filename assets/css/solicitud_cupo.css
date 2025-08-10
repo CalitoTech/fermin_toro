@@ -466,3 +466,39 @@ label {
     margin-bottom: 15px;
     border-left: 3px solid #c90000;
 }
+
+/* Estilos para la tabla de discapacidades */
+#discapacidadesTable {
+    margin-bottom: 0;
+}
+
+#discapacidadesTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.discapacidad-row td {
+    vertical-align: middle;
+}
+
+.btn-eliminar-discapacidad {
+    width: 100%;
+}
+
+.btn-eliminar-discapacidad:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.is-invalid {
+    border-color: #dc3545;
+}
+
+/* Estilo para el botón de agregar */
+#btn-agregar-discapacidad {
+    transition: all 0.3s;
+}
+
+#btn-agregar-discapacidad:hover {
+    transform: translateY(-2px);
+}

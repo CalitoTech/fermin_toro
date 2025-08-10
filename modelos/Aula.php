@@ -1,40 +1,60 @@
 <?php
 require_once __DIR__ . '/../config/conexion.php';
+
 class Aula {
-    private $conexion;
+    private $conn;
     public $IdAula;
+    public $IdNivel;
+    public $aula;
     public $capacidad;
-    public $IdCurso;
-    public $IdSeccion;
 
-    public function __construct($conexionPDO) {
-        $this->conexion = $conexionPDO;
+    public function __construct($db) {
+        $this->conn = $db;
     }
 
-    public function obtenerPorCurso($idCurso) {
-        $query = "SELECT a.*, s.seccion 
+    public function obtenerTodos() {
+        $query = "SELECT a.*, n.nivel 
                  FROM aula a
-                 JOIN seccion s ON a.IdSeccion = s.IdSeccion
-                 WHERE a.IdCurso = ?";
-        $stmt = $this->conexion->prepare($query);
-        $stmt->bindParam(1, $idCurso);
+                 JOIN nivel n ON a.IdNivel = n.IdNivel";
+        $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function obtenerDisponibles($idFechaEscolar) {
-        $query = "SELECT a.*, c.curso, s.seccion 
-                 FROM aula a
-                 JOIN curso c ON a.IdCurso = c.IdCurso
-                 JOIN seccion s ON a.IdSeccion = s.IdSeccion
-                 WHERE a.IdAula NOT IN (
-                     SELECT i.IdAula FROM inscripcion i 
-                     WHERE i.IdFecha_Escolar = ?
-                 )";
-        $stmt = $this->conexion->prepare($query);
-        $stmt->bindParam(1, $idFechaEscolar);
+    public function obtenerPorNivel($idNivel) {
+        $query = "SELECT * FROM aula WHERE IdNivel = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $idNivel, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerDisponiblesPorNivel($idNivel) {
+        $query = "SELECT a.* FROM aula a
+                 LEFT JOIN curso_seccion cs ON a.IdAula = cs.IdAula
+                 WHERE a.IdNivel = ? AND (cs.IdAula IS NULL OR cs.IdCurso_Seccion IS NULL)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $idNivel, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function actualizar() {
+        $query = "UPDATE aula SET aula = :aula, capacidad = :capacidad, IdNivel = :IdNivel 
+                 WHERE IdAula = :IdAula";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $this->aula = htmlspecialchars(strip_tags($this->aula));
+        $this->capacidad = htmlspecialchars(strip_tags($this->capacidad));
+        $this->IdNivel = htmlspecialchars(strip_tags($this->IdNivel));
+        $this->IdAula = htmlspecialchars(strip_tags($this->IdAula));
+
+        $stmt->bindParam(":aula", $this->aula);
+        $stmt->bindParam(":capacidad", $this->capacidad, PDO::PARAM_INT);
+        $stmt->bindParam(":IdNivel", $this->IdNivel, PDO::PARAM_INT);
+        $stmt->bindParam(":IdAula", $this->IdAula, PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 }
-?>

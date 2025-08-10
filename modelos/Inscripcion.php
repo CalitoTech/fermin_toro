@@ -4,15 +4,15 @@ require_once __DIR__ . '/../config/conexion.php';
 class Inscripcion {
     private $conn;
     public $IdInscripcion;
+    public $codigo_inscripcion;
     public $IdEstudiante;
     public $fecha_inscripcion;
     public $ultimo_plantel;
     public $nro_hermanos;
     public $responsable_inscripcion;
     public $IdFecha_Escolar;
-    public $IdEstado_Inscripcion;
-    public $IdCurso;
-    public $codigo_inscripcion;
+    public $IdStatus;
+    public $IdCurso_Seccion;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -20,40 +20,35 @@ class Inscripcion {
 
     public function guardar() {
         $query = "INSERT INTO inscripcion (
-            IdEstudiante, codigo_inscripcion, fecha_inscripcion, ultimo_plantel, nro_hermanos,
-            responsable_inscripcion, IdFecha_Escolar, IdEstado_Inscripcion, IdCurso
+            codigo_inscripcion, IdEstudiante, fecha_inscripcion, ultimo_plantel, 
+            nro_hermanos, responsable_inscripcion, IdFecha_Escolar, IdStatus, IdCurso_Seccion
         ) VALUES (
-            :IdEstudiante, :codigo_inscripcion, :fecha_inscripcion, :ultimo_plantel, :nro_hermanos,
-            :responsable_inscripcion, :IdFecha_Escolar, :IdEstado_Inscripcion, :IdCurso
+            :codigo_inscripcion, :IdEstudiante, :fecha_inscripcion, :ultimo_plantel, 
+            :nro_hermanos, :responsable_inscripcion, :IdFecha_Escolar, :IdStatus, :IdCurso_Seccion
         )";
 
         $stmt = $this->conn->prepare($query);
 
-        // Limpiar datos (excepto fechas que necesitan formato específico)
-        $this->IdEstudiante = htmlspecialchars(strip_tags($this->IdEstudiante));
+        // Limpiar datos
         $this->codigo_inscripcion = htmlspecialchars(strip_tags($this->codigo_inscripcion));
+        $this->IdEstudiante = htmlspecialchars(strip_tags($this->IdEstudiante));
         $this->ultimo_plantel = htmlspecialchars(strip_tags($this->ultimo_plantel));
         $this->nro_hermanos = htmlspecialchars(strip_tags($this->nro_hermanos));
         $this->responsable_inscripcion = htmlspecialchars(strip_tags($this->responsable_inscripcion));
         $this->IdFecha_Escolar = htmlspecialchars(strip_tags($this->IdFecha_Escolar));
-        $this->IdEstado_Inscripcion = htmlspecialchars(strip_tags($this->IdEstado_Inscripcion));
-        $this->IdCurso = htmlspecialchars(strip_tags($this->IdCurso));
-
-        // Validar formato de fecha si viene desde fuera
-        if ($this->fecha_inscripcion && !$this->validarFecha($this->fecha_inscripcion)) {
-            throw new Exception("Formato de fecha inválido");
-        }
+        $this->IdStatus = htmlspecialchars(strip_tags($this->IdStatus));
+        $this->IdCurso_Seccion = htmlspecialchars(strip_tags($this->IdCurso_Seccion));
 
         // Vincular valores
+        $stmt->bindParam(":codigo_inscripcion", $this->codigo_inscripcion);
         $stmt->bindParam(":IdEstudiante", $this->IdEstudiante, PDO::PARAM_INT);
-        $stmt->bindParam(":codigo_inscripcion", $this->codigo_inscripcion, PDO::PARAM_STR);
-        $stmt->bindParam(":fecha_inscripcion", $this->fecha_inscripcion, PDO::PARAM_STR);
-        $stmt->bindParam(":ultimo_plantel", $this->ultimo_plantel, PDO::PARAM_STR);
+        $stmt->bindParam(":fecha_inscripcion", $this->fecha_inscripcion);
+        $stmt->bindParam(":ultimo_plantel", $this->ultimo_plantel);
         $stmt->bindParam(":nro_hermanos", $this->nro_hermanos, PDO::PARAM_INT);
         $stmt->bindParam(":responsable_inscripcion", $this->responsable_inscripcion, PDO::PARAM_INT);
         $stmt->bindParam(":IdFecha_Escolar", $this->IdFecha_Escolar, PDO::PARAM_INT);
-        $stmt->bindParam(":IdEstado_Inscripcion", $this->IdEstado_Inscripcion, PDO::PARAM_INT);
-        $stmt->bindParam(":IdCurso", $this->IdCurso, PDO::PARAM_INT);
+        $stmt->bindParam(":IdStatus", $this->IdStatus, PDO::PARAM_INT);
+        $stmt->bindParam(":IdCurso_Seccion", $this->IdCurso_Seccion, PDO::PARAM_INT);
 
         if ($stmt->execute()) {
             $this->IdInscripcion = $this->conn->lastInsertId();
@@ -62,16 +57,12 @@ class Inscripcion {
         return false;
     }
 
-    private function validarFecha($fecha) {
-        $d = DateTime::createFromFormat('Y-m-d H:i:s', $fecha);
-        return $d && $d->format('Y-m-d H:i:s') === $fecha;
-    }
-
     public function obtenerPorEstudiante($idEstudiante) {
-        $query = "SELECT i.*, e.estado_inscripcion, f.fecha_escolar 
+        $query = "SELECT i.*, s.status, f.fecha_escolar, cs.IdCurso, cs.IdSeccion
                  FROM inscripcion i
-                 JOIN estado_inscripcion e ON i.IdEstado_Inscripcion = e.IdEstado_Inscripcion
+                 JOIN status s ON i.IdStatus = s.IdStatus
                  JOIN fecha_escolar f ON i.IdFecha_Escolar = f.IdFecha_Escolar
+                 JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
                  WHERE i.IdEstudiante = :IdEstudiante
                  ORDER BY i.fecha_inscripcion DESC";
 
@@ -83,10 +74,11 @@ class Inscripcion {
     }
 
     public function obtenerPorId($idInscripcion) {
-        $query = "SELECT i.*, e.estado_inscripcion, f.fecha_escolar 
+        $query = "SELECT i.*, s.status, f.fecha_escolar, cs.IdCurso, cs.IdSeccion
                  FROM inscripcion i
-                 JOIN estado_inscripcion e ON i.IdEstado_Inscripcion = e.IdEstado_Inscripcion
+                 JOIN status s ON i.IdStatus = s.IdStatus
                  JOIN fecha_escolar f ON i.IdFecha_Escolar = f.IdFecha_Escolar
+                 JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
                  WHERE i.IdInscripcion = :IdInscripcion
                  LIMIT 1";
 
@@ -94,27 +86,22 @@ class Inscripcion {
         $stmt->bindParam(":IdInscripcion", $idInscripcion, PDO::PARAM_INT);
         $stmt->execute();
 
-        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($resultado) {
-            // Asignar propiedades si se encuentra el registro
-            foreach ($resultado as $key => $value) {
-                if (property_exists($this, $key)) {
-                    $this->$key = $value;
-                }
-            }
-        }
-        
-        return $resultado;
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Método adicional para actualizar estado de inscripción
-    public function actualizarEstado($idInscripcion, $nuevoEstado) {
-        $query = "UPDATE inscripcion SET IdEstado_Inscripcion = :estado WHERE IdInscripcion = :id";
+    public function actualizarStatus($idInscripcion, $nuevoStatus) {
+        $query = "UPDATE inscripcion SET IdStatus = :IdStatus WHERE IdInscripcion = :IdInscripcion";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(":estado", $nuevoEstado, PDO::PARAM_INT);
-        $stmt->bindParam(":id", $idInscripcion, PDO::PARAM_INT);
+        $stmt->bindParam(":IdStatus", $nuevoStatus, PDO::PARAM_INT);
+        $stmt->bindParam(":IdInscripcion", $idInscripcion, PDO::PARAM_INT);
         
         return $stmt->execute();
+    }
+
+    public function generarCodigoInscripcion() {
+        $prefix = "INS-";
+        $random = strtoupper(substr(md5(uniqid(rand(), true)), 0, 6));
+        $this->codigo_inscripcion = $prefix . date('Ymd') . '-' . $random;
+        return $this->codigo_inscripcion;
     }
 }

@@ -308,39 +308,25 @@
                                     <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" required>
                                 </div>
                                 
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Tiene dificultad:</label>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="dificultadVisual" name="dificultadVisual">
-                                                <label class="form-check-label" for="dificultadVisual">Visual</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="dificultadAuditiva" name="dificultadAuditiva">
-                                                <label class="form-check-label" for="dificultadAuditiva">Auditiva</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="dificultadMotora" name="dificultadMotora">
-                                                <label class="form-check-label" for="dificultadMotora">Motora</label>
-                                            </div>
-                                        </div>
+                                <div class="form-group">
+                                    <label>Discapacidades o condiciones especiales:</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="discapacidadesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo de Discapacidad</th>
+                                                    <th>Descripción</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="discapacidadesBody">
+                                                <!-- Fila inicial se genera automáticamente -->
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="esAlergico" name="esAlergico">
-                                                <label class="form-check-label" for="esAlergico">Es alérgico</label>
-                                            </div>
-                                            <input type="text" class="form-control mt-2" id="alergia" name="alergia" placeholder="¿A qué?" disabled>
-                                            
-                                            <div class="form-check mt-3">
-                                                <input class="form-check-input" type="checkbox" id="tieneEnfermedad" name="tieneEnfermedad">
-                                                <label class="form-check-label" for="tieneEnfermedad">Tiene alguna enfermedad</label>
-                                            </div>
-                                            <input type="text" class="form-control mt-2" id="enfermedad" name="enfermedad" placeholder="¿Cuál?" disabled>
-                                        </div>
-                                    </div>
+                                    <button type="button" id="btn-agregar-discapacidad" class="btn btn-sm btn-primary mt-2">
+                                        <i class="fas fa-plus"></i> Agregar otra discapacidad
+                                    </button>
                                 </div>
                             </div>
                         </div>

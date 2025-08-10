@@ -1,12 +1,18 @@
 <?php
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/Persona.php';
-require_once __DIR__ . '/../modelos/Dificultad.php';
+require_once __DIR__ . '/../modelos/Discapacidad.php';
 require_once __DIR__ . '/../modelos/Representante.php';
 require_once __DIR__ . '/../modelos/Inscripcion.php';
 require_once __DIR__ . '/../modelos/Telefono.php';
 require_once __DIR__ . '/../modelos/FechaEscolar.php';
 require_once __DIR__ . '/../modelos/DetallePerfil.php';
+require_once __DIR__ . '/../modelos/CursoSeccion.php';
+require_once __DIR__ . '/../modelos/TipoDiscapacidad.php';
+
+
+error_log("Ruta actual del error_log: " . ini_get('error_log'));
+date_default_timezone_set('America/Caracas');
 
 // Crear conexión
 $database = new Database();
@@ -68,32 +74,22 @@ try {
             $detallePerfilEstudiante = new DetallePerfil($conexion);
             $detallePerfilEstudiante->IdPerfil = 3; // Estudiante
             $detallePerfilEstudiante->IdPersona = $idEstudiante;
-            $detallePerfilEstudiante->guardar();
             if (!$detallePerfilEstudiante->guardar()) {
                 throw new Exception("Error al asignar perfil de estudiante");
             }
             
-            $tieneDificultad = (
-                !empty($_POST['dificultadVisual']) ||
-                !empty($_POST['dificultadAuditiva']) ||
-                !empty($_POST['dificultadMotora']) ||
-                !empty($_POST['esAlergico']) ||
-                !empty($_POST['tieneEnfermedad'])
-            );
-
-            if ($tieneDificultad) {
-                $dificultad = new Dificultad($conexion);
-                $dificultad->IdPersona = $idEstudiante;
-                $dificultad->visual = isset($_POST['dificultadVisual']) ? 1 : 0;
-                $dificultad->auditiva = isset($_POST['dificultadAuditiva']) ? 1 : 0;
-                $dificultad->motora = isset($_POST['dificultadMotora']) ? 1 : 0;
-                $dificultad->es_alergico = isset($_POST['esAlergico']) ? 1 : 0;
-                $dificultad->alergia = !empty($_POST['alergia']) ? trim($_POST['alergia']) : null;
-                $dificultad->tiene_enfermedad = isset($_POST['tieneEnfermedad']) ? 1 : 0;
-                $dificultad->enfermedad = !empty($_POST['enfermedad']) ? trim($_POST['enfermedad']) : null;
-                $dificultad->guardar();
-                if (!$dificultad->guardar()) {
-                    throw new Exception("Error al guardar dificultades");
+            // Guardar discapacidades si existen
+            if (!empty($_POST['tipo_discapacidad']) && is_array($_POST['tipo_discapacidad'])) {
+                foreach ($_POST['tipo_discapacidad'] as $index => $tipo) {
+                    if (empty($tipo)) continue;
+                    
+                    $descripcion = $_POST['descripcion_discapacidad'][$index] ?? '';
+                    
+                    $discapacidad = new Discapacidad($conexion);
+                    $discapacidad->IdPersona = $idEstudiante;
+                    $discapacidad->IdTipo_Discapacidad = (int)$tipo;
+                    $discapacidad->discapacidad = trim($descripcion);
+                    $discapacidad->guardar();
                 }
             }
             
@@ -105,8 +101,7 @@ try {
                 $personaPadre->nombre = $_POST['padreNombres'] ?? '';
                 $personaPadre->apellido = $_POST['padreApellidos'] ?? '';
                 $personaPadre->correo = $_POST['padreCorreo'] ?? '';
-                $personaPadre->direccion = $_POST['representanteDireccion'] ?? ''; // Misma dirección que el representante
-                $personaPadre->lugar_trabajo = $_POST['padreLugarTrabajo'] ?? '';
+                $personaPadre->direccion = $_POST['representanteDireccion'] ?? '';
                 $personaPadre->IdSexo = 1; // Masculino
                 $personaPadre->IdUrbanismo = $_POST['padreUrbanismo'];
                 $idPadre = $personaPadre->guardar();
@@ -129,6 +124,7 @@ try {
                 $representantePadre->IdParentesco = 1; // Padre
                 $representantePadre->IdEstudiante = $idEstudiante;
                 $representantePadre->ocupacion = trim($_POST['padreOcupacion'] ?? '');
+                $representantePadre->lugar_trabajo = trim($_POST['padreLugarTrabajo'] ?? '');
                 $idRepresentantePadre = $representantePadre->guardar();
                 if (!$idRepresentantePadre) {
                     throw new Exception("Error al crear relación padre-estudiante");
@@ -138,11 +134,9 @@ try {
                 $detallePerfil = new DetallePerfil($conexion);
                 $detallePerfil->IdPerfil = 4;
                 $detallePerfil->IdPersona = $idPadre;
-                $detallePerfil->guardar();
                 if (!$detallePerfil->guardar()) {
                     throw new Exception("Error al asignar perfil de representante (padre)");
                 }
-                
             }
 
             // Guardar información de la madre (si se proporcionó)
@@ -153,8 +147,7 @@ try {
                 $personaMadre->nombre = $_POST['madreNombres'] ?? '';
                 $personaMadre->apellido = $_POST['madreApellidos'] ?? '';
                 $personaMadre->correo = $_POST['madreCorreo'] ?? '';
-                $personaMadre->direccion = $_POST['representanteDireccion'] ?? ''; // Misma dirección que el representante
-                $personaMadre->lugar_trabajo = $_POST['madreLugarTrabajo'] ?? '';
+                $personaMadre->direccion = $_POST['representanteDireccion'] ?? '';
                 $personaMadre->IdSexo = 2; // Femenino
                 $personaMadre->IdUrbanismo = $_POST['madreUrbanismo'];
                 $idMadre = $personaMadre->guardar();
@@ -177,6 +170,7 @@ try {
                 $representanteMadre->IdParentesco = 2; // Madre
                 $representanteMadre->IdEstudiante = $idEstudiante;
                 $representanteMadre->ocupacion = trim($_POST['madreOcupacion'] ?? '');
+                $representanteMadre->lugar_trabajo = trim($_POST['madreLugarTrabajo'] ?? '');
                 $idRepresentanteMadre = $representanteMadre->guardar();
                 if (!$idRepresentanteMadre) {
                     throw new Exception("Error al crear relación madre-estudiante");
@@ -186,7 +180,6 @@ try {
                 $detallePerfil = new DetallePerfil($conexion);
                 $detallePerfil->IdPerfil = 4;
                 $detallePerfil->IdPersona = $idMadre;
-                $detallePerfil->guardar();
                 if (!$detallePerfil->guardar()) {
                     throw new Exception("Error al asignar perfil de representante (madre)");
                 }
@@ -208,7 +201,7 @@ try {
                 $idRelacionRepresentante = $idRepresentanteMadre;
             } 
             elseif ($tipoRepresentante === 'otro') {
-                // === SOLO AQUÍ se crea y guarda el representante legal ===
+                // Validar campos requeridos para representante legal
                 $camposRequeridos = ['representanteNombres', 'representanteApellidos', 'representanteCedula', 
                 'representanteCorreo', 'representanteUrbanismo', 'representanteDireccion', 
                 'representanteCelular'];
@@ -225,7 +218,6 @@ try {
                 $personaRepresentante->apellido = $_POST['representanteApellidos'];
                 $personaRepresentante->correo = $_POST['representanteCorreo'] ?? '';
                 $personaRepresentante->direccion = $_POST['representanteDireccion'] ?? '';
-                $personaRepresentante->lugar_trabajo = $_POST['representanteLugarTrabajo'] ?? '';
                 $personaRepresentante->IdSexo = NULL;
                 $personaRepresentante->IdUrbanismo = $_POST['representanteUrbanismo'];
                 $idRepresentante = $personaRepresentante->guardar();
@@ -249,6 +241,7 @@ try {
                 $representante->IdParentesco = 3; // Representante Legal
                 $representante->IdEstudiante = $idEstudiante;
                 $representante->ocupacion = trim($_POST['representanteOcupacion'] ?? '');
+                $representante->lugar_trabajo = trim($_POST['representanteLugarTrabajo'] ?? '');
                 $idRelacionRepresentante = $representante->guardar();
                 if (!$idRelacionRepresentante) {
                     throw new Exception("Error al crear relación representante-estudiante");
@@ -267,26 +260,6 @@ try {
             }
 
             if (!empty($_POST['emergenciaNombre'])) {
-                $nombreCompleto = trim($_POST['emergenciaNombre']);
-                $partesNombre = preg_split('/\s+/', $nombreCompleto);
-
-                // Validar que haya al menos 2 palabras para que el apellido no quede vacío
-                if (count($partesNombre) < 2) {
-                    throw new Exception("El contacto de emergencia debe tener al menos un nombre y un apellido.");
-                }
-
-                // Aplicar las mismas reglas que en guardarContactoEmergencia()
-                if (count($partesNombre) == 2) {
-                    $apellido = $partesNombre[1];
-                } else {
-                    $apellido = implode(' ', array_slice($partesNombre, 2));
-                }
-
-                // Validar que el apellido no esté vacío
-                if (empty($apellido)) {
-                    throw new Exception("El contacto de emergencia debe tener un apellido válido.");
-                }
-
                 $emergencia = new Representante($conexion);
                 $emergencia->IdParentesco = $_POST['emergenciaParentesco'];
                 $emergencia->IdEstudiante = $idEstudiante;
@@ -294,44 +267,62 @@ try {
                 $emergencia->telefono_contacto = $_POST['emergenciaCelular'];
                 $emergencia->nacionalidad = NULL;
                 $emergencia->telefono_contacto = $_POST['emergenciaCelular'];
-
-                // --- INICIO DEBUG EN CONTROLADOR ---
-                error_log("Datos de emergencia recibidos en el controlador: " . print_r($_POST, true));
-                // --- FIN DEBUG EN CONTROLADOR ---
                 
                 if (!$emergencia->guardarContactoEmergencia()) {
                     throw new Exception("Error al guardar el contacto de emergencia");
                 }
+
+                // Asignar perfil de contacto de emergencia (IdPerfil = 5)
+                $detallePerfilEmergencia = new DetallePerfil($conexion);
+                $detallePerfilEmergencia->IdPerfil = 5; // Contacto de Emergencia
+                $detallePerfilEmergencia->IdPersona = $emergencia->IdPersona;
+                if (!$detallePerfilEmergencia->guardar()) {
+                    throw new Exception("Error al asignar perfil de contacto de emergencia");
+                }
             }
             
-            // --- Generar código de inscripción: AÑO-NRO_CORRELATIVO ---
+            // Obtener curso_seccion para la inscripción (IdSeccion = 1 para inscripción)
+            $cursoSeccionModel = new CursoSeccion($conexion);
+            $cursoSeccion = $cursoSeccionModel->obtenerPorCursoYSeccion($_POST['idCurso'], 1);
+            
+            if (!$cursoSeccion) {
+                throw new Exception("No se encontró una sección de inscripción para el curso seleccionado");
+            }
+            
+            // Generar código de inscripción
             $anioActual = date('Y');
             $sql = "SELECT COUNT(*) FROM inscripcion WHERE YEAR(fecha_inscripcion) = :anio";
             $stmt = $conexion->prepare($sql);
             $stmt->bindParam(':anio', $anioActual, PDO::PARAM_INT);
             $stmt->execute();
             $correlativo = $stmt->fetchColumn() + 1;
-
             $codigo_inscripcion = "$anioActual-$correlativo";
+
+            // Obtener año escolar activo
+            $modeloFechaEscolar = new FechaEscolar($conexion);
+            $anioEscolar = $modeloFechaEscolar->obtenerActivo();
+            
+            // Obtener status de inscripción (IdTipo_Status = 2 para inscripciones)
+            $sqlStatus = "SELECT IdStatus FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus LIMIT 1";
+            $stmtStatus = $conexion->prepare($sqlStatus);
+            $stmtStatus->execute();
+            $statusInscripcion = $stmtStatus->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$statusInscripcion) {
+                throw new Exception("No se encontró un estado válido para la inscripción");
+            }
 
             // Crear inscripción
             $inscripcion = new Inscripcion($conexion);
             $inscripcion->IdEstudiante = $idEstudiante;
-            $inscripcion->fecha_inscripcion = date('Y-m-d H:i:s');
+            $now = new DateTime('now', new DateTimeZone('America/Caracas')); // Ajusta la zona horaria
+            $inscripcion->fecha_inscripcion = $now->format('Y-m-d H:i:s');
             $inscripcion->ultimo_plantel = $_POST['ultimoPlantel'] ?? '';
             $inscripcion->nro_hermanos = $_POST['nroHermanos'] ?? 0;
-            if (!$idRelacionRepresentante) {
-                throw new Exception("No se pudo determinar el responsable de la inscripción");
-            }
             $inscripcion->responsable_inscripcion = $idRelacionRepresentante;
-            
-            // Obtener año escolar activo
-            $modeloFechaEscolar = new FechaEscolar($conexion);
-            $anioEscolar = $modeloFechaEscolar->obtenerActivo();
             $inscripcion->IdFecha_Escolar = $anioEscolar['IdFecha_Escolar'];
-            
-            $inscripcion->IdEstado_Inscripcion = 1; // Pendiente de aprobación
-            $inscripcion->IdCurso = $_POST['idCurso'] ?? null;
+            $inscripcion->IdStatus = $statusInscripcion['IdStatus']; // Primer estado de inscripción
+            $inscripcion->IdCurso_Seccion = $cursoSeccion['IdCurso_Seccion'];
             $inscripcion->codigo_inscripcion = $codigo_inscripcion;
             
             $numeroSolicitud = $inscripcion->guardar();
@@ -350,12 +341,10 @@ try {
             ]);
             
         } catch (Exception $e) {
-            $conexion->rollback();
-            throw $e;
-
             if ($conexion->inTransaction()) {
                 $conexion->rollback();
             }
+            throw $e;
         }
 
     } else {

@@ -58,7 +58,7 @@ require_once __DIR__ . '/../../../config/conexion.php';
 require_once __DIR__ . '/../../../modelos/Persona.php';
 require_once __DIR__ . '/../../../modelos/Perfil.php';
 require_once __DIR__ . '/../../../modelos/DetallePerfil.php';
-require_once __DIR__ . '/../../../modelos/Condicion.php';
+require_once __DIR__ . '/../../../modelos/Status.php';
 require_once __DIR__ . '/../../../modelos/TipoTelefono.php';
 require_once __DIR__ . '/../../../modelos/Telefono.php';
 
@@ -89,8 +89,8 @@ $roles = $perfilModel->obtenerTodos();
 $detallePerfilModel = new DetallePerfil($conexion);
 $rolesUsuario = $detallePerfilModel->obtenerPorPersona($idUsuario);
 
-$condicionModel = new Condicion($conexion);
-$condiciones = $condicionModel->obtenerTodos();
+$statusModel = new Status($conexion);
+$statuses = $statusModel->obtenerTodos();
 
 $tipoTelefonoModel = new TipoTelefono($conexion);
 $tiposTelefono = $tipoTelefonoModel->obtenerTodos();
@@ -288,26 +288,26 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                             <p class="añadir__input-error">Las contraseñas deben coincidir.</p>
                                         </div>
 
-                                        <!-- Condición -->
-                                        <div class="añadir__grupo" id="grupo__condicion">
-                                            <label for="condicion" class="form-label">Condición *</label>
+                                        <!-- Status -->
+                                        <div class="añadir__grupo" id="grupo__status">
+                                            <label for="status" class="form-label">Status *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-star'></i></span>
                                                 <select 
                                                     class="form-control añadir__input" 
-                                                    name="condicion" 
-                                                    id="condicion" 
+                                                    name="status" 
+                                                    id="status" 
                                                     required>
-                                                    <?php foreach ($condiciones as $cond): ?>
-                                                        <option value="<?= $cond['IdCondicion'] ?>" 
-                                                            <?= $cond['IdCondicion'] == $usuario['IdCondicion'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($cond['condicion']) ?>
+                                                    <?php foreach ($statuses as $status): ?>
+                                                        <option value="<?= $status['IdStatus'] ?>" 
+                                                            <?= $status['IdStatus'] == $usuario['IdStatus'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($status['status']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">Debe seleccionar una condición.</p>
+                                            <p class="añadir__input-error">Debe seleccionar un status.</p>
                                         </div>
                                     </div>
 

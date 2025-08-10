@@ -2,7 +2,7 @@
     session_start();
 
     if(isset($_SESSION['usuario'])){
-        header("location: ../inicio/inicio.php");
+        header("location: ../inicio/inicio/inicio.php");
     }
 ?>
 
