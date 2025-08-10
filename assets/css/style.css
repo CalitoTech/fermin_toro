@@ -344,3 +344,17 @@ body {
 .numero-telefono {
     flex-grow: 1;
 }
+
+.btn-outline-danger {
+    color: #c90000;
+    border-color: #c90000;
+}
+
+.btn-outline-danger:hover {
+    background-color: #c90000;
+    color: white;
+}
+
+.btn-lg i {
+    margin-right: 5px;
+}

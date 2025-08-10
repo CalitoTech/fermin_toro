@@ -8,6 +8,7 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
 }
 
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../controladores/Validaciones.php';
 require_once __DIR__ . '/../modelos/Persona.php';
 require_once __DIR__ . '/../modelos/DetallePerfil.php';
 require_once __DIR__ . '/../modelos/Telefono.php';
@@ -37,8 +38,12 @@ function crearUsuario() {
         exit();
     }
 
-    // Obtener datos
+    // Obtener y limpiar datos
+    $nacionalidad = $_POST['nacionalidad'] ?? '';
     $cedula = trim($_POST['cedula'] ?? '');
+    $nombre = trim($_POST['nombre'] ?? '');
+    $apellido = trim($_POST['apellido'] ?? '');
+    $correo = trim($_POST['correo'] ?? '');
     $usuario = trim($_POST['usuario'] ?? '');
     $password = trim($_POST['password'] ?? '');
     $password2 = trim($_POST['password2'] ?? '');
@@ -46,20 +51,67 @@ function crearUsuario() {
     $roles = $_POST['roles'] ?? [];
     $telefonos = $_POST['telefonos'] ?? [];
 
-    // Validar campos requeridos
-    if (empty($cedula) || empty($usuario) || empty($password) || empty($password2) || empty($roles)) {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Campos requeridos faltantes';
-        header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-        exit();
+    // === Validaciones ===
+    
+    // 1. Validar campos requeridos
+    $camposRequeridos = [
+        'nacionalidad' => $nacionalidad,
+        'cedula' => $cedula,
+        'nombre' => $nombre,
+        'apellido' => $apellido,
+        'usuario' => $usuario,
+        'password' => $password,
+        'password2' => $password2,
+        'roles' => $roles
+    ];
+    
+    foreach ($camposRequeridos as $campo => $valor) {
+        if (empty($valor)) {
+            manejarError("El campo $campo es requerido");
+        }
     }
 
-    // Validar que las contraseñas coincidan
+    // 2. Validar formatos con la clase Validaciones
+    if (!Validaciones::validarCampo($nombre, 'nombre')) {
+        manejarError('El nombre debe contener solo letras y espacios (3-40 caracteres)');
+    }
+    
+    if (!Validaciones::validarCampo($apellido, 'nombre')) {
+        manejarError('El apellido debe contener solo letras y espacios (3-40 caracteres)');
+    }
+    
+    if (!Validaciones::validarCampo($cedula, 'cedula')) {
+        manejarError('La cédula debe tener 7 u 8 dígitos numéricos');
+    }
+    
+    if (!empty($correo) && !Validaciones::validarCampo($correo, 'correo')) {
+        manejarError('El correo electrónico no tiene un formato válido');
+    }
+    
+    if (!Validaciones::validarCampo($usuario, 'usuario')) {
+        manejarError('El usuario debe tener entre 4 y 20 caracteres (letras, números, guiones y guiones bajos)');
+    }
+    
+    if (!Validaciones::validarCampo($password, 'password')) {
+        manejarError('La contraseña debe tener entre 4 y 20 caracteres');
+    }
+    
     if ($password !== $password2) {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Las contraseñas no coinciden';
-        header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-        exit();
+        manejarError('Las contraseñas no coinciden');
+    }
+    
+    if (empty($roles)) {
+        manejarError('Debe seleccionar al menos un rol');
+    }
+    
+     // Validar teléfonos (versión simplificada)
+    foreach ($telefonos as $tel) {
+        if (!empty($tel['numero'])) {
+            $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
+            if (strlen($digitos) < 11) {
+                manejarError('El número de teléfono debe contener al menos 11 dígitos');
+            }
+        }
     }
 
     try {
@@ -75,10 +127,7 @@ function crearUsuario() {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'El nombre de usuario ya existe';
-            header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-            exit();
+            manejarError('El nombre de usuario ya existe');
         }
 
         // Verificar cédula duplicada
@@ -87,29 +136,25 @@ function crearUsuario() {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'La cédula ya está registrada';
-            header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-            exit();
+            manejarError('La cédula ya está registrada');
         }
 
         // Configurar datos de la persona
-        $persona->IdNacionalidad = $_POST['nacionalidad'] === 'V' ? 1 : 2;
+        $persona->IdNacionalidad = $nacionalidad === 'V' ? 1 : 2;
         $persona->cedula = $cedula;
-        $persona->nombre = trim($_POST['nombre'] ?? '');
-        $persona->apellido = trim($_POST['apellido'] ?? '');
-        $persona->correo = !empty($_POST['correo']) ? trim($_POST['correo']) : null;
-        $persona->direccion = null; // Opcional si no se recibe
-        $persona->IdSexo = null; // Opcional si no se recibe
-        $persona->IdUrbanismo = null; // Opcional si no se recibe
-        $persona->IdStatus = 1; // Activo por defecto
+        $persona->nombre = $nombre;
+        $persona->apellido = $apellido;
+        $persona->correo = !empty($correo) ? $correo : null;
+        $persona->direccion = null;
+        $persona->IdSexo = null;
+        $persona->IdUrbanismo = null;
         $persona->IdStatus = $status;
 
         // Iniciar transacción
         $conexion->beginTransaction();
 
         try {
-            // 1. Guardar datos básicos de la persona (sin credenciales)
+            // 1. Guardar datos básicos de la persona
             $idPersona = $persona->guardar();
             if (!$idPersona) {
                 throw new Exception("Error al guardar la persona");
@@ -150,54 +195,101 @@ function crearUsuario() {
             $conexion->commit();
 
             $_SESSION['alert'] = 'success';
-            $_SESSION['success_message'] = 'Usuario creado exitosamente';
+            $_SESSION['message'] = 'Usuario creado exitosamente';
             header("Location: ../vistas/configuracion/usuario/usuario.php");
             exit();
 
         } catch (Exception $e) {
             $conexion->rollBack();
             error_log("Error al crear usuario: " . $e->getMessage());
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'Error al crear el usuario: ' . $e->getMessage();
-            header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-            exit();
+            manejarError('Error al crear el usuario: ' . $e->getMessage());
         }
 
     } catch (Exception $e) {
         error_log("Error general al crear usuario: " . $e->getMessage());
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Error interno del servidor';
-        header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-        exit();
+        manejarError('Error interno del servidor');
     }
 }
 
 function editarUsuario() {
     // Solo POST para edición
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Método no permitido';
-        header("Location: ../vistas/configuracion/usuario/usuario.php");
-        exit();
+        manejarError('Método no permitido', '../vistas/configuracion/usuario/usuario.php');
     }
 
     // Obtener ID
     $id = (int)($_POST['id'] ?? 0);
     if ($id <= 0) {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'ID de usuario inválido';
-        header("Location: ../vistas/configuracion/usuario/usuario.php");
-        exit();
+        manejarError('ID de usuario inválido', '../vistas/configuracion/usuario/usuario.php');
     }
 
-    // Validar campos requeridos
-    $required = ['nombre', 'apellido', 'cedula', 'usuario', 'status', 'roles'];
-    foreach ($required as $field) {
-        if (empty($_POST[$field])) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = "El campo $field es requerido";
-            header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-            exit();
+    // Obtener y limpiar datos
+    $nacionalidad = $_POST['nacionalidad'] ?? '';
+    $cedula = trim($_POST['cedula'] ?? '');
+    $nombre = trim($_POST['nombre'] ?? '');
+    $apellido = trim($_POST['apellido'] ?? '');
+    $correo = trim($_POST['correo'] ?? '');
+    $usuario = trim($_POST['usuario'] ?? '');
+    $status = $_POST['status'] ?? 1;
+    $roles = $_POST['roles'] ?? [];
+    $telefonos = $_POST['telefonos'] ?? [];
+    $password = $_POST['password'] ?? '';
+
+    // === Validaciones ===
+    
+    // 1. Validar campos requeridos
+    $camposRequeridos = [
+        'nacionalidad' => $nacionalidad,
+        'cedula' => $cedula,
+        'nombre' => $nombre,
+        'apellido' => $apellido,
+        'usuario' => $usuario,
+        'status' => $status,
+        'roles' => $roles
+    ];
+    
+    foreach ($camposRequeridos as $campo => $valor) {
+        if (empty($valor)) {
+            manejarError("El campo $campo es requerido", "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+        }
+    }
+
+    // 2. Validar formatos con la clase Validaciones
+    if (!Validaciones::validarCampo($nombre, 'nombre')) {
+        manejarError('El nombre debe contener solo letras y espacios (3-40 caracteres)', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!Validaciones::validarCampo($apellido, 'nombre')) {
+        manejarError('El apellido debe contener solo letras y espacios (3-40 caracteres)', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!Validaciones::validarCampo($cedula, 'cedula')) {
+        manejarError('La cédula debe tener 7 u 8 dígitos numéricos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!empty($correo) && !Validaciones::validarCampo($correo, 'correo')) {
+        manejarError('El correo electrónico no tiene un formato válido', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!Validaciones::validarCampo($usuario, 'usuario')) {
+        manejarError('El usuario debe tener entre 4 y 20 caracteres (letras, números, guiones y guiones bajos)', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!empty($password) && !Validaciones::validarCampo($password, 'password')) {
+        manejarError('La contraseña debe tener entre 4 y 20 caracteres', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (empty($roles)) {
+        manejarError('Debe seleccionar al menos un rol', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+     // Validar teléfonos (versión simplificada)
+    foreach ($telefonos as $tel) {
+        if (!empty($tel['numero'])) {
+            $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
+            if (strlen($digitos) < 11) {
+                manejarError('El número de teléfono debe contener al menos 11 dígitos');
+            }
         }
     }
 
@@ -208,16 +300,10 @@ function editarUsuario() {
         // Verificar que el usuario existe
         $persona = new Persona($conexion);
         if (!$persona->obtenerPorId($id)) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'Usuario no encontrado';
-            header("Location: ../vistas/configuracion/usuario/usuario.php");
-            exit();
+            manejarError('Usuario no encontrado', '../vistas/configuracion/usuario/usuario.php');
         }
 
         // Verificar duplicados (excluyendo al usuario actual)
-        $usuario = trim($_POST['usuario']);
-        $cedula = trim($_POST['cedula']);
-
         $stmt = $conexion->prepare("SELECT IdPersona FROM persona WHERE (usuario = :usuario OR cedula = :cedula) AND IdPersona != :id");
         $stmt->bindParam(':usuario', $usuario);
         $stmt->bindParam(':cedula', $cedula);
@@ -225,25 +311,19 @@ function editarUsuario() {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'El usuario o cédula ya están en uso por otro registro';
-            header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-            exit();
+            manejarError('El usuario o cédula ya están en uso por otro registro', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
         }
 
         // Configurar datos actualizados
-        $persona->IdNacionalidad = $_POST['nacionalidad'] === 'V' ? 1 : 2;
+        $persona->IdNacionalidad = $nacionalidad === 'V' ? 1 : 2;
         $persona->cedula = $cedula;
-        $persona->nombre = trim($_POST['nombre']);
-        $persona->apellido = trim($_POST['apellido']);
-        $persona->correo = !empty($_POST['correo']) ? trim($_POST['correo']) : null;
+        $persona->nombre = $nombre;
+        $persona->apellido = $apellido;
+        $persona->correo = !empty($correo) ? $correo : null;
         $persona->usuario = $usuario;
-        $persona->IdStatus = (int)$_POST['status'];
-        $roles = $_POST['roles'];
-        $telefonos = $_POST['telefonos'] ?? [];
-        $password = $_POST['password'] ?? '';
+        $persona->IdStatus = (int)$status;
 
-        // Iniciar transacción PRINCIPAL (solo esta)
+        // Iniciar transacción
         $conexion->beginTransaction();
 
         try {
@@ -259,41 +339,35 @@ function editarUsuario() {
                 }
             }
 
-            // 3. Actualizar roles (MODIFICADO - sin transacción interna)
+            // 3. Actualizar roles
             $detallePerfil = new DetallePerfil($conexion);
-            if (!$detallePerfil->actualizarRoles($id, $roles, false)) { // Pasamos false para no usar transacción
+            if (!$detallePerfil->actualizarRoles($id, $roles, false)) {
                 throw new Exception("Error al actualizar roles");
             }
 
-            // 4. Actualizar teléfonos (MODIFICADO - sin transacción interna)
+            // 4. Actualizar teléfonos
             $telefonoModel = new Telefono($conexion);
-            if (!$telefonoModel->actualizarTelefonos($id, $telefonos, false)) { // Pasamos false para no usar transacción
+            if (!$telefonoModel->actualizarTelefonos($id, $telefonos, false)) {
                 throw new Exception("Error al actualizar teléfonos");
             }
 
-            // Confirmar transacción PRINCIPAL
+            // Confirmar transacción
             $conexion->commit();
 
             $_SESSION['alert'] = 'success';
-            $_SESSION['success_message'] = 'Usuario actualizado correctamente';
+            $_SESSION['message'] = 'Usuario actualizado correctamente';
             header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
             exit();
 
         } catch (Exception $e) {
             $conexion->rollBack();
             error_log("Error en transacción de actualización: " . $e->getMessage());
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = $e->getMessage();
-            header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-            exit();
+            manejarError($e->getMessage(), "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
         }
 
     } catch (Exception $e) {
         error_log("Error general en edición: " . $e->getMessage());
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Error interno del servidor';
-        header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-        exit();
+        manejarError('Error interno del servidor', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
     }
 }
 
@@ -357,4 +431,16 @@ function eliminarUsuario() {
         header("Location: ../vistas/configuracion/usuario/usuario.php?error=error_interno");
         exit();
     }
+}
+
+/**
+ * Maneja los errores de forma consistente
+ * @param string $mensaje Mensaje de error a mostrar
+ * @param string $urlRedireccion URL a la que redirigir (opcional)
+ */
+function manejarError(string $mensaje, string $urlRedireccion = '../vistas/configuracion/usuario/nuevo_usuario.php') {
+    $_SESSION['alert'] = 'error';
+    $_SESSION['message'] = $mensaje;
+    header("Location: $urlRedireccion");
+    exit();
 }

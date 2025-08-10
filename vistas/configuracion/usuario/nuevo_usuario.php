@@ -27,15 +27,17 @@ require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
 // Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
+$message = $_SESSION['message'] ?? '';
 unset($_SESSION['alert']);
+unset($_SESSION['message']);
 
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El usuario se creó correctamente.");
+            $alerta = Notificaciones::exito($message ?: 'Operación realizada correctamente.');
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Este usuario ya existe, verifique por favor.");
+            $alerta = Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.');
             break;
         default:
             $alerta = null;
@@ -208,7 +210,8 @@ try {
                                                     class="form-control añadir__input" 
                                                     name="correo" 
                                                     id="correo" 
-                                                    maxlength="50">
+                                                    maxlength="50"
+                                                    required>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
                                             <p class="añadir__input-error">El correo no es válido.</p>
@@ -316,7 +319,7 @@ try {
                                                 id="roles" 
                                                 multiple 
                                                 required 
-                                                style="display: none;">
+                                                style="position: absolute; opacity: 0; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;">
                                                 <?php foreach ($roles as $rol): ?>
                                                     <option value="<?= $rol['IdPerfil'] ?>">
                                                         <?= htmlspecialchars($rol['nombre_perfil']) ?>
@@ -355,7 +358,7 @@ try {
                                                     name="telefonos[0][numero]"
                                                     placeholder="Ej: 04141234567"
                                                     maxlength="15"
-                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;" required>
                                                 
                                                 <button type="button" class="btn btn-outline-danger btn-eliminar-telefono" style="display: none;">
                                                     <i class='bx bx-trash'></i>
@@ -368,9 +371,12 @@ try {
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Botón -->
-                                <div class="d-grid gap-2 mt-4">
+                                
+                                <!-- Botones para Volver y Guardar -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <a href="usuario.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Usuarios
+                                    </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
                                         <i class='bx bxs-save'></i> Guardar Usuario
                                     </button>
