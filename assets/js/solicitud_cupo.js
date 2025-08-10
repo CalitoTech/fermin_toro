@@ -171,7 +171,81 @@ function enviarFormulario() {
     const formData = new FormData(form);
     const tipoRep = $('input[name="tipoRepresentante"]:checked').val();
 
-    // 1. Validación de discapacidades
+    // Limpiar validaciones anteriores
+    $('.is-invalid').removeClass('is-invalid');
+    
+    // 1. Validación de campos requeridos básicos
+    let camposFaltantes = [];
+    
+    // Validar sección del estudiante (siempre requerido)
+    const camposEstudiante = [
+        {id: 'estudianteNombres', nombre: 'Nombres del estudiante'},
+        {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante'},
+        {id: 'estudianteCedula', nombre: 'Cédula del estudiante'},
+        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante'}
+        // Agrega otros campos requeridos del estudiante
+    ];
+    
+    camposEstudiante.forEach(campo => {
+        if (!$(`#${campo.id}`).val()) {
+            camposFaltantes.push(campo.nombre);
+            $(`#${campo.id}`).addClass('is-invalid');
+        }
+    });
+    
+    // 2. Validación de datos del padre (siempre requeridos)
+    const camposPadre = [
+        {id: 'padreNombres', nombre: 'Nombres del padre'},
+        {id: 'padreApellidos', nombre: 'Apellidos del padre'},
+        {id: 'padreCedula', nombre: 'Cédula del padre'},
+        {id: 'padreCelular', nombre: 'Teléfono del padre'}
+        // Agrega otros campos requeridos del padre
+    ];
+    
+    camposPadre.forEach(campo => {
+        if (!$(`#${campo.id}`).val()) {
+            camposFaltantes.push(campo.nombre);
+            $(`#${campo.id}`).addClass('is-invalid');
+            $('#seccionPadre').collapse('show'); // Abrir sección si está cerrada
+        }
+    });
+    
+    // 3. Validación de datos de la madre (siempre requeridos)
+    const camposMadre = [
+        {id: 'madreNombres', nombre: 'Nombres de la madre'},
+        {id: 'madreApellidos', nombre: 'Apellidos de la madre'},
+        {id: 'madreCedula', nombre: 'Cédula de la madre'},
+        {id: 'madreCelular', nombre: 'Teléfono de la madre'}
+        // Agrega otros campos requeridos de la madre
+    ];
+    
+    camposMadre.forEach(campo => {
+        if (!$(`#${campo.id}`).val()) {
+            camposFaltantes.push(campo.nombre);
+            $(`#${campo.id}`).addClass('is-invalid');
+            $('#seccionMadre').collapse('show'); // Abrir sección si está cerrada
+        }
+    });
+    
+    // 4. Validación del representante legal (si es otro)
+    if (tipoRep === 'otro') {
+        const camposRepresentante = [
+            {id: 'representanteNombres', nombre: 'Nombres del representante legal'},
+            {id: 'representanteApellidos', nombre: 'Apellidos del representante legal'},
+            {id: 'representanteCedula', nombre: 'Cédula del representante legal'},
+            {id: 'representanteTelefono', nombre: 'Teléfono del representante legal'}
+            // Agrega otros campos requeridos del representante
+        ];
+        
+        camposRepresentante.forEach(campo => {
+            if (!$(`#${campo.id}`).val()) {
+                camposFaltantes.push(campo.nombre);
+                $(`#${campo.id}`).addClass('is-invalid');
+            }
+        });
+    }
+    
+    // 5. Validación de discapacidades
     let discapacidadesValidas = true;
     $('.discapacidad-row').each(function() {
         const tipo = $(this).find('.tipo-discapacidad').val();
@@ -184,32 +258,47 @@ function enviarFormulario() {
     });
 
     if (!discapacidadesValidas) {
-        showErrorAlert('Por favor complete todas las descripciones de discapacidades seleccionadas');
-        return false;
+        camposFaltantes.push('descripciones de discapacidades seleccionadas');
     }
 
-    // 2. Ajustar validación para representante
-    if (tipoRep !== 'otro') {
-        $('#seccionRepresentante').find('input, select').each(function() {
-            $(this).prop('required', false);
+    // 6. Validación del contacto de emergencia
+    if ($('#emergenciaNombre').val()) {
+        const nombreCompleto = $('#emergenciaNombre').val().trim();
+        if (nombreCompleto.split(' ').length < 2) {
+            camposFaltantes.push('apellido del contacto de emergencia');
+            $('#emergenciaNombre').addClass('is-invalid');
+        }
+        
+        if (!$('#emergenciaCelular').val()) {
+            camposFaltantes.push('teléfono del contacto de emergencia');
+            $('#emergenciaCelular').addClass('is-invalid');
+        }
+    }
+
+    // Mostrar errores si hay campos faltantes
+    if (camposFaltantes.length > 0) {
+        let mensaje = '<strong>Datos incompletos</strong><br>Por favor complete los siguientes campos requeridos:<br><ul class="text-left">';
+        camposFaltantes.forEach(campo => {
+            mensaje += `<li>${campo}</li>`;
         });
-    }
-
-    // 3. Validación general del formulario
-    if (!form.checkValidity()) {
-        form.reportValidity();
+        mensaje += '</ul>';
+        
+        showErrorAlert(mensaje);
+        
+        // Enfocar el primer campo con error
+        $('.is-invalid').first().focus();
         return false;
     }
 
-    // 4. Agregar ID del curso
-    formData.append('IdCurso', $('#idCursoSeleccionado').val());
-
-    // 5. Configurar botón de envío
+    // Configurar botón de envío
     const btn = $('#btnEnviarFormulario');
     btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...');
     btn.prop('disabled', true);
 
-    // 6. Enviar formulario
+    // Agregar ID del curso
+    formData.append('IdCurso', $('#idCursoSeleccionado').val());
+
+    // Enviar formulario
     fetch('../../controladores/InscripcionController.php', {
         method: 'POST',
         body: formData
@@ -226,7 +315,6 @@ function enviarFormulario() {
                 'Código de inscripción: ' + data.codigo_inscripcion
             );
             $('#formularioModal').modal('hide');
-            resetearFormularioCompleto();
         } else {
             throw new Error(data.message || 'Error al procesar la solicitud');
         }
@@ -242,50 +330,52 @@ function enviarFormulario() {
 }
 
 function inicializarFormulario() {
-// --- A. Manejo del envío del formulario ---
-$(document).on('click', '#btnEnviarFormulario', function () {
-    const form = document.getElementById('formInscripcion');
-
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-    }
-
-    const formData = new FormData(form);
-    const btn = $(this);
-
-    btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...');
-    btn.prop('disabled', true);
-
-    fetch('../../controladores/InscripcionController.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showSuccessAlert(
-                'Solicitud enviada correctamente.<br>' +
-                'Número de solicitud: ' + data.numeroSolicitud + '<br>' +
-                'Código de inscripción: ' + data.codigo_inscripcion
-            );
-            $('#formularioModal').modal('hide');
-        } else {
-            throw new Error(data.message || 'Error del servidor');
-        }
-    })
-    .catch(error => {
-        console.error('Error al enviar:', error);
-        showErrorAlert('Error: ' + error.message);
-    })
-    .finally(() => {
-        btn.html('Enviar Solicitud');
-        btn.prop('disabled', false);
+    // Inicializar acordeón
+    $('.form-title').click(function() {
+        $(this).toggleClass('collapsed');
     });
-});
+    
+    // Por defecto, solo el estudiante está abierto
+    $('.form-title').not(':first').addClass('collapsed');
+
+    // Validación de cédula al perder foco
+    $('#estudianteCedula').on('blur', function() {
+        const nacionalidad = $('#estudianteNacionalidad').val();
+        const cedula = $(this).val();
+        
+        if (nacionalidad && cedula) {
+            verificarCedulaExistente(cedula, nacionalidad, function(existe, status) {
+                if (existe) {
+                    mostrarAlertaCedulaExistente(status);
+                }
+            });
+        }
+    });
+
+    // Manejo del envío del formulario
+    $(document).on('click', '#btnEnviarFormulario', function(e) {
+        e.preventDefault(); // Prevenir envío por defecto
+        
+        const form = document.getElementById('formInscripcion');
+        const nacionalidad = $('#estudianteNacionalidad').val();
+        const cedula = $('#estudianteCedula').val();
+        
+        // Primero validar cédula si está completa
+        if (nacionalidad && cedula) {
+            verificarCedulaExistente(cedula, nacionalidad, function(existe, status) {
+                if (existe) {
+                    mostrarAlertaCedulaExistente(status);
+                    return false; // Detener el proceso
+                } else {
+                    enviarFormulario(); // Proceder con el envío
+                }
+            });
+        } else {
+            enviarFormulario(); // Si no hay cédula, proceder con validación normal
+        }
+    });
+}
+
 
 // --- B. Control de campos condicionales (alergia, enfermedad) ---
 $(document).on('change', '#esAlergico', function() {
@@ -342,7 +432,7 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function() {
         });
     }
 });
-}
+
 // Función para cargar tipos de discapacidad al iniciar
 function cargarTiposDiscapacidad() {
     fetch('../../controladores/TipoDiscapacidadController.php?action=obtenerTodos')
@@ -468,3 +558,44 @@ $(document).ready(function() {
     // Reinicializar cuando se abre el modal
     $('#formularioModal').on('shown.bs.modal', inicializarDiscapacidades);
 });
+
+// Función para verificar si la cédula ya existe
+function verificarCedulaExistente(cedula, nacionalidad, callback) {
+    if (!cedula || !nacionalidad) {
+        callback(false);
+        return;
+    }
+
+    fetch(`../../controladores/PersonaController.php?action=verificarCedula&cedula=${cedula}&nacionalidad=${nacionalidad}`)
+        .then(response => {
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            return response.json();
+        })
+        .then(data => {
+            if (data.error) {
+                console.error('Error:', data.error);
+                callback(false);
+            } else {
+                callback(data.existe, data.status);
+            }
+        })
+        .catch(error => {
+            console.error('Error al verificar cédula:', error);
+            callback(false);
+        });
+}
+
+// Función para mostrar alerta según el status de la cédula
+function mostrarAlertaCedulaExistente(status) {
+    let mensaje = '';
+    
+    if (status == 1) {
+        mensaje = 'El estudiante ya está inscrito en el sistema.';
+    } else if (status == 2) {
+        mensaje = 'El estudiante ya tiene una solicitud pendiente de aprobación.';
+    } else {
+        mensaje = 'El estudiante ya existe en el sistema.';
+    }
+    
+    showWarningAlert(mensaje);
+}

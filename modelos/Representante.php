@@ -12,6 +12,7 @@ class Representante {
     public $nacionalidad;
     public $ocupacion;
     public $lugar_trabajo;
+    public $IdStatus;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -63,21 +64,30 @@ class Representante {
     }
 
     public function guardarContactoEmergencia() {
-        // Procesar nombre y apellido según las reglas especificadas
+        // Validar que se haya ingresado nombre completo (nombre + apellido)
         $nombreCompleto = trim($this->nombre_contacto);
-        $partesNombre = preg_split('/\s+/', $nombreCompleto);
-        
-        if (count($partesNombre) < 2) {
-            $nombre = $partesNombre[0] ?? '';
-            $apellido = '';
-        } 
-        elseif (count($partesNombre) == 2) {
-            $nombre = $partesNombre[0];
-            $apellido = $partesNombre[1];
+        if (empty($nombreCompleto)) {
+            throw new Exception("Por favor ingrese el nombre completo del contacto de emergencia");
         }
-        else {
-            $nombre = $partesNombre[0].' '.$partesNombre[1];
-            $apellido = implode(' ', array_slice($partesNombre, 2));
+
+        // Validar que haya al menos un espacio (nombre y apellido)
+        if (strpos($nombreCompleto, ' ') === false) {
+            throw new Exception("Debe ingresar tanto el nombre como el apellido del contacto de emergencia");
+        }
+
+        // Validar teléfono
+        if (empty(trim($this->telefono_contacto))) {
+            throw new Exception("Debe ingresar un número de teléfono para el contacto de emergencia");
+        }
+
+        // Separar nombre y apellido
+        $partes = explode(' ', $nombreCompleto, 2);
+        $nombre = $partes[0];
+        $apellido = $partes[1] ?? '';
+
+        // Validar que el apellido no esté vacío
+        if (empty(trim($apellido))) {
+            throw new Exception("Debe ingresar un apellido válido para el contacto de emergencia");
         }
 
         // Crear persona para el contacto de emergencia
@@ -87,23 +97,27 @@ class Representante {
         $persona->IdSexo = NULL;
         $persona->IdUrbanismo = NULL;
         $persona->IdNacionalidad = NULL;
+        $persona->IdStatus = 2;
         
         $idPersona = $persona->guardar();
         
-        if ($idPersona) {
-            // Guardar teléfono del contacto de emergencia
-            $telefono = new Telefono($this->conn);
-            $telefono->numero_telefono = $this->telefono_contacto;
-            $telefono->IdTipo_Telefono = 2; // Celular
-            $telefono->IdPersona = $idPersona;
-            $telefono->guardar();
-            
-            // Crear relación como representante
-            $this->IdPersona = $idPersona;
-            return $this->guardar();
+        if (!$idPersona) {
+            throw new Exception("Error al guardar los datos del contacto de emergencia");
+        }
+
+        // Guardar teléfono
+        $telefono = new Telefono($this->conn);
+        $telefono->numero_telefono = $this->telefono_contacto;
+        $telefono->IdTipo_Telefono = 2; // Celular
+        $telefono->IdPersona = $idPersona;
+        
+        if (!$telefono->guardar()) {
+            throw new Exception("Error al guardar el teléfono del contacto de emergencia");
         }
         
-        return false;
+        // Crear relación como representante
+        $this->IdPersona = $idPersona;
+        return $this->guardar();
     }
 
     public function obtenerPorEstudiante($idEstudiante) {

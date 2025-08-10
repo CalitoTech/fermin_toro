@@ -46,6 +46,7 @@ try {
         try {
             // Crear persona (estudiante)
             $personaEstudiante = new Persona($conexion);
+            $personaEstudiante->IdStatus = 2; // Establecer IdStatus = 2 para el estudiante
             $personaEstudiante->IdNacionalidad = $_POST['estudianteNacionalidad'] === 'V' ? 1 : 2;
             $personaEstudiante->cedula = $_POST['estudianteCedula'];
             $personaEstudiante->nombre = $_POST['estudianteNombres'];
@@ -96,6 +97,7 @@ try {
             // Guardar información del padre (si se proporcionó)
             if (!empty($_POST['padreNombres']) || !empty($_POST['padreApellidos'])) {
                 $personaPadre = new Persona($conexion);
+                $personaPadre->IdStatus = 2; // Establecer IdStatus = 2 para el padre
                 $personaPadre->IdNacionalidad = $_POST['padreNacionalidad'] === 'V' ? 1 : 2;
                 $personaPadre->cedula = $_POST['padreCedula'] ?? '';
                 $personaPadre->nombre = $_POST['padreNombres'] ?? '';
@@ -142,6 +144,7 @@ try {
             // Guardar información de la madre (si se proporcionó)
             if (!empty($_POST['madreNombres']) || !empty($_POST['madreApellidos'])) {
                 $personaMadre = new Persona($conexion);
+                $personaMadre->IdStatus = 2; // Establecer IdStatus = 2 para la madre
                 $personaMadre->IdNacionalidad = $_POST['madreNacionalidad'] === 'V' ? 1 : 2;
                 $personaMadre->cedula = $_POST['madreCedula'] ?? '';
                 $personaMadre->nombre = $_POST['madreNombres'] ?? '';
@@ -212,6 +215,7 @@ try {
                 }
 
                 $personaRepresentante = new Persona($conexion);
+                $personaRepresentante->IdStatus = 2; // Establecer IdStatus = 2 para el representante
                 $personaRepresentante->IdNacionalidad = $_POST['representanteNacionalidad'] === 'V' ? 1 : 2;
                 $personaRepresentante->cedula = $_POST['representanteCedula'];
                 $personaRepresentante->nombre = $_POST['representanteNombres'];
@@ -260,24 +264,40 @@ try {
             }
 
             if (!empty($_POST['emergenciaNombre'])) {
-                $emergencia = new Representante($conexion);
-                $emergencia->IdParentesco = $_POST['emergenciaParentesco'];
-                $emergencia->IdEstudiante = $idEstudiante;
-                $emergencia->nombre_contacto = $_POST['emergenciaNombre'];
-                $emergencia->telefono_contacto = $_POST['emergenciaCelular'];
-                $emergencia->nacionalidad = NULL;
-                $emergencia->telefono_contacto = $_POST['emergenciaCelular'];
-                
-                if (!$emergencia->guardarContactoEmergencia()) {
-                    throw new Exception("Error al guardar el contacto de emergencia");
-                }
+                try {
+                    $emergencia = new Representante($conexion);
+                    $emergencia->IdParentesco = $_POST['emergenciaParentesco'];
+                    $emergencia->IdEstudiante = $idEstudiante;
+                    $emergencia->nombre_contacto = trim($_POST['emergenciaNombre']);
+                    $emergencia->telefono_contacto = trim($_POST['emergenciaCelular']);
+                    
+                    // Validación adicional para el nombre de emergencia
+                    if (str_word_count($emergencia->nombre_contacto) < 2) {
+                        throw new Exception("Debe ingresar nombre y apellido para el contacto de emergencia");
+                    }
+                    
+                    if (empty($emergencia->telefono_contacto)) {
+                        throw new Exception("Debe ingresar un teléfono para el contacto de emergencia");
+                    }
 
-                // Asignar perfil de contacto de emergencia (IdPerfil = 5)
-                $detallePerfilEmergencia = new DetallePerfil($conexion);
-                $detallePerfilEmergencia->IdPerfil = 5; // Contacto de Emergencia
-                $detallePerfilEmergencia->IdPersona = $emergencia->IdPersona;
-                if (!$detallePerfilEmergencia->guardar()) {
-                    throw new Exception("Error al asignar perfil de contacto de emergencia");
+                    if (!$emergencia->guardarContactoEmergencia()) {
+                        throw new Exception("Error al guardar el contacto de emergencia");
+                    }
+
+                    // Asignar perfil de contacto de emergencia (IdPerfil = 5)
+                    $detallePerfilEmergencia = new DetallePerfil($conexion);
+                    $detallePerfilEmergencia->IdPerfil = 5; // Contacto de Emergencia
+                    $detallePerfilEmergencia->IdPersona = $emergencia->IdPersona;
+                    if (!$detallePerfilEmergencia->guardar()) {
+                        throw new Exception("Error al asignar perfil de contacto de emergencia");
+                    }
+                } catch (Exception $e) {
+                    // Esto mostrará un mensaje claro al usuario
+                    echo json_encode([
+                        'success' => false,
+                        'message' => $e->getMessage()
+                    ]);
+                    exit;
                 }
             }
             

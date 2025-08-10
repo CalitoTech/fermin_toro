@@ -274,13 +274,14 @@ CREATE TABLE egreso (
 CREATE TABLE fecha_escolar (
     IdFecha_Escolar int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     fecha_escolar varchar(50) NOT NULL,
-    activa BOOLEAN NOT NULL DEFAULT FALSE
+    fecha_activa BOOLEAN NOT NULL DEFAULT FALSE,
+    inscripcion_activa BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-INSERT INTO `fecha_escolar` (`IdFecha_Escolar`, `fecha_escolar`, `activa`) VALUES
-(1, '2023-2024', False),
-(2, '2024-2025', False),
-(3, '2025-2026', True);
+INSERT INTO `fecha_escolar` (`IdFecha_Escolar`, `fecha_escolar`, `fecha_activa`, `inscripcion_activa`) VALUES
+(1, '2023-2024', False, False),
+(2, '2024-2025', False, False),
+(3, '2025-2026', True, True);
 
 CREATE TABLE tipo_discapacidad (
     IdTipo_Discapacidad int NOT NULL AUTO_INCREMENT PRIMARY KEY,

@@ -230,10 +230,10 @@
                         
                         <!-- Datos del Estudiante -->
                         <div class="card mb-4">
-                            <div class="card-header form-title" style="background-color: #c90000; color: white;">
+                            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosEstudiante">
                                 <h5><i class="fas fa-child mr-2"></i>Datos del Estudiante</h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body collapse show" id="datosEstudiante">
 
                                 <!-- Agregar esta leyenda al inicio del formulario -->
                                 <div class="form-legend">
@@ -333,10 +333,10 @@
                         
                         <!-- Datos de la Madre -->
                         <div class="card mb-4">
-                            <div class="card-header" style="background-color: #c90000; color: white;">
+                            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosMadre">
                                 <h5><i class="fas fa-female mr-2"></i>Datos de la Madre</h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body collapse" id="datosMadre">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
@@ -453,7 +453,9 @@
                                                 <option value="">Seleccione un parentesco</option>
                                                 <?php
                                                 foreach ($parentescos as $parentesco) {
-                                                    echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
+                                                    if ($parentesco['IdParentesco'] > 3) {
+                                                        echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
+                                                    }
                                                 }
                                                 ?>
                                             </select>
@@ -471,10 +473,10 @@
 
                         <!-- Datos del Padre -->
                         <div class="card mb-4">
-                            <div class="card-header" style="background-color: #c90000; color: white;">
+                            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosPadre">
                                 <h5><i class="fas fa-male mr-2"></i>Datos del Padre</h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body collapse" id="datosPadre">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
@@ -663,7 +665,9 @@
                                                 <option value="">Seleccione un parentesco</option>
                                                 <?php
                                                 foreach ($parentescos as $parentesco) {
-                                                    echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
+                                                    if ($parentesco['IdParentesco'] > 3) {
+                                                        echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
+                                                    }
                                                 }
                                                 ?>
                                             </select>

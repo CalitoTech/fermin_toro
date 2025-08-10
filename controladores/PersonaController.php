@@ -26,9 +26,82 @@ switch ($action) {
     case 'eliminar':
         eliminarUsuario();
         break;
+    case 'verificarCedula':
+        verificarCedula();
+        break;
     default:
         header("Location: ../vistas/configuracion/usuario/usuario.php");
         exit();
+}
+
+function verificarCedula() {
+    header('Content-Type: application/json');
+    
+    try {
+        // Verificar método
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            throw new Exception('Método no permitido');
+        }
+
+        // Obtener parámetros
+        $cedula = $_GET['cedula'] ?? '';
+        $letraNacionalidad = $_GET['nacionalidad'] ?? ''; // V o E
+        
+        if (empty($cedula) || empty($letraNacionalidad)) {
+            throw new Exception('La cédula y nacionalidad son requeridas');
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Primero obtener el IdNacionalidad correspondiente a V/E
+        $stmt = $conexion->prepare("SELECT IdNacionalidad FROM nacionalidad WHERE nacionalidad = :letra LIMIT 1");
+        $stmt->bindParam(':letra', $letraNacionalidad);
+        $stmt->execute();
+        
+        $idNacionalidad = null;
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $idNacionalidad = $row['IdNacionalidad'];
+        } else {
+            throw new Exception('Nacionalidad no válida');
+        }
+
+        // Ahora buscar la persona
+        $sql = "SELECT IdStatus FROM persona WHERE cedula = :cedula AND IdNacionalidad = :idNacionalidad";
+        $stmt = $conexion->prepare($sql);
+        
+        if (!$stmt) {
+            $errorInfo = $conexion->errorInfo();
+            throw new Exception('Error al preparar consulta: ' . json_encode($errorInfo));
+        }
+
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':idNacionalidad', $idNacionalidad, PDO::PARAM_INT);
+        
+        if (!$stmt->execute()) {
+            $errorInfo = $stmt->errorInfo();
+            throw new Exception('Error al ejecutar consulta: ' . json_encode($errorInfo));
+        }
+
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'existe' => true,
+                'status' => (int)$row['IdStatus']
+            ]);
+        } else {
+            echo json_encode(['existe' => false]);
+        }
+        
+    } catch (Exception $e) {
+        error_log("Error en verificarCedula: " . $e->getMessage());
+        echo json_encode([
+            'error' => 'Error interno',
+            'detalle' => $e->getMessage() // Solo para desarrollo
+        ]);
+    }
+    exit();
 }
 
 function crearUsuario() {
