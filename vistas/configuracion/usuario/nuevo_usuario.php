@@ -128,8 +128,10 @@ try {
                                                     name="nombre" 
                                                     id="nombre" 
                                                     required 
+                                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                                    minlength="3" 
                                                     maxlength="40"
-                                                    onkeypress="return onlyText(event)">
+                                                    oninput="formatearTexto1()">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
                                             <p class="añadir__input-error">El nombre debe tener entre 3 y 40 letras.</p>
@@ -146,7 +148,10 @@ try {
                                                     name="apellido" 
                                                     id="apellido" 
                                                     required 
+                                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                                    minlength="3" 
                                                     maxlength="40"
+                                                    oninput="formatearTexto2()"
                                                     onkeypress="return onlyText(event)">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
@@ -184,8 +189,9 @@ try {
                                                     name="cedula" 
                                                     id="cedula" 
                                                     required 
+                                                    minlength="7"
                                                     maxlength="8"
-                                                    pattern="^[0-9]+$"
+                                                    pattern="^[0-9]+"
                                                     onkeypress="return onlyNumber(event)"
                                                     style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
                                                 
@@ -357,7 +363,10 @@ try {
                                                     class="form-control añadir__input numero-telefono" 
                                                     name="telefonos[0][numero]"
                                                     placeholder="Ej: 04141234567"
-                                                    maxlength="15"
+                                                    pattern="^[0-9]+"
+                                                    minlength="11"
+                                                    maxlength="11"
+                                                    onkeypress="return onlyNumber(event)"
                                                     style="border-top-left-radius: 0; border-bottom-left-radius: 0;" required>
                                                 
                                                 <button type="button" class="btn btn-outline-danger btn-eliminar-telefono" style="display: none;">

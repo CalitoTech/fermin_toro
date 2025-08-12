@@ -45,29 +45,21 @@ function verificarCedula() {
 
         // Obtener parámetros
         $cedula = $_GET['cedula'] ?? '';
-        $letraNacionalidad = $_GET['nacionalidad'] ?? ''; // V o E
+        $idNacionalidad = $_GET['idNacionalidad'] ?? '';
         
-        if (empty($cedula) || empty($letraNacionalidad)) {
-            throw new Exception('La cédula y nacionalidad son requeridas');
+        if (empty($cedula) || empty($idNacionalidad)) {
+            throw new Exception('La cédula y el ID de nacionalidad son requeridos');
+        }
+
+        // Validar que idNacionalidad sea numérico
+        if (!is_numeric($idNacionalidad)) {
+            throw new Exception('El ID de nacionalidad debe ser numérico');
         }
 
         $database = new Database();
         $conexion = $database->getConnection();
 
-        // Primero obtener el IdNacionalidad correspondiente a V/E
-        $stmt = $conexion->prepare("SELECT IdNacionalidad FROM nacionalidad WHERE nacionalidad = :letra LIMIT 1");
-        $stmt->bindParam(':letra', $letraNacionalidad);
-        $stmt->execute();
-        
-        $idNacionalidad = null;
-        if ($stmt->rowCount() > 0) {
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            $idNacionalidad = $row['IdNacionalidad'];
-        } else {
-            throw new Exception('Nacionalidad no válida');
-        }
-
-        // Ahora buscar la persona
+        // Buscar directamente la persona con el IdNacionalidad proporcionado
         $sql = "SELECT IdStatus FROM persona WHERE cedula = :cedula AND IdNacionalidad = :idNacionalidad";
         $stmt = $conexion->prepare($sql);
         

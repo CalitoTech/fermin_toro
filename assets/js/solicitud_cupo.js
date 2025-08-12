@@ -182,8 +182,10 @@ function enviarFormulario() {
         {id: 'estudianteNombres', nombre: 'Nombres del estudiante'},
         {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante'},
         {id: 'estudianteCedula', nombre: 'Cédula del estudiante'},
-        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante'}
-        // Agrega otros campos requeridos del estudiante
+        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante'},
+        {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante'},
+        {id: 'estudianteTelefono', nombre: 'Teléfono del estudiante'},
+        {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante'}
     ];
     
     camposEstudiante.forEach(campo => {
@@ -198,15 +200,21 @@ function enviarFormulario() {
         {id: 'padreNombres', nombre: 'Nombres del padre'},
         {id: 'padreApellidos', nombre: 'Apellidos del padre'},
         {id: 'padreCedula', nombre: 'Cédula del padre'},
-        {id: 'padreCelular', nombre: 'Teléfono del padre'}
-        // Agrega otros campos requeridos del padre
+        {id: 'padreNacionalidad', nombre: 'Nacionalidad del padre'},
+        {id: 'padreOcupacion', nombre: 'Ocupación del padre'},
+        {id: 'padreUrbanismo', nombre: 'Urbanismo/Sector del padre'},
+        {id: 'padreDireccion', nombre: 'Dirección del padre'},
+        {id: 'padreTelefonoHabitacion', nombre: 'Teléfono de habitación del padre'},
+        {id: 'padreCelular', nombre: 'Celular del padre'},
+        {id: 'padreCorreo', nombre: 'Correo electrónico del padre'},
+        {id: 'padreLugarTrabajo', nombre: 'Lugar de trabajo del padre'}
     ];
     
     camposPadre.forEach(campo => {
         if (!$(`#${campo.id}`).val()) {
             camposFaltantes.push(campo.nombre);
             $(`#${campo.id}`).addClass('is-invalid');
-            $('#seccionPadre').collapse('show'); // Abrir sección si está cerrada
+            $('#seccionPadre').collapse('show');
         }
     });
     
@@ -215,15 +223,24 @@ function enviarFormulario() {
         {id: 'madreNombres', nombre: 'Nombres de la madre'},
         {id: 'madreApellidos', nombre: 'Apellidos de la madre'},
         {id: 'madreCedula', nombre: 'Cédula de la madre'},
-        {id: 'madreCelular', nombre: 'Teléfono de la madre'}
-        // Agrega otros campos requeridos de la madre
+        {id: 'madreNacionalidad', nombre: 'Nacionalidad de la madre'},
+        {id: 'madreOcupacion', nombre: 'Ocupación de la madre'},
+        {id: 'madreUrbanismo', nombre: 'Urbanismo/Sector de la madre'},
+        {id: 'madreDireccion', nombre: 'Dirección de la madre'},
+        {id: 'madreTelefonoHabitacion', nombre: 'Teléfono de habitación de la madre'},
+        {id: 'madreCelular', nombre: 'Celular de la madre'},
+        {id: 'madreCorreo', nombre: 'Correo electrónico de la madre'},
+        {id: 'madreLugarTrabajo', nombre: 'Lugar de trabajo de la madre'},
+        {id: 'emergenciaNombre', nombre: 'Nombre de contacto de emergencia'},
+        {id: 'emergenciaParentesco', nombre: 'Parentesco de contacto de emergencia'},
+        {id: 'emergenciaCelular', nombre: 'Teléfono de contacto de emergencia'}
     ];
     
     camposMadre.forEach(campo => {
         if (!$(`#${campo.id}`).val()) {
             camposFaltantes.push(campo.nombre);
             $(`#${campo.id}`).addClass('is-invalid');
-            $('#seccionMadre').collapse('show'); // Abrir sección si está cerrada
+            $('#seccionMadre').collapse('show');
         }
     });
     
@@ -233,14 +250,22 @@ function enviarFormulario() {
             {id: 'representanteNombres', nombre: 'Nombres del representante legal'},
             {id: 'representanteApellidos', nombre: 'Apellidos del representante legal'},
             {id: 'representanteCedula', nombre: 'Cédula del representante legal'},
-            {id: 'representanteTelefono', nombre: 'Teléfono del representante legal'}
-            // Agrega otros campos requeridos del representante
+            {id: 'representanteNacionalidad', nombre: 'Nacionalidad del representante legal'},
+            {id: 'representanteParentesco', nombre: 'Parentesco del representante legal'},
+            {id: 'representanteOcupacion', nombre: 'Ocupación del representante legal'},
+            {id: 'representanteUrbanismo', nombre: 'Urbanismo/Sector del representante legal'},
+            {id: 'representanteDireccion', nombre: 'Dirección del representante legal'},
+            {id: 'representanteTelefonoHabitacion', nombre: 'Teléfono de habitación del representante legal'},
+            {id: 'representanteCelular', nombre: 'Celular del representante legal'},
+            {id: 'representanteCorreo', nombre: 'Correo electrónico del representante legal'},
+            {id: 'representanteLugarTrabajo', nombre: 'Lugar de trabajo del representante legal'}
         ];
         
         camposRepresentante.forEach(campo => {
             if (!$(`#${campo.id}`).val()) {
                 camposFaltantes.push(campo.nombre);
                 $(`#${campo.id}`).addClass('is-invalid');
+                $('#seccionRepresentante').slideDown();
             }
         });
     }
@@ -261,26 +286,25 @@ function enviarFormulario() {
         camposFaltantes.push('descripciones de discapacidades seleccionadas');
     }
 
-    // 6. Validación del contacto de emergencia
+    // 6. Validación adicional del contacto de emergencia
     if ($('#emergenciaNombre').val()) {
         const nombreCompleto = $('#emergenciaNombre').val().trim();
         if (nombreCompleto.split(' ').length < 2) {
-            camposFaltantes.push('apellido del contacto de emergencia');
+            camposFaltantes.push('Debe ingresar nombre y apellido para el contacto de emergencia');
             $('#emergenciaNombre').addClass('is-invalid');
-        }
-        
-        if (!$('#emergenciaCelular').val()) {
-            camposFaltantes.push('teléfono del contacto de emergencia');
-            $('#emergenciaCelular').addClass('is-invalid');
         }
     }
 
     // Mostrar errores si hay campos faltantes
     if (camposFaltantes.length > 0) {
         let mensaje = '<strong>Datos incompletos</strong><br>Por favor complete los siguientes campos requeridos:<br><ul class="text-left">';
-        camposFaltantes.forEach(campo => {
+        
+        // Eliminar duplicados y ordenar
+        const camposUnicos = [...new Set(camposFaltantes)];
+        camposUnicos.forEach(campo => {
             mensaje += `<li>${campo}</li>`;
         });
+        
         mensaje += '</ul>';
         
         showErrorAlert(mensaje);

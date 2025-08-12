@@ -117,6 +117,8 @@
                 require_once __DIR__ . '/../../modelos/FechaEscolar.php';
                 require_once __DIR__ . '/../../modelos/Parentesco.php';
                 require_once __DIR__ . '/../../modelos/Urbanismo.php';
+                require_once __DIR__ . '/../../modelos/Nacionalidad.php';
+                require_once __DIR__ . '/../../modelos/Sexo.php';
                 require_once __DIR__ . '/../../config/conexion.php';
                 $database = new Database();
                 $conexionPDO = $database->getConnection();
@@ -126,7 +128,15 @@
                 $modeloFechaEscolar = new FechaEscolar($conexionPDO);
                 $modeloParentesco = new Parentesco($conexionPDO);
                 $modeloUrbanismo = new Urbanismo($conexionPDO);
-                
+                $modeloNacionalidad = new Nacionalidad($conexionPDO);
+                $modeloSexo = new Sexo($conexionPDO);
+
+                // Obtener todos los sexos
+                $sexos = $modeloSexo->obtenerTodos();
+
+                // Obtener todos las nacionalidades
+                $nacionalidades = $modeloNacionalidad->obtenerTodos();
+
                 // Obtener todos los urbanismos
                 $urbanismos = $modeloUrbanismo->obtenerTodos();
 
@@ -260,8 +270,10 @@
                                         <div class="form-group required-field">
                                             <label for="estudianteNacionalidad">Nacionalidad</label>
                                             <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
+                                                <option value="">Seleccione una nacionalidad</option>
+                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -275,8 +287,10 @@
                                         <div class="form-group required-field">
                                             <label for="estudianteSexo">Sexo</label>
                                             <select class="form-control" id="estudianteSexo" name="estudianteSexo" required>
-                                                <option value="F">Femenino</option>
-                                                <option value="M">Masculino</option>
+                                                <option value="">Seleccione un sexo</option>
+                                                <?php foreach ($sexos as $sexo): ?>
+                                                    <option value="<?= $sexo['IdSexo'] ?>"><?= $sexo['sexo'] ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -357,8 +371,10 @@
                                         <div class="form-group required-field">
                                             <label for="madreNacionalidad">Nacionalidad</label>
                                             <select class="form-control" id="madreNacionalidad" name="madreNacionalidad" required>
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
+                                                <option value="">Seleccione una nacionalidad</option>
+                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -496,8 +512,10 @@
                                         <div class="form-group required-field">
                                             <label for="padreNacionalidad">Nacionalidad</label>
                                             <select class="form-control" id="padreNacionalidad" name="padreNacionalidad" required>
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
+                                                <option value="">Seleccione una nacionalidad</option>
+                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -647,8 +665,10 @@
                                         <div class="form-group required-field">
                                             <label for="representanteNacionalidad">Nacionalidad</label>
                                             <select class="form-control" id="representanteNacionalidad" name="representanteNacionalidad">
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
+                                                <option value="">Seleccione una nacionalidad</option>
+                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -796,6 +816,7 @@
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="../../assets/js/solicitud_cupo.js"></script>
+    <script src="../../assets/js/validacion.js"></script>
     <script>
         // Configuración global de Toastr
         toastr.options = {

@@ -10,7 +10,6 @@ require_once __DIR__ . '/../modelos/DetallePerfil.php';
 require_once __DIR__ . '/../modelos/CursoSeccion.php';
 require_once __DIR__ . '/../modelos/TipoDiscapacidad.php';
 
-
 error_log("Ruta actual del error_log: " . ini_get('error_log'));
 date_default_timezone_set('America/Caracas');
 
@@ -27,27 +26,128 @@ try {
             throw new Exception("No se recibieron datos del formulario");
         }
 
-        // Validar datos recibidos
-        $requiredFields = [
-            'estudianteApellidos', 'estudianteNombres', 'estudianteNacionalidad', 
-            'estudianteCedula', 'estudianteSexo', 'estudianteFechaNacimiento',
-            'estudianteLugarNacimiento', 'estudianteTelefono',
-            'tipoRepresentante'
+        // === Validación de campos obligatorios ===
+        $camposFaltantes = [];
+        
+        // 1. Validación de campos del estudiante (siempre requeridos)
+        $camposEstudiante = [
+            'estudianteNombres' => 'Nombres del estudiante',
+            'estudianteApellidos' => 'Apellidos del estudiante',
+            'estudianteCedula' => 'Cédula del estudiante',
+            'estudianteFechaNacimiento' => 'Fecha de nacimiento del estudiante',
+            'estudianteLugarNacimiento' => 'Lugar de nacimiento del estudiante',
+            'estudianteTelefono' => 'Teléfono del estudiante',
+            'estudianteCorreo' => 'Correo electrónico del estudiante'
         ];
         
-        foreach ($requiredFields as $field) {
-            if (empty($_POST[$field])) {
-                throw new Exception("El campo $field es requerido");
+        foreach ($camposEstudiante as $campo => $nombre) {
+            if (empty($_POST[$campo])) {
+                $camposFaltantes[] = $nombre;
             }
         }
         
+        // 2. Validación de campos del padre (siempre requeridos)
+        $camposPadre = [
+            'padreNombres' => 'Nombres del padre',
+            'padreApellidos' => 'Apellidos del padre',
+            'padreCedula' => 'Cédula del padre',
+            'padreNacionalidad' => 'Nacionalidad del padre',
+            'padreOcupacion' => 'Ocupación del padre',
+            'padreUrbanismo' => 'Urbanismo/Sector del padre',
+            'padreDireccion' => 'Dirección del padre',
+            'padreTelefonoHabitacion' => 'Teléfono de habitación del padre',
+            'padreCelular' => 'Celular del padre',
+            'padreCorreo' => 'Correo electrónico del padre',
+            'padreLugarTrabajo' => 'Lugar de trabajo del padre'
+        ];
+        
+        foreach ($camposPadre as $campo => $nombre) {
+            if (empty($_POST[$campo])) {
+                $camposFaltantes[] = $nombre;
+            }
+        }
+        
+        // 3. Validación de campos de la madre (siempre requeridos)
+        $camposMadre = [
+            'madreNombres' => 'Nombres de la madre',
+            'madreApellidos' => 'Apellidos de la madre',
+            'madreCedula' => 'Cédula de la madre',
+            'madreNacionalidad' => 'Nacionalidad de la madre',
+            'madreOcupacion' => 'Ocupación de la madre',
+            'madreUrbanismo' => 'Urbanismo/Sector de la madre',
+            'madreDireccion' => 'Dirección de la madre',
+            'madreTelefonoHabitacion' => 'Teléfono de habitación de la madre',
+            'madreCelular' => 'Celular de la madre',
+            'madreCorreo' => 'Correo electrónico de la madre',
+            'madreLugarTrabajo' => 'Lugar de trabajo de la madre',
+            'emergenciaNombre' => 'Nombre de contacto de emergencia',
+            'emergenciaParentesco' => 'Parentesco de contacto de emergencia',
+            'emergenciaCelular' => 'Teléfono de contacto de emergencia'
+        ];
+        
+        foreach ($camposMadre as $campo => $nombre) {
+            if (empty($_POST[$campo])) {
+                $camposFaltantes[] = $nombre;
+            }
+        }
+        
+        // 4. Validación de representante legal (si es otro)
+        if (isset($_POST['tipoRepresentante']) && $_POST['tipoRepresentante'] === 'otro') {
+            $camposRepresentante = [
+                'representanteNombres' => 'Nombres del representante legal',
+                'representanteApellidos' => 'Apellidos del representante legal',
+                'representanteCedula' => 'Cédula del representante legal',
+                'representanteNacionalidad' => 'Nacionalidad del representante legal',
+                'representanteParentesco' => 'Parentesco del representante legal',
+                'representanteOcupacion' => 'Ocupación del representante legal',
+                'representanteUrbanismo' => 'Urbanismo/Sector del representante legal',
+                'representanteDireccion' => 'Dirección del representante legal',
+                'representanteTelefonoHabitacion' => 'Teléfono de habitación del representante legal',
+                'representanteCelular' => 'Celular del representante legal',
+                'representanteCorreo' => 'Correo electrónico del representante legal',
+                'representanteLugarTrabajo' => 'Lugar de trabajo del representante legal'
+            ];
+            
+            foreach ($camposRepresentante as $campo => $nombre) {
+                if (empty($_POST[$campo])) {
+                    $camposFaltantes[] = $nombre;
+                }
+            }
+        }
+        
+        // 5. Validación de discapacidades
+        if (!empty($_POST['tipo_discapacidad']) && is_array($_POST['tipo_discapacidad'])) {
+            foreach ($_POST['tipo_discapacidad'] as $index => $tipo) {
+                if (!empty($tipo) && empty($_POST['descripcion_discapacidad'][$index])) {
+                    $camposFaltantes[] = 'Descripción para la discapacidad seleccionada';
+                    break;
+                }
+            }
+        }
+        
+        // 6. Validación adicional del contacto de emergencia
+        if (!empty($_POST['emergenciaNombre'])) {
+            $nombreCompleto = trim($_POST['emergenciaNombre']);
+            if (str_word_count($nombreCompleto) < 2) {
+                $camposFaltantes[] = 'Nombre y apellido completo para el contacto de emergencia';
+            }
+        }
+        
+        // Mostrar errores si hay campos faltantes
+        if (!empty($camposFaltantes)) {
+            $camposUnicos = array_unique($camposFaltantes);
+            $mensaje = 'Datos incompletos. Por favor complete los siguientes campos requeridos:';
+            $mensaje .= "\n- " . implode("\n- ", $camposUnicos);
+            throw new Exception($mensaje);
+        }
+
         $conexion->beginTransaction();
 
         try {
             // Crear persona (estudiante)
             $personaEstudiante = new Persona($conexion);
             $personaEstudiante->IdStatus = 2; // Establecer IdStatus = 2 para el estudiante
-            $personaEstudiante->IdNacionalidad = $_POST['estudianteNacionalidad'] === 'V' ? 1 : 2;
+            $personaEstudiante->IdNacionalidad = (int)$_POST['estudianteNacionalidad'];
             $personaEstudiante->cedula = $_POST['estudianteCedula'];
             $personaEstudiante->nombre = $_POST['estudianteNombres'];
             $personaEstudiante->apellido = $_POST['estudianteApellidos'];
@@ -98,12 +198,12 @@ try {
             if (!empty($_POST['padreNombres']) || !empty($_POST['padreApellidos'])) {
                 $personaPadre = new Persona($conexion);
                 $personaPadre->IdStatus = 2; // Establecer IdStatus = 2 para el padre
-                $personaPadre->IdNacionalidad = $_POST['padreNacionalidad'] === 'V' ? 1 : 2;
+                $personaPadre->IdNacionalidad = (int)$_POST['padreNacionalidad'];
                 $personaPadre->cedula = $_POST['padreCedula'] ?? '';
                 $personaPadre->nombre = $_POST['padreNombres'] ?? '';
                 $personaPadre->apellido = $_POST['padreApellidos'] ?? '';
                 $personaPadre->correo = $_POST['padreCorreo'] ?? '';
-                $personaPadre->direccion = $_POST['representanteDireccion'] ?? '';
+                $personaPadre->direccion = $_POST['padreDireccion'] ?? '';
                 $personaPadre->IdSexo = 1; // Masculino
                 $personaPadre->IdUrbanismo = $_POST['padreUrbanismo'];
                 $idPadre = $personaPadre->guardar();
@@ -145,12 +245,12 @@ try {
             if (!empty($_POST['madreNombres']) || !empty($_POST['madreApellidos'])) {
                 $personaMadre = new Persona($conexion);
                 $personaMadre->IdStatus = 2; // Establecer IdStatus = 2 para la madre
-                $personaMadre->IdNacionalidad = $_POST['madreNacionalidad'] === 'V' ? 1 : 2;
+                $personaMadre->IdNacionalidad = (int)$_POST['madreNacionalidad'];
                 $personaMadre->cedula = $_POST['madreCedula'] ?? '';
                 $personaMadre->nombre = $_POST['madreNombres'] ?? '';
                 $personaMadre->apellido = $_POST['madreApellidos'] ?? '';
                 $personaMadre->correo = $_POST['madreCorreo'] ?? '';
-                $personaMadre->direccion = $_POST['representanteDireccion'] ?? '';
+                $personaMadre->direccion = $_POST['madreDireccion'] ?? '';
                 $personaMadre->IdSexo = 2; // Femenino
                 $personaMadre->IdUrbanismo = $_POST['madreUrbanismo'];
                 $idMadre = $personaMadre->guardar();
@@ -205,18 +305,30 @@ try {
             } 
             elseif ($tipoRepresentante === 'otro') {
                 // Validar campos requeridos para representante legal
-                $camposRequeridos = ['representanteNombres', 'representanteApellidos', 'representanteCedula', 
-                'representanteCorreo', 'representanteUrbanismo', 'representanteDireccion', 
-                'representanteCelular'];
-                foreach ($camposRequeridos as $campo) {
+                $camposRequeridos = [
+                    'representanteNombres' => 'Nombres del representante legal',
+                    'representanteApellidos' => 'Apellidos del representante legal',
+                    'representanteCedula' => 'Cédula del representante legal',
+                    'representanteNacionalidad' => 'Nacionalidad del representante legal',
+                    'representanteParentesco' => 'Parentesco del representante legal',
+                    'representanteOcupacion' => 'Ocupación del representante legal',
+                    'representanteUrbanismo' => 'Urbanismo/Sector del representante legal',
+                    'representanteDireccion' => 'Dirección del representante legal',
+                    'representanteTelefonoHabitacion' => 'Teléfono de habitación del representante legal',
+                    'representanteCelular' => 'Celular del representante legal',
+                    'representanteCorreo' => 'Correo electrónico del representante legal',
+                    'representanteLugarTrabajo' => 'Lugar de trabajo del representante legal'
+                ];
+                
+                foreach ($camposRequeridos as $campo => $nombre) {
                     if (empty($_POST[$campo])) {
-                        throw new Exception("El campo $campo es requerido para representante legal");
+                        throw new Exception("El campo $nombre es requerido para representante legal");
                     }
                 }
 
                 $personaRepresentante = new Persona($conexion);
                 $personaRepresentante->IdStatus = 2; // Establecer IdStatus = 2 para el representante
-                $personaRepresentante->IdNacionalidad = $_POST['representanteNacionalidad'] === 'V' ? 1 : 2;
+                $personaRepresentante->IdNacionalidad = (int)$_POST['representanteNacionalidad'];
                 $personaRepresentante->cedula = $_POST['representanteCedula'];
                 $personaRepresentante->nombre = $_POST['representanteNombres'];
                 $personaRepresentante->apellido = $_POST['representanteApellidos'];
@@ -292,12 +404,7 @@ try {
                         throw new Exception("Error al asignar perfil de contacto de emergencia");
                     }
                 } catch (Exception $e) {
-                    // Esto mostrará un mensaje claro al usuario
-                    echo json_encode([
-                        'success' => false,
-                        'message' => $e->getMessage()
-                    ]);
-                    exit;
+                    throw $e;
                 }
             }
             
