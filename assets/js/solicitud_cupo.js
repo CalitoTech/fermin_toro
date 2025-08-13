@@ -150,7 +150,7 @@ function abrirFormulario(idCurso) {
     $('#idCursoSeleccionado').val(idCurso);
     
     // Obtener el nombre del curso desde los datos ya cargados en la página
-    const cursoSeleccionado = $(`button[onclick="abrirFormulario(${idCurso})"]`)
+    const cursoSeleccionado = $(`button[onclick="abrirModalImprimir(${idCurso})"]`)
                               .closest('tr')
                               .find('td:first')
                               .text().trim();
@@ -635,21 +635,17 @@ function mostrarInformacionModal(idCurso) {
     $('#informacionModal').modal('show');
 }
 
-/**
- * Al hacer clic en "Continuar", se cierra el modal informativo
- * y se abre el formulario con el curso previamente seleccionado
- */
-$('#btnContinuarFormulario').on('click', function () {
+$('#btnContinuarFormulario').on('click', function() {
     if (!cursoSeleccionadoTemporal) {
         showWarningAlert('No se ha seleccionado un curso válido.');
         return;
     }
 
-    // Cerrar el modal informativo
-    $('#informacionModal').modal('hide');
-
-    // Usar la función existente para abrir el formulario
-    abrirFormulario(cursoSeleccionadoTemporal);
+    // Cerrar el modal informativo y esperar a que esté completamente oculto
+    $('#informacionModal').one('hidden.bs.modal', function() {
+        // Abrir el formulario después de que el modal informativo se haya cerrado
+        abrirFormulario(cursoSeleccionadoTemporal);
+    }).modal('hide');
 });
 
 function abrirModalImprimir() {
