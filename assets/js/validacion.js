@@ -67,6 +67,24 @@ function onlyNumber(e) {
     }
 }
 
+function onlyNumber2(e) {
+    key1 = e.keyCode || e.which;
+    teclado1 = String.fromCharCode(key1);
+    numeros = '0123456789+-';
+    especiales1 = "8-37-38-46"; 
+    teclado_especial1 = false;
+
+    for (i in especiales1) {
+        if (key1 == especiales1[i]) {
+            teclado_especial1 = true;
+            break;
+        }
+    }
+    if (numeros.indexOf(teclado1) == -1 && !teclado_especial1) {
+        return false;
+    }
+}
+
 function fechita(e) {
     key2 = e.keyCode || e.which;
     teclado2 = String.fromCharCode(key2);

@@ -623,3 +623,35 @@ function mostrarAlertaCedulaExistente(status) {
     
     showWarningAlert(mensaje);
 }
+
+// Variable para guardar temporalmente el ID del curso
+let cursoSeleccionadoTemporal = null;
+
+/**
+ * Muestra el modal informativo y guarda el ID del curso
+ */
+function mostrarInformacionModal(idCurso) {
+    cursoSeleccionadoTemporal = idCurso;
+    $('#informacionModal').modal('show');
+}
+
+/**
+ * Al hacer clic en "Continuar", se cierra el modal informativo
+ * y se abre el formulario con el curso previamente seleccionado
+ */
+$('#btnContinuarFormulario').on('click', function () {
+    if (!cursoSeleccionadoTemporal) {
+        showWarningAlert('No se ha seleccionado un curso válido.');
+        return;
+    }
+
+    // Cerrar el modal informativo
+    $('#informacionModal').modal('hide');
+
+    // Usar la función existente para abrir el formulario
+    abrirFormulario(cursoSeleccionadoTemporal);
+});
+
+function abrirModalImprimir() {
+    $('#imprimirPlanillaModal').modal('show');
+}

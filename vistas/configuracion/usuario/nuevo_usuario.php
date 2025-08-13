@@ -131,7 +131,8 @@ try {
                                                     pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
                                                     minlength="3" 
                                                     maxlength="40"
-                                                    oninput="formatearTexto1()">
+                                                    oninput="formatearTexto1()" 
+                                                    onkeypress="return onlyText(event)">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
                                             <p class="añadir__input-error">El nombre debe tener entre 3 y 40 letras.</p>
