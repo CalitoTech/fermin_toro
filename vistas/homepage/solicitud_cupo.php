@@ -188,7 +188,7 @@
                     $niveles = $modeloNivel->obtenerTodos();
                     
                     foreach ($niveles as $nivel) {
-                        echo '<h3 class="nivel-title">Nivel ' . $nivel['nivel'] . '</h3>';
+                        echo '<h3 class="nivel-title">' . $nivel['nivel'] . '</h3>';
                         
                         // Obtener cursos para este nivel
                         $cursos = $modeloCurso->obtenerPorNivel($nivel['IdNivel']);

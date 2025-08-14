@@ -3,9 +3,74 @@ require_once __DIR__ . '/../config/conexion.php';
 
 class Curso {
     private $conexion;
+    public $IdCurso;
+    public $curso;
+    public $IdNivel;
 
     public function __construct($conexionPDO) {
         $this->conexion = $conexionPDO;
+    }
+
+    public function guardar() {
+        $query = "INSERT INTO curso (curso, IdNivel) VALUES (:curso, :nivel)";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':curso', $this->curso);
+        $stmt->bindParam(':nivel', $this->IdNivel);
+        
+        if ($stmt->execute()) {
+            $this->IdCurso = $this->conexion->lastInsertId();
+            return $this->IdCurso;
+        }
+        return false;
+    }
+    
+    public function actualizar() {
+        $query = "UPDATE curso SET curso = :curso, IdNivel = :nivel WHERE IdCurso = :id";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':curso', $this->curso);
+        $stmt->bindParam(':nivel', $this->IdNivel);
+        $stmt->bindParam(':id', $this->IdCurso);
+        return $stmt->execute();
+    }
+
+    public function eliminar() {
+        // Primero verificar dependencias
+        if ($this->tieneDependencias()) {
+            return false; // No se puede eliminar porque tiene dependencias
+        }
+
+        $query = "DELETE FROM curso WHERE IdCurso = :id";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':id', $this->IdCurso);
+        return $stmt->execute();
+    }
+
+    public function tieneDependencias() {
+        // Verificar si el curso está siendo usado en la tabla curso_seccion
+        $query = "SELECT COUNT(*) as total FROM curso_seccion WHERE IdCurso = :id";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':id', $this->IdCurso);
+        $stmt->execute();
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return ($resultado['total'] > 0);
+    }
+
+    public function obtenerPorId($id) {
+        $query = "SELECT * FROM curso WHERE IdCurso = :id LIMIT 1";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($row) {
+            $this->IdCurso = $row['IdCurso'];
+            $this->curso = $row['curso'];
+            return $row;
+        }
+        
+        return false;
     }
 
     public function obtenerTodos() {

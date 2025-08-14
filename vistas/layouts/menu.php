@@ -90,7 +90,7 @@ try {
                 <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
-                <li><a href="#">Cursos</a></li>
+                <li><a href="../../registros/curso/curso.php">Cursos</a></li>
                 <li><a href="#">Secciones</a></li>
                 <li><a href="#">Aulas</a></li>
                 <li><a href="#">Requisitos</a></li>

@@ -68,11 +68,6 @@ $conexion = $database->getConnection();
 $personaModel = new Persona($conexion);
 $usuario = $personaModel->obtenerPorId($idUsuario); // Cargar datos
 
-// Para guardar cambios:
-if ($personaModel->actualizar()) {
-    // Actualización exitosa
-}
-
 // Para cambiar contraseña (si se proporcionó):
 if (!empty($_POST['password'])) {
     $personaModel->actualizarPassword($_POST['password']);

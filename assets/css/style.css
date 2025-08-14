@@ -358,3 +358,6 @@ body {
 .btn-lg i {
     margin-right: 5px;
 }
+[data-bs-toggle="tooltip"] {
+    border: 1px solid red !important; /* Solo para test */
+}
