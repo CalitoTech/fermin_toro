@@ -12,6 +12,79 @@ class Aula {
         $this->conn = $db;
     }
 
+    public function guardar() {
+        $query = "INSERT INTO aula (aula, capacidad, IdNivel) VALUES (:aula, :capacidad, :IdNivel)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':aula', $this->aula);
+        $stmt->bindParam(':capacidad', $this->capacidad);
+        $stmt->bindParam(':IdNivel', $this->IdNivel);
+        
+        if ($stmt->execute()) {
+            $this->IdAula = $this->conn->lastInsertId();
+            return $this->IdAula;
+        }
+        return false;
+    }
+
+    public function actualizar() {
+        $query = "UPDATE aula SET aula = :aula, capacidad = :capacidad, IdNivel = :IdNivel 
+                 WHERE IdAula = :IdAula";
+        
+        $stmt = $this->conn->prepare($query);
+        
+        $this->aula = htmlspecialchars(strip_tags($this->aula));
+        $this->capacidad = htmlspecialchars(strip_tags($this->capacidad));
+        $this->IdNivel = htmlspecialchars(strip_tags($this->IdNivel));
+        $this->IdAula = htmlspecialchars(strip_tags($this->IdAula));
+
+        $stmt->bindParam(":aula", $this->aula);
+        $stmt->bindParam(":capacidad", $this->capacidad, PDO::PARAM_INT);
+        $stmt->bindParam(":IdNivel", $this->IdNivel, PDO::PARAM_INT);
+        $stmt->bindParam(":IdAula", $this->IdAula, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    public function eliminar() {
+        // Primero verificar dependencias
+        if ($this->tieneDependencias()) {
+            return false; // No se puede eliminar porque tiene dependencias
+        }
+
+        $query = "DELETE FROM aula WHERE IdAula = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->IdAula);
+        return $stmt->execute();
+    }
+
+    public function tieneDependencias() {
+        // Verificar si el aula está siendo usado en la tabla curso_seccion
+        $query = "SELECT COUNT(*) as total FROM curso_seccion WHERE IdAula = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $this->IdAula);
+        $stmt->execute();
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return ($resultado['total'] > 0);
+    }
+
+    public function obtenerPorId($id) {
+        $query = "SELECT * FROM aula WHERE IdAula = :id LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($row) {
+            $this->IdAula = $row['IdAula'];
+            $this->aula = $row['aula'];
+            return $row;
+        }
+        
+        return false;
+    }
+
     public function obtenerTodos() {
         $query = "SELECT a.*, n.nivel 
                  FROM aula a
@@ -37,24 +110,5 @@ class Aula {
         $stmt->bindParam(1, $idNivel, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function actualizar() {
-        $query = "UPDATE aula SET aula = :aula, capacidad = :capacidad, IdNivel = :IdNivel 
-                 WHERE IdAula = :IdAula";
-        
-        $stmt = $this->conn->prepare($query);
-        
-        $this->aula = htmlspecialchars(strip_tags($this->aula));
-        $this->capacidad = htmlspecialchars(strip_tags($this->capacidad));
-        $this->IdNivel = htmlspecialchars(strip_tags($this->IdNivel));
-        $this->IdAula = htmlspecialchars(strip_tags($this->IdAula));
-
-        $stmt->bindParam(":aula", $this->aula);
-        $stmt->bindParam(":capacidad", $this->capacidad, PDO::PARAM_INT);
-        $stmt->bindParam(":IdNivel", $this->IdNivel, PDO::PARAM_INT);
-        $stmt->bindParam(":IdAula", $this->IdAula, PDO::PARAM_INT);
-
-        return $stmt->execute();
     }
 }

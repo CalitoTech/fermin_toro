@@ -97,7 +97,8 @@ try {
                                                     id="texto" 
                                                     required 
                                                     maxlength="10"
-                                                    oninput="formatearTexto()">
+                                                    oninput="formatearTexto()"
+                                                    onkeypress="return onlyText(event)">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
                                             <p class="añadir__input-error">La sección debe tener entre 3 y 10 letras.</p>

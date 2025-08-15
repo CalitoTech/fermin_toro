@@ -107,6 +107,8 @@ if (!$seccion) {
                                                     id="texto" 
                                                     required 
                                                     maxlength="40"
+                                                    oninput="formatearTexto()"
+                                                    onkeypress="return onlyText(event)"
                                                     value="<?= htmlspecialchars($seccion['seccion']) ?>">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
