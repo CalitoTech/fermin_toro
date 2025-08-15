@@ -22,10 +22,10 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     exit();
 }
 
-// Obtener ID del curso a editar
-$idCurso = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($idCurso <= 0) {
-    header("Location: curso.php");
+// Obtener ID del seccion a editar
+$idSeccion = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($idSeccion <= 0) {
+    header("Location: seccion.php");
     exit();
 }
 
@@ -57,26 +57,22 @@ if ($alert) {
 
 // Cargar modelos y datos
 require_once __DIR__ . '/../../../config/conexion.php';
-require_once __DIR__ . '/../../../modelos/Curso.php';
-require_once __DIR__ . '/../../../modelos/Nivel.php';
+require_once __DIR__ . '/../../../modelos/Seccion.php';
 
 $database = new Database();
 $conexion = $database->getConnection();
 
-$cursoModel = new Curso($conexion);
-$curso = $cursoModel->obtenerPorId($idCurso); // Cargar datos
+$seccionModel = new Seccion($conexion);
+$seccion = $seccionModel->obtenerPorId($idSeccion); // Cargar datos
 
-$nivelModel = new Nivel($conexion);
-$niveles = $nivelModel->obtenerTodos();
-
-if (!$curso) {
-    header("Location: curso.php");
+if (!$seccion) {
+    header("Location: seccion.php");
     exit();
 }
 ?>
 
 <head>
-    <title>UECFT Araure - Editar Curso</title>
+    <title>UECFT Araure - Editar Sección</title>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
@@ -90,56 +86,31 @@ if (!$curso) {
                 <div class="col-12 col-md-10 col-lg-8">
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-danger text-white text-center">
-                            <h4 class="mb-0"><i class='bx bxs-user-edit'></i> Editar Curso</h4>
+                            <h4 class="mb-0"><i class='bx bxs-user-edit'></i> Editar Sección</h4>
                         </div>
                         <div class="card-body p-4">
 
-                            <form action="../../../controladores/CursoController.php?action=editar" method="POST" id="editar">
-                                <input type="hidden" name="id" value="<?= $idCurso ?>">
+                            <form action="../../../controladores/SeccionController.php?action=editar" method="POST" id="editar">
+                                <input type="hidden" name="id" value="<?= $idSeccion ?>">
                                 
                                 <div class="row">
-                                    <!-- Columna Izquierda -->
                                     <div class="col-md-6">
-                                     <!-- Nivel -->
-                                        <div class="añadir__grupo" id="grupo__nivel">
-                                            <label for="nivel" class="form-label">Nivel *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="nivel" 
-                                                    id="nivel" 
-                                                    required>
-                                                   <?php foreach ($niveles as $nivel): ?>
-                                                        <option value="<?= $nivel['IdNivel'] ?>" 
-                                                            <?= $nivel['IdNivel'] == $curso['IdNivel'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($nivel['nivel']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">Debe seleccionar un nivel.</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <!-- Curso -->
-                                        <div class="añadir__grupo" id="grupo__curso">
-                                            <label for="curso" class="form-label">Curso *</label>
+                                        <!-- Sección -->
+                                        <div class="añadir__grupo" id="grupo__seccion">
+                                            <label for="seccion" class="form-label">Sección *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-user'></i></span>
                                                 <input 
                                                     type="text" 
                                                     class="form-control añadir__input" 
-                                                    name="curso" 
+                                                    name="seccion" 
                                                     id="texto" 
                                                     required 
                                                     maxlength="40"
-                                                    value="<?= htmlspecialchars($curso['curso']) ?>">
+                                                    value="<?= htmlspecialchars($seccion['seccion']) ?>">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">El curso debe tener entre 3 y 40 letras.</p>
+                                            <p class="añadir__input-error">El seccion debe tener entre 3 y 40 letras.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -147,11 +118,11 @@ if (!$curso) {
 
                                 <!-- Botones para Volver y Actualizar -->
                                 <div class="d-flex justify-content-between mt-4">
-                                    <a href="curso.php" class="btn btn-outline-danger btn-lg">
-                                        <i class='bx bx-arrow-back'></i> Volver a Cursos
+                                    <a href="seccion.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Secciones
                                     </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
-                                        <i class='bx bxs-save'></i> Actualizar Curso
+                                        <i class='bx bxs-save'></i> Actualizar Sección
                                     </button>
                                 </div>
                             </form>

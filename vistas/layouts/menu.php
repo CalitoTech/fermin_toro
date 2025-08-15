@@ -91,7 +91,7 @@ try {
             </div>
             <ul class="sub-menu">
                 <li><a href="../../registros/curso/curso.php">Cursos</a></li>
-                <li><a href="#">Secciones</a></li>
+                <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
                 <li><a href="#">Aulas</a></li>
                 <li><a href="#">Requisitos</a></li>
                 <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
