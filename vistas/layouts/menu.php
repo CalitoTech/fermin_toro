@@ -90,9 +90,11 @@ try {
                 <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
+                <li><a href="../../registros/nivel/nivel.php">Niveles</a></li>
                 <li><a href="../../registros/curso/curso.php">Cursos</a></li>
                 <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
                 <li><a href="../../registros/aula/aula.php">Aulas</a></li>
+                <li><a href="#">Curso+Seccion</a></li>
                 <li><a href="#">Requisitos</a></li>
                 <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
                 <li><a href="#">Condiciones</a></li>
