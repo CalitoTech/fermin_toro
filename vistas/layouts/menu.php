@@ -90,15 +90,15 @@ try {
                 <i class='bx bxs-chevron-down arrow'></i>
             </div>
             <ul class="sub-menu">
-                <li><a href="../../registros/nivel/nivel.php">Niveles</a></li>
+                <!-- <li><a href="../../registros/nivel/nivel.php">Niveles</a></li> -->
                 <li><a href="../../registros/curso/curso.php">Cursos</a></li>
                 <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
-                <li><a href="../../registros/aula/aula.php">Aulas</a></li>
+                <!-- <li><a href="../../registros/aula/aula.php">Aulas</a></li> -->
                 <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
                 <li><a href="#">Requisitos</a></li>
                 <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
-                <li><a href="#">Condiciones</a></li>
-                <li><a href="#">Parentescos</a></li>
+                <li><a href="#">Status</a></li>
+                <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
                 <li><a href="#">Materias</a></li>
                 <li><a href="#">Bloques</a></li>
                 <li><a href="#">Grupos de Creación</a></li>
