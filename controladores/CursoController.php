@@ -23,8 +23,44 @@ switch ($action) {
     case 'eliminar':
         eliminarCurso();
         break;
+    case 'getByNivel':
+        obtenerCursosPorNivel();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/registros/curso/curso.php');
+}
+
+function obtenerCursosPorNivel() {
+    // Solo permitir método GET
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Método no permitido']);
+        exit();
+    }
+
+    $nivelId = $_GET['nivelId'] ?? 0;
+    
+    if ($nivelId <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'ID de nivel inválido']);
+        exit();
+    }
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+        $cursoModel = new Curso($conexion);
+        
+        $cursos = $cursoModel->obtenerPorNivel($nivelId);
+        
+        header('Content-Type: application/json');
+        echo json_encode($cursos, JSON_UNESCAPED_UNICODE);
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error al obtener cursos: ' . $e->getMessage()]);
+    }
+    exit();
 }
 
 function crearCurso() {

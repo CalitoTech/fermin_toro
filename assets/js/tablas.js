@@ -93,7 +93,10 @@ class TablaDinamica {
             }
 
             tr.innerHTML = `
-                ${this.config.columns.map(col => `<td>${this.getNestedValue(item, col.key) || ''}</td>`).join('')}
+                ${this.config.columns.map(col => {
+                    const value = this.getNestedValue(item, col.key);
+                    return `<td>${value !== undefined && value !== null ? value : ''}</td>`;
+                }).join('')}
                 <td>${actionsHtml}</td>
             `;
             tbody.appendChild(tr);

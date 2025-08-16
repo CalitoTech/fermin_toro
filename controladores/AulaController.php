@@ -23,8 +23,44 @@ switch ($action) {
     case 'eliminar':
         eliminarAula();
         break;
+    case 'getByNivel': // Nueva acción para el filtrado AJAX
+        obtenerAulasPorNivel();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/registros/aula/aula.php');
+}
+
+function obtenerAulasPorNivel() {
+    // Solo permitir método GET
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Método no permitido']);
+        exit();
+    }
+
+    $nivelId = $_GET['nivelId'] ?? 0;
+    
+    if ($nivelId <= 0) {
+        http_response_code(400);
+        echo json_encode(['error' => 'ID de nivel inválido']);
+        exit();
+    }
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+        $aulaModel = new Aula($conexion);
+        
+        $aulas = $aulaModel->obtenerPorNivel($nivelId);
+        
+        header('Content-Type: application/json');
+        echo json_encode($aulas, JSON_UNESCAPED_UNICODE);
+        
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error al obtener aulas: ' . $e->getMessage()]);
+    }
+    exit();
 }
 
 function crearAula() {
