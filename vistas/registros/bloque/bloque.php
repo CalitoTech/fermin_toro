@@ -27,19 +27,19 @@ require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 // Manejo de alertas por GET (para redirigir limpiando la URL)
 if (isset($_GET['deleted'])) {
     $_SESSION['alert'] = 'deleted';
-    header("Location: nivel.php");
+    header("Location: bloque.php");
     exit();
 } elseif (isset($_GET['success'])) {
     $_SESSION['alert'] = 'success';
-    header("Location: nivel.php");
+    header("Location: bloque.php");
     exit();
 } elseif (isset($_GET['actualizar'])) {
     $_SESSION['alert'] = 'actualizar';
-    header("Location: nivel.php");
+    header("Location: bloque.php");
     exit();
 } elseif (isset($_GET['error'])) {
     $_SESSION['alert'] = 'error';
-    header("Location: nivel.php");
+    header("Location: bloque.php");
     exit();
 }
 
@@ -51,19 +51,19 @@ unset($_SESSION['alert']);
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El nivel se creó correctamente.");
+            $alerta = Notificaciones::exito("El bloque se creó correctamente.");
             break;
         case 'actualizar':
-            $alerta = Notificaciones::exito("El nivel se actualizó correctamente.");
+            $alerta = Notificaciones::exito("El bloque se actualizó correctamente.");
             break;
         case 'deleted':
-            $alerta = Notificaciones::exito("El nivel se eliminó correctamente.");
+            $alerta = Notificaciones::exito("El bloque se eliminó correctamente.");
             break;
         case 'dependency_error':
-            $alerta = Notificaciones::advertencia("No se puede eliminar el nivel porque está siendo utilizado por una o más personas.");
+            $alerta = Notificaciones::advertencia("No se puede eliminar el bloque porque está siendo utilizado por una o más personas.");
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Este nivel ya existe, verifique por favor.");
+            $alerta = Notificaciones::advertencia("Este bloque ya existe, verifique por favor.");
             break;
         default:
             $alerta = null;
@@ -76,7 +76,7 @@ if ($alert) {
 ?>
 
 <head>
-    <title>UECFT Araure - Niveles</title>
+    <title>UECFT Araure - Bloques</title>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
@@ -90,7 +90,7 @@ if ($alert) {
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <i class='bx bxs-user-detail'></i> Gestión de Niveles
+                            <i class='bx bxs-user-detail'></i> Gestión de Bloques
                         </div>
                         <div class="card-body">
                             <!-- Botones de acción (intercambiados) -->
@@ -99,9 +99,9 @@ if ($alert) {
                                 <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
                                     <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
                                 </button>
-                                <!-- Nuevo Nivel a la derecha -->
-                                <a href="nuevo_nivel.php" class="btn btn-danger d-flex align-items-center">
-                                    <i class='bx bx-plus-medical me-1'></i> Nuevo Nivel
+                                <!-- Nuevo Bloque a la derecha -->
+                                <a href="nuevo_bloque.php" class="btn btn-danger d-flex align-items-center">
+                                    <i class='bx bx-plus-medical me-1'></i> Nuevo Bloque
                                 </a>
                             </div>
 
@@ -122,11 +122,12 @@ if ($alert) {
 
                             <!-- Tabla -->
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle" id="tabla-niveles">
+                                <table class="table table-hover align-middle" id="tabla-bloques">
                                     <thead class="table-light">
                                         <tr>
                                             <th>ID</th>
-                                            <th>Nivel</th>
+                                            <th>Hora de Inicio</th>
+                                            <th>Hora de Fin</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -136,21 +137,29 @@ if ($alert) {
                                         $database = new Database();
                                         $conexion = $database->getConnection();
 
-                                        $query = "SELECT IdNivel, nivel
-                                                  FROM nivel";
+                                        $query = "SELECT IdBloque, hora_inicio, hora_fin
+                                                  FROM bloque
+                                                  ORDER BY hora_inicio ASC";
                                         $stmt = $conexion->prepare($query);
                                         $stmt->execute();
-                                        $niveles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                        $bloques = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                                        foreach ($niveles as $user): ?>
+                                        foreach ($bloques as $user): ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($user['IdNivel']) ?></td>
-                                                <td><?= htmlspecialchars($user['nivel']) ?></td>
+                                                <td><?= htmlspecialchars($user['IdBloque']) ?></td>
                                                 <td>
-                                                    <a href="editar_nivel.php?id=<?= $user['IdNivel'] ?>" class="btn btn-sm btn-outline-primary me-1">
+                                                    <i class='bx bx-time me-1'></i>
+                                                    <?= htmlspecialchars(date('h:i A', strtotime($user['hora_inicio']))) ?>
+                                                </td>
+                                                <td>
+                                                    <i class='bx bx-time me-1'></i>
+                                                    <?= htmlspecialchars(date('h:i A', strtotime($user['hora_fin']))) ?>
+                                                </td>
+                                                <td>
+                                                    <a href="editar_bloque.php?id=<?= $user['IdBloque'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
                                                     </a>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $user['IdNivel'] ?>)">
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $user['IdBloque'] ?>)">
                                                         <i class='bx bxs-trash'></i>
                                                     </button>
                                                 </td>
@@ -178,28 +187,49 @@ if ($alert) {
 <script src="../../../assets/js/reportes.js"></script>
 <script>
     // === DATOS GLOBALES ===
-    let allData = <?= json_encode($niveles) ?>;
+    let allData = <?= json_encode($bloques) ?>;
     let filteredData = [...allData];
     let currentPage = 1;
     let entriesPerPage = parseInt(document.getElementById('entries').value) || 10;
 
+        allData = allData.map(item => ({
+        ...item,
+        hora_inicio: `<i class='bx bx-time me-1'></i>${formatTime(item.hora_inicio)}`,
+        hora_fin: `<i class='bx bx-time me-1'></i>${formatTime(item.hora_fin)}`
+    }));
+
+    // Función global para formatear horas
+    function formatTime(timeString) {
+        if (!timeString) return '';
+        const [hours, minutes] = timeString.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours));
+        date.setMinutes(parseInt(minutes));
+        return date.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+    }
+
     // Inicialización de TablaDinamica
     document.addEventListener('DOMContentLoaded', function() {
         const config = {
-            tablaId: 'tabla-niveles',  // Coincide con tu HTML
+            tablaId: 'tabla-bloques',  // Coincide con tu HTML
             tbodyId: 'table-body',      // Coincide con tu HTML
             buscarId: 'buscar',         // Coincide con tu HTML
             entriesId: 'entries',       // Coincide con tu HTML
             paginationId: 'pagination', // Coincide con tu HTML
             data: allData,
-            idField: 'IdNivel',
+            idField: 'IdBloque',
             columns: [
-                { label: 'ID', key: 'IdNivel' },
-                { label: 'Nivel', key: 'nivel' }
+                { label: 'ID', key: 'IdBloque' },
+                { label: 'Hora de Inicio', key: 'hora_inicio' },
+                { label: 'Hora de Fin', key: 'hora_fin' }
             ],
             acciones: [
                 {
-                    url: 'editar_nivel.php?id={id}',
+                    url: 'editar_bloque.php?id={id}',
                     class: 'btn-outline-primary',
                     icon: '<i class="bx bxs-edit"></i>'
                 },
@@ -218,22 +248,22 @@ if ($alert) {
         }));
 
         // Crear instancia de TablaDinamica
-        window.tablaNiveles = new TablaDinamica(config);
+        window.tablaBloques = new TablaDinamica(config);
     });
 
     // === FUNCIONES ===
     function confirmDelete(id) {
         Swal.fire({
-            title: "¿Está seguro que desea eliminar este nivel?",
+            title: "¿Está seguro que desea eliminar este bloque?",
             showDenyButton: true,
             showCancelButton: false,
             confirmButtonText: "Sí, Eliminar",
             denyButtonText: "No, Volver"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '../../../controladores/NivelController.php?action=eliminar&id=' + id;
+                window.location.href = '../../../controladores/BloqueController.php?action=eliminar&id=' + id;
             } else if (result.isDenied) {
-                Swal.fire("No se eliminó el nivel", "", "info");
+                Swal.fire("No se eliminó el bloque", "", "info");
             }
         });
     }
@@ -249,8 +279,8 @@ if ($alert) {
         ?>";
         
         generarReporteImprimible(
-            'REPORTE DE NIVELES DEL SISTEMA',
-            '#tabla-niveles',
+            'REPORTE DE BLOQUES DEL SISTEMA',
+            '#tabla-bloques',
             {
                 logoUrl: '../../../assets/images/fermin.png',
                 colorPrincipal: '#c90000',

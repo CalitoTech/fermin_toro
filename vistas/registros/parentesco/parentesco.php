@@ -249,7 +249,7 @@ if ($alert) {
         ?>";
         
         generarReporteImprimible(
-            'REPORTE DE URBANISMOS DEL SISTEMA',
+            'REPORTE DE PARENTESCOS DEL SISTEMA',
             '#tabla-parentescos',
             {
                 logoUrl: '../../../assets/images/fermin.png',

@@ -361,3 +361,13 @@ body {
 [data-bs-toggle="tooltip"] {
     border: 1px solid red !important; /* Solo para test */
 }
+
+/* Añade esto a tu archivo CSS principal */
+.no-data-message {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
