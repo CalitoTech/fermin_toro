@@ -99,7 +99,7 @@ try {
                 <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
                 <li><a href="#">Status</a></li>
                 <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
-                <li><a href="#">Materias</a></li>
+                <li><a href="../../registros/materia/materia.php">Materias</a></li>
                 <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
                 <li><a href="#">Grupos de Creación</a></li>
             </ul>
