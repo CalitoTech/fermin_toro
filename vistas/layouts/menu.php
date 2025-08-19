@@ -101,7 +101,7 @@ try {
                 <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
                 <li><a href="../../registros/materia/materia.php">Materias</a></li>
                 <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
-                <li><a href="#">Grupos de Creación</a></li>
+                <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
             </ul>
         </li>
 
@@ -153,6 +153,7 @@ try {
             <ul class="sub-menu">
                 <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
                 <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
+                <li><a href="#">Tablas de BD</a></li>
                 <li><a href="#">Permisos</a></li>
                 <li><a href="#">Año Escolar</a></li>
             </ul>

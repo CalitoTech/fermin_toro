@@ -155,10 +155,12 @@ $niveles = $nivelModel->obtenerTodos();
                                                     id="texto" 
                                                     required 
                                                     maxlength="40"
-                                                    value="<?= htmlspecialchars($aula['capacidad']) ?>">
+                                                    value="<?= htmlspecialchars($aula['capacidad']) ?>"
+                                                    pattern="^[0-9]+"
+                                                    onkeypress="return onlyNumber(event)">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">El capacidad debe tener entre 3 y 40 letras.</p>
+                                            <p class="añadir__input-error">La capacidad es obligatoria.</p>
                                         </div>
                                     </div>
                                 </div>

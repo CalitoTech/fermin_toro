@@ -408,7 +408,7 @@ CREATE TABLE horario (
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion)
 );
 
-CREATE TABLE tipo_grupo_creacion (
+CREATE TABLE tipo_grupo_interes (
     IdTipo_Grupo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     nombre_grupo varchar(50) NOT NULL,
     descripcion varchar(255) DEFAULT NULL,
@@ -418,24 +418,24 @@ CREATE TABLE tipo_grupo_creacion (
     FOREIGN KEY (IdNivel) REFERENCES nivel(IdNivel)
 );
 
-CREATE TABLE grupo_creacion (
-    IdGrupo_Creacion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE grupo_interes (
+    IdGrupo_Interes int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdTipo_Grupo int NOT NULL,
     IdProfesor int NOT NULL,
     IdCurso_Seccion int NOT NULL,
     IdFecha_Escolar int NOT NULL,
     cupos_disponibles int NOT NULL,
-    FOREIGN KEY (IdTipo_Grupo) REFERENCES tipo_grupo_creacion(IdTipo_Grupo),
+    FOREIGN KEY (IdTipo_Grupo) REFERENCES tipo_grupo_interes(IdTipo_Grupo),
     FOREIGN KEY (IdProfesor) REFERENCES persona(IdPersona),
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar)
 );
 
-CREATE TABLE inscripcion_grupo_creacion (
+CREATE TABLE inscripcion_grupo_interes (
     IdInscripcion_Grupo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    IdGrupo_Creacion int NOT NULL,
+    IdGrupo_Interes int NOT NULL,
     IdEstudiante int NOT NULL,
     fecha_ingreso_grupo datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (IdGrupo_Creacion) REFERENCES grupo_creacion(IdGrupo_Creacion),
+    FOREIGN KEY (IdGrupo_Interes) REFERENCES grupo_interes(IdGrupo_Interes),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona)
 );
