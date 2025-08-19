@@ -22,6 +22,13 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     exit();
 }
 
+// Obtener ID del requisito a editar
+$idRequisito = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($idRequisito <= 0) {
+    header("Location: requisito.php");
+    exit();
+}
+
 // Incluir Notificaciones
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
@@ -48,56 +55,52 @@ if ($alert) {
     }
 }
 
-try {
-    // Asegurarnos de que conexion.php define la clase Database
-    require_once __DIR__ . '/../../../config/conexion.php';
+// Cargar modelos y datos
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Requisito.php';
+require_once __DIR__ . '/../../../modelos/Nivel.php';
 
-    $database = new Database();
-    $conexion = $database->getConnection();
+$database = new Database();
+$conexion = $database->getConnection();
 
-} catch (Exception $e) {
-    error_log("Error al conectar a la base de datos: " . $e->getMessage());
+$requisitoModel = new Requisito($conexion);
+$requisito = $requisitoModel->obtenerPorId($idRequisito); // Cargar datos
+
+$nivelModel = new Nivel($conexion);
+$niveles = $nivelModel->obtenerTodos();
+
+if (!$requisito) {
+    header("Location: requisito.php");
+    exit();
 }
-
-$niveles = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Nivel.php'; // Asumo que tienes un modelo Niveles
-    $nivelModel = new Nivel($conexion);
-    $niveles = $nivelModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar niveles en nuevo_curso.php: " . $e->getMessage());
-    $niveles = [];
-}
-
 ?>
 
 <head>
-    <title>UECFT Araure - Nueva Aula</title>
+    <title>UECFT Araure - Editar Requisito</title>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
-<!-- Aula Principal -->
+<!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
         <div class="container">
             <div class="row justify-content-center">
                 <div class="col-12 col-md-10 col-lg-8">
-                    <div class="card shadow-sm border-0" >
+                    <div class="card shadow-sm border-0">
                         <div class="card-header bg-danger text-white text-center">
-                            <h4 class="mb-0"><i class='bx bxs-user-plus'></i> Nuevo Aula</h4>
+                            <h4 class="mb-0"><i class='bx bxs-user-edit'></i> Editar Requisito</h4>
                         </div>
                         <div class="card-body p-4">
 
-                            <form action="../../../controladores/AulaController.php" method="POST" id="añadir">
-                                <input type="hidden" name="action" value="crear">
+                            <form action="../../../controladores/RequisitoController.php?action=editar" method="POST" id="editar">
+                                <input type="hidden" name="id" value="<?= $idRequisito ?>">
+                                
                                 <div class="row">
-
+                                    <!-- Columna Izquierda -->
                                     <div class="col-md-6">
-                                        
-                                        <!-- Nivel -->
+                                     <!-- Nivel -->
                                         <div class="añadir__grupo" id="grupo__nivel">
                                             <label for="nivel" class="form-label">Nivel *</label>
                                             <div class="input-group">
@@ -107,9 +110,9 @@ try {
                                                     name="nivel" 
                                                     id="nivel" 
                                                     required>
-                                                    <option value="">Seleccione un nivel</option>
-                                                    <?php foreach ($niveles as $nivel): ?>
-                                                        <option value="<?= $nivel['IdNivel'] ?>" <?= $nivel['IdNivel']?>>
+                                                   <?php foreach ($niveles as $nivel): ?>
+                                                        <option value="<?= $nivel['IdNivel'] ?>" 
+                                                            <?= $nivel['IdNivel'] == $requisito['IdNivel'] ? 'selected' : '' ?>>
                                                             <?= htmlspecialchars($nivel['nivel']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
@@ -119,53 +122,52 @@ try {
                                             <p class="añadir__input-error">Debe seleccionar un nivel.</p>
                                         </div>
 
-                                        <!-- Aula -->
-                                        <div class="añadir__grupo" id="grupo__aula">
-                                            <label for="aula" class="form-label">Aula *</label>
+                                        <!-- Requisito -->
+                                        <div class="añadir__grupo" id="grupo__requisito">
+                                            <label for="requisito" class="form-label">Requisito *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-user'></i></span>
                                                 <input 
                                                     type="text" 
                                                     class="form-control añadir__input" 
-                                                    name="aula" 
+                                                    name="requisito" 
                                                     id="texto" 
                                                     required 
-                                                    maxlength="20"
-                                                    oninput="formatearTexto()">
+                                                    maxlength="40"
+                                                    value="<?= htmlspecialchars($requisito['requisito']) ?>">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">La aula debe tener entre 3 y 10 letras.</p>
+                                            <p class="añadir__input-error">El requisito debe tener entre 3 y 40 letras.</p>
                                         </div>
 
-                                    </div>
-                                    <div class="col-md-6">
-
-                                        <!-- Capacidad -->
-                                        <div class="añadir__grupo" id="grupo__capacidad">
-                                            <label for="capacidad" class="form-label">Capacidad *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="capacidad" 
-                                                    id="texto" 
-                                                    required 
-                                                    maxlength="10"
-                                                    oninput="formatearTexto()">
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">La capacidad debe tener entre 3 y 10 letras.</p>
+                                         <!-- ¿Es Obligatorio? -->
+                                        <div class="añadir__grupo" id="grupo__obligatorio">
+                                            <label class="toggle-label">
+                                                <span class="form-label">¿Es Obligatorio?</span>
+                                                <div class="toggle-container">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        name="obligatorio" 
+                                                        id="obligatorio"
+                                                        class="toggle-input añadir__input"
+                                                        value="1"
+                                                        <?= $requisito['obligatorio'] == 1 ? 'checked' : '' ?>>
+                                                    <label for="obligatorio" class="toggle-slider"></label>
+                                                </div>
+                                            </label>
+                                            <p class="añadir__input-error">Seleccione si el elemento es obligatorio.</p>
                                         </div>
                                     </div>
+                                </div>
 
-                                <!-- Botones para Volver y Guardar -->
+
+                                <!-- Botones para Volver y Actualizar -->
                                 <div class="d-flex justify-content-between mt-4">
-                                    <a href="aula.php" class="btn btn-outline-danger btn-lg">
-                                        <i class='bx bx-arrow-back'></i> Volver a Aulas
+                                    <a href="requisito.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Requisitos
                                     </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
-                                        <i class='bx bxs-save'></i> Guardar Aula
+                                        <i class='bx bxs-save'></i> Actualizar Requisito
                                     </button>
                                 </div>
                             </form>

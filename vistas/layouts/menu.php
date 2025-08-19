@@ -95,7 +95,7 @@ try {
                 <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
                 <!-- <li><a href="../../registros/aula/aula.php">Aulas</a></li> -->
                 <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
-                <li><a href="#">Requisitos</a></li>
+                <li><a href="../../registros/requisito/requisito.php">Requisitos</a></li>
                 <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
                 <li><a href="../../registros/status/status.php">Status</a></li>
                 <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>

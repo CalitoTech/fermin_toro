@@ -59,6 +59,7 @@ try {
     error_log("Error al conectar a la base de datos: " . $e->getMessage());
 }
 
+// === Cargar Niveles desde la base de datos ===
 $niveles = [];
 
 try {
@@ -66,20 +67,20 @@ try {
     $nivelModel = new Nivel($conexion);
     $niveles = $nivelModel->obtenerTodos();
 } catch (Exception $e) {
-    error_log("Error al cargar niveles en nuevo_curso.php: " . $e->getMessage());
+    error_log("Error al cargar niveles en nuevo_requisito.php: " . $e->getMessage());
     $niveles = [];
 }
 
 ?>
 
 <head>
-    <title>UECFT Araure - Nueva Aula</title>
+    <title>UECFT Araure - Nuevo Requisito</title>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
-<!-- Aula Principal -->
+<!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
         <div class="container">
@@ -87,16 +88,16 @@ try {
                 <div class="col-12 col-md-10 col-lg-8">
                     <div class="card shadow-sm border-0" >
                         <div class="card-header bg-danger text-white text-center">
-                            <h4 class="mb-0"><i class='bx bxs-user-plus'></i> Nuevo Aula</h4>
+                            <h4 class="mb-0"><i class='bx bxs-user-plus'></i> Nuevo Requisito</h4>
                         </div>
                         <div class="card-body p-4">
 
-                            <form action="../../../controladores/AulaController.php" method="POST" id="añadir">
+                            <form action="../../../controladores/RequisitoController.php" method="POST" id="añadir">
                                 <input type="hidden" name="action" value="crear">
                                 <div class="row">
-
+                                    <!-- Columna Izquierda -->
                                     <div class="col-md-6">
-                                        
+
                                         <!-- Nivel -->
                                         <div class="añadir__grupo" id="grupo__nivel">
                                             <label for="nivel" class="form-label">Nivel *</label>
@@ -119,53 +120,49 @@ try {
                                             <p class="añadir__input-error">Debe seleccionar un nivel.</p>
                                         </div>
 
-                                        <!-- Aula -->
-                                        <div class="añadir__grupo" id="grupo__aula">
-                                            <label for="aula" class="form-label">Aula *</label>
+                                        <!-- Requisito -->
+                                        <div class="añadir__grupo" id="grupo__requisito">
+                                            <label for="requisito" class="form-label">Requisito *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-user'></i></span>
                                                 <input 
                                                     type="text" 
                                                     class="form-control añadir__input" 
-                                                    name="aula" 
+                                                    name="requisito" 
                                                     id="texto" 
                                                     required 
-                                                    maxlength="20"
+                                                    maxlength="40"
                                                     oninput="formatearTexto()">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">La aula debe tener entre 3 y 10 letras.</p>
+                                            <p class="añadir__input-error">El requisito debe tener entre 3 y 10 letras.</p>
                                         </div>
 
-                                    </div>
-                                    <div class="col-md-6">
-
-                                        <!-- Capacidad -->
-                                        <div class="añadir__grupo" id="grupo__capacidad">
-                                            <label for="capacidad" class="form-label">Capacidad *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="capacidad" 
-                                                    id="texto" 
-                                                    required 
-                                                    maxlength="10"
-                                                    oninput="formatearTexto()">
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">La capacidad debe tener entre 3 y 10 letras.</p>
+                                        <!-- ¿Es Obligatorio? -->
+                                        <div class="añadir__grupo" id="grupo__obligatorio">
+                                            <label class="toggle-label">
+                                                <span class="form-label">¿Es Obligatorio?</span>
+                                                <div class="toggle-container">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        name="obligatorio" 
+                                                        id="obligatorio" 
+                                                        value="1"
+                                                        class="toggle-input añadir__input">
+                                                    <label for="obligatorio" class="toggle-slider"></label>
+                                                </div>
+                                            </label>
+                                            <p class="añadir__input-error">Seleccione si el elemento es obligatorio.</p>
                                         </div>
                                     </div>
 
                                 <!-- Botones para Volver y Guardar -->
                                 <div class="d-flex justify-content-between mt-4">
-                                    <a href="aula.php" class="btn btn-outline-danger btn-lg">
-                                        <i class='bx bx-arrow-back'></i> Volver a Aulas
+                                    <a href="requisito.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Requisitos
                                     </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
-                                        <i class='bx bxs-save'></i> Guardar Aula
+                                        <i class='bx bxs-save'></i> Guardar Requisito
                                     </button>
                                 </div>
                             </form>

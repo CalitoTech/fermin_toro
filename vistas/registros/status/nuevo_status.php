@@ -133,7 +133,7 @@ try {
                                                     name="status" 
                                                     id="texto" 
                                                     required 
-                                                    maxlength="10"
+                                                    maxlength="20"
                                                     oninput="formatearTexto()"
                                                     onkeypress="return onlyText(event)">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
