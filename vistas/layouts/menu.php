@@ -119,6 +119,7 @@ try {
                 <li><a href="#">Representantes</a></li>
                 <li><a href="#">Est. con Dificultades</a></li>
                 <li><a href="#">Horarios</a></li>
+                <li><a href="#">Egresos</a></li>
             </ul>
         </li>
 
@@ -153,9 +154,7 @@ try {
             <ul class="sub-menu">
                 <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
                 <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
-                <li><a href="#">Tablas de BD</a></li>
-                <li><a href="#">Permisos</a></li>
-                <li><a href="#">Año Escolar</a></li>
+                <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
             </ul>
         </li>
         <?php endif; ?>
