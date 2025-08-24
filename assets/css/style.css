@@ -436,3 +436,68 @@ body {
 .toggle-input:checked + .toggle-slider:hover {
     background-color: var(--clr-hover); /* #a80000 */
 }
+
+/* Texto del toggle */
+.toggle-label .toggle-text {
+    font-size: 0.95rem;
+    color: #666;
+    transition: color 0.3s ease;
+    min-width: 50px;
+    text-align: right;
+}
+
+/* Cuando está checked */
+.toggle-input:checked ~ .toggle-label .toggle-text,
+.toggle-input:checked + .toggle-slider + .toggle-label .toggle-text {
+    color: var(--clr-primary);
+    font-weight: 600;
+}
+
+/* Tooltip de ayuda cuando está deshabilitado */
+.toggle-container:has(input:disabled)::after {
+    content: "🔒 Solo si el año está activo";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s;
+    z-index: 10;
+}
+
+.toggle-container:has(input:disabled):hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Asegurar altura mínima en celdas con toggle */
+#tabla-fecha_escolar td .text-center {
+    min-height: 50px; /* Ajusta según necesidad */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+}
+
+/* Asegurar altura mínima en celdas con toggle */
+#tabla-grupo_interes td .text-center {
+    min-height: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#tabla-grupo_interes td {
+    padding: 12px 8px;
+    vertical-align: middle;
+}

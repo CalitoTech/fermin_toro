@@ -179,4 +179,35 @@ class TablaDinamica {
         }
         return Array.from(pages).sort((a, b) => a - b);
     }
+
+    /**
+     * Actualiza los datos de la tabla y vuelve a renderizar
+     * @param {Array} newData - Nuevo conjunto de datos
+     * @param {boolean} preserveFilter - Si true, mantiene el filtro actual
+     */
+    updateData(newData, preserveFilter = false) {
+        // Actualizar datos originales
+        this.allData = [...newData];
+        
+        // Si no se preserva el filtro, reiniciar búsqueda
+        if (!preserveFilter) {
+            this.filteredData = [...newData];
+            const buscar = document.getElementById(this.config.buscarId);
+            if (buscar) buscar.value = ''; // Limpiar input de búsqueda
+        } else {
+            // Re-aplicar filtro si hay término
+            const buscar = document.getElementById(this.config.buscarId);
+            if (buscar && buscar.value.trim() !== '') {
+                this.filterData(buscar.value);
+            } else {
+                this.filteredData = [...newData];
+            }
+        }
+
+        // Resetear a la primera página
+        this.currentPage = 1;
+
+        // Volver a renderizar
+        this.renderTable();
+    }
 }

@@ -104,5 +104,30 @@ class TipoGrupoInteres {
         
         return false;
     }
+
+    /**
+     * Actualiza solo el estado de inscripción del grupo de interés
+     * @param int $id
+     * @param int $estado
+     * @return bool
+     */
+    public function actualizarInscripcion($id, $estado) {
+        // Validar que el estado sea 0 o 1
+        $estado = (int)$estado;
+        if ($estado !== 0 && $estado !== 1) {
+            return false;
+        }
+
+        // Verificar que el registro exista
+        if (!$this->obtenerPorId($id)) {
+            return false;
+        }
+
+        $query = "UPDATE tipo_grupo_interes SET inscripcion_activa = :estado WHERE IdTipo_Grupo = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':estado', $estado, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
 }
 ?>

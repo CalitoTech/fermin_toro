@@ -119,30 +119,57 @@ class FechaEscolar {
     }
 
     public function activarFechaEscolar($id) {
-    try {
-        // Iniciar transacción
-        $this->conexion->beginTransaction();
+        try {
+            // Iniciar transacción
+            $this->conexion->beginTransaction();
 
-        // 1. Desactivar todos los años escolares
-        $queryDesactivar = "UPDATE fecha_escolar SET fecha_activa = 0";
-        $stmtDesactivar = $this->conexion->prepare($queryDesactivar);
-        $stmtDesactivar->execute();
+            // 1. Desactivar todos los años escolares
+            $queryDesactivar = "UPDATE fecha_escolar SET fecha_activa = 0, inscripcion_activa = 0";
+            $stmtDesactivar = $this->conexion->prepare($queryDesactivar);
+            $stmtDesactivar->execute();
 
-        // 2. Activar el año escolar específico
-        $queryActivar = "UPDATE fecha_escolar SET fecha_activa = 1 WHERE IdFecha_Escolar = :id";
-        $stmtActivar = $this->conexion->prepare($queryActivar);
-        $stmtActivar->bindParam(':id', $id);
-        $stmtActivar->execute();
+            // 2. Activar el año escolar específico
+            $queryActivar = "UPDATE fecha_escolar SET fecha_activa = 1, inscripcion_activa = 1 WHERE IdFecha_Escolar = :id";
+            $stmtActivar = $this->conexion->prepare($queryActivar);
+            $stmtActivar->bindParam(':id', $id);
+            $stmtActivar->execute();
 
-        // Confirmar transacción
-        $this->conexion->commit();
-        return true;
+            // Confirmar transacción
+            $this->conexion->commit();
+            return true;
 
-    } catch (Exception $e) {
-        // Revertir transacción en caso de error
-        $this->conexion->rollBack();
-        throw $e;
+        } catch (Exception $e) {
+            // Revertir transacción en caso de error
+            $this->conexion->rollBack();
+            throw $e;
+        }
     }
-}
+
+    /**
+     * Activa o desactiva solo la inscripción del año escolar
+     * @param int $id ID del año escolar
+     * @param bool $estado Nuevo estado (1 o 0)
+     * @return bool Éxito o fracaso
+     */
+    public function actualizarInscripcion($id, $estado) {
+        // Validar que el año escolar esté activo
+        $query = "SELECT fecha_activa FROM fecha_escolar WHERE IdFecha_Escolar = :id";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || $row['fecha_activa'] != 1) {
+            return false; // Solo se puede cambiar si está activo
+        }
+
+        // Actualizar inscripcion_activa
+        $update = "UPDATE fecha_escolar SET inscripcion_activa = :estado WHERE IdFecha_Escolar = :id";
+        $stmt = $this->conexion->prepare($update);
+        $stmt->bindParam(':estado', $estado, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
 }
 ?>

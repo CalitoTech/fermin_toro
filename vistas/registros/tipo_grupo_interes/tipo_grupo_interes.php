@@ -93,15 +93,23 @@ if ($alert) {
                             <i class='bx bxs-user-detail'></i> Gestión de Grupo de Interés
                         </div>
                         <div class="card-body">
-                            <!-- Botones de acción (intercambiados) -->
+                            <!-- Botones de acción -->
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <!-- Imprimir Lista a la izquierda -->
-                                <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
-                                    <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
-                                </button>
-                                <!-- Nuevo Grupo de Interés a la derecha -->
+                                <!-- Imprimir y Botones de masa a la izquierda -->
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
+                                        <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
+                                    </button>
+                                    <button class="btn btn-outline-success d-flex align-items-center" onclick="activarTodas()">
+                                        <i class='bx bx-check-circle me-1'></i> Activar Todos
+                                    </button>
+                                    <button class="btn btn-outline-secondary d-flex align-items-center" onclick="desactivarTodas()">
+                                        <i class='bx bx-block me-1'></i> Desactivar Todos
+                                    </button>
+                                </div>
+                                <!-- Nuevo Grupo a la derecha -->
                                 <a href="nuevo_tipo_grupo_interes.php" class="btn btn-danger d-flex align-items-center">
-                                    <i class='bx bx-plus-medical me-1'></i> Nuevo Grupo de Interés
+                                    <i class='bx bx-plus-medical me-1'></i> Nuevo Grupo
                                 </a>
                             </div>
 
@@ -153,7 +161,22 @@ if ($alert) {
                                                 <td><?= htmlspecialchars($user['nivel']) ?></td>
                                                 <td><?= htmlspecialchars($user['nombre_grupo']) ?></td>
                                                 <td><?= htmlspecialchars($user['capacidad_maxima']) ?></td>
-                                                <td><?= $user['inscripcion_activa'] == 1 ? 'Sí' : 'No' ?></td>
+                                                <td data-search="<?= $user['inscripcion_activa'] == 1 ? 'Sí' : 'No' ?>" class="text-center">
+                                                    <div class="text-center">
+                                                        <label class="toggle-label" title="Activar/desactivar inscripciones">
+                                                            <span class="toggle-text"><?= $user['inscripcion_activa'] == 1 ? 'Sí' : 'No' ?></span>
+                                                            <div class="toggle-container">
+                                                                <input 
+                                                                    type="checkbox" 
+                                                                    class="toggle-input toggle-inscripcion" 
+                                                                    data-id="<?= $user['IdTipo_Grupo'] ?>"
+                                                                    <?= $user['inscripcion_activa'] == 1 ? 'checked' : '' ?>
+                                                                >
+                                                                <span class="toggle-slider"></span>
+                                                            </div>
+                                                        </label>
+                                                    </div>
+                                                </td>
                                                 <td>
                                                     <a href="editar_tipo_grupo_interes.php?id=<?= $user['IdTipo_Grupo'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
@@ -191,11 +214,31 @@ if ($alert) {
     let currentPage = 1;
     let entriesPerPage = parseInt(document.getElementById('entries').value) || 10;
 
-    allData = allData.map(item => ({
-        ...item,
-        // Convertir inscripcion_activa a texto
-        inscripcion_activa: item.inscripcion_activa == 1 ? 'Sí' : 'No'
-    }));
+    allData = allData.map(item => {
+        const toggleChecked = item.inscripcion_activa == 1 ? 'checked' : '';
+        const inscripcionHTML = `
+            <div class="text-center">
+                <label class="toggle-label" title="Activar/desactivar inscripciones">
+                    <span class="toggle-text">${item.inscripcion_activa == 1 ? 'Sí' : 'No'}</span>
+                    <div class="toggle-container">
+                        <input 
+                            type="checkbox" 
+                            class="toggle-input toggle-inscripcion" 
+                            data-id="${item.IdTipo_Grupo}"
+                            ${toggleChecked}
+                        >
+                        <span class="toggle-slider"></span>
+                    </div>
+                </label>
+            </div>
+        `;
+
+        return {
+            ...item,
+            inscripcion_activa_text: item.inscripcion_activa == 1 ? 'Sí' : 'No',
+            inscripcion_activa: inscripcionHTML
+        };
+    });
 
     // Inicialización de TablaDinamica
     document.addEventListener('DOMContentLoaded', function() {
@@ -236,6 +279,8 @@ if ($alert) {
 
         // Crear instancia de TablaDinamica
         window.tablaGrupoInteres = new TablaDinamica(config);
+
+        inicializarToggleInscripcion();
     });
 
     // === FUNCIONES ===
@@ -248,9 +293,245 @@ if ($alert) {
             denyButtonText: "No, Volver"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '../../../controladores/GrupoInteresController.php?action=eliminar&id=' + id;
+                window.location.href = '../../../controladores/TipoGrupoInteresController.php?action=eliminar&id=' + id;
             } else if (result.isDenied) {
                 Swal.fire("No se eliminó el grupo_interes", "", "info");
+            }
+        });
+    }
+
+    // === INICIALIZAR TOGGLE DE INSCRIPCIÓN ===
+    function inicializarToggleInscripcion() {
+        document.addEventListener('change', async function(e) {
+            // Solo reacciona si es un toggle de inscripción
+            if (!e.target.matches('.toggle-inscripcion')) return;
+
+            const toggle = e.target;
+            const id = toggle.dataset.id;
+            const nuevoEstado = toggle.checked ? 1 : 0;
+
+            try {
+                const response = await fetch('../../../controladores/TipoGrupoInteresController.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `action=toggle_inscripcion&id=${id}&estado=${nuevoEstado}`
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 1. Actualizar texto del toggle
+                    const labelText = toggle.closest('.toggle-label').querySelector('.toggle-text');
+                    labelText.textContent = nuevoEstado ? 'Sí' : 'No';
+
+                    // 2. Actualizar datos locales
+                    allData = allData.map(item => {
+                        if (item.IdTipo_Grupo == id) {
+                            const html = `
+                                <div class="text-center">
+                                    <label class="toggle-label" title="Activar/desactivar inscripciones">
+                                        <span class="toggle-text">${nuevoEstado ? 'Sí' : 'No'}</span>
+                                        <div class="toggle-container">
+                                            <input 
+                                                type="checkbox" 
+                                                class="toggle-input toggle-inscripcion" 
+                                                data-id="${id}"
+                                                ${nuevoEstado ? 'checked' : ''}
+                                            >
+                                            <span class="toggle-slider"></span>
+                                        </div>
+                                    </label>
+                                </div>
+                            `;
+                            return {
+                                ...item,
+                                inscripcion_activa: html,
+                                inscripcion_activa_text: nuevoEstado ? 'Sí' : 'No'
+                            };
+                        }
+                        return item;
+                    });
+
+                    // 3. Refrescar tabla
+                    window.tablaGrupoInteres.updateData(allData);
+
+                    // 4. Mostrar notificación
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Listo!',
+                        text: `Inscripciones ${nuevoEstado ? 'activadas' : 'desactivadas'}.`,
+                        showConfirmButton: false,
+                        timer: 1500,
+                        toast: true,
+                        position: 'top-end',
+                        background: '#f8f9fa',
+                        timerProgressBar: true
+                    });
+                } else {
+                    throw new Error(data.message || 'Error al actualizar');
+                }
+            } catch (error) {
+                // Revertir el estado del toggle
+                toggle.checked = !nuevoEstado;
+
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message,
+                });
+            }
+        });
+    }
+
+    // === ACTIVAR/DESACTIVAR TODAS LAS INSCRIPCIONES ===
+    async function activarTodas() {
+        Swal.fire({
+            title: '¿Activar todas las inscripciones?',
+            text: 'Esta acción activará la inscripción en todos los grupos de interés.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, activar todas',
+            cancelButtonText: 'Cancelar',
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('../../../controladores/TipoGrupoInteresController.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'action=toggle_todas&estado=1'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Actualizar todos los toggles localmente
+                        allData = allData.map(item => {
+                            const html = `
+                                <div class="text-center">
+                                    <label class="toggle-label" title="Activar/desactivar inscripciones">
+                                        <span class="toggle-text">Sí</span>
+                                        <div class="toggle-container">
+                                            <input 
+                                                type="checkbox" 
+                                                class="toggle-input toggle-inscripcion" 
+                                                data-id="${item.IdTipo_Grupo}"
+                                                checked
+                                            >
+                                            <span class="toggle-slider"></span>
+                                        </div>
+                                    </label>
+                                </div>
+                            `;
+                            return {
+                                ...item,
+                                inscripcion_activa: html,
+                                inscripcion_activa_text: 'Sí'
+                            };
+                        });
+
+                        // Refrescar tabla
+                        window.tablaGrupoInteres.updateData(allData);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Listo!',
+                            text: 'Todas las inscripciones fueron activadas.',
+                            showConfirmButton: false,
+                            timer: 1800,
+                            toast: true,
+                            position: 'top-end',
+                            background: '#f8f9fa',
+                            timerProgressBar: true
+                        });
+                    } else {
+                        throw new Error(data.message || 'Error al activar');
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message,
+                    });
+                }
+            }
+        });
+    }
+
+    async function desactivarTodas() {
+        Swal.fire({
+            title: '¿Desactivar todas las inscripciones?',
+            text: 'Esta acción desactivará la inscripción en todos los grupos de interés.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, desactivar todas',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc3545'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('../../../controladores/TipoGrupoInteresController.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: 'action=toggle_todas&estado=0'
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Actualizar todos los toggles localmente
+                        allData = allData.map(item => {
+                            const html = `
+                                <div class="text-center">
+                                    <label class="toggle-label" title="Activar/desactivar inscripciones">
+                                        <span class="toggle-text">No</span>
+                                        <div class="toggle-container">
+                                            <input 
+                                                type="checkbox" 
+                                                class="toggle-input toggle-inscripcion" 
+                                                data-id="${item.IdTipo_Grupo}"
+                                            >
+                                            <span class="toggle-slider"></span>
+                                        </div>
+                                    </label>
+                                </div>
+                            `;
+                            return {
+                                ...item,
+                                inscripcion_activa: html,
+                                inscripcion_activa_text: 'No'
+                            };
+                        });
+
+                        // Refrescar tabla
+                        window.tablaGrupoInteres.updateData(allData);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Listo!',
+                            text: 'Todas las inscripciones fueron desactivadas.',
+                            showConfirmButton: false,
+                            timer: 1800,
+                            toast: true,
+                            position: 'top-end',
+                            background: '#f8f9fa',
+                            timerProgressBar: true
+                        });
+                    } else {
+                        throw new Error(data.message || 'Error al desactivar');
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message,
+                    });
+                }
             }
         });
     }

@@ -23,8 +23,96 @@ switch ($action) {
     case 'eliminar':
         eliminarTipoGrupoInteres();
         break;
+    case 'toggle_inscripcion':
+        toggleInscripcion();
+        break;
+    case 'toggle_todas':
+        toggleTodasInscripciones();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/registros/tipo_grupo_interes/tipo_grupo_interes.php');
+}
+
+function toggleTodasInscripciones() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $estado = isset($_POST['estado']) ? (int)$_POST['estado'] : 0;
+    if ($estado !== 0 && $estado !== 1) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Estado inválido']);
+        exit();
+    }
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+        $grupoModel = new TipoGrupoInteres($conexion);
+
+        // Actualizar todos los registros
+        $query = "UPDATE tipo_grupo_interes SET inscripcion_activa = :estado";
+        $stmt = $conexion->prepare($query);
+        $stmt->bindParam(':estado', $estado, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => "Todas las inscripciones fueron " . ($estado ? 'activadas' : 'desactivadas')
+            ]);
+        } else {
+            throw new Exception("Error al actualizar");
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit();
+}
+
+function toggleInscripcion() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $id = (int)($_POST['id'] ?? 0);
+    $estado = isset($_POST['estado']) ? (int)$_POST['estado'] : 0;
+
+    if ($id <= 0 || ($estado !== 0 && $estado !== 1)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
+        exit();
+    }
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+        $grupoModel = new TipoGrupoInteres($conexion);
+
+        if ($grupoModel->actualizarInscripcion($id, $estado)) {
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Estado de inscripción actualizado',
+                'nuevo_estado' => $estado
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'No se pudo actualizar el estado'
+            ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+    }
+    exit();
 }
 
 function crearTipoGrupoInteres() {

@@ -25,8 +25,59 @@ switch ($action) {
     case 'activar':
         activarFechaEscolar();
         break;
+    case 'toggle_inscripcion':
+        toggleInscripcion();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/configuracion/fecha_escolar/fecha_escolar.php');
+}
+
+function toggleInscripcion() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $id = (int)($_POST['id'] ?? 0);
+    $estado = isset($_POST['estado']) ? (int)$_POST['estado'] : 0;
+
+    if ($id <= 0 || ($estado !== 0 && $estado !== 1)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
+        exit();
+    }
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+        $fecha_escolarModel = new FechaEscolar($conexion);
+
+        if (!$fecha_escolarModel->obtenerPorId($id)) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Año escolar no encontrado']);
+            exit();
+        }
+
+        if ($fecha_escolarModel->actualizarInscripcion($id, $estado)) {
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Estado de inscripción actualizado',
+                'nuevo_estado' => $estado
+            ]);
+        } else {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'No se puede modificar: el año escolar no está activo'
+            ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()]);
+    }
+    exit();
 }
 
 function activarFechaEscolar() {
@@ -213,6 +264,56 @@ function eliminarFechaEscolar() {
     } catch (Exception $e) {
         manejarError('Error al eliminar: ' . $e->getMessage(), '../vistas/configuracion/fecha_escolar/fecha_escolar.php');
     }
+// function eliminarFechaEscolar() {
+//     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+//         http_response_code(405);
+//         echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+//         exit();
+//     }
+
+//     $id = (int)($_POST['id'] ?? 0);
+//     if ($id <= 0) {
+//         http_response_code(400);
+//         echo json_encode(['success' => false, 'message' => 'ID inválido']);
+//         exit();
+//     }
+
+//     try {
+//         $database = new Database();
+//         $conexion = $database->getConnection();
+//         $fecha_escolarModel = new FechaEscolar($conexion);
+
+//         if (!$fecha_escolarModel->obtenerPorId($id)) {
+//             http_response_code(404);
+//             echo json_encode(['success' => false, 'message' => 'No encontrado']);
+//             exit();
+//         }
+
+//         $fecha_escolarModel->IdFecha_Escolar = $id;
+
+//         if ($fecha_escolarModel->tieneDependencias()) {
+//             http_response_code(400);
+//             echo json_encode([
+//                 'success' => false,
+//                 'error' => 'dependency',
+//                 'message' => 'Tiene dependencias'
+//             ]);
+//             exit();
+//         }
+
+//         if ($fecha_escolarModel->eliminar()) {
+//             http_response_code(200);
+//             echo json_encode(['success' => true]);
+//         } else {
+//             http_response_code(500);
+//             echo json_encode(['success' => false, 'message' => 'Error al eliminar']);
+//         }
+//     } catch (Exception $e) {
+//         http_response_code(500);
+//         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+//     }
+//     exit();
+// }
 }
 
 /**
