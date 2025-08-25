@@ -76,7 +76,7 @@ try {
         <ul class="nav-links">
             <!-- Inicio -->
             <li>
-                <a href="../inicio/inicio.php">
+                <a href="../inicio/inicio/inicio.php">
                     <i class='bx bx-home-alt-2'></i>
                     <span class="link_name">Inicio</span>
                 </a>
