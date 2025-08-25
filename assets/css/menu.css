@@ -89,10 +89,9 @@ html {
     position: fixed;
     top: 0;
     left: 0;
-    height: 100%;
+    height: 100vh;
     width: 278px;
     background: var(--clr-primary);
-    padding: 10px 14px;
     z-index: 99;
     transition: all 0.5s ease;
 }
@@ -100,7 +99,21 @@ html {
 
 /* Ocultar barra de desplazamiento */
 .sidebar::-webkit-scrollbar {
-    width: 0px;
+    width: 0;
+}
+
+/* Contenedor interno: solo tiene scroll cuando el menú está ABIERTO */
+.sidebar-scroll {
+    height: calc(100vh - 120px - 80px); /* Ajusta: logo (~120px) + perfil (~80px) */
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* En modo CERRADO, el contenedor de scroll se contrae, pero sin overflow */
+.sidebar.close .sidebar-scroll {
+    overflow-y: visible; /* ✅ Permite que los tooltips salgan */
+    height: auto;
 }
 
 .sidebar.close {
@@ -219,6 +232,24 @@ html {
     transition: all 0.2s ease;
 }
 
+.sidebar.close .nav-links li:hover .link_name,
+.sidebar.close .nav-links li:hover .sub-menu {
+    position: absolute;
+    left: 65px;
+    z-index: 2000;
+    background: var(--clr-primary);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    min-width: 200px;
+    border-radius: 6px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    /* Scroll interno si el submenú es muy largo */
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+
 @keyframes fadeInRight {
     from { opacity: 0; transform: translateX(-10px); }
     to { opacity: 1; transform: translateX(0); }
@@ -234,31 +265,41 @@ html {
 }
 
 /* Mostrar submenús al hacer hover cuando el menú está cerrado */
+/* Submenú con scroll interno cuando tiene muchas opciones */
 .sidebar.close .nav-links li:hover .sub-menu {
+    /* Ya tienes estos estilos */
     display: block;
     position: absolute;
     left: 65px;
-    top: 40px; /* Alineado debajo del link_name (40px de altura) */
+    top: 40px;
     min-width: 200px;
+    max-height: 300px; /* Limita la altura */
+    overflow-y: auto; /* ✅ Scroll interno en el submenú */
     background: var(--clr-primary);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     padding: 6px 0;
     margin: 0;
-    opacity: 1;
+    border-radius: 6px;
+    /* Scroll invisible */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-/* Estilo de los enlaces del submenú */
+/* WebKit: ocultar barra de scroll */
+.sidebar.close .nav-links li:hover .sub-menu::-webkit-scrollbar {
+    width: 0;
+}
+
+/* Ajuste en los enlaces del submenú */
 .sidebar.close .nav-links li:hover .sub-menu a {
-    color: rgba(255, 255, 255, 0.7); /* Semi-opaco */
+    color: rgba(255, 255, 255, 0.7);
     padding: 8px 12px;
     display: block;
-    background: transparent;
-    border-radius: 4px;
-    margin: 2px 8px;
-    white-space: nowrap;
     font-size: 14px;
-    font-weight: 400;
+    white-space: nowrap;
+    margin: 2px 8px;
+    border-radius: 4px;
     transition: all 0.2s ease;
 }
 

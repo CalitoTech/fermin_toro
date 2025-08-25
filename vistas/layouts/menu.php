@@ -71,118 +71,121 @@ try {
         <img src="../../../assets/images/fermin.png" alt="Logo">
         <span class="logo_name">UECFT Araure</span>
     </div>
-    <ul class="nav-links">
-        <!-- Inicio -->
-        <li>
-            <a href="../inicio/inicio.php">
-                <i class='bx bx-home-alt-2'></i>
-                <span class="link_name">Inicio</span>
-            </a>
-        </li>
 
-        <!-- Estudiantes -->
-        <li>
-            <div class="icon-link">
-                <a href="#">
-                    <i class='bx bxs-graduation'></i>
-                    <span class="link_name">Registro</span>
+    <div class="sidebar-scroll">
+        <ul class="nav-links">
+            <!-- Inicio -->
+            <li>
+                <a href="../inicio/inicio.php">
+                    <i class='bx bx-home-alt-2'></i>
+                    <span class="link_name">Inicio</span>
                 </a>
-                <i class='bx bxs-chevron-down arrow'></i>
-            </div>
-            <ul class="sub-menu">
-                <!-- <li><a href="../../registros/nivel/nivel.php">Niveles</a></li> -->
-                <li><a href="../../registros/curso/curso.php">Cursos</a></li>
-                <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
-                <!-- <li><a href="../../registros/aula/aula.php">Aulas</a></li> -->
-                <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
-                <li><a href="../../registros/requisito/requisito.php">Requisitos</a></li>
-                <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
-                <li><a href="../../registros/status/status.php">Status</a></li>
-                <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
-                <li><a href="../../registros/materia/materia.php">Materias</a></li>
-                <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
-                <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
-            </ul>
-        </li>
+            </li>
 
-        <!-- Inscripciones -->
-        <li>
-            <div class="icon-link">
-                <a href="#">
-                    <i class='bx bx-edit'></i>
-                    <span class="link_name">Estudiantes</span>
-                </a>
-                <i class='bx bxs-chevron-down arrow'></i>
-            </div>
-            <ul class="sub-menu">
-                <li><a href="#">Estudiantes</a></li>
-                <li><a href="#">Representantes</a></li>
-                <li><a href="#">Est. con Dificultades</a></li>
-                <li><a href="#">Horarios</a></li>
-                <li><a href="#">Egresos</a></li>
-            </ul>
-        </li>
-
-        <!-- Reportes (solo para Perfil 1 o 2) -->
-        <?php if ($idPerfil == 1 || $idPerfil == 2): ?>
-        <li>
-            <div class="icon-link">
-                <a href="#">
-                    <i class='bx bx-line-chart'></i>
-                    <span class="link_name">Inscripciones</span>
-                </a>
-                <i class='bx bxs-chevron-down arrow'></i>
-            </div>
-            <ul class="sub-menu">
-                <li><a href="#">Inscripciones</a></li>
-                <li><a href="#">Insc. Grupo C.</a></li>
-                <li><a href="#">Insc. Pendientes</a></li>
-            </ul>
-        </li>
-        <?php endif; ?>
-
-        <!-- Configuración (solo para Perfil 1: Admin) -->
-        <?php if ($idPerfil == 1): ?>
-        <li>
-            <div class="icon-link">
-                <a href="#">
-                    <i class='bx bx-cog'></i>
-                    <span class="link_name">Configuración</span>
-                </a>
-                <i class='bx bxs-chevron-down arrow'></i>
-            </div>
-            <ul class="sub-menu">
-                <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
-                <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
-                <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
-            </ul>
-        </li>
-        <?php endif; ?>
-
-        <!-- Cerrar sesión -->
-        <li>
-            <div class="icon-link">
-                <a href="../../../controladores/login/cerrar_sesion.php">
-                    <i class='bx bx-log-out-circle'></i>
-                    <span class="link_name">Cerrar Sesión</span>
-                </a>
-            </div>
-        </li>
-
-        <!-- Perfil de usuario -->
-        <li>
-            <div class="profile-details">
-                <div class="profile-content">
-                    <img src="../../../assets/images/avatar.svg" alt="Perfil">
+            <!-- Estudiantes -->
+            <li>
+                <div class="icon-link">
+                    <a href="#">
+                        <i class='bx bxs-graduation'></i>
+                        <span class="link_name">Registro</span>
+                    </a>
+                    <i class='bx bxs-chevron-down arrow'></i>
                 </div>
-                <div class="name-job">
-                    <div class="profile_name"><?php echo htmlspecialchars($userNombre . ' ' . $userApellido); ?></div>
-                    <div class="job"><?php echo htmlspecialchars($userPerfil); ?></div>
+                <ul class="sub-menu">
+                    <!-- <li><a href="../../registros/nivel/nivel.php">Niveles</a></li> -->
+                    <li><a href="../../registros/curso/curso.php">Cursos</a></li>
+                    <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
+                    <!-- <li><a href="../../registros/aula/aula.php">Aulas</a></li> -->
+                    <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
+                    <li><a href="../../registros/requisito/requisito.php">Requisitos</a></li>
+                    <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
+                    <li><a href="../../registros/status/status.php">Status</a></li>
+                    <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
+                    <li><a href="../../registros/materia/materia.php">Materias</a></li>
+                    <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
+                    <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
+                </ul>
+            </li>
+
+            <!-- Inscripciones -->
+            <li>
+                <div class="icon-link">
+                    <a href="#">
+                        <i class='bx bx-edit'></i>
+                        <span class="link_name">Estudiantes</span>
+                    </a>
+                    <i class='bx bxs-chevron-down arrow'></i>
                 </div>
-                <a href="../../controladores/login/cerrar_sesion.php"><i class='bx bx-log-out'></i></a>
-            </div>
-        </li>
-    </ul>
+                <ul class="sub-menu">
+                    <li><a href="#">Estudiantes</a></li>
+                    <li><a href="#">Representantes</a></li>
+                    <li><a href="#">Est. con Dificultades</a></li>
+                    <li><a href="#">Horarios</a></li>
+                    <li><a href="#">Egresos</a></li>
+                </ul>
+            </li>
+
+            <!-- Reportes (solo para Perfil 1 o 2) -->
+            <?php if ($idPerfil == 1 || $idPerfil == 2): ?>
+            <li>
+                <div class="icon-link">
+                    <a href="#">
+                        <i class='bx bx-line-chart'></i>
+                        <span class="link_name">Inscripciones</span>
+                    </a>
+                    <i class='bx bxs-chevron-down arrow'></i>
+                </div>
+                <ul class="sub-menu">
+                    <li><a href="#">Inscripciones</a></li>
+                    <li><a href="#">Insc. Grupo C.</a></li>
+                    <li><a href="#">Insc. Pendientes</a></li>
+                </ul>
+            </li>
+            <?php endif; ?>
+
+            <!-- Configuración (solo para Perfil 1: Admin) -->
+            <?php if ($idPerfil == 1): ?>
+            <li>
+                <div class="icon-link">
+                    <a href="#">
+                        <i class='bx bx-cog'></i>
+                        <span class="link_name">Configuración</span>
+                    </a>
+                    <i class='bx bxs-chevron-down arrow'></i>
+                </div>
+                <ul class="sub-menu">
+                    <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
+                    <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
+                    <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
+                </ul>
+            </li>
+            <?php endif; ?>
+
+            <!-- Cerrar sesión -->
+            <li>
+                <div class="icon-link">
+                    <a href="../../../controladores/login/cerrar_sesion.php">
+                        <i class='bx bx-log-out-circle'></i>
+                        <span class="link_name">Cerrar Sesión</span>
+                    </a>
+                </div>
+            </li>
+
+            <!-- Perfil de usuario -->
+            <li>
+                <div class="profile-details">
+                    <div class="profile-content">
+                        <img src="../../../assets/images/avatar.svg" alt="Perfil">
+                    </div>
+                    <div class="name-job">
+                        <div class="profile_name"><?php echo htmlspecialchars($userNombre . ' ' . $userApellido); ?></div>
+                        <div class="job"><?php echo htmlspecialchars($userPerfil); ?></div>
+                    </div>
+                    <a href="../../controladores/login/cerrar_sesion.php"><i class='bx bx-log-out'></i></a>
+                </div>
+            </li>
+        </ul>
+    </div>
 </div>
 
 <!-- Sección Principal -->
