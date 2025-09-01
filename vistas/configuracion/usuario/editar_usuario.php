@@ -416,7 +416,10 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                 </div>
 
                                 <!-- Botón -->
-                                <div class="d-grid gap-2 mt-4">
+                                <div class="d-flex justify-content-between mt-4">
+                                    <a href="usuario.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Usuarios
+                                    </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
                                         <i class='bx bxs-save'></i> Actualizar Usuario
                                     </button>

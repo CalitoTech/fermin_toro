@@ -123,4 +123,22 @@ class CursoSeccion {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    
+    public function obtenerPorCursoYSeccion($idCurso, $idSeccion) {
+        $query = "SELECT cs.*, s.seccion, a.aula, c.curso, n.nivel
+                 FROM curso_seccion cs
+                 JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                 LEFT JOIN aula a ON cs.IdAula = a.IdAula
+                 JOIN curso c ON cs.IdCurso = c.IdCurso
+                 JOIN nivel n ON c.IdNivel = n.IdNivel
+                 WHERE cs.IdCurso = ? AND cs.IdSeccion = ?
+                 LIMIT 1";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $idCurso, PDO::PARAM_INT);
+        $stmt->bindParam(2, $idSeccion, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }

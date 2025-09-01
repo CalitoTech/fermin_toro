@@ -76,7 +76,7 @@ try {
         <ul class="nav-links">
             <!-- Inicio -->
             <li>
-                <a href="../inicio/inicio/inicio.php">
+                <a href="../../inicio/inicio/inicio.php">
                     <i class='bx bx-home-alt-2'></i>
                     <span class="link_name">Inicio</span>
                 </a>
@@ -136,7 +136,7 @@ try {
                     <i class='bx bxs-chevron-down arrow'></i>
                 </div>
                 <ul class="sub-menu">
-                    <li><a href="#">Inscripciones</a></li>
+                    <li><a href="../../inscripciones/inscripcion/inscripcion.php">Inscripciones</a></li>
                     <li><a href="#">Insc. Grupo C.</a></li>
                     <li><a href="#">Insc. Pendientes</a></li>
                 </ul>

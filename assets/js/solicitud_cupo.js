@@ -590,7 +590,7 @@ function verificarCedulaExistente(cedula, nacionalidad, callback) {
         return;
     }
 
-    fetch(`../../controladores/PersonaController.php?action=verificarCedula&cedula=${cedula}&nacionalidad=${nacionalidad}`)
+    fetch(`../../controladores/PersonaController.php?action=verificarCedula&cedula=${cedula}&idNacionalidad=${nacionalidad}`)
         .then(response => {
             if (!response.ok) throw new Error('Error en la respuesta del servidor');
             return response.json();

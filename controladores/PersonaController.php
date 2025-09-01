@@ -1,10 +1,16 @@
 <?php
-session_start();
+// Verificación de sesión SOLO para acciones que lo requieran
+$action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
-// Verificación de sesión
-if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
-    header("Location: ../vistas/login/login.php");
-    exit();
+// Acciones que NO requieren sesión
+$accionesPublicas = ['verificarCedula'];
+
+if (!in_array($action, $accionesPublicas)) {
+    session_start();
+    if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
+        header("Location: ../vistas/login/login.php");
+        exit();
+    }
 }
 
 require_once __DIR__ . '/../config/conexion.php';
@@ -88,9 +94,10 @@ function verificarCedula() {
         
     } catch (Exception $e) {
         error_log("Error en verificarCedula: " . $e->getMessage());
+        http_response_code(500);
         echo json_encode([
-            'error' => 'Error interno',
-            'detalle' => $e->getMessage() // Solo para desarrollo
+            'error' => 'Error interno del servidor',
+            'existe' => false
         ]);
     }
     exit();
