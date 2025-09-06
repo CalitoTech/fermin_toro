@@ -501,3 +501,114 @@ body {
     padding: 12px 8px;
     vertical-align: middle;
 }
+
+/* VER INSCRIPCION */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.card-header {
+    background-color: var(--clr-primary);
+    color: white;
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.info-badge {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.requisito-item {
+    border-left: 4px solid var(--clr-primary);
+    padding-left: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.requisito-obligatorio {
+    border-left-color: #dc3545;
+}
+
+.requisito-opcional {
+    border-left-color: #28a745;
+}
+
+.checkbox-cumplido {
+    width: 20px;
+    height: 20px;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: var(--clr-primary);
+    border-color: var(--clr-primary);
+}
+
+.btn-primary:hover {
+    background-color: #a80000;
+    border-color: #a80000;
+}
+
+.section-title {
+    color: var(--clr-primary);
+    border-bottom: 2px solid var(--clr-primary);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.info-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.status-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.status-step {
+    text-align: center;
+    cursor: pointer;
+    flex: 1;
+    color: #6c757d;
+    transition: all 0.2s ease-in-out;
+}
+.status-step.active {
+    font-weight: bold;
+    color: #0d6efd;
+}
+.status-step:hover {
+    transform: scale(1.05);
+}
+.status-icon {
+    font-size: 22px;
+    display: block;
+}
+.status-line {
+    flex: none;
+    width: 40px;
+    height: 2px;
+    background-color: #dee2e6;
+    align-self: center;
+}

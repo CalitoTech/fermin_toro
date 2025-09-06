@@ -168,9 +168,9 @@ if ($alert) {
                                                     <a href="editar_inscripcion.php?id=<?= $user['IdInscripcion'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
                                                     </a>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $user['IdInscripcion'] ?>)">
-                                                        <i class='bx bxs-trash'></i>
-                                                    </button>
+                                                    <a href="ver_inscripcion.php?id=<?= $user['IdInscripcion'] ?>" class="btn btn-sm btn-outline-info me-1">
+                                                        <i class='bx bxs-show'></i>
+                                                    </a>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -227,9 +227,9 @@ if ($alert) {
                     icon: '<i class="bx bxs-edit"></i>'
                 },
                 {
-                    onClick: 'confirmDelete({id})',
-                    class: 'btn-outline-danger',
-                    icon: '<i class="bx bxs-trash"></i>'
+                    url: 'ver_inscripcion.php?id={id}',
+                    class: 'btn-outline-info',
+                    icon: '<i class="bx bxs-show"></i>'
                 }
             ]
         };
@@ -245,23 +245,6 @@ if ($alert) {
         // Crear instancia de TablaDinamica
         window.tablaInscripciones = new TablaDinamica(config);
     });
-
-    // === FUNCIONES ===
-    function confirmDelete(id) {
-        Swal.fire({
-            title: "¿Está seguro que desea eliminar este inscripcion?",
-            showDenyButton: true,
-            showCancelButton: false,
-            confirmButtonText: "Sí, Eliminar",
-            denyButtonText: "No, Volver"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = '../../../controladores/InscripcionController.php?action=eliminar&id=' + id;
-            } else if (result.isDenied) {
-                Swal.fire("No se eliminó el inscripcion", "", "info");
-            }
-        });
-    }
 
     window.imprimirLista = function() {
         const nombreCompleto = "<?php 

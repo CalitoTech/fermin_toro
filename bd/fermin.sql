@@ -220,9 +220,9 @@ INSERT INTO `status` (`IdStatus`, `IdTipo_Status`, `status`) VALUES
 (6, 1, 'Graduado'),
 (7, 2, 'Pendiente de aprobación'),
 (8, 2, 'Aprobada para reunión'),
-(9, 2, 'Rechazada'),
-(10, 2, 'En espera de pago'),
-(11, 2, 'Inscrito');
+(9, 2, 'En espera de pago'),
+(10, 2, 'Inscrito'),
+(11, 2, 'Rechazada');
 
 CREATE TABLE parentesco (
     IdParentesco int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -327,10 +327,13 @@ CREATE TABLE inscripcion (
     IdFecha_Escolar int NOT NULL,
     IdStatus int NOT NULL,
     IdCurso_Seccion int NOT NULL,
+    ultima_modificacion datetime DEFAULT NULL,
+    modificado_por int DEFAULT NULL,
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
     FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
+    FOREIGN KEY (modificado_por) REFERENCES persona(IdPersona),
     FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante)
 );
 
