@@ -232,11 +232,11 @@ CREATE TABLE parentesco (
 INSERT INTO `parentesco` (`IdParentesco`, `parentesco`) VALUES
 (1, 'Padre'),
 (2, 'Madre'),
-(3, 'Representante Legal'),
-(4, 'Tutor'),
-(5, 'Hermano'),
-(6, 'Abuelo'),
-(7, 'Tío');
+(3, 'Tutor'),
+(4, 'Hermano'),
+(5, 'Abuelo'),
+(6, 'Tío'),
+(7, 'Otro');
 
 CREATE TABLE persona (
     IdPersona int NOT NULL AUTO_INCREMENT PRIMARY KEY,

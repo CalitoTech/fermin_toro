@@ -720,7 +720,7 @@
                                                 <option value="">Seleccione un parentesco</option>
                                                 <?php
                                                 foreach ($parentescos as $parentesco) {
-                                                    if ($parentesco['IdParentesco'] > 3) {
+                                                    if ($parentesco['IdParentesco'] >= 3) {
                                                         echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
                                                     }
                                                 }
@@ -973,7 +973,7 @@
                                                 <option value="">Seleccione un parentesco</option>
                                                 <?php
                                                 foreach ($parentescos as $parentesco) {
-                                                    if ($parentesco['IdParentesco'] > 3) {
+                                                    if ($parentesco['IdParentesco'] >= 3) {
                                                         echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
                                                     }
                                                 }

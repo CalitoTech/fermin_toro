@@ -178,7 +178,7 @@ function procesarInscripcion($conexion) {
                 $personaEstudiante->fecha_nacimiento = $_POST['estudianteFechaNacimiento'];
                 $personaEstudiante->correo = $_POST['estudianteCorreo'] ?? '';
                 $personaEstudiante->direccion = $_POST['representanteDireccion'] ?? ''; // Usar dirección del representante
-                $personaEstudiante->IdSexo = $_POST['estudianteSexo'] === 'M' ? 1 : 2;
+                $personaEstudiante->IdSexo = $_POST['estudianteSexo'] === 'Masculino' ? 1 : 2;
                 $urbanismoEstudiante = match($_POST['tipoRepresentante']) {
                     'padre' => $_POST['padreUrbanismo'] ?? null,
                     'madre' => $_POST['madreUrbanismo'] ?? null,
