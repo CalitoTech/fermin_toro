@@ -52,9 +52,13 @@ $query = "SELECT
     i.fecha_inscripcion,
     i.ultimo_plantel,
     i.nro_hermanos,
+    i.modificado_por,
+    i.ultima_modificacion,
+    i.IdCurso_Seccion,
 
     -- Curso, sección, nivel, año escolar
-    c.curso,
+    c.curso, 
+    c.IdCurso,
     s.seccion,
     n.nivel,
     fe.fecha_escolar,
@@ -71,6 +75,7 @@ $query = "SELECT
     e.direccion AS estudiante_direccion,
     sexo_e.sexo AS estudiante_sexo,
     urb_e.urbanismo AS estudiante_urbanismo,
+    urb_e.IdUrbanismo AS estudiante_id_urbanismo,
     nac_e.nacionalidad AS estudiante_nacionalidad,
 
     -- Teléfonos del estudiante
@@ -352,6 +357,82 @@ if ($inscripcion) {
         $esMadreRepresentante = true;
     }
 }
+
+// Obtener información del modificador
+if (!empty($inscripcion['modificado_por'])) {
+    $queryModificador = "SELECT nombre, apellido FROM persona WHERE IdPersona = :id_modificador";
+    $stmtModificador = $conexion->prepare($queryModificador);
+    $stmtModificador->bindParam(':id_modificador', $inscripcion['modificado_por'], PDO::PARAM_INT);
+    $stmtModificador->execute();
+    $modificador = $stmtModificador->fetch(PDO::FETCH_ASSOC);
+    
+    $nombreModificador = $modificador ? htmlspecialchars($modificador['nombre'] . ' ' . $modificador['apellido']) : 'Usuario no encontrado';
+} else {
+    $nombreModificador = 'No modificado aún';
+}
+
+// Formatear la fecha de modificación
+$fechaModificacion = !empty($inscripcion['ultima_modificacion']) ? 
+    date('d/m/Y H:i', strtotime($inscripcion['ultima_modificacion'])) : 
+    'No modificado aún';
+
+// Después de obtener los datos de la inscripción:
+$idCursoActual = $inscripcion['IdCurso'] ?? null;
+$idCursoSeccionActual = $inscripcion['IdCurso_Seccion'] ?? null;
+
+// Obtener secciones disponibles (excluyendo la sección "Inscripción" y del mismo curso)
+$seccionesDisponibles = [];
+$seccionesConCupo = [];
+$maxMismosUrbanismo = 0;
+$hayRecomendada = false;
+if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
+    $querySecciones = "SELECT 
+                        cs.IdCurso_Seccion,
+                        s.seccion,
+                        a.aula,
+                        a.capacidad,
+                        (SELECT COUNT(*) FROM inscripcion i2 
+                         WHERE i2.IdCurso_Seccion = cs.IdCurso_Seccion 
+                         AND i2.IdStatus = 10) as estudiantes_actuales,
+                        (SELECT COUNT(*) FROM inscripcion i3 
+                         INNER JOIN persona e ON i3.IdEstudiante = e.IdPersona
+                         WHERE i3.IdCurso_Seccion = cs.IdCurso_Seccion 
+                         AND i3.IdStatus = 10 
+                         AND e.IdUrbanismo = :id_urbanismo) as mismos_urbanismo
+                      FROM curso_seccion cs
+                      INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                      LEFT JOIN aula a ON cs.IdAula = a.IdAula
+                      WHERE cs.IdCurso = :id_curso
+                      AND s.seccion != 'Inscripción'
+                      AND cs.IdCurso_Seccion != :id_curso_seccion_actual
+                      ORDER BY s.seccion";
+    
+    $stmtSecciones = $conexion->prepare($querySecciones);
+    $stmtSecciones->bindParam(':id_curso', $idCursoActual, PDO::PARAM_INT);
+    $stmtSecciones->bindParam(':id_urbanismo', $inscripcion['estudiante_id_urbanismo'], PDO::PARAM_INT);
+    $stmtSecciones->bindParam(':id_curso_seccion_actual', $idCursoSeccionActual, PDO::PARAM_INT);
+    $stmtSecciones->execute();
+    $seccionesDisponibles = $stmtSecciones->fetchAll(PDO::FETCH_ASSOC);
+    
+
+     // Encontrar el máximo de estudiantes con mismo urbanismo
+    foreach ($seccionesDisponibles as $seccion) {
+        if (($seccion['mismos_urbanismo'] ?? 0) > $maxMismosUrbanismo) {
+            $maxMismosUrbanismo = $seccion['mismos_urbanismo'];
+        }
+    }
+    
+    $hayRecomendada = $maxMismosUrbanismo > 0;
+
+   // Filtrar solo las que tienen cupo
+    $seccionesConCupo = array_filter($seccionesDisponibles, function($sec) {
+        // Si no hay capacidad definida, consideramos que hay cupo
+        if (empty($sec['capacidad'])) {
+            return true;
+        }
+        return (int)$sec['estudiantes_actuales'] < (int)$sec['capacidad'];
+    });
+}
 ?>
 
 <head>
@@ -433,13 +514,38 @@ if ($inscripcion) {
                         <?php endif; ?>
                     </div>
 
+                    <!-- Información de modificación -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="modification-info-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-history me-2 text-info"></i>
+                                        <span class="text-muted small">Última modificación:</span>
+                                        <span class="ms-1 fw-medium"><?= $fechaModificacion ?></span>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-user-edit me-2 text-info"></i>
+                                        <span class="text-muted small">Por:</span>
+                                        <span class="ms-1 fw-medium"><?= $nombreModificador ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Información General -->
                     <div class="row mb-4">
                         <!-- Datos de la Inscripción -->
                         <div class="col-md-6">
                             <div class="card">
-                                <div class="card-header">
+                                <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información General</h5>
+                                    <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles)): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-primary text-light" id="btn-cambiar-seccion">
+                                        <i class="fas fa-exchange-alt me-1"></i> Cambiar Sección
+                                    </button>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="card-body">
                                     <div class="info-card">
@@ -451,7 +557,11 @@ if ($inscripcion) {
                                             <strong>Curso:</strong> <?= htmlspecialchars($inscripcion['curso']) ?>
                                         </div>
                                         <div class="mb-2">
-                                            <strong>Sección:</strong> <?= htmlspecialchars($inscripcion['seccion']) ?>
+                                            <strong>Sección:</strong> 
+                                            <span id="texto-seccion-actual"><?= htmlspecialchars($inscripcion['seccion']) ?></span>
+                                            <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles)): ?>
+                                            <small class="text-muted ms-1">(Click en "Cambiar Sección")</small>
+                                            <?php endif; ?>
                                         </div>
                                         <div class="mb-2">
                                             <strong>Nivel:</strong> <?= htmlspecialchars($inscripcion['nivel']) ?>
@@ -459,6 +569,57 @@ if ($inscripcion) {
                                         <div class="mb-2">
                                             <strong>Año Escolar:</strong> <?= htmlspecialchars($inscripcion['fecha_escolar']) ?>
                                         </div>
+
+                                        <!-- Selector de sección (oculto inicialmente) -->
+                                        <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles)): ?>
+                                        <div id="selector-seccion" class="mt-3 p-3 border rounded" style="display: none;">
+                                            <h6 class="section-title mb-3">Cambiar Sección</h6>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label fw-medium">Selecciona una nueva sección:</label>
+                                                <select class="form-select" id="select-nueva-seccion">
+                                                    <option value="">-- Selecciona una sección --</option>
+                                                    <?php foreach ($seccionesDisponibles as $seccion): 
+                                                        $esRecomendada = $hayRecomendada && 
+                                                                        ($seccion['mismos_urbanismo'] ?? 0) > 0 && 
+                                                                        $seccion['mismos_urbanismo'] == $maxMismosUrbanismo;
+                                                    ?>
+                                                    <option value="<?= $seccion['IdCurso_Seccion'] ?>" 
+                                                            data-capacidad="<?= $seccion['capacidad'] ?? 0 ?>"
+                                                            data-estudiantes="<?= $seccion['estudiantes_actuales'] ?? 0 ?>"
+                                                            data-urbanismo="<?= $seccion['mismos_urbanismo'] ?? 0 ?>"
+                                                            <?php if ($esRecomendada): ?>
+                                                            style="background-color: #fff3cd; font-weight: bold; color: #856404;" 
+                                                            <?php endif; ?>>
+                                                        <?= htmlspecialchars($seccion['seccion']) ?> 
+                                                        - Aula: <?= htmlspecialchars($seccion['aula'] ?? 'Sin asignar') ?>
+                                                        (<?= ($seccion['estudiantes_actuales'] ?? 0) . '/' . ($seccion['capacidad'] ?? 0) ?>)
+                                                        <?php if ($esRecomendada): ?> 
+                                                            ⭐ (Recomendada)
+                                                        <?php endif; ?>
+                                                    </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+
+                                            <div id="info-seccion" class="p-2 bg-light rounded mb-3" style="display: none;">
+                                                <small>
+                                                    <div><strong>Capacidad:</strong> <span id="info-capacidad"></span> estudiantes</div>
+                                                    <div><strong>Ocupación actual:</strong> <span id="info-ocupacion"></span></div>
+                                                    <div><strong>Estudiantes de mismo urbanismo:</strong> <span id="info-urbanismo"></span></div>
+                                                </small>
+                                            </div>
+
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-primary btn-sm" id="btn-confirmar-cambio">
+                                                    <i class="fas fa-check me-1"></i> Confirmar Cambio
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-sm" id="btn-cancelar-cambio">
+                                                    <i class="fas fa-times me-1"></i> Cancelar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -866,6 +1027,8 @@ if ($inscripcion) {
 <script>
     const ID_INSCRIPCION = <?= $inscripcion['IdInscripcion'] ?>;
     const ID_INSCRITO = <?= $idInscrito ?>;
+    const SECCIONES_CON_CUPO = <?= isset($seccionesConCupo) ? count($seccionesConCupo) : 0 ?>;
+    const ID_CURSO = <?= (int)$inscripcion['IdCurso'] ?>;
 </script>
 <script src="../../../assets/js/inscripcion.js"></script>
 

@@ -7,22 +7,21 @@ function manejarStatusBar(idInscripcion, idInscrito) {
     const estaEnModoRechazado = document.querySelector('.status-step.rejected-mode');
 
     steps.forEach(step => {
-        step.addEventListener('click', function () {
-            // Validar datos primero
+        step.addEventListener('click', async function () {
             if (!this.dataset.nombre || this.dataset.nombre === 'undefined') {
                 console.error('Nombre de estado no definido');
                 return;
             }
-            
+
             const nuevoId = parseInt(this.dataset.id);
             const nuevoNombre = this.dataset.nombre;
             const stepActivo = document.querySelector('.status-step.active');
-            
+
             if (!stepActivo) {
                 console.error('No se encontró step activo');
                 return;
             }
-            
+
             const actualId = parseInt(stepActivo.dataset.id);
 
             // Prevenir clic en el estado actual
@@ -32,7 +31,7 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                     title: 'Estado actual',
                     html: `
                         <div class="text-center">
-                            <i class="fas fa-info-circle fa-2x mb-3 text-primary"></i>
+                            <i class="bi bi-info-circle-fill fa-2x mb-3 text-primary"></i>
                             <p>La inscripción ya se encuentra en estado:<br>
                             <strong>"${nuevoNombre}"</strong></p>
                             <small class="text-muted">Selecciona un estado diferente para cambiar</small>
@@ -71,15 +70,42 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Acción no permitida',
-                    text: 'No puedes retroceder a un estado anterior, salvo a Rechazado.',
+                    text: 'No puedes retroceder a un estado anterior.',
                     confirmButtonColor: '#c90000'
                 });
                 return;
             }
 
+            // ========================
+            // Aquí cambiamos el confirm
+            // ========================
+            let titulo = '¿Cambiar estado?';
+            let texto = `¿Deseas cambiar el estado a "${nuevoNombre}"?`;
+
+            if (nuevoId === idInscrito) {
+                try {
+                    const fd = new FormData();
+                    fd.append('action', 'hayCupo');
+                    fd.append('idCurso', ID_CURSO);
+
+                    const resp = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+                        method: 'POST',
+                        body: fd
+                    }).then(r => r.json());
+
+                    if (resp?.success && resp.todasLlenas === true) {
+                        titulo = 'Capacidad completa';
+                        texto = `No hay secciones con cupo disponible, la capacidad está completa. 
+                        ¿Deseas inscribir de todos modos a otro estudiante?`;
+                    }
+                } catch (e) {
+                    console.warn('No se pudo verificar cupo:', e);
+                }
+            }
+
             Swal.fire({
-                title: '¿Cambiar estado?',
-                text: `¿Deseas cambiar el estado a "${nuevoNombre}"?`,
+                title: titulo,
+                html: `<div style="text-align:center">${texto}</div>`,
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, cambiar',
@@ -100,28 +126,31 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
+                            let mensaje = data.message;
+
+                            if (data.cambioAutomatico) {
+                                mensaje += '\nSe asignó automáticamente a la sección recomendada';
+                            }
+
                             Swal.fire({
                                 icon: 'success',
                                 title: '¡Hecho!',
-                                text: data.message,
+                                text: mensaje,
                                 timer: 2000,
                                 showConfirmButton: true
                             });
 
-                            // Actualizar visualmente
                             actualizarBarraStatus(nuevoId);
-                            
-                            // Transformar inmediatamente a modo rechazado si aplica
+
                             if (nuevoNombre.toLowerCase().includes('rechazado')) {
                                 setTimeout(() => {
                                     transformarAModoRechazado();
                                 }, 100);
                             }
-                            
-                            // Recargar solo si es necesario para otros cambios mayores
-                            const cambiosMayores = nuevoNombre.toLowerCase().includes('rechazado') || 
-                                                nuevoId === idInscrito;
-                            
+
+                            const cambiosMayores = nuevoNombre.toLowerCase().includes('rechazado') ||
+                                                   nuevoId === idInscrito;
+
                             if (cambiosMayores) {
                                 setTimeout(() => {
                                     window.location.reload();
@@ -154,7 +183,7 @@ function manejarStatusBar(idInscripcion, idInscrito) {
         rejectedStep.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            
+
             Swal.fire({
                 icon: 'info',
                 title: 'Inscripción rechazada',
@@ -164,6 +193,7 @@ function manejarStatusBar(idInscripcion, idInscrito) {
         });
     }
 }
+
 
 // Función para transformar la barra a modo rechazado
 function transformarAModoRechazado() {
@@ -308,7 +338,7 @@ function manejarRequisitos(idInscripcion) {
             title: 'Cambios descartados',
             text: 'Se han restaurado los valores originales',
             timer: 1500,
-            showConfirmButton: false
+            showConfirmButton: true
         });
     });
 
@@ -351,7 +381,7 @@ function manejarRequisitos(idInscripcion) {
                         title: '¡Actualizado!',
                         text: data.message,
                         timer: 1500,
-                        showConfirmButton: false
+                        showConfirmButton: true
                     });
                 } else {
                     throw new Error(data.message);
@@ -398,7 +428,7 @@ function manejarRequisitos(idInscripcion) {
                     title: '¡Guardado!',
                     text: data.message,
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: true
                 });
             } else {
                 throw new Error(data.message);
@@ -417,12 +447,138 @@ function manejarRequisitos(idInscripcion) {
 }
 
 // ==============================
+// Gestión de cambio de sección
+// ==============================
+function manejarCambioSeccion(idInscripcion) {
+    const btnCambiarSeccion = document.getElementById('btn-cambiar-seccion');
+    const selectorSeccion = document.getElementById('selector-seccion');
+    const selectNuevaSeccion = document.getElementById('select-nueva-seccion');
+    const infoSeccion = document.getElementById('info-seccion');
+    const btnConfirmarCambio = document.getElementById('btn-confirmar-cambio');
+    const btnCancelarCambio = document.getElementById('btn-cancelar-cambio');
+    const textoSeccionActual = document.getElementById('texto-seccion-actual');
+
+    if (!btnCambiarSeccion) return;
+
+    // Mostrar/ocultar selector
+    btnCambiarSeccion.addEventListener('click', function() {
+        selectorSeccion.style.display = selectorSeccion.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Cancelar cambio
+    btnCancelarCambio.addEventListener('click', function() {
+        selectorSeccion.style.display = 'none';
+        selectNuevaSeccion.value = '';
+        infoSeccion.style.display = 'none';
+    });
+
+    // Mostrar información de la sección seleccionada
+        selectNuevaSeccion.addEventListener('change', function() {
+        if (this.value) {
+            const option = this.options[this.selectedIndex];
+            const capacidad = option.getAttribute('data-capacidad') || '0';
+            const estudiantes = option.getAttribute('data-estudiantes') || '0';
+            const urbanismo = option.getAttribute('data-urbanismo') || '0';
+            
+            document.getElementById('info-capacidad').textContent = capacidad;
+            document.getElementById('info-ocupacion').textContent = `${estudiantes}/${capacidad}`;
+            document.getElementById('info-urbanismo').textContent = urbanismo;
+            
+            infoSeccion.style.display = 'block';
+        } else {
+            infoSeccion.style.display = 'none';
+        }
+    });
+
+    // Confirmar cambio de sección
+    btnConfirmarCambio.addEventListener('click', function() {
+        const nuevaSeccionId = selectNuevaSeccion.value;
+        const nuevaSeccionTexto = selectNuevaSeccion.options[selectNuevaSeccion.selectedIndex].text;
+        
+        if (!nuevaSeccionId) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selección requerida',
+                text: 'Por favor selecciona una sección',
+                confirmButtonColor: '#c90000'
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Cambiar sección?',
+            html: `¿Estás seguro de cambiar la sección a:<br><strong>${nuevaSeccionTexto}</strong>?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, cambiar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#c90000',
+            cancelButtonColor: '#6c757d'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTexto);
+            }
+        });
+    });
+}
+
+// Función para cambiar la sección via AJAX
+function cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTexto) {
+    Swal.fire({
+        title: 'Actualizando...',
+        text: 'Cambiando sección',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    const formData = new FormData();
+    formData.append('action', 'cambiarSeccion');
+    formData.append('idInscripcion', idInscripcion);
+    formData.append('nuevaSeccion', nuevaSeccionId);
+
+    fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        
+        if (data.success) {
+            // Actualizar la UI
+            document.getElementById('texto-seccion-actual').textContent = nuevaSeccionTexto.split(' - ')[0];
+            document.getElementById('selector-seccion').style.display = 'none';
+            document.getElementById('select-nueva-seccion').value = '';
+            document.getElementById('info-seccion').style.display = 'none';
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Sección cambiada!',
+                text: 'La sección se ha actualizado correctamente',
+                timer: 2000,
+                showConfirmButton: true
+            });
+        } else {
+            throw new Error(data.message || 'Error al cambiar sección');
+        }
+    })
+    .catch(error => {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message
+        });
+    });
+}
+
+// ==============================
 // Inicialización global
 // ==============================
 document.addEventListener('DOMContentLoaded', function () {
     if (typeof ID_INSCRIPCION !== 'undefined' && typeof ID_INSCRITO !== 'undefined') {
         manejarStatusBar(ID_INSCRIPCION, ID_INSCRITO);
         manejarRequisitos(ID_INSCRIPCION);
+        manejarCambioSeccion(ID_INSCRIPCION);
     } else {
         console.error('Variables no definidas:', {
             ID_INSCRIPCION: typeof ID_INSCRIPCION,

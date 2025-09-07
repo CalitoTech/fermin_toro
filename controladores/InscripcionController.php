@@ -16,6 +16,175 @@ date_default_timezone_set('America/Caracas');
 $database = new Database();
 $conexion = $database->getConnection();
 
+function actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario) {
+    try {
+        $query = "UPDATE inscripcion 
+                  SET modificado_por = :modificado_por, 
+                      ultima_modificacion = NOW() 
+                  WHERE IdInscripcion = :idInscripcion";
+        
+        $stmt = $conexion->prepare($query);
+        $stmt->bindParam(':modificado_por', $idUsuario, PDO::PARAM_INT);
+        $stmt->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
+        
+        return $stmt->execute();
+    } catch (Exception $e) {
+        error_log("Error al actualizar auditoría: " . $e->getMessage());
+        return false;
+    }
+}
+
+// Función auxiliar para obtener el ID del usuario de la sesión
+function obtenerIdUsuario() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    return $_SESSION['idPersona'] ?? null;
+}
+
+function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSeccionActual) {
+    try {
+        // Primero verificar si hay aulas con cupo disponible
+        $aulasConCupo = verificarCapacidadAulas($conexion, $idCurso);
+        
+        $hayAulasConCupo = false;
+        foreach ($aulasConCupo as $aula) {
+            if ($aula['tiene_cupo'] == 1) {
+                $hayAulasConCupo = true;
+                break;
+            }
+        }
+        
+        if ($hayAulasConCupo) {
+            // Buscar sección con cupo y mismo urbanismo
+            $query = "SELECT 
+                    cs.IdCurso_Seccion,
+                    s.seccion,
+                    COUNT(DISTINCT CASE WHEN e.IdUrbanismo = :id_urbanismo THEN i.IdInscripcion END) as mismos_urbanismo,
+                    COUNT(DISTINCT i2.IdInscripcion) as total_estudiantes,
+                    a.capacidad,
+                    CASE 
+                        WHEN COUNT(DISTINCT CASE WHEN e.IdUrbanismo = :id_urbanismo THEN i.IdInscripcion END) > 0 THEN 1
+                        ELSE 0 
+                    END as tiene_mismo_urbanismo,
+                    CASE 
+                        WHEN a.capacidad IS NULL OR COUNT(DISTINCT i2.IdInscripcion) < a.capacidad THEN 1
+                        ELSE 0 
+                    END as tiene_cupo
+                FROM curso_seccion cs
+                INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                LEFT JOIN aula a ON cs.IdAula = a.IdAula
+                LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
+                    AND i.IdStatus = 10
+                LEFT JOIN persona e ON i.IdEstudiante = e.IdPersona
+                LEFT JOIN inscripcion i2 ON cs.IdCurso_Seccion = i2.IdCurso_Seccion 
+                    AND i2.IdStatus = 10
+                WHERE cs.IdCurso = :id_curso
+                AND s.seccion != 'Inscripción'
+                AND cs.IdCurso_Seccion != :id_curso_seccion_actual
+                GROUP BY cs.IdCurso_Seccion
+                HAVING tiene_cupo = 1  -- Solo secciones con cupo disponible
+                ORDER BY tiene_mismo_urbanismo DESC, mismos_urbanismo DESC, 
+                        total_estudiantes ASC, RAND()
+                LIMIT 1";
+            
+            $stmt = $conexion->prepare($query);
+            $stmt->bindParam(':id_curso', $idCurso, PDO::PARAM_INT);
+            $stmt->bindParam(':id_urbanismo', $idUrbanismo, PDO::PARAM_INT);
+            $stmt->bindParam(':id_curso_seccion_actual', $idCursoSeccionActual, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $seccion = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($seccion) {
+                return $seccion['IdCurso_Seccion'];
+            }
+        }
+        
+        // Si no hay aulas con cupo, buscar la sección con menor cantidad de estudiantes
+        return obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idUrbanismo, $idCursoSeccionActual);
+        
+    } catch (Exception $e) {
+        error_log("Error al obtener sección recomendada: " . $e->getMessage());
+        return null;
+    }
+}
+
+function verificarCapacidadAulas($conexion, $idCurso) {
+    try {
+        $query = "SELECT 
+                cs.IdCurso_Seccion,
+                s.seccion,
+                COUNT(DISTINCT i.IdInscripcion) as total_estudiantes,
+                a.capacidad,
+                CASE 
+                    WHEN a.capacidad IS NULL THEN 1
+                    WHEN COUNT(DISTINCT i.IdInscripcion) < a.capacidad THEN 1
+                    ELSE 0 
+                END as tiene_cupo
+            FROM curso_seccion cs
+            INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+            LEFT JOIN aula a ON cs.IdAula = a.IdAula
+            LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
+                AND i.IdStatus = 10
+            WHERE cs.IdCurso = :id_curso
+            AND s.seccion != 'Inscripción'
+            GROUP BY cs.IdCurso_Seccion
+            ORDER BY tiene_cupo DESC, total_estudiantes ASC";
+        
+        $stmt = $conexion->prepare($query);
+        $stmt->bindParam(':id_curso', $idCurso, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+    } catch (Exception $e) {
+        error_log("Error al verificar capacidad de aulas: " . $e->getMessage());
+        return [];
+    }
+}
+
+function obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idUrbanismo, $idCursoSeccionActual) {
+    try {
+        $query = "SELECT 
+                cs.IdCurso_Seccion,
+                s.seccion,
+                COUNT(DISTINCT i2.IdInscripcion) as total_estudiantes,
+                a.capacidad,
+                CASE 
+                    WHEN COUNT(DISTINCT CASE WHEN e.IdUrbanismo = :id_urbanismo THEN i.IdInscripcion END) > 0 THEN 1
+                    ELSE 0 
+                END as tiene_mismo_urbanismo
+            FROM curso_seccion cs
+            INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+            LEFT JOIN aula a ON cs.IdAula = a.IdAula
+            LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
+                AND i.IdStatus = 10
+            LEFT JOIN persona e ON i.IdEstudiante = e.IdPersona
+            LEFT JOIN inscripcion i2 ON cs.IdCurso_Seccion = i2.IdCurso_Seccion 
+                AND i2.IdStatus = 10
+            WHERE cs.IdCurso = :id_curso
+            AND s.seccion != 'Inscripción'
+            AND cs.IdCurso_Seccion != :id_curso_seccion_actual
+            GROUP BY cs.IdCurso_Seccion
+            ORDER BY total_estudiantes ASC, tiene_mismo_urbanismo DESC, RAND()
+            LIMIT 1";
+        
+        $stmt = $conexion->prepare($query);
+        $stmt->bindParam(':id_curso', $idCurso, PDO::PARAM_INT);
+        $stmt->bindParam(':id_urbanismo', $idUrbanismo, PDO::PARAM_INT);
+        $stmt->bindParam(':id_curso_seccion_actual', $idCursoSeccionActual, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $seccion = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $seccion ? $seccion['IdCurso_Seccion'] : null;
+        
+    } catch (Exception $e) {
+        error_log("Error al obtener sección con menos estudiantes: " . $e->getMessage());
+        return null;
+    }
+}
 // Determinar acción
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
@@ -34,6 +203,12 @@ if (empty($action)) {
             break;
         case 'actualizarMultiplesRequisitos':
             actualizarMultiplesRequisitos($conexion);
+            break;
+        case 'cambiarSeccion':
+            cambiarSeccion($conexion);
+            break;
+        case 'hayCupo':
+            hayCupo($conexion);
             break;
         default:
             header('Content-Type: application/json');
@@ -525,16 +700,147 @@ function cambiarStatus($conexion) {
     }
 
     try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
+
+        // Obtener datos actuales de la inscripción
+        $queryInscripcion = "SELECT i.*, e.IdUrbanismo, cs.IdCurso, i.IdEstudiante
+                           FROM inscripcion i
+                           INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
+                           INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                           WHERE i.IdInscripcion = :idInscripcion";
+        $stmtInscripcion = $conexion->prepare($queryInscripcion);
+        $stmtInscripcion->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
+        $stmtInscripcion->execute();
+        $inscripcionData = $stmtInscripcion->fetch(PDO::FETCH_ASSOC);
+
+        if (!$inscripcionData) {
+            echo json_encode(['success' => false, 'message' => 'Inscripción no encontrada']);
+            exit();
+        }
+
+        // =========================================
+        // BLOQUE EXTRA → activar estudiante/representantes
+        // =========================================
+        $alertaCapacidad = '';
+        if ($nuevoStatus == 10) {
+            $idEstudiante = $inscripcionData['IdEstudiante'];
+
+            // 1) Activar estudiante
+            $stmt = $conexion->prepare("UPDATE persona SET IdStatus = 1 WHERE IdPersona = :id");
+            $stmt->execute([':id' => $idEstudiante]);
+
+            // 2) Activar representantes y crear usuario/clave
+            $stmtRep = $conexion->prepare("
+                SELECT r.IdPersona, p.cedula,
+                    CASE WHEN dp.IdPerfil = 5 THEN 1 ELSE 0 END AS es_contacto_emergencia
+                FROM representante r
+                INNER JOIN persona p ON r.IdPersona = p.IdPersona
+                LEFT JOIN detalle_perfil dp ON r.IdPersona = dp.IdPersona AND dp.IdPerfil = 5
+                WHERE r.IdEstudiante = :idEstudiante
+            ");
+            $stmtRep->execute([':idEstudiante' => $idEstudiante]);
+            $representantes = $stmtRep->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($representantes as $rep) {
+                $idPersona = $rep['IdPersona'];
+                $cedula = $rep['cedula'];
+                $esEmergencia = (int)$rep['es_contacto_emergencia'];
+
+                // Activar representante
+                $stmt = $conexion->prepare("UPDATE persona SET IdStatus = 1 WHERE IdPersona = :id");
+                $stmt->execute([':id' => $idPersona]);
+
+                // Crear credenciales solo si NO es el estudiante y NO es contacto de emergencia
+                if ($idPersona != $idEstudiante && !$esEmergencia) {
+                    $persona = new Persona($conexion);
+                    $persona->IdPersona = $idPersona;
+                    
+                    $credenciales = $persona->obtenerCredenciales();
+
+                    if (empty($credenciales['usuario']) || empty($credenciales['password'])) {
+                        // Crear usuario = cédula, contraseña = cédula (hasheada)
+                        $cedula = trim($cedula); // quita espacios al inicio y fin
+                        $persona->actualizarCredenciales($cedula, $cedula);
+                    }
+                }
+            }
+
+            // =========================================
+            // Chequear capacidad de aulas
+            // =========================================
+            $aulas = verificarCapacidadAulas($conexion, $inscripcionData['IdCurso']);
+            $todasAulasLlenas = !empty($aulas);
+
+            foreach ($aulas as $aula) {
+                if ((int)$aula['tiene_cupo'] === 1) {
+                    $todasAulasLlenas = false;
+                    break;
+                }
+            }
+
+            if ($todasAulasLlenas) {
+                $alertaCapacidad = 'Todas las aulas han alcanzado su capacidad máxima. Se recomienda considerar un cambio de aula o remodelación del espacio antes de continuar con las inscripciones.';
+            }
+        }
+
+        // =========================================
+        // Actualizar status de la inscripción
+        // =========================================
         $query = "UPDATE inscripcion SET IdStatus = :status WHERE IdInscripcion = :id";
         $stmt = $conexion->prepare($query);
         $stmt->bindParam(':status', $nuevoStatus, PDO::PARAM_INT);
         $stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
 
         if ($stmt->execute()) {
+            // Si el nuevo estado es "Inscrito" (IdStatus = 10), intentar cambio automático de sección
+            $cambioRealizado = false;
+            $seccionAnterior = $inscripcionData['IdCurso_Seccion'];
+            $seccionNueva = null;
+
+            if ($nuevoStatus == 10) {
+                try {
+                    $seccionRecomendada = obtenerSeccionRecomendada(
+                        $conexion,
+                        $inscripcionData['IdCurso'],
+                        $inscripcionData['IdUrbanismo'],
+                        $inscripcionData['IdCurso_Seccion']
+                    );
+
+                    if ($seccionRecomendada && $seccionRecomendada != $inscripcionData['IdCurso_Seccion']) {
+                        $queryUpdateSeccion = "UPDATE inscripcion SET IdCurso_Seccion = :nuevaSeccion WHERE IdInscripcion = :idInscripcion";
+                        $stmtUpdate = $conexion->prepare($queryUpdateSeccion);
+                        $stmtUpdate->bindParam(':nuevaSeccion', $seccionRecomendada, PDO::PARAM_INT);
+                        $stmtUpdate->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
+
+                        if ($stmtUpdate->execute()) {
+                            $cambioRealizado = true;
+                            $seccionNueva = $seccionRecomendada;
+                            error_log("Cambio automático realizado: " . $inscripcionData['IdCurso_Seccion'] . " → " . $seccionRecomendada);
+                        }
+                    } else {
+                        error_log("No se realizó cambio automático. Razón: " .
+                            (!$seccionRecomendada ? "No hay sección recomendada" : "Ya está en la sección recomendada"));
+                    }
+                } catch (Exception $e) {
+                    error_log("Error en cambio automático de sección: " . $e->getMessage());
+                }
+            }
+
+            // Auditoría
+            actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Estado actualizado correctamente',
-                'nuevoStatus' => $nuevoStatus
+                'nuevoStatus' => $nuevoStatus,
+                'cambioAutomatico' => $cambioRealizado,
+                'seccionAnterior' => $seccionAnterior,
+                'seccionNueva' => $seccionNueva,
+                'alertaCapacidad' => $alertaCapacidad
             ]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Error al actualizar']);
@@ -544,7 +850,6 @@ function cambiarStatus($conexion) {
         echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
     }
 }
-
 
 function toggleRequisito($conexion) {
     // Fuerza salida en JSON
@@ -563,6 +868,11 @@ function toggleRequisito($conexion) {
     }
 
     try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
         $stmt = $conexion->prepare("
             REPLACE INTO inscripcion_requisito (IdInscripcion, IdRequisito, cumplido) 
             VALUES (:idInscripcion, :idRequisito, :cumplido)
@@ -572,6 +882,9 @@ function toggleRequisito($conexion) {
             ':idRequisito'   => $idRequisito,
             ':cumplido'      => $cumplido
         ]);
+        
+        // Actualizar campos de auditoría
+        actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
 
         echo json_encode([
             'success' => true,
@@ -605,6 +918,11 @@ function actualizarMultiplesRequisitos($conexion) {
     }
 
     try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
         // Limpio los requisitos anteriores
         $stmtDelete = $conexion->prepare("DELETE FROM inscripcion_requisito WHERE IdInscripcion = :idInscripcion");
         $stmtDelete->execute([ ':idInscripcion' => $idInscripcion ]);
@@ -624,6 +942,9 @@ function actualizarMultiplesRequisitos($conexion) {
             }
         }
 
+        // Actualizar campos de auditoría
+        actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
+
         echo json_encode([
             'success' => true,
             'message' => 'Requisitos actualizados correctamente',
@@ -632,6 +953,83 @@ function actualizarMultiplesRequisitos($conexion) {
         ]);
     } catch (Exception $e) {
         error_log("Error actualizarMultiplesRequisitos: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno']);
+    }
+}
+
+function cambiarSeccion($conexion) {
+    header('Content-Type: application/json');
+
+    $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
+    $nuevaSeccion = intval($_POST['nuevaSeccion'] ?? 0);
+
+    if ($idInscripcion <= 0 || $nuevaSeccion <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
+        exit();
+    }
+
+    try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
+
+        // Verificar que la inscripción esté en estado "Inscrito"
+        $queryVerificar = "SELECT IdStatus FROM inscripcion WHERE IdInscripcion = :idInscripcion";
+        $stmtVerificar = $conexion->prepare($queryVerificar);
+        $stmtVerificar->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
+        $stmtVerificar->execute();
+        $inscripcion = $stmtVerificar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$inscripcion || $inscripcion['IdStatus'] != 10) { // 10 = Inscrito
+            echo json_encode(['success' => false, 'message' => 'Solo se puede cambiar sección en estado "Inscrito"']);
+            exit();
+        }
+
+        // Actualizar la sección
+        $query = "UPDATE inscripcion SET IdCurso_Seccion = :nuevaSeccion WHERE IdInscripcion = :idInscripcion";
+        $stmt = $conexion->prepare($query);
+        $stmt->bindParam(':nuevaSeccion', $nuevaSeccion, PDO::PARAM_INT);
+        $stmt->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            // Actualizar auditoría
+            actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Sección actualizada correctamente'
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar sección']);
+        }
+    } catch (Exception $e) {
+        error_log("Error al cambiar sección: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+    }
+}
+
+function hayCupo($conexion) {
+    header('Content-Type: application/json');
+    $idCurso = intval($_POST['idCurso'] ?? 0);
+    if ($idCurso <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Curso inválido']); exit();
+    }
+
+    try {
+        $aulas = verificarCapacidadAulas($conexion, $idCurso);
+        $todasAulasLlenas = !empty($aulas); // importante: mismo fix que arriba
+        foreach ($aulas as $a) {
+            if ((int)$a['tiene_cupo'] === 1) { $todasAulasLlenas = false; break; }
+        }
+        echo json_encode([
+            'success' => true,
+            'todasLlenas' => $todasAulasLlenas,
+            'totalSecciones' => count($aulas)
+        ]);
+    } catch (Exception $e) {
+        error_log("Error hayCupo: ".$e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error interno']);
     }
 }

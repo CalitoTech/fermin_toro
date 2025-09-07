@@ -51,6 +51,23 @@ CREATE TABLE requisito (
     FOREIGN KEY (IdNivel) REFERENCES nivel(IdNivel)
 );
 
+INSERT INTO `requisito` (`IdRequisito`, `requisito`, `obligatorio`, `IdNivel`) VALUES
+(1, 'Copia de la cédula de identidad del estudiante', TRUE, 1),
+(2, 'Copia de la partida de nacimiento del estudiante', TRUE, 1),
+(3, 'Copia del carnet de vacunación del estudiante', TRUE, 1),
+(4, 'Copia de la cédula de identidad del representante', TRUE, 1),
+(5, 'Copia del carnet de vacunación del representante', FALSE, 1),
+(6, 'Copia de la cédula de identidad del estudiante', TRUE, 2),
+(7, 'Copia de la partida de nacimiento del estudiante', TRUE, 2),
+(8, 'Copia del carnet de vacunación del estudiante', TRUE, 2),
+(9, 'Copia de la cédula de identidad del representante', TRUE, 2),
+(10, 'Copia del carnet de vacunación del representante', FALSE, 2),
+(11, 'Copia de la cédula de identidad del estudiante', TRUE, 3),
+(12, 'Copia de la partida de nacimiento del estudiante', TRUE, 3),
+(13, 'Copia del historial académico del estudiante', TRUE, 3),
+(14, 'Copia de la cédula de identidad del representante', TRUE, 3),
+(15, 'Copia del carnet de vacunación del representante', FALSE, 3);
+
 CREATE TABLE aula (
     IdAula int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdNivel int NOT NULL,
@@ -242,6 +259,7 @@ CREATE TABLE persona (
     IdPersona int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdNacionalidad int NULL,
     cedula int NULL,
+    cedula_escolar varchar(50) NULL,
     nombre varchar(50) NOT NULL,
     apellido varchar(50) NOT NULL,
     fecha_nacimiento date NULL,
@@ -259,7 +277,7 @@ CREATE TABLE persona (
 );
 
 INSERT INTO `persona` (`IdPersona`, `IdNacionalidad`, `cedula`, `nombre`, `apellido`, `fecha_nacimiento`, `correo`, `usuario`, `password`, `direccion`, `IdSexo`, `IdUrbanismo`, `IdStatus`) VALUES
-(1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', 'Av. Sucre, Calle 3, Casa #152', 1, 1, NULL);
+(1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', 'Av. Sucre, Calle 3, Casa #152', 1, 1, 1);
 
 CREATE TABLE egreso (
     IdEgreso int NOT NULL AUTO_INCREMENT PRIMARY KEY,
