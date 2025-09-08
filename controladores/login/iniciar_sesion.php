@@ -22,35 +22,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $usuario = isset($_POST['usuario']) ? trim($_POST['usuario']) : '';
     $password = $_POST['password'] ?? '';
 
-    // Normalizar la clave de sesión para el usuario (minúsculas, sin espacios al inicio/fin)
+    // Normalizar usuario para clave de sesión
     $usernameKey = mb_strtolower($usuario);
     $usernameKey = $usernameKey === '' ? '_empty_' : $usernameKey;
 
-    // Parámetros de control
     $max_intentos = 3;
-    $bloqueo_minutos = 1; // 1 minuto
-
-    // Verificar si ese usuario está bloqueado
-    if (isset($_SESSION['bloqueos'][$usernameKey]) && $_SESSION['bloqueos'][$usernameKey] > time()) {
-        $tiempo_restante = $_SESSION['bloqueos'][$usernameKey] - time();
-        mostrarAlertaTiempo($tiempo_restante, $max_intentos);
-        exit;
-    } else {
-        // Si el bloqueo expiró, limpiar estado
-        if (isset($_SESSION['bloqueos'][$usernameKey]) && $_SESSION['bloqueos'][$usernameKey] <= time()) {
-            unset($_SESSION['bloqueos'][$usernameKey]);
-            if (isset($_SESSION['intentos'][$usernameKey])) {
-                $_SESSION['intentos'][$usernameKey] = 0;
-            }
-        }
-    }
+    $bloqueo_minutos = 1; // minutos de bloqueo
 
     try {
-        // Buscar el usuario en la base de datos (si existe)
+        // Verificar que el usuario exista y esté activo
+        $queryCheck = "SELECT IdPersona, IdStatus FROM persona WHERE usuario = :usuario";
+        $stmtCheck = $conexion->prepare($queryCheck);
+        $stmtCheck->bindParam(':usuario', $usuario);
+        $stmtCheck->execute();
+        $persona = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+
+        if (!$persona) {
+            // Usuario no existe
+            mostrarAlertaUsuario("El usuario no existe en el sistema.");
+            exit;
+        }
+
+        if ($persona['IdStatus'] != 1) {
+            // Usuario inactivo
+            mostrarAlertaUsuario("El usuario está inactivo, contacte al administrador.");
+            exit;
+        }
+
+        // Validar si este usuario está bloqueado
+        if (isset($_SESSION['bloqueos'][$usernameKey]) && $_SESSION['bloqueos'][$usernameKey] > time()) {
+            $tiempo_restante = $_SESSION['bloqueos'][$usernameKey] - time();
+            mostrarAlertaTiempo($tiempo_restante, $max_intentos);
+            exit;
+        } else {
+            // Si el bloqueo expiró, limpiar estado
+            if (isset($_SESSION['bloqueos'][$usernameKey]) && $_SESSION['bloqueos'][$usernameKey] <= time()) {
+                unset($_SESSION['bloqueos'][$usernameKey]);
+                if (isset($_SESSION['intentos'][$usernameKey])) {
+                    $_SESSION['intentos'][$usernameKey] = 0;
+                }
+            }
+        }
+
+        // Buscar credenciales completas
         $query = "SELECT p.IdPersona, dp.IdPerfil, p.password, p.IdStatus
                  FROM detalle_perfil dp
                  INNER JOIN persona p ON dp.IdPersona = p.IdPersona
-                 WHERE p.usuario = :usuario";
+                 WHERE p.usuario = :usuario AND p.IdStatus = 1";
         $stmt = $conexion->prepare($query);
         $stmt->bindParam(':usuario', $usuario);
         $stmt->execute();
@@ -62,26 +80,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
 
         if ($login_ok) {
-            // Inicio de sesión exitoso: resetear contador para este usuario
+            // Inicio de sesión exitoso: resetear contador
             $_SESSION['usuario'] = $usuario;
             $_SESSION['idPersona'] = $user['IdPersona'];
             $_SESSION['idPerfil'] = $user['IdPerfil'];
             $_SESSION['login_exitoso'] = true;
 
-            if (isset($_SESSION['intentos'][$usernameKey])) {
-                unset($_SESSION['intentos'][$usernameKey]);
-            }
-            if (isset($_SESSION['bloqueos'][$usernameKey])) {
-                unset($_SESSION['bloqueos'][$usernameKey]);
-            }
+            unset($_SESSION['intentos'][$usernameKey]);
+            unset($_SESSION['bloqueos'][$usernameKey]);
 
             header("Location: ../../vistas/inicio/inicio/inicio.php");
             exit;
         } else {
-            // Incrementar intentos específicos para el usuario proporcionado
-            if (!isset($_SESSION['intentos'])) {
-                $_SESSION['intentos'] = [];
-            }
+            // Manejo de intentos fallidos solo para este usuario
             if (!isset($_SESSION['intentos'][$usernameKey])) {
                 $_SESSION['intentos'][$usernameKey] = 0;
             }
@@ -89,7 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $intento = $_SESSION['intentos'][$usernameKey];
 
             if ($intento >= $max_intentos) {
-                // Bloquear solo ese usuario durante $bloqueo_minutos
                 $_SESSION['bloqueos'][$usernameKey] = time() + ($bloqueo_minutos * 60);
                 $tiempo_restante = $_SESSION['bloqueos'][$usernameKey] - time();
                 mostrarAlertaTiempo($tiempo_restante, $max_intentos);
@@ -107,7 +117,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 
 /**
- * Muestra alerta de tiempo restante para bloqueo (por usuario)
+ * Alerta cuando usuario no existe o está inactivo
+ */
+function mostrarAlertaUsuario($mensaje) {
+    $mensaje_js = json_encode($mensaje);
+    echo "<script>
+    Swal.fire({
+        title: 'Acceso Denegado',
+        text: $mensaje_js,
+        icon: 'error',
+        confirmButtonText: 'Aceptar'
+    }).then(() => {
+        window.location = '../../vistas/login/login.php';
+    });
+    </script>";
+}
+
+/**
+ * Alerta de bloqueo
  */
 function mostrarAlertaTiempo($tiempo_restante, $max_intentos = 3) {
     $html = "Has agotado tus $max_intentos intentos. Inténtalo de nuevo en <b></b>.";
@@ -134,14 +161,14 @@ function mostrarAlertaTiempo($tiempo_restante, $max_intentos = 3) {
         willClose: () => {
             clearInterval(timerInterval);
         }
-    }).then((result) => {
+    }).then(() => {
         window.location = '../../vistas/login/login.php';
     });
     </script>";
 }
 
 /**
- * Muestra alerta de error de credenciales (por usuario)
+ * Alerta de error de credenciales
  */
 function mostrarAlertaError($intento = null, $max_intentos = null) {
     if ($intento !== null && $max_intentos !== null) {
@@ -157,7 +184,7 @@ function mostrarAlertaError($intento = null, $max_intentos = null) {
         text: $mensaje_js,
         icon: 'warning',
         confirmButtonText: 'Aceptar'
-    }).then((result) => {
+    }).then(() => {
         window.location = '../../vistas/login/login.php';
     });
     </script>";
