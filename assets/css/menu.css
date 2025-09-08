@@ -104,7 +104,7 @@ html {
 
 /* Contenedor interno: solo tiene scroll cuando el menú está ABIERTO */
 .sidebar-scroll {
-    height: calc(100vh - 120px - 80px); /* Ajusta: logo (~120px) + perfil (~80px) */
+    height: calc(100vh - 120px - 0px); /* Ajusta: logo (~120px) + perfil (~0px) */
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
