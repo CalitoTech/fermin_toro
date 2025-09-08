@@ -36,6 +36,7 @@
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="../../../assets/css/menu.css">
     <link rel="stylesheet" href="../../../assets/css/style.css">
+    <link rel="stylesheet" href="../../../assets/css/ver_inscripcion.css">
     <link rel="stylesheet" href="../../../assets/css/flatpickr.css">
 </head>
 <body>

@@ -63,10 +63,10 @@ if (isset($_SESSION['login_exitoso'])) {
             Ya puedes comenzar a gestionar el sistema educativo.
         </p>
         <div class="btn-group">
-            <a href="solicitud_cupo.php" class="btn btn-lg btn-danger px-4 shadow-sm">
+            <a href="../../inscripciones/inscripcion/inscripcion.php" class="btn btn-lg btn-danger px-4 shadow-sm">
                 <i class="fas fa-edit me-2"></i>Insc. Pendientes
             </a>
-            <a href="estudiantes.php" class="btn btn-lg btn-outline-secondary px-4 shadow-sm">
+            <a href="../../estudiantes/estudiante/estudiante.php" class="btn btn-lg btn-outline-secondary px-4 shadow-sm">
                 <i class="fas fa-users me-2"></i>Estudiantes
             </a>
         </div>

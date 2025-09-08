@@ -138,7 +138,6 @@ try {
                 <ul class="sub-menu">
                     <li><a href="../../inscripciones/inscripcion/inscripcion.php">Inscripciones</a></li>
                     <li><a href="#">Insc. Grupo C.</a></li>
-                    <li><a href="#">Insc. Pendientes</a></li>
                 </ul>
             </li>
             <?php endif; ?>
