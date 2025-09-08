@@ -272,6 +272,11 @@
                     <button type="button" class="btn btn-cerrar-modal" data-dismiss="modal">
                         <i class="fas fa-times mr-1"></i> Cerrar
                     </button>
+                    <a class="btn btn-requisitos" 
+   href="../registros/requisito/reporte_requisitos.php?nivel=<?= $nivel['IdNivel'] ?>" 
+   target="_blank">
+   Ver Requisitos
+</a>
                 </div>
             </div>
         </div>
@@ -313,7 +318,7 @@
                                 <tr>
                                     <td style="text-align: center; font-weight: bold; background-color: #f8f9fa;">2</td>
                                     <td style="color: #444; font-size: 0.95rem; line-height: 1.6;">
-                                        <strong>Descargue y lea los requisitos</strong> para el nivel correspondiente, que deberán ser consignados en la institución el <strong>día en que se le notifique</strong>, de <strong>8:00 AM a 12:00 PM</strong>, en la oficina de Administración. <strong><a href="#">[Descargar requisitos]</a></strong>
+                                        <strong>Descargue y lea los requisitos</strong> para el nivel correspondiente, que deberán ser consignados en la institución el <strong>día en que se le notifique</strong>, de <strong>8:00 AM a 12:00 PM</strong>, en la oficina de Administración. <strong><a href="#" id="linkDescargarRequisitos" target="_blank">[Descargar requisitos]</a></strong>
                                     </td>
                                 </tr>
                                 <tr>

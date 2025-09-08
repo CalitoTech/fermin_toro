@@ -95,10 +95,29 @@ if ($alert) {
                         <div class="card-body">
                             <!-- Botones de acción (intercambiados) -->
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <!-- Imprimir Lista a la izquierda -->
-                                <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
-                                    <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
-                                </button>
+                                <!-- Botón y selector para generar reporte por nivel -->
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <label for="nivelReporte" class="mb-0">Seleccionar Nivel:</label>
+                                        <select id="nivelReporte" class="form-select" style="width: auto;">
+                                            <option value="">Todos los niveles</option>
+                                            <?php
+                                            $query = "SELECT IdNivel, nivel FROM nivel ORDER BY nivel ASC";
+                                            $stmt = $conexion->prepare($query);
+                                            $stmt->execute();
+                                            $niveles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                            foreach ($niveles as $n) {
+                                                echo '<option value="'. $n['IdNivel'] .'">'. htmlspecialchars($n['nivel']) .'</option>';
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+
+                                    <a href="#" id="btnReporteNivel" class="btn btn-danger d-flex align-items-center">
+                                        <i class='bx bxs-file-pdf me-1'></i> Generar Reporte PDF
+                                    </a>
+                                </div>
+
                                 <!-- Nuevo Requisito a la derecha -->
                                 <a href="nuevo_requisito.php" class="btn btn-danger d-flex align-items-center">
                                     <i class='bx bx-plus-medical me-1'></i> Nuevo Requisito
@@ -271,6 +290,20 @@ if ($alert) {
             }
         );
     };
+    document.getElementById('btnReporteNivel').addEventListener('click', function() {
+    const nivelId = document.getElementById('nivelReporte').value;
+    if (!nivelId) {
+        Swal.fire({
+            title: "Nivel no seleccionado",
+            text: "Por favor selecciona un nivel para generar el reporte.",
+            icon: "warning",
+            confirmButtonText: "Aceptar"
+        });
+        return;
+    }
+    // Abrir reporte en nueva ventana
+    window.open('reporte_requisitos.php?nivel=' + nivelId, '_blank');
+});
 </script>
 </body>
 </html>

@@ -45,84 +45,81 @@ function showWarningAlert(message) {
 }
 
 function mostrarRequisitos(idNivel) {
-// Mostrar spinner de carga
-$('#requisitosModalBody').html(`
-    <div class="text-center py-4">
-        <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
-        <p class="mt-2">Cargando requisitos...</p>
-    </div>
-`);
-$('#requisitosModal').modal('show');
+    // Mostrar modal y spinner de carga
+    $('#requisitosModalBody').html(`
+        <div class="text-center py-4">
+            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+            <p class="mt-2">Cargando requisitos...</p>
+        </div>
+    `);
+    $('#requisitosModal').modal('show');
 
-fetch(`../../controladores/RequisitosController.php?idNivel=${idNivel}`)
-    .then(respuesta => {
-        if (!respuesta.ok) {
-            throw new Error('Error al obtener requisitos');
-        }
-        return respuesta.json();
-    })
-    .then(requisitos => {
-        if (requisitos.error) {
-            throw new Error(requisitos.error);
-        }
+    // Cargar requisitos desde el controlador
+    fetch(`../../controladores/RequisitosController.php?idNivel=${idNivel}`)
+        .then(respuesta => {
+            if (!respuesta.ok) throw new Error('Error al obtener requisitos');
+            return respuesta.json();
+        })
+        .then(requisitos => {
+            if (requisitos.error) throw new Error(requisitos.error);
 
-        if (requisitos.length === 0) {
+            if (requisitos.length === 0) {
+                $('#requisitosModalBody').html(`
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        No hay requisitos definidos para este nivel.
+                    </div>
+                `);
+                return;
+            }
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="tabla-requisitos table table-bordered">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-list-ol mr-1"></i> Requisito</th>
+                                <th class="text-center"><i class="fas fa-check-circle mr-1"></i> Obligatorio</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+
+            requisitos.forEach(r => {
+                const esObligatorio = r.obligatorio === 'Sí';
+                html += `
+                    <tr>
+                        <td>
+                            <i class="fas ${esObligatorio ? 'fa-exclamation-circle text-danger' : 'fa-info-circle text-info'} mr-2"></i>
+                            ${r.requisito}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-requisito ${esObligatorio ? 'badge-obligatorio' : 'badge-opcional'}">
+                                ${r.obligatorio}
+                            </span>
+                        </td>
+                    </tr>`;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3 text-muted small">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Todos los documentos deben ser presentados en original y copia.
+                </div>`;
+
+            $('#requisitosModalBody').html(html);
+        })
+        .catch(error => {
+            console.error('Error al cargar requisitos:', error);
             $('#requisitosModalBody').html(`
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    No hay requisitos definidos para este nivel.
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    ${error.message || 'Error al cargar los requisitos. Por favor intente nuevamente.'}
                 </div>
             `);
-            return;
-        }
-
-        let html = `
-            <div class="table-responsive">
-                <table class="tabla-requisitos">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-list-ol mr-1"></i> Requisito</th>
-                            <th class="text-center"><i class="fas fa-check-circle mr-1"></i> Obligatorio</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-        requisitos.forEach(requisito => {
-            const esObligatorio = requisito.obligatorio === 'Sí';
-            html += `
-                <tr>
-                    <td>
-                        <i class="fas ${esObligatorio ? 'fa-exclamation-circle text-danger' : 'fa-info-circle text-info'} mr-2"></i>
-                        ${requisito.requisito}
-                    </td>
-                    <td class="text-center">
-                        <span class="badge-requisito ${esObligatorio ? 'badge-obligatorio' : 'badge-opcional'}">
-                            ${requisito.obligatorio}
-                        </span>
-                    </td>
-                </tr>`;
         });
-
-        html += `
-                    </tbody>
-                </table>
-            </div>
-            <div class="mt-3 text-muted small">
-                <i class="fas fa-info-circle mr-1"></i>
-                Todos los documentos deben ser presentados en original y copia.
-            </div>`;
-
-        $('#requisitosModalBody').html(html);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        $('#requisitosModalBody').html(`
-            <div class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle mr-2"></i>
-                ${error.message || 'Error al cargar los requisitos. Por favor intente nuevamente.'}
-            </div>
-        `);
-    });
 }
 
 $(document).ready(function () {
