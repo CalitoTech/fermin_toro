@@ -273,10 +273,10 @@
                         <i class="fas fa-times mr-1"></i> Cerrar
                     </button>
                     <a class="btn btn-requisitos" 
-   href="../registros/requisito/reporte_requisitos.php?nivel=<?= $nivel['IdNivel'] ?>" 
-   target="_blank">
-   Ver Requisitos
-</a>
+                        href="../registros/requisito/reporte_requisitos.php?nivel=<?= $nivel['IdNivel'] ?>" 
+                        target="_blank">
+                        Ver Requisitos
+                    </a>
                 </div>
             </div>
         </div>

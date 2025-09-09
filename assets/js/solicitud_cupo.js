@@ -648,3 +648,24 @@ $('#btnContinuarFormulario').on('click', function() {
 function abrirModalImprimir() {
     $('#imprimirPlanillaModal').modal('show');
 }
+
+$(document).ready(function() {
+    $('#btnImprimirPlanilla').on('click', function() {
+        const anioEscolar = $('#anioEscolar').val();
+        const nacionalidad = $('#nacionalidad').val();
+        const cedula = $('#documentoEstudiante').val().trim();
+
+        if (!anioEscolar) {
+            showWarningAlert('Debe seleccionar el Año Escolar.');
+            return;
+        }
+        if (!nacionalidad || !cedula) {
+            showWarningAlert('Debe ingresar la cédula del estudiante.');
+            return;
+        }
+
+        // Abrir el PDF filtrando por cédula y año escolar
+        const url = `../inscripciones/inscripcion/reporte_inscripcion.php?anio_escolar=${anioEscolar}&nacionalidad=${nacionalidad}&cedula=${cedula}`;
+        window.open(url, '_blank');
+    });
+});

@@ -263,6 +263,7 @@ CREATE TABLE persona (
     nombre varchar(50) NOT NULL,
     apellido varchar(50) NOT NULL,
     fecha_nacimiento date NULL,
+    lugar_nacimiento varchar(50) NULL,
     correo varchar(50) NULL,
     usuario varchar(50) NULL,
     password varchar(1000) NULL,
