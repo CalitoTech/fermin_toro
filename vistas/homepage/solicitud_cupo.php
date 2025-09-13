@@ -275,7 +275,7 @@
                     <a class="btn btn-requisitos" 
                         href="../registros/requisito/reporte_requisitos.php?nivel=<?= $nivel['IdNivel'] ?>" 
                         target="_blank">
-                        Ver Requisitos
+                        Imprimir Requisitos
                     </a>
                 </div>
             </div>
