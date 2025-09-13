@@ -8,10 +8,17 @@ $(function () {
 
 	/* Preloader
 	-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
+    
+    // Ocultar el preloader cuando la página esté completamente cargada
+    $(window).on('load', function() {
+        $('.loader_bg').fadeOut();
+    });
+    
+    // También ocultar después de un tiempo máximo por si hay problemas (5 segundos)
+    setTimeout(function() {
+        $('.loader_bg').fadeOut();
+    }, 5000);
 
-	setTimeout(function () {
-		$('.loader_bg').fadeToggle();
-	}, 1500);
 
 
 	/* Mouseover
