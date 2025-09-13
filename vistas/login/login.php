@@ -29,7 +29,7 @@
     <img class="wave" src="img/wave2.png">
     <div class="container">
         <div class="back-arrow">
-            <a href="../homepage/index.html" class="btn-back">
+            <a href="../homepage/index.php" class="btn-back">
                 <i title="Volver al Inicio" class='bx bx-undo'></i>
             </a>
         </div>
