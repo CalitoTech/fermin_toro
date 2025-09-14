@@ -10,7 +10,11 @@
          </ol>
          <div class="carousel-inner">
             <div class="carousel-item active">
-               <img class="first-slide" src="images/banner2.jpg" alt="First slide" style="max-height: 85vh;">
+               <!-- Usamos la etiqueta picture para cambiar imágenes según el tamaño -->
+               <picture>
+                  <source media="(max-width: 768px)" srcset="images/fondo_movil.png">
+                  <img class="first-slide" src="images/fondolisto.jpg" alt="First slide" style="max-height: 85vh; width: 100%;">
+               </picture>
                <div class="container">
                   <div class="carousel-caption relative">
                     

@@ -180,6 +180,21 @@
             background-color: rgba(255, 255, 255, 0.1); /* Fondo claro al pasar el mouse */
          }
       }
+      .custom-slide-image {
+          width: 100%;
+          max-height: 85vh;
+          background-size: cover;
+          background-position: center;
+          /* Imagen por defecto (escritorio) */
+          background-image: url('images/fondolisto.jpg');
+        }
+        
+        /* Para dispositivos móviles */
+        @media (max-width: 768px) {
+          .custom-slide-image {
+            background-image: url('images/fondo_movil.png');
+          }
+        }
       </style>
    </head>
    <!-- body -->
