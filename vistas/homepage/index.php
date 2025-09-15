@@ -12,7 +12,7 @@
             <div class="carousel-item active">
                <!-- Usamos la etiqueta picture para cambiar imágenes según el tamaño -->
                <picture>
-                  <source media="(max-width: 768px)" srcset="images/bannermovil222.jpg">
+                  <source media="(max-width: 768px)" srcset="images/bannermovil.jpg">
                   <img class="first-slide" src="images/fondolisto.jpg" alt="First slide" style="max-height: 85vh; width: 100%;">
                </picture>
                <div class="container">
