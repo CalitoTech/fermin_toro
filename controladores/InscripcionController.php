@@ -707,7 +707,7 @@ function cambiarStatus($conexion) {
         }
 
         // Obtener datos actuales de la inscripción
-        $queryInscripcion = "SELECT i.*, e.IdUrbanismo, cs.IdCurso, i.IdEstudiante
+        $queryInscripcion = "SELECT i.*, e.IdUrbanismo, cs.IdCurso, i.IdEstudiante, i.IdStatus as status_actual
                            FROM inscripcion i
                            INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
                            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
@@ -721,6 +721,8 @@ function cambiarStatus($conexion) {
             echo json_encode(['success' => false, 'message' => 'Inscripción no encontrada']);
             exit();
         }
+
+        $estadoAnterior = $inscripcionData['status_actual'];
 
         // =========================================
         // BLOQUE EXTRA → activar estudiante/representantes
@@ -783,7 +785,7 @@ function cambiarStatus($conexion) {
             }
 
             if ($todasAulasLlenas) {
-                $alertaCapacidad = 'Todas las aulas han alcanzado su capacidad máxima. Se recomienda considerar un cambio de aula o remodelación del espacio antes de continuar con las inscripciones.';
+                $alertaCapacidad = 'Todas las aulas han alcanzado su capacidad máxima. Se recomienda considerar un cambio de aula o remodelación del espacio antes de continuar las inscripciones.';
             }
         }
 
@@ -833,15 +835,39 @@ function cambiarStatus($conexion) {
             // Auditoría
             actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
 
+            // =========================================
+            // ✅ NUEVO: Enviar mensajes de WhatsApp
+            // =========================================
+            $mensajesEnviados = false;
+            try {
+                require_once __DIR__ . '/WhatsAppController.php';
+                $whatsappController = new WhatsAppController($conexion);
+                $resultadoWhatsApp = $whatsappController->enviarMensajesCambioEstado(
+                    $idInscripcion, 
+                    $nuevoStatus, 
+                    $estadoAnterior
+                );
+                
+                if ($resultadoWhatsApp) {
+                    $mensajesEnviados = true;
+                    error_log("Mensajes de WhatsApp enviados exitosamente para inscripción ID: $idInscripcion");
+                }
+            } catch (Exception $e) {
+                error_log("Error enviando WhatsApp (no crítico): " . $e->getMessage());
+                // No fallar la operación principal por error en WhatsApp
+            }
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Estado actualizado correctamente',
+                'message' => 'Estado actualizado correctamente' . ($mensajesEnviados ? ' y notificaciones enviadas' : ''),
                 'nuevoStatus' => $nuevoStatus,
                 'cambioAutomatico' => $cambioRealizado,
                 'seccionAnterior' => $seccionAnterior,
                 'seccionNueva' => $seccionNueva,
-                'alertaCapacidad' => $alertaCapacidad
+                'alertaCapacidad' => $alertaCapacidad,
+                'whatsappEnviado' => $mensajesEnviados
             ]);
+
         } else {
             echo json_encode(['success' => false, 'message' => 'Error al actualizar']);
         }
