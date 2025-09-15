@@ -247,19 +247,19 @@ class WhatsAppController {
      */
     private function enviarMensajeWhatsApp($telefono, $mensaje, $nombreDestinatario) {
         // ✅ Hardcodeado para pruebas
-        $telefonoLimpio = '584263519830';
+        // $telefonoLimpio = '584263519830';
 
         // ✅ Nuevo (usa la función formateadora)
-        // $telefonoFormateado = $this->formatearTelefono($telefono);
-        // if (!$telefonoFormateado) {
-        //     error_log("❌ Teléfono inválido: $telefono para $nombreDestinatario");
-        //     return false;
-        // }
+        $telefonoFormateado = $this->formatearTelefono($telefono);
+        if (!$telefonoFormateado) {
+            error_log("❌ Teléfono inválido: $telefono para $nombreDestinatario");
+            return false;
+        }
         
         $endpoint = $this->evolutionApiUrl . '/message/sendText/' . $this->nombreInstancia;
 
         $payload = [
-            'number' => $telefonoLimpio,
+            'number' => $telefonoFormateado,
             'text' => $mensaje,
             'options' => [
                 'delay' => 1200,
@@ -297,14 +297,41 @@ class WhatsAppController {
      * Formatea el número de teléfono para WhatsApp
      */
     private function formatearTelefono($telefono) {
-        $telefonoLimpio = preg_replace('/[^0-9]/', '', $telefono);
+        // Eliminar todo excepto números y el signo +
+        $telefonoLimpio = preg_replace('/[^0-9+]/', '', $telefono);
         
-        if (strlen($telefonoLimpio) === 10) {
-            return '58' . substr($telefonoLimpio, 1);
-        } elseif (strlen($telefonoLimpio) === 11 && substr($telefonoLimpio, 0, 2) === '58') {
+        // Si empieza con +, es formato internacional
+        if (strpos($telefonoLimpio, '+') === 0) {
+            // Eliminar el + y mantener solo números
+            $telefonoLimpio = substr($telefonoLimpio, 1);
+            return $telefonoLimpio; // Ya está en formato internacional correcto
+        }
+        
+        // Si no tiene +, asumimos que es número venezolano
+        $longitud = strlen($telefonoLimpio);
+        
+        // Formato 10 dígitos (0412-3456789)
+        if ($longitud === 10 && substr($telefonoLimpio, 0, 1) === '0') {
+            return '58' . substr($telefonoLimpio, 1); // 04123456789 → 584123456789
+        }
+        // Formato 11 dígitos que empieza con 0 (04263519830)
+        elseif ($longitud === 11 && substr($telefonoLimpio, 0, 1) === '0') {
+            return '58' . substr($telefonoLimpio, 1); // 04263519830 → 584263519830
+        }
+        // Formato 9 dígitos (4123456789) - sin el 0 inicial
+        elseif ($longitud === 9) {
+            return '58' . $telefonoLimpio; // 4123456789 → 584123456789
+        }
+        // Ya está en formato internacional (584123456789)
+        elseif ($longitud === 11 && substr($telefonoLimpio, 0, 2) === '58') {
+            return $telefonoLimpio;
+        }
+        // Formato internacional de 12 dígitos (584123456789)
+        elseif ($longitud === 12 && substr($telefonoLimpio, 0, 2) === '58') {
             return $telefonoLimpio;
         }
         
+        error_log("Formato de teléfono no reconocido: $telefono (limpio: $telefonoLimpio)");
         return false;
     }
 }
