@@ -10,6 +10,7 @@ class Persona {
     public $nombre;
     public $apellido;
     public $fecha_nacimiento;
+    public $lugar_nacimiento;
     public $correo;
     public $usuario;
     public $password;
@@ -39,11 +40,11 @@ class Persona {
 
         // Construir consulta con todos los campos, permitiendo NULL
         $query = "INSERT INTO persona (
-            IdNacionalidad, cedula, nombre, apellido, fecha_nacimiento,
+            IdNacionalidad, cedula, nombre, apellido, fecha_nacimiento, lugar_nacimiento,
             correo, direccion,
             IdSexo, IdUrbanismo, IdStatus
         ) VALUES (
-            :IdNacionalidad, :cedula, :nombre, :apellido, :fecha_nacimiento,
+            :IdNacionalidad, :cedula, :nombre, :apellido, :fecha_nacimiento, :lugar_nacimiento,
             :correo, :direccion,
             :IdSexo, :IdUrbanismo, :IdStatus
         )";
@@ -56,6 +57,7 @@ class Persona {
         $this->nombre = $this->cleanValue($this->nombre);
         $this->apellido = $this->cleanValue($this->apellido);
         $this->fecha_nacimiento = $this->cleanValue($this->fecha_nacimiento);
+        $this->lugar_nacimiento = $this->cleanValue($this->lugar_nacimiento);
         $this->correo = $this->cleanValue($this->correo);
         $this->direccion = $this->cleanValue($this->direccion);
         $this->IdSexo = $this->cleanValue($this->IdSexo);
@@ -68,6 +70,7 @@ class Persona {
         $stmt->bindParam(":nombre", $this->nombre, is_null($this->nombre) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":apellido", $this->apellido, is_null($this->apellido) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":fecha_nacimiento", $this->fecha_nacimiento, is_null($this->fecha_nacimiento) ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(":lugar_nacimiento", $this->lugar_nacimiento, is_null($this->lugar_nacimiento) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":correo", $this->correo, is_null($this->correo) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":direccion", $this->direccion, is_null($this->direccion) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":IdSexo", $this->IdSexo, is_null($this->IdSexo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
@@ -96,6 +99,7 @@ class Persona {
             $this->nombre = $row['nombre'];
             $this->apellido = $row['apellido'];
             $this->fecha_nacimiento = $row['fecha_nacimiento'];
+            $this->lugar_nacimiento = $row['lugar_nacimiento'];
             $this->correo = $row['correo'];
             $this->usuario = $row['usuario'];
             $this->password = $row['password'];
@@ -117,6 +121,7 @@ class Persona {
                     nombre = :nombre,
                     apellido = :apellido,
                     fecha_nacimiento = :fecha_nacimiento,
+                    lugar_nacimiento = :lugar_nacimiento,
                     correo = :correo,
                     usuario = :usuario,
                     direccion = :direccion,
@@ -133,6 +138,7 @@ class Persona {
         $this->nombre = $this->cleanValue($this->nombre);
         $this->apellido = $this->cleanValue($this->apellido);
         $this->fecha_nacimiento = $this->cleanValue($this->fecha_nacimiento);
+        $this->lugar_nacimiento = $this->cleanValue($this->lugar_nacimiento);
         $this->correo = $this->cleanValue($this->correo);
         $this->usuario = $this->cleanValue($this->usuario);
         $this->direccion = $this->cleanValue($this->direccion);
@@ -146,6 +152,7 @@ class Persona {
         $stmt->bindParam(":nombre", $this->nombre, is_null($this->nombre) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":apellido", $this->apellido, is_null($this->apellido) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":fecha_nacimiento", $this->fecha_nacimiento, is_null($this->fecha_nacimiento) ? PDO::PARAM_NULL : PDO::PARAM_STR);
+        $stmt->bindParam(":lugar_nacimiento", $this->lugar_nacimiento, is_null($this->lugar_nacimiento) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":correo", $this->correo, is_null($this->correo) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":usuario", $this->usuario, is_null($this->usuario) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":direccion", $this->direccion, is_null($this->direccion) ? PDO::PARAM_NULL : PDO::PARAM_STR);

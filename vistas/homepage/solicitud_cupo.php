@@ -23,7 +23,6 @@
 
                 $modeloNivel = new Nivel($conexionPDO);
                 $modeloCurso = new Curso($conexionPDO);
-                $modeloFechaEscolar = new FechaEscolar($conexionPDO);
                 $modeloParentesco = new Parentesco($conexionPDO);
                 $modeloUrbanismo = new Urbanismo($conexionPDO);
                 $modeloNacionalidad = new Nacionalidad($conexionPDO);
@@ -33,18 +32,16 @@
                 // Obtener año escolar activo
                 $añoActivo = $modeloFechaEscolar->obtenerActivo();
 
-                $inscripcionesAbiertas = false;
-
-                if ($añoActivo && $añoActivo['inscripcion_activa']) {
-                    $inscripcionesAbiertas = true;
-                }
-                
+                $inscripcionesAbiertas = $añoActivo && $añoActivo['inscripcion_activa'];
             
                 ?>
                 <?php if ($inscripcionesAbiertas): ?>
                 <?php
                 // Variable para preseleccionar el año
                 $yearSelected = '';
+                
+                // Obtener todos los años escolares
+                $añosEscolares = $modeloFechaEscolar->obtenerTodos();
 
                 // Si hay un año activo, usarlo como predeterminado
                 if ($añoActivo) {
@@ -55,9 +52,6 @@
                         $yearSelected = $añosEscolares[0]['IdFecha_Escolar'];
                     }
                 }
-
-                // Obtener todos los años escolares
-                $añosEscolares = $modeloFechaEscolar->obtenerTodos();
 
                 // Obtener todos los sexos
                 $sexos = $modeloSexo->obtenerTodos();

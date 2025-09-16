@@ -273,10 +273,11 @@ function enviarFormulario() {
         const tipo = $(this).find('.tipo-discapacidad').val();
         const descripcion = $(this).find('.descripcion-discapacidad').val();
         
-        if (tipo && !descripcion) {
+        if ((tipo && !descripcion) || (!tipo && descripcion)) {
             $(this).find('.descripcion-discapacidad').addClass('is-invalid');
             discapacidadesValidas = false;
         }
+
     });
 
     if (!discapacidadesValidas) {

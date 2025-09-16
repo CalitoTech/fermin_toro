@@ -345,15 +345,16 @@ function procesarInscripcion($conexion) {
             try {
                 // Crear persona (estudiante)
                 $personaEstudiante = new Persona($conexion);
-                $personaEstudiante->IdStatus = 2; // Establecer IdStatus = 2 para el estudiante
-                $personaEstudiante->IdNacionalidad = (int)$_POST['estudianteNacionalidad'];
-                $personaEstudiante->cedula = $_POST['estudianteCedula'];
-                $personaEstudiante->nombre = $_POST['estudianteNombres'];
-                $personaEstudiante->apellido = $_POST['estudianteApellidos'];
-                $personaEstudiante->fecha_nacimiento = $_POST['estudianteFechaNacimiento'];
+                $personaEstudiante->cedula = $_POST['estudianteCedula'] ?? null;
+                $personaEstudiante->nombre = $_POST['estudianteNombres'] ?? '';
+                $personaEstudiante->apellido = $_POST['estudianteApellidos'] ?? '';
                 $personaEstudiante->correo = $_POST['estudianteCorreo'] ?? '';
-                $personaEstudiante->direccion = $_POST['representanteDireccion'] ?? ''; // Usar dirección del representante
-                $personaEstudiante->IdSexo = $_POST['estudianteSexo'] === 'Masculino' ? 1 : 2;
+                $personaEstudiante->fecha_nacimiento = $_POST['estudianteFechaNacimiento'] ?? null;
+                $personaEstudiante->IdNacionalidad = isset($_POST['estudianteNacionalidad']) ? (int)$_POST['estudianteNacionalidad'] : null;
+                $personaEstudiante->lugar_nacimiento = $_POST['estudianteLugarNacimiento'] ?? null; // ✅ Nuevo
+                $personaEstudiante->IdSexo = isset($_POST['estudianteSexo']) ? (int)$_POST['estudianteSexo'] : null; // ✅ Corregido
+
+                // Urbanismo y dirección según representante
                 $urbanismoEstudiante = match($_POST['tipoRepresentante']) {
                     'padre' => $_POST['padreUrbanismo'] ?? null,
                     'madre' => $_POST['madreUrbanismo'] ?? null,
@@ -361,21 +362,32 @@ function procesarInscripcion($conexion) {
                     default => null
                 };
 
-                if (!$urbanismoEstudiante) {
-                    throw new Exception("Debe seleccionar un urbanismo válido");
-                }
-                $personaEstudiante->IdUrbanismo = $urbanismoEstudiante;
-                $idEstudiante = $personaEstudiante->guardar();
-                if (!$idEstudiante) {
-                    throw new Exception("Error al guardar al estudiante");
-                }
+                $direccionEstudiante = match($_POST['tipoRepresentante']) {
+                    'padre' => $_POST['padreDireccion'] ?? null,
+                    'madre' => $_POST['madreDireccion'] ?? null,
+                    'otro' => $_POST['representanteDireccion'] ?? null,
+                    default => null
+                };
 
-                // --- Asignar perfil de estudiante (IdPerfil = 3) ---
+                $personaEstudiante->IdUrbanismo = $urbanismoEstudiante;
+                $personaEstudiante->direccion = $direccionEstudiante;
+
+                $idEstudiante = $personaEstudiante->guardar();
+                $personaEstudiante->IdPersona = $idEstudiante;
+
+                // Insertar perfil de estudiante
                 $detallePerfilEstudiante = new DetallePerfil($conexion);
-                $detallePerfilEstudiante->IdPerfil = 3; // Estudiante
                 $detallePerfilEstudiante->IdPersona = $idEstudiante;
-                if (!$detallePerfilEstudiante->guardar()) {
-                    throw new Exception("Error al asignar perfil de estudiante");
+                $detallePerfilEstudiante->IdPerfil = 3;
+                $detallePerfilEstudiante->guardar();
+
+                // ======== TELEFONO DEL ESTUDIANTE (CELULAR) =========
+                if (!empty($_POST['estudianteTelefono'])) {
+                    $telefonoEstudiante = new Telefono($conexion);
+                    $telefonoEstudiante->IdPersona = $idEstudiante;
+                    $telefonoEstudiante->IdTipo_Telefono = 2; // Celular
+                    $telefonoEstudiante->numero_telefono = $_POST['estudianteTelefono'];
+                    $telefonoEstudiante->guardar();
                 }
                 
                 // Guardar discapacidades si existen
