@@ -721,16 +721,16 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <?= htmlspecialchars($inscripcion['estudiante_urbanismo']) ?>
                                     </div>
                                     <?php if (!empty($inscripcion['estudiante_telefono'])): ?>
-                                    <div class="mb-3">
-                                        <strong class="d-block mb-2">Teléfono:</strong>
-                                        <div class="telefono-item d-flex align-items-center">
-                                            <i class="fas fa-mobile-alt me-2 text-primary"></i>
-                                            <span class="telefono-numero"><?= htmlspecialchars($inscripcion['estudiante_telefono']) ?></span>
-                                            <?php if (!empty($inscripcion['estudiante_tipo_telefono'])): ?>
-                                            <span class="badge bg-primary ms-2"><?= htmlspecialchars($inscripcion['estudiante_tipo_telefono']) ?></span>
-                                            <?php endif; ?>
+                                        <div class="mb-3">
+                                            <strong class="d-block mb-2">Teléfono:</strong>
+                                            <div class="telefono-item d-flex align-items-center">
+                                                <i class="fas fa-phone me-2 text-success"></i>
+                                                <span class="telefono-numero"><?= htmlspecialchars($inscripcion['estudiante_telefono']) ?></span>
+                                                <?php if (!empty($inscripcion['estudiante_tipo_telefono'])): ?>
+                                                <span class="badge bg-success ms-2"><?= htmlspecialchars($inscripcion['estudiante_tipo_telefono']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                    </div>
                                     <?php endif; ?>
                                     <div class="mb-2">
                                         <strong>Último plantel:</strong> 
