@@ -404,34 +404,36 @@ function procesarInscripcion($conexion) {
                         $discapacidad->guardar();
                     }
                 }
-                
-                // Guardar información del padre (si se proporcionó)
+                // ========================================================
+                // ======== PADRE =========================================
+                // ========================================================
                 if (!empty($_POST['padreNombres']) || !empty($_POST['padreApellidos'])) {
                     $personaPadre = new Persona($conexion);
-                    $personaPadre->IdStatus = 2; // Establecer IdStatus = 2 para el padre
-                    $personaPadre->IdNacionalidad = (int)$_POST['padreNacionalidad'];
-                    $personaPadre->cedula = $_POST['padreCedula'] ?? '';
-                    $personaPadre->nombre = $_POST['padreNombres'] ?? '';
-                    $personaPadre->apellido = $_POST['padreApellidos'] ?? '';
-                    $personaPadre->correo = $_POST['padreCorreo'] ?? '';
-                    $personaPadre->direccion = $_POST['padreDireccion'] ?? '';
-                    $personaPadre->IdSexo = 1; // Masculino
-                    $personaPadre->IdUrbanismo = $_POST['padreUrbanismo'];
-                    $idPadre = $personaPadre->guardar();
-                    if (!$idPadre) {
-                        throw new Exception("Error al guardar al padre");
+                    $personaPadreExistente = $personaPadre->obtenerPorCedula($_POST['padreNacionalidad'], $_POST['padreCedula']);
+
+                    if ($personaPadreExistente) {
+                        $idPadre = $personaPadreExistente['IdPersona'];
+                    } else {
+                        $personaPadre->IdStatus = 2;
+                        $personaPadre->IdNacionalidad = (int)$_POST['padreNacionalidad'];
+                        $personaPadre->cedula = $_POST['padreCedula'];
+                        $personaPadre->nombre = $_POST['padreNombres'];
+                        $personaPadre->apellido = $_POST['padreApellidos'];
+                        $personaPadre->correo = $_POST['padreCorreo'] ?? '';
+                        $personaPadre->direccion = $_POST['padreDireccion'] ?? '';
+                        $personaPadre->IdSexo = 1; // Masculino
+                        $personaPadre->IdUrbanismo = $_POST['padreUrbanismo'];
+                        $idPadre = $personaPadre->guardar();
                     }
 
                     // Teléfonos del padre
-                    if (!Telefono::guardarTelefonosPersona($conexion, $idPadre, [
+                    Telefono::guardarTelefonosPersona($conexion, $idPadre, [
                         'TelefonoHabitacion' => $_POST['padreTelefonoHabitacion'] ?? '',
                         'Celular' => $_POST['padreCelular'] ?? '',
                         'TelefonoTrabajo' => $_POST['padreTelefonoTrabajo'] ?? ''
-                    ])) {
-                        throw new Exception("Error al guardar teléfonos del padre");
-                    }
+                    ]);
 
-                    // Crear relación padre-estudiante
+                    // Relación padre-estudiante
                     $representantePadre = new Representante($conexion);
                     $representantePadre->IdPersona = $idPadre;
                     $representantePadre->IdParentesco = 1; // Padre
@@ -439,46 +441,46 @@ function procesarInscripcion($conexion) {
                     $representantePadre->ocupacion = trim($_POST['padreOcupacion'] ?? '');
                     $representantePadre->lugar_trabajo = trim($_POST['padreLugarTrabajo'] ?? '');
                     $idRepresentantePadre = $representantePadre->guardar();
-                    if (!$idRepresentantePadre) {
-                        throw new Exception("Error al crear relación padre-estudiante");
-                    }
 
-                    // Asignar perfil de representante (IdPerfil = 4)
-                    $detallePerfil = new DetallePerfil($conexion);
-                    $detallePerfil->IdPerfil = 4;
-                    $detallePerfil->IdPersona = $idPadre;
-                    if (!$detallePerfil->guardar()) {
-                        throw new Exception("Error al asignar perfil de representante (padre)");
+                    // Perfil de representante (IdPerfil = 4)
+                    if (!DetallePerfil::tienePerfil($conexion, $idPadre, 4)) {
+                        $detallePerfil = new DetallePerfil($conexion);
+                        $detallePerfil->IdPerfil = 4;
+                        $detallePerfil->IdPersona = $idPadre;
+                        $detallePerfil->guardar();
                     }
                 }
 
-                // Guardar información de la madre (si se proporcionó)
+                // ========================================================
+                // ======== MADRE =========================================
+                // ========================================================
                 if (!empty($_POST['madreNombres']) || !empty($_POST['madreApellidos'])) {
                     $personaMadre = new Persona($conexion);
-                    $personaMadre->IdStatus = 2; // Establecer IdStatus = 2 para la madre
-                    $personaMadre->IdNacionalidad = (int)$_POST['madreNacionalidad'];
-                    $personaMadre->cedula = $_POST['madreCedula'] ?? '';
-                    $personaMadre->nombre = $_POST['madreNombres'] ?? '';
-                    $personaMadre->apellido = $_POST['madreApellidos'] ?? '';
-                    $personaMadre->correo = $_POST['madreCorreo'] ?? '';
-                    $personaMadre->direccion = $_POST['madreDireccion'] ?? '';
-                    $personaMadre->IdSexo = 2; // Femenino
-                    $personaMadre->IdUrbanismo = $_POST['madreUrbanismo'];
-                    $idMadre = $personaMadre->guardar();
-                    if (!$idMadre) {
-                        throw new Exception("Error al guardar a la madre");
+                    $personaMadreExistente = $personaMadre->obtenerPorCedula($_POST['madreNacionalidad'], $_POST['madreCedula']);
+
+                    if ($personaMadreExistente) {
+                        $idMadre = $personaMadreExistente['IdPersona'];
+                    } else {
+                        $personaMadre->IdStatus = 2;
+                        $personaMadre->IdNacionalidad = (int)$_POST['madreNacionalidad'];
+                        $personaMadre->cedula = $_POST['madreCedula'];
+                        $personaMadre->nombre = $_POST['madreNombres'];
+                        $personaMadre->apellido = $_POST['madreApellidos'];
+                        $personaMadre->correo = $_POST['madreCorreo'] ?? '';
+                        $personaMadre->direccion = $_POST['madreDireccion'] ?? '';
+                        $personaMadre->IdSexo = 2; // Femenino
+                        $personaMadre->IdUrbanismo = $_POST['madreUrbanismo'];
+                        $idMadre = $personaMadre->guardar();
                     }
 
                     // Teléfonos de la madre
-                    if (!Telefono::guardarTelefonosPersona($conexion, $idMadre, [
+                    Telefono::guardarTelefonosPersona($conexion, $idMadre, [
                         'TelefonoHabitacion' => $_POST['madreTelefonoHabitacion'] ?? '',
                         'Celular' => $_POST['madreCelular'] ?? '',
                         'TelefonoTrabajo' => $_POST['madreTelefonoTrabajo'] ?? ''
-                    ])) {
-                        throw new Exception("Error al guardar teléfonos de la madre");
-                    }
+                    ]);
 
-                    // Crear relación madre-estudiante
+                    // Relación madre-estudiante
                     $representanteMadre = new Representante($conexion);
                     $representanteMadre->IdPersona = $idMadre;
                     $representanteMadre->IdParentesco = 2; // Madre
@@ -486,16 +488,13 @@ function procesarInscripcion($conexion) {
                     $representanteMadre->ocupacion = trim($_POST['madreOcupacion'] ?? '');
                     $representanteMadre->lugar_trabajo = trim($_POST['madreLugarTrabajo'] ?? '');
                     $idRepresentanteMadre = $representanteMadre->guardar();
-                    if (!$idRepresentanteMadre) {
-                        throw new Exception("Error al crear relación madre-estudiante");
-                    }
 
-                    // Asignar perfil de representante (IdPerfil = 4)
-                    $detallePerfil = new DetallePerfil($conexion);
-                    $detallePerfil->IdPerfil = 4;
-                    $detallePerfil->IdPersona = $idMadre;
-                    if (!$detallePerfil->guardar()) {
-                        throw new Exception("Error al asignar perfil de representante (madre)");
+                    // Perfil de representante (IdPerfil = 4)
+                    if (!DetallePerfil::tienePerfil($conexion, $idMadre, 4)) {
+                        $detallePerfil = new DetallePerfil($conexion);
+                        $detallePerfil->IdPerfil = 4;
+                        $detallePerfil->IdPersona = $idMadre;
+                        $detallePerfil->guardar();
                     }
                 }
                 
@@ -537,32 +536,32 @@ function procesarInscripcion($conexion) {
                         }
                     }
 
-                    $personaRepresentante = new Persona($conexion);
-                    $personaRepresentante->IdStatus = 2; // Establecer IdStatus = 2 para el representante
-                    $personaRepresentante->IdNacionalidad = (int)$_POST['representanteNacionalidad'];
-                    $personaRepresentante->cedula = $_POST['representanteCedula'];
-                    $personaRepresentante->nombre = $_POST['representanteNombres'];
-                    $personaRepresentante->apellido = $_POST['representanteApellidos'];
-                    $personaRepresentante->correo = $_POST['representanteCorreo'] ?? '';
-                    $personaRepresentante->direccion = $_POST['representanteDireccion'] ?? '';
-                    $personaRepresentante->IdSexo = NULL;
-                    $personaRepresentante->IdUrbanismo = $_POST['representanteUrbanismo'];
-                    $idRepresentante = $personaRepresentante->guardar();
+                    $personaRep = new Persona($conexion);
+                    $personaRepExistente = $personaRep->obtenerPorCedula($_POST['representanteNacionalidad'], $_POST['representanteCedula']);
 
-                    if (!$idRepresentante) {
-                        throw new Exception("Error al guardar al representante legal");
+                    if ($personaRepExistente) {
+                        $idRepresentante = $personaRepExistente['IdPersona'];
+                    } else {
+                        $personaRep->IdStatus = 2;
+                        $personaRep->IdNacionalidad = (int)$_POST['representanteNacionalidad'];
+                        $personaRep->cedula = $_POST['representanteCedula'];
+                        $personaRep->nombre = $_POST['representanteNombres'];
+                        $personaRep->apellido = $_POST['representanteApellidos'];
+                        $personaRep->correo = $_POST['representanteCorreo'] ?? '';
+                        $personaRep->direccion = $_POST['representanteDireccion'] ?? '';
+                        $personaRep->IdSexo = null; // puede venir del form si lo necesitas
+                        $personaRep->IdUrbanismo = $_POST['representanteUrbanismo'];
+                        $idRepresentante = $personaRep->guardar();
                     }
 
-                    // Guardar teléfonos del representante
-                    if (!Telefono::guardarTelefonosPersona($conexion, $idRepresentante, [
+                    // Teléfonos del representante
+                    Telefono::guardarTelefonosPersona($conexion, $idRepresentante, [
                         'TelefonoHabitacion' => $_POST['representanteTelefonoHabitacion'] ?? '',
                         'Celular' => $_POST['representanteCelular'] ?? '',
                         'TelefonoTrabajo' => $_POST['representanteTelefonoTrabajo'] ?? ''
-                    ])) {
-                        throw new Exception("Error al guardar teléfonos del representante");
-                    }
+                    ]);
 
-                    // Crear relación representante-estudiante
+                    // Relación representante-estudiante
                     $representante = new Representante($conexion);
                     $representante->IdPersona = $idRepresentante;
                     $representante->IdParentesco = 3; // Representante Legal
@@ -570,16 +569,13 @@ function procesarInscripcion($conexion) {
                     $representante->ocupacion = trim($_POST['representanteOcupacion'] ?? '');
                     $representante->lugar_trabajo = trim($_POST['representanteLugarTrabajo'] ?? '');
                     $idRelacionRepresentante = $representante->guardar();
-                    if (!$idRelacionRepresentante) {
-                        throw new Exception("Error al crear relación representante-estudiante");
-                    }
 
-                    // Asignar perfil de representante (IdPerfil = 4)
-                    $detallePerfil = new DetallePerfil($conexion);
-                    $detallePerfil->IdPerfil = 4;
-                    $detallePerfil->IdPersona = $idRepresentante;
-                    if (!$detallePerfil->guardar()) {
-                        throw new Exception("Error al asignar perfil de representante legal");
+                    // Perfil de representante (IdPerfil = 4)
+                    if (!DetallePerfil::tienePerfil($conexion, $idRepresentante, 4)) {
+                        $detallePerfil = new DetallePerfil($conexion);
+                        $detallePerfil->IdPerfil = 4;
+                        $detallePerfil->IdPersona = $idRepresentante;
+                        $detallePerfil->guardar();
                     }
                 } 
                 else {
