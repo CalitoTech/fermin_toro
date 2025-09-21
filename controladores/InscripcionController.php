@@ -746,6 +746,20 @@ function procesarInscripcion($conexion) {
                     'codigo_inscripcion' => $codigo_inscripcion,
                     'message' => 'Solicitud registrada correctamente'
                 ]);
+
+                // ========================================================
+                // === ENVÍO DE MENSAJE POR WHATSAPP (NO BLOQUEANTE) =====
+                // ========================================================
+                try {
+                    require_once __DIR__ . '/../controladores/WhatsAppController.php';
+                    $whatsAppCtrl = new WhatsAppController($conexion);
+
+                    // 👇 Estado inicial 7 = "Solicitud en Proceso"
+                    $whatsAppCtrl->enviarMensajesCambioEstado($numeroSolicitud, 7);
+                } catch (Exception $e) {
+                    // Registrar error pero NO interrumpir el flujo
+                    error_log("Error enviando WhatsApp en inscripción $numeroSolicitud: " . $e->getMessage());
+                }
                 
             } catch (Exception $e) {
                 if ($conexion->inTransaction()) {

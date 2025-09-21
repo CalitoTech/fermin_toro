@@ -202,10 +202,11 @@ class WhatsAppController {
         // ✅ Mensajes personalizados
         $mensajes = [
             7 => "⏳ *Solicitud en Proceso*\n\nEstimado(a) *$nombreRep*,\n\n"
-                 . "La solicitud de inscripción de *$estudianteNombre* (Código: $codigoInscripcion)" 
+                 . "La solicitud de inscripción de *$estudianteNombre* " 
                  . "ha sido recibida y está en revisión inicial.\n\n"
-                 . "Nuestro equipo administrativo verificará la documentación y le notificará"
-                 . "los próximos pasos en un plazo de 48 horas hábiles.",
+                 . "Nuestro equipo administrativo verificará la documentación y le notificará "
+                 . "los próximos pasos en un plazo de 48 horas hábiles.\n"
+                 . "Código de Seguimiento: $codigoInscripcion",
 
             9 => "💳 *Pendiente de Pago*\n\nEstimado(a) *$nombreRep*,\n\n*${estudianteNombre}*"
                 . "ha sido *aceptado oficialmente* en nuestra institución.\n\n"
