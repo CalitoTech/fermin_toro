@@ -74,7 +74,7 @@
                     echo '<p class="text-muted mb-3"><i class="fas fa-calendar-alt mr-2"></i>Inscripción para el año escolar: <strong>' . $anioEscolar['fecha_escolar'] . '</strong></p>';
                     }
                     ?>
-                    <p style="margin-bottom: 2rem;">Seleccione el curso al que desea inscribir a su representado:</p>
+                    <p style="margin-bottom: 2rem;">Seleccione el curso al que desea solicitar cupo para su representado:</p>
                     
                     <?php
                     
@@ -101,7 +101,7 @@
                                 echo '<tr>';
                                 echo '<td>' . $curso['curso'] . '</td>';
                                 echo '<td>';
-                                echo '<button class="btn-registro" onclick="mostrarInformacionModal(' . $curso['IdCurso'] . ')">Inscribir</button>';
+                                echo '<button class="btn-registro" onclick="mostrarInformacionModal(' . $curso['IdCurso'] . ')">Solicitar Cupo</button>';
                                 echo ' ';
                                 echo '<button class="btn-requisitos" onclick="mostrarRequisitos(' . $nivel['IdNivel'] . ')">Ver Requisitos</button>';
                                 echo ' ';
@@ -189,9 +189,9 @@
                     </button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-center mb-4" style="font-size: 1.1rem; color: #333;">
+                    <!-- <p class="text-center mb-4" style="font-size: 1.1rem; color: #333;">
                         <strong>SIGA LAS SIGUIENTES INSTRUCCIONES PARA REALIZAR SU SOLICITUD DE CUPO:</strong>
-                    </p>
+                    </p> -->
 
                     <!-- Tabla para los pasos -->
                     <div class="table-responsive">
@@ -233,7 +233,7 @@
 
                     <div class="alert alert-info mt-3" style="background-color: #f0f7ff; border-color: #c9e2ff; color: #004085; font-size: 0.9rem; border-radius: 8px;">
                         <i class="fas fa-lightbulb mr-2"></i>
-                        <strong>Consejo:</strong> Tenga a mano los datos personales del estudiante, padres y representante legal para llenar el formulario sin interrupciones.
+                        <strong>Recordatorio:</strong> Tenga a mano los datos personales del estudiante, padres y representante legal para llenar el formulario sin interrupciones.
                     </div>
                 </div>
                 <div class="modal-footer" style="background-color: #f8f9fa; border-top: none; border-radius: 0 0 10px 10px; padding: 1rem;">
