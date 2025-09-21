@@ -366,9 +366,9 @@ function inicializarFormulario() {
         const cedula = $(this).val();
         
         if (nacionalidad && cedula) {
-            verificarCedulaExistente(cedula, nacionalidad, function(existe, status) {
-                if (existe) {
-                    mostrarAlertaCedulaExistente(status);
+            verificarCedulaExistente(cedula, nacionalidad, function(inscrito, estado) {
+                if (inscrito) {
+                    mostrarAlertaCedulaExistente(estado);
                 }
             });
         }
@@ -384,9 +384,9 @@ function inicializarFormulario() {
         
         // Primero validar cédula si está completa
         if (nacionalidad && cedula) {
-            verificarCedulaExistente(cedula, nacionalidad, function(existe, status) {
-                if (existe) {
-                    mostrarAlertaCedulaExistente(status);
+            verificarCedulaExistente(cedula, nacionalidad, function(inscrito, estado) {
+                if (inscrito) {
+                    mostrarAlertaCedulaExistente(estado);
                     return false; // Detener el proceso
                 } else {
                     enviarFormulario(); // Proceder con el envío
@@ -588,39 +588,105 @@ function verificarCedulaExistente(cedula, nacionalidad, callback) {
         return;
     }
 
-    fetch(`../../controladores/PersonaController.php?action=verificarCedula&cedula=${cedula}&idNacionalidad=${nacionalidad}`)
-        .then(response => {
-            if (!response.ok) throw new Error('Error en la respuesta del servidor');
-            return response.json();
+    const url = `../../controladores/PersonaController.php?action=verificarCedula&cedula=${encodeURIComponent(cedula)}&idNacionalidad=${encodeURIComponent(nacionalidad)}`;
+
+    fetch(url)
+        .then(res => {
+            // intentar parsear JSON aunque el status sea 4xx/5xx para ver el error del backend
+            return res.json().then(json => {
+                if (!res.ok) {
+                    // forzar error con el mensaje del backend si existe
+                    const msg = json.error || json.message || `HTTP ${res.status}`;
+                    throw new Error(msg);
+                }
+                return json;
+            });
         })
         .then(data => {
-            if (data.error) {
-                console.error('Error:', data.error);
-                callback(false);
-            } else {
-                callback(data.existe, data.status);
-            }
+            console.log('verificarCedula response:', data);
+
+            // admitir ambos formatos: { existe: bool } o { inscrito: bool }
+            const existe = (typeof data.existe !== 'undefined') ? data.existe : (typeof data.inscrito !== 'undefined' ? data.inscrito : false);
+
+            // estado puede venir en distintos campos; normalizamos a string
+            const estado = (data.estado ?? data.status ?? data.estado_inscripcion ?? '').toString();
+
+            callback(Boolean(existe), estado);
         })
-        .catch(error => {
-            console.error('Error al verificar cédula:', error);
+        .catch(err => {
+            console.error('Error al verificar cédula (fetch):', err);
+            // Si quieres mostrar un toast de error aquí, descomenta:
+            // showErrorAlert('No se pudo verificar la cédula. Por favor intente nuevamente.');
             callback(false);
         });
 }
 
-// Función para mostrar alerta según el status de la cédula
-function mostrarAlertaCedulaExistente(status) {
-    let mensaje = '';
-    
-    if (status == 1) {
-        mensaje = 'El estudiante ya está inscrito en el sistema.';
-    } else if (status == 2) {
-        mensaje = 'El estudiante ya tiene una solicitud pendiente de aprobación.';
-    } else {
-        mensaje = 'El estudiante ya existe en el sistema.';
+// ---------- Mostrar alerta (Swal primero, toastr fallback) ----------
+function mostrarAlertaCedulaExistente(estadoRaw) {
+    const estado = (estadoRaw || '').toString().toLowerCase();
+    let mensaje = '⚠️ Este estudiante ya existe en el sistema.';
+
+    // heurística amplia para cubrir variaciones ("Pendiente de aprobación", "pendiente", "inscrito", etc.)
+    if (estado.includes('inscr') || estado.includes('inscrito')) {
+        mensaje = '⚠️ Este estudiante ya está inscrito en el año escolar actual.';
+    } else if (estado.includes('pend') || estado.includes('aprob')) {
+        mensaje = '⚠️ Este estudiante ya tiene una solicitud pendiente de aprobación.';
     }
-    
-    showWarningAlert(mensaje);
+
+    // Mostramos con Swal (más fiable / ya utilizado en tu app). Si Swal no existe, usamos toastr si está disponible.
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Advertencia',
+            html: mensaje,
+            confirmButtonColor: '#c90000',
+            confirmButtonText: 'Entendido'
+        });
+    } else if (typeof toastr !== 'undefined') {
+        toastr.warning(mensaje, 'Advertencia', {
+            timeOut: 4000,
+            iconClass: 'toast-warning',
+            positionClass: "toast-top-center"
+        });
+    } else {
+        // último recurso
+        alert(mensaje);
+    }
 }
+
+// ---------- Bindings: blur del input y cambio de nacionalidad ----------
+function instalarHandlersCedula() {
+    // blur en la cédula
+    $('#estudianteCedula').off('blur.cedulaCheck').on('blur.cedulaCheck', function () {
+        const cedula = $(this).val().trim();
+        const nacionalidad = $('#estudianteNacionalidad').val();
+        if (cedula && nacionalidad) {
+            verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
+                if (existe) {
+                    mostrarAlertaCedulaExistente(estado);
+                }
+            });
+        }
+    });
+
+    // si el usuario cambia la nacionalidad después de escribir la cédula, revalidamos
+    $('#estudianteNacionalidad').off('change.cedulaCheck').on('change.cedulaCheck', function () {
+        const nacionalidad = $(this).val();
+        const cedula = $('#estudianteCedula').val().trim();
+        if (cedula && nacionalidad) {
+            verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
+                if (existe) {
+                    mostrarAlertaCedulaExistente(estado);
+                }
+            });
+        }
+    });
+}
+
+// Llamar a la instalación cuando el formulario esté listo (ya tienes inicializarFormulario)
+$(document).ready(function () {
+    instalarHandlersCedula();
+});
 
 // Variable para guardar temporalmente el ID del curso
 let cursoSeleccionadoTemporal = null;

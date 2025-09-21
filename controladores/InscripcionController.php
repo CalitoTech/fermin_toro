@@ -343,43 +343,56 @@ function procesarInscripcion($conexion) {
             $conexion->beginTransaction();
 
             try {
-                // Crear persona (estudiante)
+                // ========================================================
+                // ======== ESTUDIANTE ====================================
+                // ========================================================
                 $personaEstudiante = new Persona($conexion);
-                $personaEstudiante->cedula = $_POST['estudianteCedula'] ?? null;
-                $personaEstudiante->nombre = $_POST['estudianteNombres'] ?? '';
-                $personaEstudiante->apellido = $_POST['estudianteApellidos'] ?? '';
-                $personaEstudiante->correo = $_POST['estudianteCorreo'] ?? '';
-                $personaEstudiante->fecha_nacimiento = $_POST['estudianteFechaNacimiento'] ?? null;
-                $personaEstudiante->IdNacionalidad = isset($_POST['estudianteNacionalidad']) ? (int)$_POST['estudianteNacionalidad'] : null;
-                $personaEstudiante->lugar_nacimiento = $_POST['estudianteLugarNacimiento'] ?? null; // ✅ Nuevo
-                $personaEstudiante->IdSexo = isset($_POST['estudianteSexo']) ? (int)$_POST['estudianteSexo'] : null; // ✅ Corregido
 
-                // Urbanismo y dirección según representante
-                $urbanismoEstudiante = match($_POST['tipoRepresentante']) {
-                    'padre' => $_POST['padreUrbanismo'] ?? null,
-                    'madre' => $_POST['madreUrbanismo'] ?? null,
-                    'otro' => $_POST['representanteUrbanismo'] ?? null,
-                    default => null
-                };
+                // Buscar estudiante por cédula + nacionalidad
+                $estudianteExistente = $personaEstudiante->obtenerPorCedula(
+                    $_POST['estudianteNacionalidad'],
+                    $_POST['estudianteCedula']
+                );
 
-                $direccionEstudiante = match($_POST['tipoRepresentante']) {
-                    'padre' => $_POST['padreDireccion'] ?? null,
-                    'madre' => $_POST['madreDireccion'] ?? null,
-                    'otro' => $_POST['representanteDireccion'] ?? null,
-                    default => null
-                };
+                if ($estudianteExistente) {
+                    // Ya existe en persona → usar ese IdPersona
+                    $idEstudiante = $estudianteExistente['IdPersona'];
+                } else {
+                    // Crear nuevo registro porque no existe
+                    $personaEstudiante->cedula = $_POST['estudianteCedula'] ?? null;
+                    $personaEstudiante->nombre = $_POST['estudianteNombres'] ?? '';
+                    $personaEstudiante->apellido = $_POST['estudianteApellidos'] ?? '';
+                    $personaEstudiante->correo = $_POST['estudianteCorreo'] ?? '';
+                    $personaEstudiante->fecha_nacimiento = $_POST['estudianteFechaNacimiento'] ?? null;
+                    $personaEstudiante->IdNacionalidad = isset($_POST['estudianteNacionalidad']) ? (int)$_POST['estudianteNacionalidad'] : null;
+                    $personaEstudiante->lugar_nacimiento = $_POST['estudianteLugarNacimiento'] ?? null;
+                    $personaEstudiante->IdSexo = isset($_POST['estudianteSexo']) ? (int)$_POST['estudianteSexo'] : null;
 
-                $personaEstudiante->IdUrbanismo = $urbanismoEstudiante;
-                $personaEstudiante->direccion = $direccionEstudiante;
+                    // Urbanismo y dirección según representante
+                    $personaEstudiante->IdUrbanismo = match($_POST['tipoRepresentante']) {
+                        'padre' => $_POST['padreUrbanismo'] ?? null,
+                        'madre' => $_POST['madreUrbanismo'] ?? null,
+                        'otro' => $_POST['representanteUrbanismo'] ?? null,
+                        default => null
+                    };
 
-                $idEstudiante = $personaEstudiante->guardar();
-                $personaEstudiante->IdPersona = $idEstudiante;
+                    $personaEstudiante->direccion = match($_POST['tipoRepresentante']) {
+                        'padre' => $_POST['padreDireccion'] ?? null,
+                        'madre' => $_POST['madreDireccion'] ?? null,
+                        'otro' => $_POST['representanteDireccion'] ?? null,
+                        default => null
+                    };
 
-                // Insertar perfil de estudiante
-                $detallePerfilEstudiante = new DetallePerfil($conexion);
-                $detallePerfilEstudiante->IdPersona = $idEstudiante;
-                $detallePerfilEstudiante->IdPerfil = 3;
-                $detallePerfilEstudiante->guardar();
+                    $idEstudiante = $personaEstudiante->guardar();
+
+                    // Insertar perfil de estudiante (solo si no lo tiene ya)
+                    if (!DetallePerfil::tienePerfil($conexion, $idEstudiante, 3)) {
+                        $detallePerfilEstudiante = new DetallePerfil($conexion);
+                        $detallePerfilEstudiante->IdPersona = $idEstudiante;
+                        $detallePerfilEstudiante->IdPerfil = 3;
+                        $detallePerfilEstudiante->guardar();
+                    }
+                }
 
                 // ======== TELEFONO DEL ESTUDIANTE (CELULAR) =========
                 if (!empty($_POST['estudianteTelefono'])) {
@@ -632,9 +645,36 @@ function procesarInscripcion($conexion) {
                 $correlativo = $stmt->fetchColumn() + 1;
                 $codigo_inscripcion = "$anioActual-$correlativo";
 
+                // ========================================================
+                // === VALIDACIONES DE INSCRIPCIÓN ========================
+                // ========================================================
+
                 // Obtener año escolar activo
                 $modeloFechaEscolar = new FechaEscolar($conexion);
                 $anioEscolar = $modeloFechaEscolar->obtenerActivo();
+
+                if (!$anioEscolar) {
+                    throw new Exception("No se encontró un año escolar activo");
+                }
+
+                // Validar si el año escolar permite inscripciones
+                if (isset($anioEscolar['inscripcion_activa']) && (int)$anioEscolar['inscripcion_activa'] !== 1) {
+                    throw new Exception("Ya no se aceptan inscripciones o no hay cupos disponibles.");
+                }
+
+                // Verificar si el estudiante ya tiene inscripción en este año escolar
+                $sqlDup = "SELECT COUNT(*) 
+                        FROM inscripcion 
+                        WHERE IdEstudiante = :idEstudiante 
+                        AND IdFecha_Escolar = :idFechaEscolar";
+                $stmtDup = $conexion->prepare($sqlDup);
+                $stmtDup->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+                $stmtDup->bindParam(':idFechaEscolar', $anioEscolar['IdFecha_Escolar'], PDO::PARAM_INT);
+                $stmtDup->execute();
+
+                if ($stmtDup->fetchColumn() > 0) {
+                    throw new Exception("El estudiante ya posee una inscripción en este año escolar.");
+                }
                 
                 // Obtener status de inscripción (IdTipo_Status = 2 para inscripciones)
                 $sqlStatus = "SELECT IdStatus FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus LIMIT 1";

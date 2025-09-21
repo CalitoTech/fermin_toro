@@ -66,7 +66,11 @@ function verificarCedula() {
         $conexion = $database->getConnection();
 
         // Buscar directamente la persona con el IdNacionalidad proporcionado
-        $sql = "SELECT IdStatus FROM persona WHERE cedula = :cedula AND IdNacionalidad = :idNacionalidad";
+        $sql = "SELECT p.*, i.IdInscripcion, s.status AS estado
+            FROM persona p
+            LEFT JOIN inscripcion i ON i.IdEstudiante = p.IdPersona
+            LEFT JOIN status s ON i.IdStatus = s.IdStatus
+            WHERE p.cedula = :cedula AND p.IdNacionalidad = :idNacionalidad";
         $stmt = $conexion->prepare($sql);
         
         if (!$stmt) {
@@ -85,21 +89,19 @@ function verificarCedula() {
         if ($stmt->rowCount() > 0) {
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             echo json_encode([
-                'existe' => true,
-                'status' => (int)$row['IdStatus']
+                'inscrito' => true,
+                'estado'   => $row['estado'] // inscrito, pendiente, aprobado, etc.
             ]);
         } else {
-            echo json_encode(['existe' => false]);
+            echo json_encode(['inscrito' => false]);
         }
         
     } catch (Exception $e) {
-        error_log("Error en verificarCedula: " . $e->getMessage());
-        http_response_code(500);
-        echo json_encode([
-            'error' => 'Error interno del servidor',
-            'existe' => false
-        ]);
-    }
+    echo json_encode([
+        "error" => "Excepción en verificarCedula: " . $e->getMessage(),
+        "existe" => false
+    ]);
+}
     exit();
 }
 
