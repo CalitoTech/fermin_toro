@@ -716,23 +716,45 @@ function abrirModalImprimir() {
     $('#imprimirPlanillaModal').modal('show');
 }
 
+function imprimirInscripcion(anioEscolar, nacionalidad, nacionalidadTexto, cedula) {
+    if (!anioEscolar) {
+        showWarningAlert('Debe seleccionar el Año Escolar.');
+        return;
+    }
+    if (!nacionalidad || !cedula) {
+        showWarningAlert('Debe ingresar la cédula del estudiante.');
+        return;
+    }
+
+    fetch(`../../controladores/InscripcionController.php?action=verificar&anio=${anioEscolar}&cedula=${cedula}&nacionalidad=${nacionalidad}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.existe) {
+                const url = `../inscripciones/inscripcion/reporte_inscripcion.php?anio_escolar=${anioEscolar}&nacionalidad=${nacionalidad}&cedula=${cedula}`;
+                window.open(url, '_blank');
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'No inscrito',
+                    html: `El estudiante con cédula <b>${nacionalidadTexto}-${cedula}</b> aún no está inscrito.`,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showErrorAlert('Error al verificar inscripción. Intente de nuevo.');
+        });
+}
+
 $(document).ready(function() {
     $('#btnImprimirPlanilla').on('click', function() {
         const anioEscolar = $('#anioEscolar').val();
         const nacionalidad = $('#nacionalidad').val();
+        const nacionalidadTexto = $('#nacionalidad option:selected').text();
         const cedula = $('#documentoEstudiante').val().trim();
 
-        if (!anioEscolar) {
-            showWarningAlert('Debe seleccionar el Año Escolar.');
-            return;
-        }
-        if (!nacionalidad || !cedula) {
-            showWarningAlert('Debe ingresar la cédula del estudiante.');
-            return;
-        }
-
-        // Abrir el PDF filtrando por cédula y año escolar
-        const url = `../inscripciones/inscripcion/reporte_inscripcion.php?anio_escolar=${anioEscolar}&nacionalidad=${nacionalidad}&cedula=${cedula}`;
-        window.open(url, '_blank');
+        imprimirInscripcion(anioEscolar, nacionalidad, nacionalidadTexto, cedula);
     });
 });

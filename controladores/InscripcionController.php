@@ -185,6 +185,30 @@ function obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idUrbanismo, $i
         return null;
     }
 }
+
+function verificarInscripcion($conexion, $anio, $cedula, $nacionalidad) {
+    try {
+        $stmt = $conexion->prepare("
+            SELECT 1
+            FROM inscripcion i
+            INNER JOIN persona p ON i.IdEstudiante = p.IdPersona
+            WHERE p.cedula = :cedula 
+              AND p.idNacionalidad = :nacionalidad
+              AND i.IdFecha_Escolar = :anio
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':cedula' => $cedula,
+            ':nacionalidad' => $nacionalidad,
+            ':anio' => $anio
+        ]);
+        return $stmt->fetch() ? true : false;
+    } catch (Exception $e) {
+        error_log("Error al verificar inscripción: " . $e->getMessage());
+        return false;
+    }
+}
+
 // Determinar acción
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
@@ -210,6 +234,15 @@ if (empty($action)) {
         case 'hayCupo':
             hayCupo($conexion);
             break;
+        case 'verificar':
+            header('Content-Type: application/json');
+            $anio = intval($_GET['anio'] ?? 0);
+            $cedula = trim($_GET['cedula'] ?? '');
+            $nacionalidad = trim($_GET['nacionalidad'] ?? '');
+
+            $existe = verificarInscripcion($conexion, $anio, $cedula, $nacionalidad);
+            echo json_encode(['existe' => $existe]);
+            exit;
         default:
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Acción no válida']);
