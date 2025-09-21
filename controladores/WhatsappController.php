@@ -12,7 +12,7 @@ class WhatsAppController {
         $this->conexion = $conexion;
         
         // Configuración de Evolution API
-        $this->evolutionApiUrl = 'http://host.docker.internal:8080';
+        $this->evolutionApiUrl = 'http://localhost:8080';
         $this->evolutionApiKey = 'A8DB43E66C28-4108-AA2D-9A3E84E98648';
         $this->nombreInstancia = 'Test';
 
@@ -246,52 +246,57 @@ class WhatsAppController {
      * Envía mensaje a través de Evolution API
      */
     private function enviarMensajeWhatsApp($telefono, $mensaje, $nombreDestinatario) {
-        // ✅ Hardcodeado para pruebas
-        // $telefonoLimpio = '584263519830';
+    // ✅ Hardcodeado para pruebas
+    $telefonoLimpio = '584263519830';
+    
+    $endpoint = $this->evolutionApiUrl . '/message/sendText/' . $this->nombreInstancia;
 
-        // ✅ Nuevo (usa la función formateadora)
-        $telefonoFormateado = $this->formatearTelefono($telefono);
-        if (!$telefonoFormateado) {
-            error_log("❌ Teléfono inválido: $telefono para $nombreDestinatario");
-            return false;
-        }
-        
-        $endpoint = $this->evolutionApiUrl . '/message/sendText/' . $this->nombreInstancia;
+    $payload = [
+        'number' => $telefonoLimpio,
+        'text' => $mensaje,
+        'options' => [
+            'delay' => 1200,
+            'presence' => 'composing',
+            'linkPreview' => true
+        ]
+    ];
 
-        $payload = [
-            'number' => $telefonoFormateado,
-            'text' => $mensaje,
-            'options' => [
-                'delay' => 1200,
-                'presence' => 'composing',
-                'linkPreview' => true
-            ]
-        ];
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $endpoint,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload),
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'apikey: ' . $this->evolutionApiKey
+        ],
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_SSL_VERIFYPEER => false, // ← Agregar para debugging
+        CURLOPT_SSL_VERIFYHOST => false  // ← Agregar para debugging
+    ]);
 
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $endpoint,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'apikey: ' . $this->evolutionApiKey
-            ],
-            CURLOPT_TIMEOUT => 30
-        ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error = curl_error($ch); // ← Capturar error de conexión
+    curl_close($ch);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+    // ✅ Debugging completo
+    error_log("🔧 Debug Evolution API:");
+    error_log("   URL: $endpoint");
+    error_log("   HTTP Code: $httpCode");
+    error_log("   Response: " . $response);
+    error_log("   Error: " . $error);
+    error_log("   Payload: " . json_encode($payload));
 
-        if ($httpCode !== 200) {
-            error_log("❌ Error enviando WhatsApp a $nombreDestinatario");
-            return false;
-        }
-
-        return true;
+    if ($httpCode !== 200) {
+        error_log("❌ Error enviando WhatsApp a $nombreDestinatario - Código: $httpCode");
+        return false;
     }
+
+    error_log("✅ Mensaje enviado a $telefonoLimpio para $nombreDestinatario");
+    return true;
+}
 
     /**
      * Formatea el número de teléfono para WhatsApp
