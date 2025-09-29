@@ -103,6 +103,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $_SESSION['bloqueos'][$usernameKey] = time() + ($bloqueo_minutos * 60);
                 $tiempo_restante = $_SESSION['bloqueos'][$usernameKey] - time();
                 mostrarAlertaTiempo($tiempo_restante, $max_intentos);
+                require_once __DIR__ . '/../../controladores/WhatsAppController.php';
+                $whatsapp = new WhatsAppController($conexion);
+                $whatsapp->enviarAvisoBloqueo($persona['IdPersona'], $bloqueo_minutos * 60);
                 exit;
             } else {
                 mostrarAlertaError($intento, $max_intentos);

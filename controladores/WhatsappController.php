@@ -6,7 +6,7 @@ class WhatsAppController {
     private $evolutionApiUrl;
     private $evolutionApiKey;
     private $nombreInstancia;
-     private $loginUrl;
+    private $loginUrl;
 
     public function __construct($conexion) {
         $this->conexion = $conexion;
@@ -20,6 +20,118 @@ class WhatsAppController {
         $this->loginUrl = null;
         // Ejemplo: 
         // $this->loginUrl = 'http://localhost/mis_apps/fermin_toro/vistas/login/login.php';
+    }
+
+    public function responderWhatsApp($telefono, $mensaje) {
+        return $this->enviarMensajeWhatsApp($telefono, $mensaje, "Webhook");
+    }
+
+    public function procesarSeleccion($rowId, $numeroWhatsApp) {
+        if (preg_match('/bloqueo_(si|no)_(.+)/', $rowId, $matches)) {
+            $opcion  = $matches[1]; // si | no
+            $usuario = $matches[2];
+
+            $persona = new Persona($this->conexion);
+
+            if ($opcion === 'si') {
+                // Buscar credenciales
+                $stmt = $this->conexion->prepare("SELECT IdPersona FROM persona WHERE usuario = :usuario LIMIT 1");
+                $stmt->bindParam(":usuario", $usuario, PDO::PARAM_STR);
+                $stmt->execute();
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($row) {
+                    $persona->IdPersona = $row['IdPersona'];
+                    $credenciales = $persona->obtenerCredenciales();
+
+                    if ($credenciales) {
+                        $respuesta = "👤 Usuario: *{$credenciales['usuario']}*\n🔑 Contraseña: *{$credenciales['password']}*";
+                    } else {
+                        $respuesta = "⚠️ No pude obtener tus credenciales.";
+                    }
+                } else {
+                    $respuesta = "⚠️ No pude encontrar tu usuario en la base de datos.";
+                }
+
+                $this->responderWhatsApp($numeroWhatsApp, $respuesta);
+            }
+
+            if ($opcion === 'no') {
+                $respuesta = "⚠️ Por seguridad, te recomiendo ingresar al portal y cambiar tu contraseña lo antes posible.";
+                $this->responderWhatsApp($numeroWhatsApp, $respuesta);
+            }
+        }
+    }
+
+    public function enviarAvisoBloqueo($idPersona, $tiempoBloqueo) {
+        // 1. Buscar el número y usuario
+        $query = "SELECT usuario, password, nombre, apellido, 
+                        (SELECT numero_telefono FROM telefono t 
+                        WHERE t.IdPersona = p.IdPersona 
+                        LIMIT 1) AS telefono
+                FROM persona p 
+                WHERE p.IdPersona = :id";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(":id", $idPersona, PDO::PARAM_INT);
+        $stmt->execute();
+        $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$persona || empty($persona['telefono'])) {
+            error_log("❌ No se encontró teléfono para la persona $idPersona");
+            return false;
+        }
+
+        $telefono = $this->formatearTelefono($persona['telefono']);
+        $usuario = $persona['usuario'];
+        $minutos = intval($tiempoBloqueo / 60);
+
+        // 2. Construir payload plano según la documentación de Evolution
+        $endpoint = $this->evolutionApiUrl . '/message/sendList/' . $this->nombreInstancia;
+
+        $payload = [
+            "number"     => $telefono,
+            "title"      => "🔒 Bloqueo de cuenta",
+            "description"=> "Tu usuario *$usuario* fue bloqueado por $minutos minuto(s) debido a intentos fallidos.\n¿Fuiste tú?",
+            "buttonText" => "Responder",
+            "footerText" => "Confirma para continuar",
+            "sections"   => [
+                [
+                    "title" => "Confirma tu respuesta",
+                    "rows"  => [
+                        [
+                            "rowId"      => "bloqueo_si_{$usuario}",
+                            "title"      => "✅ Sí, fui yo",
+                            "description"=> "Desbloquear la cuenta"
+                        ],
+                        [
+                            "rowId"      => "bloqueo_no_{$usuario}",
+                            "title"      => "❌ No, no fui yo",
+                            "description"=> "Marcar actividad sospechosa"
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        // 3. Enviar petición
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $endpoint,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'apikey: ' . $this->evolutionApiKey
+            ],
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        error_log("📤 WhatsApp bloqueo respuesta: $response");
+
+        return $httpCode === 200;
     }
 
     /**
