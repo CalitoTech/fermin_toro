@@ -12,7 +12,8 @@ class Representante {
     public $nacionalidad;
     public $ocupacion;
     public $lugar_trabajo;
-    public $IdStatus;
+    public $IdEstadoAcceso;
+    public $IdEstadoInstitucional;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -97,7 +98,8 @@ class Representante {
         $persona->IdSexo = NULL;
         $persona->IdUrbanismo = NULL;
         $persona->IdNacionalidad = NULL;
-        $persona->IdStatus = 2;
+        $persona->IdEstadoAcceso = 2;
+        $persona->IdEstadoInstitucional = 2;
         
         $idPersona = $persona->guardar();
         

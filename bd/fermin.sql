@@ -231,11 +231,11 @@ CREATE TABLE status (
 INSERT INTO `status` (`IdStatus`, `IdTipo_Status`, `status`) VALUES
 (1, 1, 'Activo'),
 (2, 1, 'Inactivo'),
-(3, 1, 'Jubilado'),
-(4, 1, 'Reposo'),
-(5, 1, 'Vacaciones'),
-(6, 1, 'Graduado'),
-(7, 1, 'Bloqueado'),
+(3, 1, 'Bloqueado'),
+(4, 1, 'Jubilado'),
+(5, 1, 'Reposo'),
+(6, 1, 'Vacaciones'),
+(7, 1, 'Graduado'),
 (8, 2, 'Pendiente de aprobación'),
 (9, 2, 'Aprobada para reunión'),
 (10, 2, 'En espera de pago'),
@@ -260,7 +260,6 @@ CREATE TABLE persona (
     IdPersona int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdNacionalidad int NULL,
     cedula int NULL,
-    cedula_escolar varchar(50) NULL,
     nombre varchar(50) NOT NULL,
     apellido varchar(50) NOT NULL,
     fecha_nacimiento date NULL,
@@ -273,15 +272,17 @@ CREATE TABLE persona (
     direccion varchar(555) NULL,
     IdSexo int NULL,
     IdUrbanismo int NULL,
-    IdStatus int NULL,
+    IdEstadoAcceso int NOT NULL,
+    IdEstadoInstitucional int NOT NULL,
     FOREIGN KEY (IdNacionalidad) REFERENCES nacionalidad(IdNacionalidad),
     FOREIGN KEY (IdUrbanismo) REFERENCES urbanismo(IdUrbanismo),
-    FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
+    FOREIGN KEY (IdEstadoAcceso) REFERENCES status(IdStatus),
+    FOREIGN KEY (IdEstadoInstitucional) REFERENCES status(IdStatus),
     FOREIGN KEY (IdSexo) REFERENCES sexo(IdSexo)
 );
 
-INSERT INTO `persona` (`IdPersona`, `IdNacionalidad`, `cedula`, `nombre`, `apellido`, `fecha_nacimiento`, `correo`, `usuario`, `password`, `codigo_temporal`, `codigo_expiracion`, `direccion`, `IdSexo`, `IdUrbanismo`, `IdStatus`) VALUES
-(1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', NULL, NULL, 'Av. Sucre, Calle 3, Casa #152', 1, 1, 1);
+INSERT INTO `persona` (`IdPersona`, `IdNacionalidad`, `cedula`, `nombre`, `apellido`, `fecha_nacimiento`, `correo`, `usuario`, `password`, `codigo_temporal`, `codigo_expiracion`, `direccion`, `IdSexo`, `IdUrbanismo`, `IdEstadoAcceso`, `IdEstadoInstitucional`) VALUES
+(1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', NULL, NULL, 'Av. Sucre, Calle 3, Casa #152', 1, 1, 1, 1);
 
 CREATE TABLE egreso (
     IdEgreso int NOT NULL AUTO_INCREMENT PRIMARY KEY,

@@ -75,10 +75,10 @@ function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSe
                 INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
                 LEFT JOIN aula a ON cs.IdAula = a.IdAula
                 LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
-                    AND i.IdStatus = 10
+                    AND i.IdStatus = 11
                 LEFT JOIN persona e ON i.IdEstudiante = e.IdPersona
                 LEFT JOIN inscripcion i2 ON cs.IdCurso_Seccion = i2.IdCurso_Seccion 
-                    AND i2.IdStatus = 10
+                    AND i2.IdStatus = 11
                 WHERE cs.IdCurso = :id_curso
                 AND s.seccion != 'Inscripción'
                 AND cs.IdCurso_Seccion != :id_curso_seccion_actual
@@ -126,7 +126,7 @@ function verificarCapacidadAulas($conexion, $idCurso) {
             INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
             LEFT JOIN aula a ON cs.IdAula = a.IdAula
             LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
-                AND i.IdStatus = 10
+                AND i.IdStatus = 11
             WHERE cs.IdCurso = :id_curso
             AND s.seccion != 'Inscripción'
             GROUP BY cs.IdCurso_Seccion
@@ -159,10 +159,10 @@ function obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idUrbanismo, $i
             INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
             LEFT JOIN aula a ON cs.IdAula = a.IdAula
             LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
-                AND i.IdStatus = 10
+                AND i.IdStatus = 11
             LEFT JOIN persona e ON i.IdEstudiante = e.IdPersona
             LEFT JOIN inscripcion i2 ON cs.IdCurso_Seccion = i2.IdCurso_Seccion 
-                AND i2.IdStatus = 10
+                AND i2.IdStatus = 11
             WHERE cs.IdCurso = :id_curso
             AND s.seccion != 'Inscripción'
             AND cs.IdCurso_Seccion != :id_curso_seccion_actual
@@ -392,6 +392,9 @@ function procesarInscripcion($conexion) {
                     $idEstudiante = $estudianteExistente['IdPersona'];
                 } else {
                     // Crear nuevo registro porque no existe
+                    
+                    $personaEstudiante->IdEstadoAcceso = 2;
+                    $personaEstudiante->IdEstadoInstitucional = 2;
                     $personaEstudiante->cedula = $_POST['estudianteCedula'] ?? null;
                     $personaEstudiante->nombre = $_POST['estudianteNombres'] ?? '';
                     $personaEstudiante->apellido = $_POST['estudianteApellidos'] ?? '';
@@ -460,7 +463,8 @@ function procesarInscripcion($conexion) {
                     if ($personaPadreExistente) {
                         $idPadre = $personaPadreExistente['IdPersona'];
                     } else {
-                        $personaPadre->IdStatus = 2;
+                        $personaPadre->IdEstadoAcceso = 2;
+                        $personaPadre->IdEstadoInstitucional = 2;
                         $personaPadre->IdNacionalidad = (int)$_POST['padreNacionalidad'];
                         $personaPadre->cedula = $_POST['padreCedula'];
                         $personaPadre->nombre = $_POST['padreNombres'];
@@ -507,7 +511,8 @@ function procesarInscripcion($conexion) {
                     if ($personaMadreExistente) {
                         $idMadre = $personaMadreExistente['IdPersona'];
                     } else {
-                        $personaMadre->IdStatus = 2;
+                        $personaMadre->IdEstadoAcceso = 2;
+                        $personaMadre->IdEstadoInstitucional = 2;
                         $personaMadre->IdNacionalidad = (int)$_POST['madreNacionalidad'];
                         $personaMadre->cedula = $_POST['madreCedula'];
                         $personaMadre->nombre = $_POST['madreNombres'];
@@ -588,7 +593,8 @@ function procesarInscripcion($conexion) {
                     if ($personaRepExistente) {
                         $idRepresentante = $personaRepExistente['IdPersona'];
                     } else {
-                        $personaRep->IdStatus = 2;
+                        $personaRep->IdEstadoAcceso = 2;
+                        $personaRep->IdEstadoInstitucional = 2;
                         $personaRep->IdNacionalidad = (int)$_POST['representanteNacionalidad'];
                         $personaRep->cedula = $_POST['representanteCedula'];
                         $personaRep->nombre = $_POST['representanteNombres'];
@@ -755,7 +761,7 @@ function procesarInscripcion($conexion) {
                     $whatsAppCtrl = new WhatsAppController($conexion);
 
                     // 👇 Estado inicial 7 = "Solicitud en Proceso"
-                    $whatsAppCtrl->enviarMensajesCambioEstado($numeroSolicitud, 7);
+                    $whatsAppCtrl->enviarMensajesCambioEstado($numeroSolicitud, 8);
                 } catch (Exception $e) {
                     // Registrar error pero NO interrumpir el flujo
                     error_log("Error enviando WhatsApp en inscripción $numeroSolicitud: " . $e->getMessage());
@@ -823,11 +829,11 @@ function cambiarStatus($conexion) {
         // BLOQUE EXTRA → activar estudiante/representantes
         // =========================================
         $alertaCapacidad = '';
-        if ($nuevoStatus == 10) {
+        if ($nuevoStatus == 11) {
             $idEstudiante = $inscripcionData['IdEstudiante'];
 
             // 1) Activar estudiante
-            $stmt = $conexion->prepare("UPDATE persona SET IdStatus = 1 WHERE IdPersona = :id");
+            $stmt = $conexion->prepare("UPDATE persona SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 WHERE IdPersona = :id");
             $stmt->execute([':id' => $idEstudiante]);
 
             // 2) Activar representantes y crear usuario/clave
@@ -848,7 +854,7 @@ function cambiarStatus($conexion) {
                 $esEmergencia = (int)$rep['es_contacto_emergencia'];
 
                 // Activar representante
-                $stmt = $conexion->prepare("UPDATE persona SET IdStatus = 1 WHERE IdPersona = :id");
+                $stmt = $conexion->prepare("UPDATE persona SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 WHERE IdPersona = :id");
                 $stmt->execute([':id' => $idPersona]);
 
                 // Crear credenciales solo si NO es el estudiante y NO es contacto de emergencia
@@ -893,12 +899,12 @@ function cambiarStatus($conexion) {
         $stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
 
         if ($stmt->execute()) {
-            // Si el nuevo estado es "Inscrito" (IdStatus = 10), intentar cambio automático de sección
+            // Si el nuevo estado es "Inscrito" (IdStatus = 11), intentar cambio automático de sección
             $cambioRealizado = false;
             $seccionAnterior = $inscripcionData['IdCurso_Seccion'];
             $seccionNueva = null;
 
-            if ($nuevoStatus == 10) {
+            if ($nuevoStatus == 11) {
                 try {
                     $seccionRecomendada = obtenerSeccionRecomendada(
                         $conexion,
@@ -1103,7 +1109,7 @@ function cambiarSeccion($conexion) {
         $stmtVerificar->execute();
         $inscripcion = $stmtVerificar->fetch(PDO::FETCH_ASSOC);
 
-        if (!$inscripcion || $inscripcion['IdStatus'] != 10) { // 10 = Inscrito
+        if (!$inscripcion || $inscripcion['IdStatus'] != 11) { // 11 = Inscrito
             echo json_encode(['success' => false, 'message' => 'Solo se puede cambiar sección en estado "Inscrito"']);
             exit();
         }

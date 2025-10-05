@@ -73,6 +73,28 @@ class Status {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Obtener sólo los status válidos para 'acceso' (Tipo = Persona y IdStatus en 1,2,3)
+     * Retorna array asociativo de filas.
+     */
+    public function obtenerStatusAcceso() {
+        $query = "SELECT s.* FROM status s WHERE s.IdTipo_Status = 1 AND s.IdStatus IN (1,2,3) ORDER BY s.IdStatus";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtener status institucional: todos los status donde IdTipo_Status = 1
+     * excepto el bloqueado (IdStatus = 3)
+     */
+    public function obtenerStatusInstitucional() {
+        $query = "SELECT s.* FROM status s WHERE s.IdTipo_Status = 1 AND s.IdStatus != 3 ORDER BY s.IdStatus";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function obtenerPorTipo($idTipoStatus) {
         $query = "SELECT * FROM status WHERE IdTipo_Status = ?";
         $stmt = $this->conn->prepare($query);

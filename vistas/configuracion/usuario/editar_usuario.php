@@ -85,7 +85,8 @@ $detallePerfilModel = new DetallePerfil($conexion);
 $rolesUsuario = $detallePerfilModel->obtenerPorPersona($idUsuario);
 
 $statusModel = new Status($conexion);
-$statuses = $statusModel->obtenerTodos();
+$statusesAcceso = $statusModel->obtenerStatusAcceso();
+$statusesInstitucional = $statusModel->obtenerStatusInstitucional();
 
 $tipoTelefonoModel = new TipoTelefono($conexion);
 $tiposTelefono = $tipoTelefonoModel->obtenerTodos();
@@ -283,28 +284,50 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                             <p class="añadir__input-error">Las contraseñas deben coincidir.</p>
                                         </div>
 
-                                        <!-- Status -->
-                                        <div class="añadir__grupo" id="grupo__status">
-                                            <label for="status" class="form-label">Status *</label>
+                                        <!-- Status de Acceso -->
+                                        <div class="añadir__grupo" id="grupo__status_acceso">
+                                            <label for="status_acceso" class="form-label">Status de Acceso *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-star'></i></span>
                                                 <select 
                                                     class="form-control añadir__input" 
-                                                    name="status" 
-                                                    id="status" 
+                                                    name="status_acceso" 
+                                                    id="status_acceso" 
                                                     required>
-                                                    <?php foreach ($statuses as $status): ?>
+                                                    <?php foreach ($statusesAcceso as $status): ?>
                                                         <option value="<?= $status['IdStatus'] ?>" 
-                                                            <?= $status['IdStatus'] == $usuario['IdStatus'] ? 'selected' : '' ?>>
+                                                            <?= $status['IdStatus'] == $usuario['IdEstadoAcceso'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($status['status']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Status Institucional -->
+                                        <div class="añadir__grupo" id="grupo__status_institucional">
+                                            <label for="status_institucional" class="form-label">Status Institucional *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
+                                                <select 
+                                                    class="form-control añadir__input" 
+                                                    name="status_institucional" 
+                                                    id="status_institucional" 
+                                                    required>
+                                                    <?php foreach ($statusesInstitucional as $status): ?>
+                                                        <option value="<?= $status['IdStatus'] ?>" 
+                                                            <?= $status['IdStatus'] == $usuario['IdEstadoInstitucional'] ? 'selected' : '' ?>>
                                                             <?= htmlspecialchars($status['status']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">Debe seleccionar un status.</p>
+                                            <p class="añadir__input-error">Debe seleccionar un status institucional.</p>
                                         </div>
+
                                     </div>
+                                </div>
 
                                     <!-- Roles -->
                                     <div class="añadir__grupo" id="grupo__roles">

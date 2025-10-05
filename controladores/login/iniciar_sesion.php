@@ -37,17 +37,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $resultado = $personaModel->validarCodigoTemporal($cedula, $codigo);
 
         if ($resultado['valido']) {
-            // ✅ Verificar si el usuario estaba bloqueado (IdStatus = 7)
+            // ✅ Verificar si el usuario estaba bloqueado (IdEstadoAcceso = 3)
             $idPersona = $resultado['IdPersona'];
-            $queryStatus = "SELECT IdStatus FROM persona WHERE IdPersona = :id";
+            $queryStatus = "SELECT IdEstadoAcceso FROM persona WHERE IdPersona = :id";
             $stmtStatus = $conexion->prepare($queryStatus);
             $stmtStatus->bindParam(':id', $idPersona, PDO::PARAM_INT);
             $stmtStatus->execute();
             $estado = (int)$stmtStatus->fetchColumn();
 
-            if ($estado === 7) {
+            if ($estado === 3) {
                 // ✅ Reactivar usuario automáticamente
-                $queryReactivar = "UPDATE persona SET IdStatus = 1 WHERE IdPersona = :id";
+                $queryReactivar = "UPDATE persona SET IdEstadoAcceso = 1 WHERE IdPersona = :id";
                 $stmtReactivar = $conexion->prepare($queryReactivar);
                 $stmtReactivar->bindParam(':id', $idPersona, PDO::PARAM_INT);
                 $stmtReactivar->execute();
@@ -84,8 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $max_intentos = 3;
 
     try {
-        // 1) Buscar persona por usuario (solo IdPersona + IdStatus)
-        $queryCheck = "SELECT IdPersona, IdStatus, usuario FROM persona WHERE usuario = :usuario LIMIT 1";
+        // 1) Buscar persona por usuario (solo IdPersona + IdEstadoAcceso)
+        $queryCheck = "SELECT IdPersona, IdEstadoAcceso, usuario FROM persona WHERE usuario = :usuario LIMIT 1";
         $stmtCheck = $conexion->prepare($queryCheck);
         $stmtCheck->bindParam(':usuario', $usuario, PDO::PARAM_STR);
         $stmtCheck->execute();
@@ -96,17 +96,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit;
         }
 
-        $status = (int)($persona['IdStatus'] ?? 0);
+        $status = (int)($persona['IdEstadoAcceso'] ?? 0);
 
-        if ($status === 7) {
+        if ($status === 3) {
             // Bloqueado permanentemente
             mostrarAlertaUsuario("El usuario ha sido bloqueado por medidas de seguridad. Contacte al administrador.");
             exit;
         }
 
-        $permitidos_login = [1, 4, 5]; // Activo, Reposo, Vacaciones
+        $permitidos_login = [1]; // Activo
 
-        if (!in_array((int)$persona['IdStatus'], $permitidos_login)) {
+        if (!in_array((int)$persona['IdEstadoAcceso'], $permitidos_login)) {
             mostrarAlertaUsuario("El usuario no tiene permitido acceder al sistema. Contacte al administrador.");
             exit;
         }
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $query = "SELECT p.IdPersona, dp.IdPerfil, p.password
                   FROM persona p
                   LEFT JOIN detalle_perfil dp ON dp.IdPersona = p.IdPersona
-                  WHERE p.usuario = :usuario AND p.IdStatus = 1
+                  WHERE p.usuario = :usuario AND p.IdEstadoAcceso = 1
                   LIMIT 1";
         $stmt = $conexion->prepare($query);
         $stmt->bindParam(':usuario', $usuario, PDO::PARAM_STR);

@@ -341,8 +341,8 @@ class WhatsAppController {
         $nombreRep = $representante['nombre'] ?? 'Representante';
         $cedulaRep = $representante['cedula'] ?? 'No asignada';
 
-        // ✅ Estado 8: requisitos dinámicos
-        if ($nuevoEstado == 8 && $idNivel) {
+        // ✅ Estado 9: requisitos dinámicos
+        if ($nuevoEstado == 9 && $idNivel) {
             require_once __DIR__ . '/../modelos/Requisito.php';
             $requisitoModel = new Requisito($this->conexion);
             $requisitos = $requisitoModel->obtenerPorNivel($idNivel);
@@ -368,14 +368,14 @@ class WhatsAppController {
 
         // ✅ Mensajes personalizados
         $mensajes = [
-            7 => "⏳ *Solicitud en Proceso*\n\nEstimado(a) *$nombreRep*,\n\n"
+            8 => "⏳ *Solicitud en Proceso*\n\nEstimado(a) *$nombreRep*,\n\n"
                  . "La solicitud de inscripción de *$estudianteNombre* " 
                  . "ha sido recibida y está en revisión inicial.\n\n"
                  . "Nuestro equipo administrativo verificará la documentación y le notificará "
                  . "los próximos pasos en un plazo de 48 horas hábiles.\n"
                  . "Código de Seguimiento: $codigoInscripcion",
 
-            9 => "💳 *Pendiente de Pago*\n\nEstimado(a) *$nombreRep*,\n\n*${estudianteNombre}*"
+            10 => "💳 *Pendiente de Pago*\n\nEstimado(a) *$nombreRep*,\n\n*${estudianteNombre}*"
                 . "ha sido *aceptado oficialmente* en nuestra institución.\n\n"
                 . "*📅 Próximo paso:* Diríjase a la caja para realizar el pago de:\n"
                 . "• Matrícula de inscripción\n• Primera mensualidad\n\n"
@@ -383,7 +383,7 @@ class WhatsAppController {
                 . "Una vez realizado el pago, la inscripción se completará automáticamente.\n"
                 . "Código de Seguimiento: $codigoInscripcion",
 
-            10 => "🎉 *¡Inscripción Completada!*\n\nEstimado(a) *$nombreRep*,\n\n*¡Felicidades!* \n\n*$estudianteNombre* ha sido oficialmente inscrito(a) en:\n"
+            11 => "🎉 *¡Inscripción Completada!*\n\nEstimado(a) *$nombreRep*,\n\n*¡Felicidades!* \n\n*$estudianteNombre* ha sido oficialmente inscrito(a) en:\n"
                 . "• 🏫 Curso: $curso\n"
                 . "• 📚 Sección: $seccion\n\n"
                 . "*📅 Inicio de clases:*\nPrimera semana de noviembre\n\n"
@@ -395,7 +395,7 @@ class WhatsAppController {
                 . (!empty($this->loginUrl) ? "🔗 Acceda aquí: {$this->loginUrl}\n\n" : "") // 👈 Solo si existe URL
                 . "¡Bienvenido(a) a nuestra familia fermintoriana!",
 
-            11 => "❌ *Solicitud Rechazada*\n\nEstimado(a) *$nombreRep*,\n\n"
+            12 => "❌ *Solicitud Rechazada*\n\nEstimado(a) *$nombreRep*,\n\n"
                 . "Luego de revisar la documentación de *$estudianteNombre*,"
                 . "lamentamos informarle que la solicitud de inscripción no pudo ser procesada.\n\n"
                 . "*📞 Contacte a administración* para:\n• Conocer los motivos específicos\n"

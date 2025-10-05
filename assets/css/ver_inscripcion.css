@@ -237,14 +237,14 @@
 }
 
 .swal2-confirm {
-    background: linear-gradient(135deg, var(--clr-primary) 0%, #a80000 100%) !important;
+    /* background: linear-gradient(135deg, var(--clr-primary) 0%, #a80000 100%) !important; */
     border: none !important;
     border-radius: 8px !important;
     padding: 10px 24px !important;
 }
 
 .swal2-cancel {
-    background: #6c757d !important;
+    /* background: #6c757d !important; */
     border: none !important;
     border-radius: 8px !important;
     padding: 10px 24px !important;

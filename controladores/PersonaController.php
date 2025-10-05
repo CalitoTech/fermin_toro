@@ -121,7 +121,8 @@ function crearUsuario() {
     $usuario = trim($_POST['usuario'] ?? '');
     $password = trim($_POST['password'] ?? '');
     $password2 = trim($_POST['password2'] ?? '');
-    $status = $_POST['status'] ?? 1;
+    $status_acceso = $_POST['status_acceso'] ?? 1;
+    $status_institucional = $_POST['status_institucional'] ?? 1;
     $roles = $_POST['roles'] ?? [];
     $telefonos = $_POST['telefonos'] ?? [];
 
@@ -222,7 +223,8 @@ function crearUsuario() {
         $persona->direccion = null;
         $persona->IdSexo = null;
         $persona->IdUrbanismo = null;
-        $persona->IdStatus = $status;
+        $persona->IdEstadoAcceso = $status_acceso;
+        $persona->IdEstadoInstitucional = $status_institucional;
 
         // Iniciar transacción
         $conexion->beginTransaction();
@@ -304,7 +306,8 @@ function editarUsuario() {
     $apellido = trim($_POST['apellido'] ?? '');
     $correo = trim($_POST['correo'] ?? '');
     $usuario = trim($_POST['usuario'] ?? '');
-    $status = $_POST['status'] ?? 1;
+    $status_acceso = $_POST['status_acceso'] ?? 1;
+    $status_institucional = $_POST['status_institucional'] ?? 1;
     $roles = $_POST['roles'] ?? [];
     $telefonos = $_POST['telefonos'] ?? [];
     $password = $_POST['password'] ?? '';
@@ -318,7 +321,8 @@ function editarUsuario() {
         'nombre' => $nombre,
         'apellido' => $apellido,
         'usuario' => $usuario,
-        'status' => $status,
+        'status_acceso' => $status_acceso,
+        'status_institucional' => $status_institucional,
         'roles' => $roles
     ];
     
@@ -395,7 +399,8 @@ function editarUsuario() {
         $persona->apellido = $apellido;
         $persona->correo = !empty($correo) ? $correo : null;
         $persona->usuario = $usuario;
-        $persona->IdStatus = (int)$status;
+        $persona->IdEstadoAcceso = (int)$status_acceso;
+        $persona->IdEstadoInstitucional = (int)$status_institucional;
 
         // Iniciar transacción
         $conexion->beginTransaction();

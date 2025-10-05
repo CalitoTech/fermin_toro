@@ -244,7 +244,7 @@ $stmtStatus = $conexion->prepare($queryStatus);
 $stmtStatus->execute();
 $todosStatus = $stmtStatus->fetchAll(PDO::FETCH_ASSOC);
 
-$idInscrito = 10; // Valor por defecto
+$idInscrito = 11; // Valor por defecto
 
 foreach ($todosStatus as $status) {
     if ($status['status'] === 'Inscrito') {
@@ -393,11 +393,11 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                         a.capacidad,
                         (SELECT COUNT(*) FROM inscripcion i2 
                          WHERE i2.IdCurso_Seccion = cs.IdCurso_Seccion 
-                         AND i2.IdStatus = 10) as estudiantes_actuales,
+                         AND i2.IdStatus = 11) as estudiantes_actuales,
                         (SELECT COUNT(*) FROM inscripcion i3 
                          INNER JOIN persona e ON i3.IdEstudiante = e.IdPersona
                          WHERE i3.IdCurso_Seccion = cs.IdCurso_Seccion 
-                         AND i3.IdStatus = 10 
+                         AND i3.IdStatus = 11 
                          AND e.IdUrbanismo = :id_urbanismo) as mismos_urbanismo
                       FROM curso_seccion cs
                       INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
@@ -465,8 +465,8 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                     <div class="status-bar d-flex align-items-center">
                         <?php 
                         $mostrarRechazado = true;
-                        $idStatusInscrito = 10;
-                        $idStatusRechazado = 11;
+                        $idStatusInscrito = 11;
+                        $idStatusRechazado = 12;
                         $estaRechazado = $inscripcion['IdStatus'] == $idStatusRechazado;
                         
                         if ($estaRechazado): ?>

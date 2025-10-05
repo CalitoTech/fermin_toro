@@ -17,7 +17,8 @@ class Persona {
     public $direccion;
     public $IdSexo;
     public $IdUrbanismo;
-    public $IdStatus;
+    public $IdEstadoAcceso;
+    public $IdEstadoInstitucional;
     public $codigo_temporal;
     public $codigo_expiracion;
 
@@ -36,19 +37,36 @@ class Persona {
         if (!$this->existeForeignKey('urbanismo', 'IdUrbanismo', $this->IdUrbanismo)) {
             throw new Exception("El urbanismo con IdUrbanismo={$this->IdUrbanismo} no existe.");
         }
-        if ($this->IdStatus !== null && !$this->existeForeignKey('status', 'IdStatus', $this->IdStatus)) {
-            throw new Exception("El status con IdStatus={$this->IdStatus} no existe.");
+
+        // Validar estados usando la columna correcta (IdStatus) y asegurarse que
+        // pertenecen al tipo 'Persona' (IdTipo_Status = 1) en la tabla status.
+        if ($this->IdEstadoAcceso !== null && $this->IdEstadoAcceso !== '') {
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM status WHERE IdStatus = :valor AND IdTipo_Status = 1");
+            $stmt->bindParam(":valor", $this->IdEstadoAcceso, PDO::PARAM_INT);
+            $stmt->execute();
+            if ($stmt->fetchColumn() == 0) {
+                throw new Exception("El status de acceso con IdEstadoAcceso={$this->IdEstadoAcceso} no existe.");
+            }
+        }
+
+        if ($this->IdEstadoInstitucional !== null && $this->IdEstadoInstitucional !== '') {
+            $stmt = $this->conn->prepare("SELECT COUNT(*) FROM status WHERE IdStatus = :valor AND IdTipo_Status = 1");
+            $stmt->bindParam(":valor", $this->IdEstadoInstitucional, PDO::PARAM_INT);
+            $stmt->execute();
+            if ($stmt->fetchColumn() == 0) {
+                throw new Exception("El status institucional con IdEstadoInstitucional={$this->IdEstadoInstitucional} no existe.");
+            }
         }
 
         // Construir consulta con todos los campos, permitiendo NULL
         $query = "INSERT INTO persona (
             IdNacionalidad, cedula, nombre, apellido, fecha_nacimiento, lugar_nacimiento,
             correo, direccion,
-            IdSexo, IdUrbanismo, IdStatus
+            IdSexo, IdUrbanismo, IdEstadoAcceso, IdEstadoInstitucional
         ) VALUES (
             :IdNacionalidad, :cedula, :nombre, :apellido, :fecha_nacimiento, :lugar_nacimiento,
             :correo, :direccion,
-            :IdSexo, :IdUrbanismo, :IdStatus
+            :IdSexo, :IdUrbanismo, :IdEstadoAcceso, :IdEstadoInstitucional
         )";
 
         $stmt = $this->conn->prepare($query);
@@ -64,7 +82,8 @@ class Persona {
         $this->direccion = $this->cleanValue($this->direccion);
         $this->IdSexo = $this->cleanValue($this->IdSexo);
         $this->IdUrbanismo = $this->cleanValue($this->IdUrbanismo);
-        $this->IdStatus = $this->cleanValue($this->IdStatus);
+        $this->IdEstadoAcceso = $this->cleanValue($this->IdEstadoAcceso);
+        $this->IdEstadoInstitucional = $this->cleanValue($this->IdEstadoInstitucional);
 
         // Vincular parámetros, convirtiendo cadenas vacías o valores inválidos a NULL
         $stmt->bindParam(":IdNacionalidad", $this->IdNacionalidad, is_null($this->IdNacionalidad) ? PDO::PARAM_NULL : PDO::PARAM_INT);
@@ -77,8 +96,9 @@ class Persona {
         $stmt->bindParam(":direccion", $this->direccion, is_null($this->direccion) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":IdSexo", $this->IdSexo, is_null($this->IdSexo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(":IdUrbanismo", $this->IdUrbanismo, is_null($this->IdUrbanismo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $stmt->bindParam(":IdStatus", $this->IdStatus, is_null($this->IdStatus) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        
+        $stmt->bindParam(":IdEstadoAcceso", $this->IdEstadoAcceso, is_null($this->IdEstadoAcceso) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindParam(":IdEstadoInstitucional", $this->IdEstadoInstitucional, is_null($this->IdEstadoInstitucional) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+
         if ($stmt->execute()) {
             return $this->conn->lastInsertId();
         }
@@ -108,8 +128,9 @@ class Persona {
             $this->direccion = $row['direccion'];
             $this->IdSexo = $row['IdSexo'];
             $this->IdUrbanismo = $row['IdUrbanismo'];
-            $this->IdStatus = $row['IdStatus'];
-            
+            $this->IdEstadoAcceso = $row['IdEstadoAcceso'];
+            $this->IdEstadoInstitucional = $row['IdEstadoInstitucional'];
+
             return $row;
         }
         
@@ -127,9 +148,10 @@ class Persona {
                     correo = :correo,
                     usuario = :usuario,
                     direccion = :direccion,
-                    IdSexo = :IdSexo,
-                    IdUrbanismo = :IdUrbanismo,
-                    IdStatus = :IdStatus
+                                        IdSexo = :IdSexo,
+                                        IdUrbanismo = :IdUrbanismo,
+                                        IdEstadoAcceso = :IdEstadoAcceso,
+                                        IdEstadoInstitucional = :IdEstadoInstitucional
                   WHERE IdPersona = :IdPersona";
 
         $stmt = $this->conn->prepare($query);
@@ -146,7 +168,8 @@ class Persona {
         $this->direccion = $this->cleanValue($this->direccion);
         $this->IdSexo = $this->cleanValue($this->IdSexo);
         $this->IdUrbanismo = $this->cleanValue($this->IdUrbanismo);
-        $this->IdStatus = $this->cleanValue($this->IdStatus);
+        $this->IdEstadoAcceso = $this->cleanValue($this->IdEstadoAcceso);
+        $this->IdEstadoInstitucional = $this->cleanValue($this->IdEstadoInstitucional);
 
         // Vincular parámetros
         $stmt->bindParam(":IdNacionalidad", $this->IdNacionalidad, is_null($this->IdNacionalidad) ? PDO::PARAM_NULL : PDO::PARAM_INT);
@@ -160,7 +183,8 @@ class Persona {
         $stmt->bindParam(":direccion", $this->direccion, is_null($this->direccion) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":IdSexo", $this->IdSexo, is_null($this->IdSexo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(":IdUrbanismo", $this->IdUrbanismo, is_null($this->IdUrbanismo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
-        $stmt->bindParam(":IdStatus", $this->IdStatus, is_null($this->IdStatus) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindParam(":IdEstadoAcceso", $this->IdEstadoAcceso, is_null($this->IdEstadoAcceso) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindParam(":IdEstadoInstitucional", $this->IdEstadoInstitucional, is_null($this->IdEstadoInstitucional) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
 
         return $stmt->execute();
@@ -287,7 +311,7 @@ class Persona {
     }
 
     public function validarCodigoTemporal($cedula, $codigo) {
-        $query = "SELECT IdPersona, IdStatus, usuario, codigo_temporal, codigo_expiracion 
+        $query = "SELECT IdPersona, IdEstadoAcceso, usuario, codigo_temporal, codigo_expiracion 
                 FROM persona 
                 WHERE cedula = :cedula 
                 LIMIT 1";
@@ -317,9 +341,9 @@ class Persona {
             return ['valido' => false, 'mensaje' => 'El código ha expirado.'];
         }
 
-        $permitidos_recuperar = [1, 4, 5, 7]; // Activo, Reposo, Vacaciones, Bloqueado
+        $permitidos_recuperar = [1, 3]; // Activo, Bloqueado
 
-        if (!in_array((int)$row['IdStatus'], $permitidos_recuperar)) {
+        if (!in_array((int)$row['IdEstadoAcceso'], $permitidos_recuperar)) {
             $this->limpiarCodigoTemporal($row['IdPersona']);
             return ['valido' => false, 'mensaje' => 'El usuario está en un estado no permitido para recuperar acceso.'];
         }
@@ -342,7 +366,7 @@ class Persona {
 
     public function bloquearCuenta() {
         $query = "UPDATE " . $this->table . " 
-                SET IdStatus = 7 
+                SET IdEstadoAcceso = 3 
                 WHERE IdPersona = :IdPersona";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':IdPersona', $this->IdPersona, PDO::PARAM_INT);

@@ -68,16 +68,19 @@ try {
     $roles = []; // Dejar vacío si hay error
 }
 
-// === Cargar Status desde la base de datos ===
-$statuses = [];
-
+// === Cargar Status desde la base de datos (filtrados por uso) ===
+$statusModel = null;
+$statusesAcceso = [];
+$statusesInstitucional = [];
 try {
-    require_once __DIR__ . '/../../../modelos/Status.php'; // Asumo que tienes un modelo Status
+    require_once __DIR__ . '/../../../modelos/Status.php';
     $statusModel = new Status($conexion);
-    $statuses = $statusModel->obtenerTodos();
+    $statusesAcceso = $statusModel->obtenerStatusAcceso();
+    $statusesInstitucional = $statusModel->obtenerStatusInstitucional();
 } catch (Exception $e) {
     error_log("Error al cargar statuses en nuevo_usuario.php: " . $e->getMessage());
-    $statuses = [];
+    $statusesAcceso = [];
+    $statusesInstitucional = [];
 }
 
 // Después de cargar los roles, añade esto:
@@ -285,16 +288,36 @@ try {
                                         </div>
 
                                         <!-- Status -->
-                                        <div class="añadir__grupo" id="grupo__status">
-                                            <label for="status" class="form-label">Status *</label>
+                                        <div class="añadir__grupo" id="grupo__status_acceso">
+                                            <label for="status_acceso" class="form-label">Status de Acceso *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
+                                                <select
+                                                    class="form-control añadir__input" 
+                                                    name="status_acceso" 
+                                                    id="status_acceso" 
+                                                    required>
+                                                    <?php foreach ($statusesAcceso as $status): ?>
+                                                        <option value="<?= $status['IdStatus'] ?>" <?= $status['IdStatus'] == 1 ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($status['status']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
+                                            </div>
+                                            <p class="añadir__input-error">Debe seleccionar un status.</p>
+                                        </div>
+
+                                        <div class="añadir__grupo" id="grupo__status_institucional">
+                                            <label for="status_institucional" class="form-label">Status Institucional *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-star'></i></span>
                                                 <select 
                                                     class="form-control añadir__input" 
-                                                    name="status" 
-                                                    id="status" 
+                                                    name="status_institucional" 
+                                                    id="status_institucional" 
                                                     required>
-                                                    <?php foreach ($statuses as $status): ?>
+                                                    <?php foreach ($statusesInstitucional as $status): ?>
                                                         <option value="<?= $status['IdStatus'] ?>" <?= $status['IdStatus'] == 1 ? 'selected' : '' ?>>
                                                             <?= htmlspecialchars($status['status']) ?>
                                                         </option>

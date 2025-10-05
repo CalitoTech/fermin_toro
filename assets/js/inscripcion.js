@@ -271,8 +271,8 @@ function actualizarBarraStatus(nuevoId) {
         }
         
         // Ocultar rechazado si ahora está inscrito
-        if (nuevoId === 10) { // ID_INSCRITO
-            const rechazadoStep = document.querySelector('.status-step[data-id="11"]');
+        if (nuevoId === 11) { // ID_INSCRITO
+            const rechazadoStep = document.querySelector('.status-step[data-id="12"]');
             if (rechazadoStep) {
                 rechazadoStep.style.display = 'none';
                 const lineAfter = rechazadoStep.nextElementSibling;
