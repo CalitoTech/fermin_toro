@@ -235,11 +235,12 @@ INSERT INTO `status` (`IdStatus`, `IdTipo_Status`, `status`) VALUES
 (4, 1, 'Reposo'),
 (5, 1, 'Vacaciones'),
 (6, 1, 'Graduado'),
-(7, 2, 'Pendiente de aprobación'),
-(8, 2, 'Aprobada para reunión'),
-(9, 2, 'En espera de pago'),
-(10, 2, 'Inscrito'),
-(11, 2, 'Rechazada');
+(7, 1, 'Bloqueado'),
+(8, 2, 'Pendiente de aprobación'),
+(9, 2, 'Aprobada para reunión'),
+(10, 2, 'En espera de pago'),
+(11, 2, 'Inscrito'),
+(12, 2, 'Rechazada');
 
 CREATE TABLE parentesco (
     IdParentesco int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -267,6 +268,8 @@ CREATE TABLE persona (
     correo varchar(50) NULL,
     usuario varchar(50) NULL,
     password varchar(1000) NULL,
+    codigo_temporal varchar (1000) NULL,
+    codigo_expiracion datetime NULL,
     direccion varchar(555) NULL,
     IdSexo int NULL,
     IdUrbanismo int NULL,
@@ -277,8 +280,8 @@ CREATE TABLE persona (
     FOREIGN KEY (IdSexo) REFERENCES sexo(IdSexo)
 );
 
-INSERT INTO `persona` (`IdPersona`, `IdNacionalidad`, `cedula`, `nombre`, `apellido`, `fecha_nacimiento`, `correo`, `usuario`, `password`, `direccion`, `IdSexo`, `IdUrbanismo`, `IdStatus`) VALUES
-(1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', 'Av. Sucre, Calle 3, Casa #152', 1, 1, 1);
+INSERT INTO `persona` (`IdPersona`, `IdNacionalidad`, `cedula`, `nombre`, `apellido`, `fecha_nacimiento`, `correo`, `usuario`, `password`, `codigo_temporal`, `codigo_expiracion`, `direccion`, `IdSexo`, `IdUrbanismo`, `IdStatus`) VALUES
+(1, 1, 30588094, 'Carlos', 'Navas', '2004-10-26', 'carlosdanielnavas26@gmail.com', 'carlos', '$2y$10$DeA8v8DgHihCe2aKBW4qZuwtITen6EM5W4OdQKoZoQHqWsBCuOM/2', NULL, NULL, 'Av. Sucre, Calle 3, Casa #152', 1, 1, 1);
 
 CREATE TABLE egreso (
     IdEgreso int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -392,6 +395,9 @@ CREATE TABLE telefono (
     FOREIGN KEY (IdTipo_Telefono) REFERENCES tipo_telefono(IdTipo_Telefono),
     FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona)
 );
+
+INSERT INTO `telefono` (`IdTelefono`, `IdTipo_Telefono`, `numero_telefono`, `IdPersona`) VALUES
+(1, 2, '04263519830', 1);
 
 CREATE TABLE materia (
     IdMateria int NOT NULL AUTO_INCREMENT PRIMARY KEY,

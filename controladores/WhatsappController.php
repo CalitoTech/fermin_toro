@@ -33,31 +33,42 @@ class WhatsAppController {
 
             $persona = new Persona($this->conexion);
 
+            // 🔍 Buscar persona por usuario
+            $stmt = $this->conexion->prepare("SELECT IdPersona FROM persona WHERE usuario = :usuario LIMIT 1");
+            $stmt->bindParam(":usuario", $usuario, PDO::PARAM_STR);
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                $this->responderWhatsApp($numeroWhatsApp, "⚠️ No pude encontrar tu usuario en la base de datos.");
+                return;
+            }
+
+            $persona->IdPersona = $row['IdPersona'];
+
             if ($opcion === 'si') {
-                // Buscar credenciales
-                $stmt = $this->conexion->prepare("SELECT IdPersona FROM persona WHERE usuario = :usuario LIMIT 1");
-                $stmt->bindParam(":usuario", $usuario, PDO::PARAM_STR);
-                $stmt->execute();
-                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                // ✅ Generar y guardar código temporal
+                $codigo = $persona->generarCodigoTemporal();
 
-                if ($row) {
-                    $persona->IdPersona = $row['IdPersona'];
-                    $credenciales = $persona->obtenerCredenciales();
-
-                    if ($credenciales) {
-                        $respuesta = "👤 Usuario: *{$credenciales['usuario']}*\n🔑 Contraseña: *{$credenciales['password']}*";
-                    } else {
-                        $respuesta = "⚠️ No pude obtener tus credenciales.";
-                    }
+                if ($codigo) {
+                    $respuesta = "🔐 Código de verificación: *$codigo*\n\n"
+                            . "⚠️ Este código expira en 1 minuto. Úsalo de inmediato.";
                 } else {
-                    $respuesta = "⚠️ No pude encontrar tu usuario en la base de datos.";
+                    $respuesta = "⚠️ No se pudo generar tu código temporal. Intenta más tarde.";
                 }
 
                 $this->responderWhatsApp($numeroWhatsApp, $respuesta);
             }
 
             if ($opcion === 'no') {
-                $respuesta = "⚠️ Por seguridad, te recomiendo ingresar al portal y cambiar tu contraseña lo antes posible.";
+                // 🚫 Bloquear la cuenta
+                if ($persona->bloquearCuenta()) {
+                    $respuesta = "🚫 Tu cuenta ha sido bloqueada por seguridad.\n\n"
+                            . "👉 Para recuperar acceso, comunícate con el área administrativa.";
+                } else {
+                    $respuesta = "⚠️ Ocurrió un error al bloquear tu cuenta.";
+                }
+
                 $this->responderWhatsApp($numeroWhatsApp, $respuesta);
             }
         }

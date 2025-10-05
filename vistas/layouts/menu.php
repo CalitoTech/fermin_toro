@@ -180,7 +180,7 @@ try {
                         <div class="profile_name"><?php echo htmlspecialchars($userNombre . ' ' . $userApellido); ?></div>
                         <div class="job"><?php echo htmlspecialchars($userPerfil); ?></div>
                     </div>
-                    <a href="../../controladores/login/cerrar_sesion.php"><i class='bx bx-log-out'></i></a>
+                    <a href="../../../controladores/login/cerrar_sesion.php"><i class='bx bx-log-out'></i></a>
                 </div>
             </li>
         </ul>

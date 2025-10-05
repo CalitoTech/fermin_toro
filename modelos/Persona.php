@@ -18,6 +18,8 @@ class Persona {
     public $IdSexo;
     public $IdUrbanismo;
     public $IdStatus;
+    public $codigo_temporal;
+    public $codigo_expiracion;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -252,4 +254,92 @@ class Persona {
         $stmt->bindParam(':id', $this->IdPersona, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    public function generarCodigoTemporal() {
+        // Usar la zona horaria de Caracas
+        $zona = new DateTimeZone("America/Caracas");
+
+        // Generar código aleatorio de 6 dígitos
+        $codigo = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        // Calcular expiración en Caracas (1 minuto desde ahora)
+        $expira = new DateTime("+1 minute", $zona);
+        $expiraStr = $expira->format("Y-m-d H:i:s");
+
+        // Hashear el código antes de guardarlo
+        $hashedCodigo = password_hash($codigo, PASSWORD_DEFAULT);
+
+        // Guardar en la BD
+        $query = "UPDATE " . $this->table . " 
+                SET codigo_temporal = :codigo, codigo_expiracion = :expira 
+                WHERE IdPersona = :IdPersona";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':codigo', $hashedCodigo, PDO::PARAM_STR);
+        $stmt->bindParam(':expira', $expiraStr, PDO::PARAM_STR);
+        $stmt->bindParam(':IdPersona', $this->IdPersona, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            return $codigo; // ✅ Devuelves el código en claro (para enviar al usuario)
+        }
+
+        return false;
+    }
+
+    public function validarCodigoTemporal($codigoIngresado) {
+        // Buscar si hay un código para este usuario
+        $query = "SELECT codigo_temporal, codigo_expiracion 
+                FROM " . $this->table . " 
+                WHERE IdPersona = :IdPersona 
+                LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':IdPersona', $this->IdPersona, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || empty($row['codigo_temporal'])) {
+            return [ "valido" => false, "mensaje" => "No existe un código activo." ];
+        }
+
+        // Verificar expiración
+        $zona = new DateTimeZone("America/Caracas");
+        $ahora = new DateTime("now", $zona);
+        $expira = new DateTime($row['codigo_expiracion'], $zona);
+
+        if ($ahora > $expira) {
+            // Si está vencido → limpiar
+            $this->limpiarCodigoTemporal();
+            return [ "valido" => false, "mensaje" => "El código ha expirado." ];
+        }
+
+        // Verificar coincidencia usando password_verify
+        if (!password_verify($codigoIngresado, $row['codigo_temporal'])) {
+            return [ "valido" => false, "mensaje" => "El código no es válido." ];
+        }
+
+        // Si es válido y aún no expiró → limpiar para que sea de un solo uso
+        $this->limpiarCodigoTemporal();
+        return [ "valido" => true, "mensaje" => "Código válido." ];
+    }
+
+    private function limpiarCodigoTemporal() {
+        $query = "UPDATE " . $this->table . " 
+                SET codigo_temporal = NULL, codigo_expiracion = NULL 
+                WHERE IdPersona = :IdPersona";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':IdPersona', $this->IdPersona, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+
+    public function bloquearCuenta() {
+        $query = "UPDATE " . $this->table . " 
+                SET IdStatus = 7 
+                WHERE IdPersona = :IdPersona";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':IdPersona', $this->IdPersona, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+
 }
