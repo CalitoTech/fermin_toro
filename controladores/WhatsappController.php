@@ -74,9 +74,9 @@ class WhatsAppController {
         }
     }
 
-    public function enviarAvisoBloqueo($idPersona, $tiempoBloqueo) {
+    public function enviarAvisoBloqueo($idPersona, $tipoAviso = 'bloqueo') {
         // 1. Buscar el número y usuario
-        $query = "SELECT usuario, password, nombre, apellido, 
+        $query = "SELECT usuario, nombre, apellido, 
                         (SELECT numero_telefono FROM telefono t 
                         WHERE t.IdPersona = p.IdPersona 
                         LIMIT 1) AS telefono
@@ -93,18 +93,31 @@ class WhatsAppController {
         }
 
         $telefono = $this->formatearTelefono($persona['telefono']);
-        $usuario = $persona['usuario'];
-        $minutos = intval($tiempoBloqueo / 60);
-
-        // 2. Construir payload plano según la documentación de Evolution
+        $usuario  = $persona['usuario'];
+        $nombre   = "{$persona['nombre']} {$persona['apellido']}";
         $endpoint = $this->evolutionApiUrl . '/message/sendList/' . $this->nombreInstancia;
 
+        // --- 🧠 Definir el contenido según el tipo de aviso ---
+        if ($tipoAviso === 'bloqueo') {
+            $title = "🔒 Bloqueo de cuenta";
+            $description = "Hola *$nombre*, tu cuenta fue bloqueada debido a que realizó 3 intentos fallidos de inicio de sesión.\n¿Fuiste tú?";
+            $footer = "Confirma para continuar";
+        } else if ($tipoAviso === 'recuperacion') {
+            $title = "🔐 Recuperación de acceso";
+            $description = "Hola *$nombre*, recibimos una solicitud para recuperar el acceso a tu cuenta.\n¿Fuiste tú quien la realizó?";
+            $footer = "Confirma para proceder con la recuperación";
+        } else {
+            error_log("⚠️ Tipo de aviso desconocido: $tipoAviso");
+            return false;
+        }
+
+        // --- 📦 Construir payload WhatsApp ---
         $payload = [
             "number"     => $telefono,
-            "title"      => "🔒 Bloqueo de cuenta",
-            "description"=> "Tu usuario *$usuario* fue bloqueado por $minutos minuto(s) debido a intentos fallidos.\n¿Fuiste tú?",
+            "title"      => $title,
+            "description"=> $description,
             "buttonText" => "Responder",
-            "footerText" => "Confirma para continuar",
+            "footerText" => $footer,
             "sections"   => [
                 [
                     "title" => "Confirma tu respuesta",
@@ -112,19 +125,23 @@ class WhatsAppController {
                         [
                             "rowId"      => "bloqueo_si_{$usuario}",
                             "title"      => "✅ Sí, fui yo",
-                            "description"=> "Desbloquear la cuenta"
+                            "description"=> ($tipoAviso === 'bloqueo')
+                                ? "Recuperar cuenta"
+                                : "Continuar con la recuperación"
                         ],
                         [
                             "rowId"      => "bloqueo_no_{$usuario}",
                             "title"      => "❌ No, no fui yo",
-                            "description"=> "Marcar actividad sospechosa"
+                            "description"=> ($tipoAviso === 'bloqueo')
+                                ? "Marcar actividad sospechosa"
+                                : "Cancelar la recuperación"
                         ]
                     ]
                 ]
             ]
         ];
 
-        // 3. Enviar petición
+        // --- 🚀 Enviar mensaje WhatsApp ---
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $endpoint,
@@ -140,10 +157,37 @@ class WhatsAppController {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        error_log("📤 WhatsApp bloqueo respuesta: $response");
+        error_log("📤 WhatsApp ($tipoAviso) enviado a {$persona['telefono']} -> HTTP $httpCode -> Respuesta: $response");
 
-        return $httpCode === 200;
+        // 🧩 Analizar la respuesta JSON de Evolution API (si existe)
+        $responseData = json_decode($response, true);
+
+        // ✅ Determinar si el envío fue exitoso según el código o el cuerpo
+        $exito = false;
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            $exito = true;
+        } elseif (isset($responseData['status']) && in_array(strtolower($responseData['status']), ['success', 'ok', 'sent'])) {
+            $exito = true;
+        } elseif (isset($responseData['message']) && stripos($responseData['message'], 'success') !== false) {
+            $exito = true;
+        }
+
+        // 💬 Log más informativo
+        if ($exito) {
+            error_log("✅ Mensaje de tipo '$tipoAviso' enviado correctamente a $telefono");
+        } else {
+            error_log("❌ Falló el envío del mensaje ($tipoAviso) a $telefono - HTTP: $httpCode - Respuesta: " . print_r($responseData, true));
+        }
+
+        // 📦 Retornar datos útiles al controlador
+        return [
+            'success'  => $exito,
+            'httpCode' => $httpCode,
+            'response' => $responseData
+        ];
     }
+
 
     /**
      * Envía mensajes de WhatsApp para cambio de estado de inscripción

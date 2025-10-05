@@ -14,6 +14,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../../config/conexion.php';
+require_once __DIR__ . '/../../modelos/Persona.php'; // asegúrate de la ruta correcta
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $database = new Database();
@@ -22,60 +23,107 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $usuario = isset($_POST['usuario']) ? trim($_POST['usuario']) : '';
     $password = $_POST['password'] ?? '';
 
-    // Normalizar usuario para clave de sesión
+    // --- LOGIN CON CÓDIGO TEMPORAL ---
+    if (isset($_POST['cedula']) && isset($_POST['codigo'])) {
+        $cedula = trim($_POST['cedula']);
+        $codigo = trim($_POST['codigo']);
+
+        if ($cedula === '' || $codigo === '') {
+            mostrarAlertaUsuario("Debes ingresar la cédula y el código de verificación.");
+            exit;
+        }
+
+        $personaModel = new Persona($conexion);
+        $resultado = $personaModel->validarCodigoTemporal($cedula, $codigo);
+
+        if ($resultado['valido']) {
+            // ✅ Verificar si el usuario estaba bloqueado (IdStatus = 7)
+            $idPersona = $resultado['IdPersona'];
+            $queryStatus = "SELECT IdStatus FROM persona WHERE IdPersona = :id";
+            $stmtStatus = $conexion->prepare($queryStatus);
+            $stmtStatus->bindParam(':id', $idPersona, PDO::PARAM_INT);
+            $stmtStatus->execute();
+            $estado = (int)$stmtStatus->fetchColumn();
+
+            if ($estado === 7) {
+                // ✅ Reactivar usuario automáticamente
+                $queryReactivar = "UPDATE persona SET IdStatus = 1 WHERE IdPersona = :id";
+                $stmtReactivar = $conexion->prepare($queryReactivar);
+                $stmtReactivar->bindParam(':id', $idPersona, PDO::PARAM_INT);
+                $stmtReactivar->execute();
+            }
+
+            // Login exitoso sin contraseña
+            $_SESSION['idPersona'] = $resultado['IdPersona'];
+            $_SESSION['usuario'] = $resultado['usuario'];
+            $_SESSION['idPerfil'] = null;
+
+            // Limpiar el código para que no se pueda reutilizar
+            $personaModel->limpiarCodigoTemporal($resultado['IdPersona']);
+
+            $_SESSION['login_exitoso'] = true;
+            header("Location: ../../vistas/inicio/inicio/inicio.php");
+            exit;
+        } else {
+            mostrarAlertaUsuario($resultado['mensaje']);
+            exit;
+        }
+    }
+
+
+    // si usuario vacío -> error inmediato
+    if ($usuario === '') {
+        mostrarAlertaUsuario("Debes ingresar tu usuario.");
+        exit;
+    }
+
+    // Normalizar clave de sesión (sólo para intentos)
     $usernameKey = mb_strtolower($usuario);
     $usernameKey = $usernameKey === '' ? '_empty_' : $usernameKey;
 
     $max_intentos = 3;
-    $bloqueo_minutos = 1; // minutos de bloqueo
 
     try {
-        // Verificar que el usuario exista y esté activo
-        $queryCheck = "SELECT IdPersona, IdStatus FROM persona WHERE usuario = :usuario";
+        // 1) Buscar persona por usuario (solo IdPersona + IdStatus)
+        $queryCheck = "SELECT IdPersona, IdStatus, usuario FROM persona WHERE usuario = :usuario LIMIT 1";
         $stmtCheck = $conexion->prepare($queryCheck);
-        $stmtCheck->bindParam(':usuario', $usuario);
+        $stmtCheck->bindParam(':usuario', $usuario, PDO::PARAM_STR);
         $stmtCheck->execute();
         $persona = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
         if (!$persona) {
-            // Usuario no existe
             mostrarAlertaUsuario("El usuario no existe en el sistema.");
             exit;
         }
 
-        if ($persona['IdStatus'] != 1) {
-            // Usuario inactivo
-            mostrarAlertaUsuario("El usuario está inactivo, contacte al administrador.");
+        $status = (int)($persona['IdStatus'] ?? 0);
+
+        if ($status === 7) {
+            // Bloqueado permanentemente
+            mostrarAlertaUsuario("El usuario ha sido bloqueado por medidas de seguridad. Contacte al administrador.");
             exit;
         }
 
-        // Validar si este usuario está bloqueado
-        if (isset($_SESSION['bloqueos'][$usernameKey]) && $_SESSION['bloqueos'][$usernameKey] > time()) {
-            $tiempo_restante = $_SESSION['bloqueos'][$usernameKey] - time();
-            mostrarAlertaTiempo($tiempo_restante, $max_intentos);
+        $permitidos_login = [1, 4, 5]; // Activo, Reposo, Vacaciones
+
+        if (!in_array((int)$persona['IdStatus'], $permitidos_login)) {
+            mostrarAlertaUsuario("El usuario no tiene permitido acceder al sistema. Contacte al administrador.");
             exit;
-        } else {
-            // Si el bloqueo expiró, limpiar estado
-            if (isset($_SESSION['bloqueos'][$usernameKey]) && $_SESSION['bloqueos'][$usernameKey] <= time()) {
-                unset($_SESSION['bloqueos'][$usernameKey]);
-                if (isset($_SESSION['intentos'][$usernameKey])) {
-                    $_SESSION['intentos'][$usernameKey] = 0;
-                }
-            }
         }
 
-        // Buscar credenciales completas
-        $query = "SELECT p.IdPersona, dp.IdPerfil, p.password, p.IdStatus
-                 FROM detalle_perfil dp
-                 INNER JOIN persona p ON dp.IdPersona = p.IdPersona
-                 WHERE p.usuario = :usuario AND p.IdStatus = 1";
+        // 2) Obtener credenciales (usar LEFT JOIN para no depender de detalle_perfil)
+        $query = "SELECT p.IdPersona, dp.IdPerfil, p.password
+                  FROM persona p
+                  LEFT JOIN detalle_perfil dp ON dp.IdPersona = p.IdPersona
+                  WHERE p.usuario = :usuario AND p.IdStatus = 1
+                  LIMIT 1";
         $stmt = $conexion->prepare($query);
-        $stmt->bindParam(':usuario', $usuario);
+        $stmt->bindParam(':usuario', $usuario, PDO::PARAM_STR);
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $login_ok = false;
-        if ($user && password_verify($password, $user['password'])) {
+        if ($user && isset($user['password']) && password_verify($password, $user['password'])) {
             $login_ok = true;
         }
 
@@ -83,16 +131,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             // Inicio de sesión exitoso: resetear contador
             $_SESSION['usuario'] = $usuario;
             $_SESSION['idPersona'] = $user['IdPersona'];
-            $_SESSION['idPerfil'] = $user['IdPerfil'];
+            $_SESSION['idPerfil'] = $user['IdPerfil'] ?? null;
             $_SESSION['login_exitoso'] = true;
 
+            // limpiar contador de intentos para este usuario
             unset($_SESSION['intentos'][$usernameKey]);
-            unset($_SESSION['bloqueos'][$usernameKey]);
 
             header("Location: ../../vistas/inicio/inicio/inicio.php");
             exit;
         } else {
-            // Manejo de intentos fallidos solo para este usuario
+            // Manejo de intentos fallidos
             if (!isset($_SESSION['intentos'][$usernameKey])) {
                 $_SESSION['intentos'][$usernameKey] = 0;
             }
@@ -100,12 +148,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $intento = $_SESSION['intentos'][$usernameKey];
 
             if ($intento >= $max_intentos) {
-                $_SESSION['bloqueos'][$usernameKey] = time() + ($bloqueo_minutos * 60);
-                $tiempo_restante = $_SESSION['bloqueos'][$usernameKey] - time();
-                mostrarAlertaTiempo($tiempo_restante, $max_intentos);
+                // Bloquear definitivamente en BD usando el modelo Persona
+                $personaModel = new Persona($conexion);
+                $personaModel->IdPersona = $persona['IdPersona'];
+                $okBloqueo = $personaModel->bloquearCuenta();
+
+                // Enviar aviso via whatsapp (si quieres)
                 require_once __DIR__ . '/../../controladores/WhatsAppController.php';
                 $whatsapp = new WhatsAppController($conexion);
-                $whatsapp->enviarAvisoBloqueo($persona['IdPersona'], $bloqueo_minutos * 60);
+                // enviarAvisoBloqueo espera idPersona
+                $whatsapp->enviarAvisoBloqueo($persona['IdPersona'], 'bloqueo');
+
+                error_log("LOGIN: usuario '{$usuario}' bloqueado en BD (IdPersona={$persona['IdPersona']}). Bloqueo ok? " . ($okBloqueo ? 'si' : 'no'));
+
+                mostrarAlertaUsuario("El usuario ha sido bloqueado por medidas de seguridad. Contacte al administrador.");
                 exit;
             } else {
                 mostrarAlertaError($intento, $max_intentos);
@@ -132,6 +188,18 @@ function mostrarAlertaUsuario($mensaje) {
         confirmButtonText: 'Aceptar'
     }).then(() => {
         window.location = '../../vistas/login/login.php';
+    });
+    </script>";
+}
+
+function mostrarAlertaExito($mensaje) {
+    $mensaje_js = json_encode($mensaje);
+    echo "<script>
+    Swal.fire({
+        title: 'Ëxito',
+        text: $mensaje_js,
+        icon: 'success',
+        confirmButtonText: 'Aceptar'
     });
     </script>";
 }
