@@ -44,6 +44,12 @@ function showWarningAlert(message) {
     });
 }
 
+let nivelSeleccionadoGlobal = null;
+
+$('#formularioModal').on('hidden.bs.modal', function() {
+    nivelSeleccionadoGlobal = null;
+});
+
 function mostrarRequisitos(idNivel) {
     // Mostrar modal y spinner de carga
     $('#requisitosModalBody').html(`
@@ -143,21 +149,39 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function() {
     }
 });
 
-function abrirFormulario(idCurso) {
+function abrirFormulario(idCurso, idNivel) {
     $('#idCursoSeleccionado').val(idCurso);
-    
+
+    // Mostrar/ocultar campos de cédula y teléfono para nivel Inicial (IdNivel == 1)
+    if (parseInt(idNivel) === 1) {
+        $('#estudianteCedulaContainer').hide();
+        $('#estudianteTelefonoContainer').hide();
+
+        // Desactivar validación HTML y limpiar valores
+        $('#estudianteCedula').prop('required', false).val('');
+        $('#estudianteTelefono').prop('required', false).val('');
+
+        // Guardar el nivel para validaciones posteriores
+        $('#idNivelSeleccionado').val(idNivel);
+    } else {
+        $('#estudianteCedulaContainer').show();
+        $('#estudianteTelefonoContainer').show();
+        $('#estudianteCedula').prop('required', true);
+        $('#estudianteTelefono').prop('required', true);
+        $('#idNivelSeleccionado').val(idNivel);
+    }
+
+
     // Obtener el nombre del curso desde los datos ya cargados en la página
     const cursoSeleccionado = $(`button[onclick="abrirModalImprimir(${idCurso})"]`)
                               .closest('tr')
                               .find('td:first')
                               .text().trim();
-    
-    // Si encontramos el nombre del curso en la tabla, lo usamos
+
     if (cursoSeleccionado) {
         $('#formularioModalLabel').html(`Formulario de Inscripción - ${cursoSeleccionado}`);
         $('#formularioModal').modal('show');
     } else {
-        // Si no lo encontramos, mostramos un mensaje genérico
         $('#formularioModalLabel').html('Formulario de Inscripción');
         $('#formularioModal').modal('show');
     }
@@ -173,20 +197,42 @@ function enviarFormulario() {
     
     // 1. Validación de campos requeridos básicos
     let camposFaltantes = [];
-    
-    // Validar sección del estudiante (siempre requerido)
+
+    // Validar sección del estudiante (siempre requerido) pero omitir cédula/telefono si sus contenedores están ocultos
     const camposEstudiante = [
-        {id: 'estudianteNombres', nombre: 'Nombres del estudiante'},
-        {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante'},
-        {id: 'estudianteCedula', nombre: 'Cédula del estudiante'},
-        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante'},
-        {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante'},
-        {id: 'estudianteTelefono', nombre: 'Teléfono del estudiante'},
-        {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante'}
+        {id: 'estudianteNombres', nombre: 'Nombres del estudiante', container: null},
+        {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante', container: null},
+        {id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer'},
+        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null},
+        {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null},
+        {id: 'estudianteTelefono', nombre: 'Teléfono del estudiante', container: '#estudianteTelefonoContainer'},
+        {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante', container: null}
     ];
-    
-    camposEstudiante.forEach(campo => {
-        if (!$(`#${campo.id}`).val()) {
+
+    const idNivelSeleccionado = parseInt($('#idNivelSeleccionado').val() || 0);
+
+
+    // 🔧 Filtramos solo los que deben validarse
+    const camposAValidar = camposEstudiante.filter(campo => {
+        // Omitir cédula y teléfono si es nivel inicial
+        if (idNivelSeleccionado === 1 && 
+            (campo.id === 'estudianteCedula' || campo.id === 'estudianteTelefono')) {
+            return false;
+        }
+
+        // Omitir si el contenedor está oculto
+        if (campo.container && $(campo.container).is(':hidden')) {
+            return false;
+        }
+
+        return true;
+    });
+
+    // ✅ Validamos solo los campos que quedan en la lista filtrada
+    camposAValidar.forEach(campo => {
+        const valor = $(`#${campo.id}`).val();
+
+        if (!valor) {
             camposFaltantes.push(campo.nombre);
             $(`#${campo.id}`).addClass('is-invalid');
         }
@@ -362,6 +408,10 @@ function inicializarFormulario() {
 
     // Validación de cédula al perder foco
     $('#estudianteCedula').on('blur', function() {
+        const idNivelSeleccionado = parseInt(nivelSeleccionadoGlobal || 0);
+        // Si es nivel inicial, no hacemos verificación
+        if (idNivelSeleccionado === 1) return;
+
         const nacionalidad = $('#estudianteNacionalidad').val();
         const cedula = $(this).val();
         
@@ -379,21 +429,27 @@ function inicializarFormulario() {
         e.preventDefault(); // Prevenir envío por defecto
         
         const form = document.getElementById('formInscripcion');
-        const nacionalidad = $('#estudianteNacionalidad').val();
-        const cedula = $('#estudianteCedula').val();
-        
-        // Primero validar cédula si está completa
+    const nacionalidad = $('#estudianteNacionalidad').val();
+    let cedula = $('#estudianteCedula').val();
+    const idNivelSeleccionado = parseInt($('#idNivelSeleccionado').val() || 0);
+
+        // Si el nivel es inicial (IdNivel == 1), forzamos cedula vacía y no validamos
+        if (idNivelSeleccionado === 1) {
+            cedula = '';
+        }
+
+        // Primero validar cédula si está completa y visible
         if (nacionalidad && cedula) {
             verificarCedulaExistente(cedula, nacionalidad, function(inscrito, estado) {
                 if (inscrito) {
                     mostrarAlertaCedulaExistente(estado);
-                    return false; // Detener el proceso
+                    return false; // Detener el proceso dentro del callback
                 } else {
                     enviarFormulario(); // Proceder con el envío
                 }
             });
         } else {
-            enviarFormulario(); // Si no hay cédula, proceder con validación normal
+            enviarFormulario(); // Si no hay cédula (o no es visible), proceder con validación normal
         }
     });
 }
@@ -603,7 +659,6 @@ function verificarCedulaExistente(cedula, nacionalidad, callback) {
             });
         })
         .then(data => {
-            console.log('verificarCedula response:', data);
 
             // admitir ambos formatos: { existe: bool } o { inscrito: bool }
             const existe = (typeof data.existe !== 'undefined') ? data.existe : (typeof data.inscrito !== 'undefined' ? data.inscrito : false);
@@ -694,8 +749,12 @@ let cursoSeleccionadoTemporal = null;
 /**
  * Muestra el modal informativo y guarda el ID del curso
  */
-function mostrarInformacionModal(idCurso) {
+// Ahora aceptamos (idCurso, idNivel). Si idNivel == 1 -> nivel Inicial
+function mostrarInformacionModal(idCurso, idNivel) {
     cursoSeleccionadoTemporal = idCurso;
+    nivelSeleccionadoGlobal = idNivel;
+    // Guardamos el idNivel temporalmente en el modal para usarlo al abrir el formulario
+    $('#informacionModal').data('idNivel', idNivel);
     $('#informacionModal').modal('show');
 }
 
@@ -708,7 +767,9 @@ $('#btnContinuarFormulario').on('click', function() {
     // Cerrar el modal informativo y esperar a que esté completamente oculto
     $('#informacionModal').one('hidden.bs.modal', function() {
         // Abrir el formulario después de que el modal informativo se haya cerrado
-        abrirFormulario(cursoSeleccionadoTemporal);
+        // Detectar si el curso corresponde a nivel Inicial (IdNivel == 1)
+        const idNivel = $('#informacionModal').data('idNivel') || 0;
+        abrirFormulario(cursoSeleccionadoTemporal, nivelSeleccionadoGlobal);
     }).modal('hide');
 });
 

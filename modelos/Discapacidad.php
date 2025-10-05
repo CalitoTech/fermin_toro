@@ -14,6 +14,30 @@ class Discapacidad {
 
     // Guardar una discapacidad
     public function guardar() {
+        // Sanitizar
+        $this->discapacidad = trim($this->discapacidad === null ? '' : $this->discapacidad);
+        $this->discapacidad = htmlspecialchars(strip_tags($this->discapacidad));
+        $this->IdPersona = (int)$this->IdPersona;
+        $this->IdTipo_Discapacidad = (int)$this->IdTipo_Discapacidad;
+
+        if (empty($this->discapacidad) && $this->IdTipo_Discapacidad <= 0) {
+            // Nada que guardar
+            return false;
+        }
+
+        // Verificar si ya existe la misma discapacidad para la persona (silencioso)
+        $checkSql = "SELECT IdDiscapacidad FROM discapacidad WHERE IdPersona = :IdPersona AND IdTipo_Discapacidad = :IdTipo LIMIT 1";
+        $checkStmt = $this->conn->prepare($checkSql);
+        $checkStmt->bindParam(':IdPersona', $this->IdPersona, PDO::PARAM_INT);
+        $checkStmt->bindParam(':IdTipo', $this->IdTipo_Discapacidad, PDO::PARAM_INT);
+        $checkStmt->execute();
+        $found = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($found) {
+            // Ya existe -> no insertar de nuevo
+            return (int)$found['IdDiscapacidad'];
+        }
+
         $query = "INSERT INTO discapacidad (
             discapacidad, IdPersona, IdTipo_Discapacidad
         ) VALUES (
@@ -21,18 +45,19 @@ class Discapacidad {
         )";
 
         $stmt = $this->conn->prepare($query);
-
-        // Limpiar datos
-        $this->discapacidad = htmlspecialchars(strip_tags($this->discapacidad));
-        $this->IdPersona = htmlspecialchars(strip_tags($this->IdPersona));
-        $this->IdTipo_Discapacidad = htmlspecialchars(strip_tags($this->IdTipo_Discapacidad));
-
-        // Vincular valores
         $stmt->bindParam(":discapacidad", $this->discapacidad);
-        $stmt->bindParam(":IdPersona", $this->IdPersona);
-        $stmt->bindParam(":IdTipo_Discapacidad", $this->IdTipo_Discapacidad);
+        $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
+        $stmt->bindParam(":IdTipo_Discapacidad", $this->IdTipo_Discapacidad, PDO::PARAM_INT);
 
-        return $stmt->execute();
+        try {
+            if ($stmt->execute()) {
+                return $this->conn->lastInsertId();
+            }
+            return false;
+        } catch (Exception $e) {
+            error_log("Error al guardar discapacidad: " . $e->getMessage());
+            return false;
+        }
     }
 
     // Obtener discapacidades por persona

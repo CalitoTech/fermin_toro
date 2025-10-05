@@ -23,21 +23,42 @@ class Telefono {
         $this->numero_telefono = htmlspecialchars(strip_tags($this->numero_telefono));
         $this->IdTipo_Telefono = (int)$this->IdTipo_Telefono;
         $this->IdPersona = (int)$this->IdPersona;
-
-        $query = "INSERT INTO telefono (numero_telefono, IdTipo_Telefono, IdPersona) 
-                  VALUES (:numero_telefono, :IdTipo_Telefono, :IdPersona)";
-
-        $stmt = $this->conn->prepare($query);
-
-        $stmt->bindParam(":numero_telefono", $this->numero_telefono);
-        $stmt->bindParam(":IdTipo_Telefono", $this->IdTipo_Telefono, PDO::PARAM_INT);
-        $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
-
         try {
-            return $stmt->execute() ? $this->conn->lastInsertId() : false;
+            // 1) Verificar si el número ya existe en la tabla
+            $checkSql = "SELECT IdTelefono, IdPersona FROM telefono WHERE numero_telefono = :numero LIMIT 1";
+            $checkStmt = $this->conn->prepare($checkSql);
+            $checkStmt->bindParam(':numero', $this->numero_telefono);
+            $checkStmt->execute();
+            $found = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($found) {
+                // Si ya existe para la misma persona, no insertar (silencioso)
+                if ((int)$found['IdPersona'] === (int)$this->IdPersona) {
+                    return (int)$found['IdTelefono'];
+                }
+
+                // Si ya existe para otra persona: error (debe hacer rollback en el controlador)
+                throw new Exception('El número de teléfono ya está registrado para otra persona');
+            }
+
+            // 2) Insertar nuevo teléfono
+            $query = "INSERT INTO telefono (numero_telefono, IdTipo_Telefono, IdPersona) 
+                      VALUES (:numero_telefono, :IdTipo_Telefono, :IdPersona)";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":numero_telefono", $this->numero_telefono);
+            $stmt->bindParam(":IdTipo_Telefono", $this->IdTipo_Telefono, PDO::PARAM_INT);
+            $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
+
+            if ($stmt->execute()) {
+                return $this->conn->lastInsertId();
+            }
+
+            return false;
         } catch (Exception $e) {
             error_log("Error al guardar teléfono: " . $e->getMessage());
-            return false;
+            // Re-lanzamos la excepción para que el controlador pueda hacer rollback cuando corresponda
+            throw $e;
         }
     }
 
@@ -56,9 +77,12 @@ class Telefono {
                 $modeloTelefono->IdTipo_Telefono = $idTipo;
                 $modeloTelefono->IdPersona = $idPersona;
 
-                if (!$modeloTelefono->guardar()) {
-                    error_log("Error al guardar teléfono: Tipo=$tipo, Número=" . $telefonos[$tipo] . ", IdPersona=$idPersona");
-                    return false; // ← Retorna false si uno falla
+                try {
+                    $modeloTelefono->guardar();
+                } catch (Exception $e) {
+                    // Si hubo conflicto (teléfono en otra persona), propagar excepción para rollback
+                    error_log("Error al guardar teléfono (persona $idPersona): " . $e->getMessage());
+                    throw $e;
                 }
             }
             // Si está vacío, simplemente lo omite (no es un error)

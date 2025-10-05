@@ -101,7 +101,7 @@
                                 echo '<tr>';
                                 echo '<td>' . $curso['curso'] . '</td>';
                                 echo '<td>';
-                                echo '<button class="btn-registro" onclick="mostrarInformacionModal(' . $curso['IdCurso'] . ')">Solicitar Cupo</button>';
+                                echo '<button class="btn-registro" onclick="mostrarInformacionModal(' . $curso['IdCurso'] . ', ' . $nivel['IdNivel'] . ')">Solicitar Cupo</button>';
                                 echo ' ';
                                 echo '<button class="btn-requisitos" onclick="mostrarRequisitos(' . $nivel['IdNivel'] . ')">Ver Requisitos</button>';
                                 echo ' ';
@@ -342,6 +342,7 @@
                 <div class="modal-body">
                     <form id="formInscripcion">
                         <input type="hidden" id="idCursoSeleccionado" name="idCurso">
+                        <input type="hidden" id="idNivelSeleccionado" name="idNivelSeleccionado">
                         
                         <!-- Datos del Estudiante -->
                         <div class="card mb-4">
@@ -390,7 +391,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-3" id="estudianteCedulaContainer">
                                         <div class="form-group required-field">
                                             <label for="estudianteCedula">Cédula</label>
                                             <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
@@ -426,7 +427,7 @@
                                             oninput="formatearTexto1()" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-6" id="estudianteTelefonoContainer">
                                         <div class="form-group required-field">
                                             <label for="estudianteTelefono">Teléfono</label>
                                             <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono" 

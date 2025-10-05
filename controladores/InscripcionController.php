@@ -42,6 +42,49 @@ function obtenerIdUsuario() {
     return $_SESSION['idPersona'] ?? null;
 }
 
+/**
+ * Genera una cédula para el estudiante basada en la cédula de la madre y el año de nacimiento.
+ * Formato: <prefijo><2 dígitos año><cedulaMadre>
+ * Prefijo comienza en 1 y aumenta hasta encontrar una cédula no existente.
+ * Retorna la cédula como string (solo números) o false si no pudo generarla.
+ */
+function generarCedulaEscolar($conexion, $cedulaMadre, $anioNacimiento, $idNacionalidad = null) {
+    // Limpiar la cédula de cualquier carácter no numérico
+    $cedulaMadreClean = preg_replace('/[^0-9]/', '', $cedulaMadre);
+    if (empty($cedulaMadreClean) || empty($anioNacimiento)) return false;
+
+    // Si la cédula es menor a 10 millones (tiene menos de 8 dígitos), anteponer un 0
+    if ((int)$cedulaMadreClean < 10000000) {
+        $cedulaMadreClean = str_pad($cedulaMadreClean, 8, '0', STR_PAD_LEFT);
+    }
+
+    $dosDigitos = substr($anioNacimiento, -2);
+
+    // Intentar prefijos del 1 al 99
+    for ($pref = 1; $pref <= 99; $pref++) {
+        $prefStr = (string)$pref;
+        $cand = $prefStr . $dosDigitos . $cedulaMadreClean;
+
+        // Verificar existencia en persona (mismo IdNacionalidad si se dio)
+        if ($idNacionalidad) {
+            $sql = "SELECT COUNT(*) FROM persona WHERE cedula = :cedula AND IdNacionalidad = :idNac";
+            $stmt = $conexion->prepare($sql);
+            $stmt->execute([':cedula' => $cand, ':idNac' => $idNacionalidad]);
+        } else {
+            $sql = "SELECT COUNT(*) FROM persona WHERE cedula = :cedula";
+            $stmt = $conexion->prepare($sql);
+            $stmt->execute([':cedula' => $cand]);
+        }
+
+        $count = (int)$stmt->fetchColumn();
+        if ($count === 0) {
+            return $cand; // Retornar la primera cédula disponible
+        }
+    }
+
+    return false; // Si no se encontró una cédula disponible
+}
+
 function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSeccionActual) {
     try {
         // Primero verificar si hay aulas con cupo disponible
@@ -260,18 +303,32 @@ function procesarInscripcion($conexion) {
 
             // === Validación de campos obligatorios ===
             $camposFaltantes = [];
-            
-            // 1. Validación de campos del estudiante (siempre requeridos)
+            // Para decidir si cedula/telefono del estudiante son obligatorios, necesitamos conocer
+            // el nivel del curso seleccionado (si es 'Inicial' los campos no serán obligatorios para el estudiante)
+            $nivelEsInicial = false;
+            $idNivelCurso = null;
+            if (!empty($_POST['idNivelSeleccionado'])) {
+                $idNivelCurso = (int)$_POST['idNivelSeleccionado'];
+                if ($idNivelCurso === 1) {
+                    $nivelEsInicial = true;
+                }
+            }
+
+            // 1. Validación de campos del estudiante
             $camposEstudiante = [
                 'estudianteNombres' => 'Nombres del estudiante',
                 'estudianteApellidos' => 'Apellidos del estudiante',
-                'estudianteCedula' => 'Cédula del estudiante',
                 'estudianteFechaNacimiento' => 'Fecha de nacimiento del estudiante',
                 'estudianteLugarNacimiento' => 'Lugar de nacimiento del estudiante',
-                'estudianteTelefono' => 'Teléfono del estudiante',
                 'estudianteCorreo' => 'Correo electrónico del estudiante'
             ];
-            
+
+            // Agregar cédula y teléfono solo si NO es nivel inicial
+            if (!$nivelEsInicial) {
+                $camposEstudiante['estudianteCedula'] = 'Cédula del estudiante';
+                $camposEstudiante['estudianteTelefono'] = 'Teléfono del estudiante';
+            }
+
             foreach ($camposEstudiante as $campo => $nombre) {
                 if (empty($_POST[$campo])) {
                     $camposFaltantes[] = $nombre;
@@ -421,6 +478,29 @@ function procesarInscripcion($conexion) {
 
                     $idEstudiante = $personaEstudiante->guardar();
 
+                    // Si es nivel inicial y no se proporcionó cédula, generar una automáticamente usando la cédula de la madre
+                    if ($nivelEsInicial && empty($_POST['estudianteCedula'])) {
+                        // Necesitamos la cédula de la madre y la fecha de nacimiento del estudiante
+                        $cedulaMadre = $_POST['madreCedula'] ?? null;
+                        $anioNacimiento = null;
+                        if (!empty($_POST['estudianteFechaNacimiento'])) {
+                            $anioNacimiento = date('Y', strtotime($_POST['estudianteFechaNacimiento']));
+                        }
+
+                        if ($cedulaMadre && $anioNacimiento) {
+                            // Generar la cédula compuesta
+                            $nacionalidadEst = isset($_POST['estudianteNacionalidad']) ? (int)$_POST['estudianteNacionalidad'] : null;
+                            $nuevaCedula = generarCedulaEscolar($conexion, $cedulaMadre, $anioNacimiento, $nacionalidadEst);
+                            if ($nuevaCedula) {
+                                // Actualizar persona con la cédula generada
+                                $stmtUpd = $conexion->prepare("UPDATE persona SET cedula = :cedula WHERE IdPersona = :id");
+                                $stmtUpd->execute([':cedula' => $nuevaCedula, ':id' => $idEstudiante]);
+                                // También actualizar variable para que otras validaciones lo usen
+                                $personaEstudiante->cedula = $nuevaCedula;
+                            }
+                        }
+                    }
+
                     // Insertar perfil de estudiante (solo si no lo tiene ya)
                     if (!DetallePerfil::tienePerfil($conexion, $idEstudiante, 3)) {
                         $detallePerfilEstudiante = new DetallePerfil($conexion);
@@ -431,25 +511,32 @@ function procesarInscripcion($conexion) {
                 }
 
                 // ======== TELEFONO DEL ESTUDIANTE (CELULAR) =========
-                if (!empty($_POST['estudianteTelefono'])) {
+                // Usar el modelo Telefono que ya verifica duplicados.
+                if (!empty(trim($_POST['estudianteTelefono'] ?? ''))) {
                     $telefonoEstudiante = new Telefono($conexion);
                     $telefonoEstudiante->IdPersona = $idEstudiante;
                     $telefonoEstudiante->IdTipo_Telefono = 2; // Celular
                     $telefonoEstudiante->numero_telefono = $_POST['estudianteTelefono'];
-                    $telefonoEstudiante->guardar();
+                    try {
+                        $telefonoEstudiante->guardar();
+                    } catch (Exception $e) {
+                        // Si el teléfono ya existe para otra persona, esto debe ser crítico: rollback
+                        throw $e;
+                    }
                 }
                 
                 // Guardar discapacidades si existen
                 if (!empty($_POST['tipo_discapacidad']) && is_array($_POST['tipo_discapacidad'])) {
                     foreach ($_POST['tipo_discapacidad'] as $index => $tipo) {
                         if (empty($tipo)) continue;
-                        
+
                         $descripcion = $_POST['descripcion_discapacidad'][$index] ?? '';
-                        
+
                         $discapacidad = new Discapacidad($conexion);
                         $discapacidad->IdPersona = $idEstudiante;
                         $discapacidad->IdTipo_Discapacidad = (int)$tipo;
                         $discapacidad->discapacidad = trim($descripcion);
+                        // Discapacidad::guardar ahora evita duplicados y retorna Id o false
                         $discapacidad->guardar();
                     }
                 }
