@@ -974,22 +974,16 @@
 
     <?php include 'layouts/footer.php'; ?>
     
-    <!-- Javascript files-->
-    <script src="js/jquery.min.js"></script>
-    <script src="js/popper.min.js"></script>
-    <script src="js/bootstrap.bundle.min.js"></script>
-    <script src="js/jquery-3.0.0.min.js"></script>
-  
-    <!-- sidebar -->
-    <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
-    <script src="js/custom.js"></script>
-
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <!-- Tus scripts personalizados -->
     <script src="../../assets/js/solicitud_cupo.js"></script>
     <script src="../../assets/js/validacion.js"></script>
+
     <script>
         // Configuración global de Toastr
         toastr.options = {
