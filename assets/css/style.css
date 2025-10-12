@@ -550,3 +550,33 @@ body {
 @media(max-width:768px){
     .status-step-modern { min-width: 100px; padding: 8px 12px; }
 }
+
+.filtros-card {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.filtros-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.filtro label {
+    font-weight: 600;
+    color: #444;
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+.filtro-select {
+    min-width: 160px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    transition: 0.2s;
+}
+
+.filtro-select:focus {
+    border-color: #c90000;
+    box-shadow: 0 0 0 0.1rem rgba(201, 0, 0, 0.2);
+}
