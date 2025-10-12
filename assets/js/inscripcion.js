@@ -314,6 +314,11 @@ function manejarRequisitos(idInscripcion) {
         guardarCambios.style.display = hayCambios ? 'block' : 'none';
     }
 
+    // Asegurar estado inicial correcto: ocultar aviso y fijar estado original
+    if (guardarCambios) {
+        guardarCambios.style.display = 'none';
+    }
+
     checkboxes.forEach(checkbox => {
         checkbox.setAttribute('data-original', checkbox.checked ? 1 : 0);
     });
@@ -444,6 +449,8 @@ function manejarRequisitos(idInscripcion) {
     });
 
     actualizarContador();
+    // Evaluar inmediatamente si hay cambios (no debería haberlos al cargar)
+    verificarCambios();
 }
 
 // ==============================

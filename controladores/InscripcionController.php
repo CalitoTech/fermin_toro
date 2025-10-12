@@ -1066,10 +1066,8 @@ function cambiarStatus($conexion) {
 }
 
 function toggleRequisito($conexion) {
-    // Fuerza salida en JSON
+    // Forzar salida en JSON
     header('Content-Type: application/json; charset=utf-8');
-    
-    // Limpia cualquier output previo
     ob_clean();
 
     $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
@@ -1085,31 +1083,49 @@ function toggleRequisito($conexion) {
         $idUsuario = obtenerIdUsuario();
         if (!$idUsuario) {
             echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
-            exit();
+            exit;
         }
-        $stmt = $conexion->prepare("
-            REPLACE INTO inscripcion_requisito (IdInscripcion, IdRequisito, cumplido) 
-            VALUES (:idInscripcion, :idRequisito, :cumplido)
-        ");
-        $stmt->execute([
-            ':idInscripcion' => $idInscripcion,
-            ':idRequisito'   => $idRequisito,
-            ':cumplido'      => $cumplido
-        ]);
-        
-        // Actualizar campos de auditoría
+
+        if ($cumplido === 1) {
+            // Marcar requisito como cumplido → insertar o actualizar
+            $stmt = $conexion->prepare("
+                INSERT INTO inscripcion_requisito (IdInscripcion, IdRequisito, cumplido)
+                VALUES (:idInscripcion, :idRequisito, 1)
+                ON DUPLICATE KEY UPDATE cumplido = 1
+            ");
+            $stmt->execute([
+                ':idInscripcion' => $idInscripcion,
+                ':idRequisito'   => $idRequisito
+            ]);
+
+            $mensaje = 'Requisito marcado como cumplido';
+        } else {
+            // Desmarcar → eliminar el requisito
+            $stmt = $conexion->prepare("
+                DELETE FROM inscripcion_requisito
+                WHERE IdInscripcion = :idInscripcion AND IdRequisito = :idRequisito
+            ");
+            $stmt->execute([
+                ':idInscripcion' => $idInscripcion,
+                ':idRequisito'   => $idRequisito
+            ]);
+
+            $mensaje = 'Requisito desmarcado y eliminado';
+        }
+
+        // Actualizar auditoría
         actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
 
         echo json_encode([
             'success' => true,
-            'message' => 'Requisito actualizado',
+            'message' => $mensaje,
             'idRequisito' => $idRequisito,
             'cumplido'    => $cumplido
         ]);
     } catch (Exception $e) {
         echo json_encode([
             'success' => false,
-            'message' => 'Error al actualizar: '.$e->getMessage()
+            'message' => 'Error al actualizar: ' . $e->getMessage()
         ]);
     }
 
