@@ -179,80 +179,80 @@ $yearSelected = $añoActivo ? $añoActivo['IdFecha_Escolar'] : ($añosEscolares[
                         <div class="card-body">
 
                             <!-- 🔹 Línea superior: Imprimir | Año Escolar centrado | Nueva inscripción -->
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <!-- Botón Imprimir -->
-    <div class="mb-2">
-        <button class="btn btn-imprimir d-flex align-items-center" id="btnImprimir">
-            <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
-        </button>
-    </div>
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <!-- Botón Imprimir -->
+                                <div class="mb-2">
+                                    <button class="btn btn-imprimir d-flex align-items-center" id="btnImprimir">
+                                        <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
+                                    </button>
+                                </div>
 
-    <!-- Filtro Año Escolar centrado -->
-    <div class="d-flex justify-content-center align-items-center mb-2 flex-grow-1 text-center">
-        <label for="filtroAnio" class="fw-semibold mb-0 me-2">Año Escolar:</label>
-        <select id="filtroAnio" class="form-select d-inline-block w-auto text-center">
-            <option value="">Todos</option>
-            <?php foreach ($añosEscolares as $año): ?>
-                <option value="<?= $año['IdFecha_Escolar']; ?>"
-                    <?= $año['IdFecha_Escolar'] == $yearSelected ? 'selected' : ''; ?>>
-                    <?= htmlspecialchars($año['fecha_escolar']); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+                                <!-- Filtro Año Escolar centrado -->
+                                <div class="d-flex justify-content-center align-items-center mb-2 flex-grow-1 text-center">
+                                    <label for="filtroAnio" class="fw-semibold mb-0 me-2">Año Escolar:</label>
+                                    <select id="filtroAnio" class="form-select d-inline-block w-auto text-center">
+                                        <option value="">Todos</option>
+                                        <?php foreach ($añosEscolares as $año): ?>
+                                            <option value="<?= $año['IdFecha_Escolar']; ?>"
+                                                <?= $año['IdFecha_Escolar'] == $yearSelected ? 'selected' : ''; ?>>
+                                                <?= htmlspecialchars($año['fecha_escolar']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
 
-    <!-- Botón Nueva Inscripción -->
-    <div class="mb-2">
-        <button id="btnNuevoRegistro" class="btn btn-danger d-flex align-items-center">
-            <i class='bx bx-plus-medical me-1'></i> Nueva Inscripción
-        </button>
-    </div>
-</div>
+                                <!-- Botón Nueva Inscripción -->
+                                <div class="mb-2">
+                                    <button id="btnNuevoRegistro" class="btn btn-danger d-flex align-items-center">
+                                        <i class='bx bx-plus-medical me-1'></i> Nueva Inscripción
+                                    </button>
+                                </div>
+                            </div>
 
-<!-- 🔹 Línea inferior: Buscador, filtros (nivel/curso/sección) y entradas -->
-<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <!-- Buscador -->
-    <div class="flex-grow-1" style="max-width: 250px;">
-        <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
-    </div>
+                            <!-- 🔹 Línea inferior: Buscador, filtros (nivel/curso/sección) y entradas -->
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                                <!-- Buscador -->
+                                <div class="flex-grow-1" style="max-width: 250px;">
+                                    <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
+                                </div>
 
-    <!-- Filtros Nivel, Curso, Sección -->
-    <div class="d-flex flex-wrap align-items-center gap-2">
-        <label for="filtroNivel" class="fw-semibold mb-0">Nivel:</label>
-        <select id="filtroNivel" class="form-select" style="width:auto;">
-            <option value="">Todos</option>
-            <?php foreach ($niveles as $nivel): ?>
-                <option value="<?= $nivel['nivel']; ?>"><?= htmlspecialchars($nivel['nivel']); ?></option>
-            <?php endforeach; ?>
-        </select>
+                                <!-- Filtros Nivel, Curso, Sección -->
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <label for="filtroNivel" class="fw-semibold mb-0">Nivel:</label>
+                                    <select id="filtroNivel" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                        <?php foreach ($niveles as $nivel): ?>
+                                            <option value="<?= $nivel['nivel']; ?>"><?= htmlspecialchars($nivel['nivel']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
 
-        <label for="filtroCurso" class="fw-semibold mb-0">Curso:</label>
-        <select id="filtroCurso" class="form-select" style="width:auto;">
-            <option value="">Todos</option>
-            <?php foreach ($cursos as $curso): ?>
-                <option value="<?= $curso['curso']; ?>"><?= htmlspecialchars($curso['curso']); ?></option>
-            <?php endforeach; ?>
-        </select>
+                                    <label for="filtroCurso" class="fw-semibold mb-0">Curso:</label>
+                                    <select id="filtroCurso" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                        <?php foreach ($cursos as $curso): ?>
+                                            <option value="<?= $curso['curso']; ?>"><?= htmlspecialchars($curso['curso']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
 
-        <label for="filtroSeccion" class="fw-semibold mb-0">Sección:</label>
-        <select id="filtroSeccion" class="form-select" style="width:auto;">
-            <option value="">Todos</option>
-            <?php foreach ($secciones as $seccion): ?>
-                <option value="<?= $seccion['seccion']; ?>"><?= htmlspecialchars($seccion['seccion']); ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
+                                    <label for="filtroSeccion" class="fw-semibold mb-0">Sección:</label>
+                                    <select id="filtroSeccion" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                        <?php foreach ($secciones as $seccion): ?>
+                                            <option value="<?= $seccion['seccion']; ?>"><?= htmlspecialchars($seccion['seccion']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
 
-    <!-- Entradas -->
-    <div class="d-flex align-items-center">
-        <label for="entries" class="me-2">Entradas:</label>
-        <select id="entries" class="form-select" style="width:auto;">
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-        </select>
-    </div>
-</div>
+                                <!-- Entradas -->
+                                <div class="d-flex align-items-center">
+                                    <label for="entries" class="me-2">Entradas:</label>
+                                    <select id="entries" class="form-select" style="width:auto;">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                </div>
+                            </div>
 
                             <!-- 🔹 Tabla -->
                             <div class="table-responsive">

@@ -82,7 +82,7 @@ try {
                 </a>
             </li>
 
-            <!-- Estudiantes -->
+            <!-- REGISTRO -->
             <li>
                 <div class="icon-link">
                     <a href="#">
@@ -107,7 +107,7 @@ try {
                 </ul>
             </li>
 
-            <!-- Inscripciones -->
+            <!-- ESTUDIANTES -->
             <li>
                 <div class="icon-link">
                     <a href="#">
@@ -117,15 +117,14 @@ try {
                     <i class='bx bxs-chevron-down arrow'></i>
                 </div>
                 <ul class="sub-menu">
-                    <li><a href="#">Estudiantes</a></li>
-                    <li><a href="#">Representantes</a></li>
-                    <li><a href="#">Est. con Dificultades</a></li>
-                    <li><a href="#">Horarios</a></li>
+                    <li><a href="../../estudiantes/estudiante/estudiante.php">Estudiantes</a></li>
+                    <li><a href="../../estudiantes/representante/representante.php">Representantes</a></li>
+                    <!-- <li><a href="#">Horarios</a></li> -->
                     <li><a href="#">Egresos</a></li>
                 </ul>
             </li>
 
-            <!-- Reportes (solo para Perfil 1 o 2) -->
+            <!-- INSCRIPCIONES-->
             <?php if ($idPerfil == 1 || $idPerfil == 2): ?>
             <li>
                 <div class="icon-link">
