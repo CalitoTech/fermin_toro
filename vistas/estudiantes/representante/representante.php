@@ -117,9 +117,6 @@ $parentescos = $conexion->query("SELECT IdParentesco, parentesco FROM parentesco
                                 <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
                                     <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
                                 </button>
-                                <a href="nuevo_representante.php" class="btn btn-danger d-flex align-items-center">
-                                    <i class='bx bx-plus-medical me-1'></i> Nuevo Representante
-                                </a>
                             </div>
 
                             <!-- FILTROS: Buscador | Parentesco (nuevo) | Entradas -->
@@ -193,7 +190,7 @@ $parentescos = $conexion->query("SELECT IdParentesco, parentesco FROM parentesco
 document.addEventListener('DOMContentLoaded', function() {
     const allData = <?= json_encode($representantes, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP) ?>;
 
-    // Preparar config para TablaDinamica
+    // === CONFIGURACIÓN DE TABLA DINÁMICA ===
     const config = {
         tablaId: 'tabla-representantes',
         tbodyId: 'table-body',
@@ -206,7 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
             cedulaCompleta: `${item.nacionalidad ? item.nacionalidad + ' ' : ''}${item.cedula || ''}`,
             cantidad_estudiantes: parseInt(item.cantidad_estudiantes || 0, 10),
             contacto_emergencia: item.contacto_emergencia == 1 ? 1 : 0,
-            // HTML para mostrar checkbox (deshabilitado)
             contacto_html: (item.contacto_emergencia == 1)
                 ? '<input type="checkbox" checked disabled class="chk-disabled">'
                 : '<input type="checkbox" disabled class="chk-disabled">',
@@ -227,55 +223,54 @@ document.addEventListener('DOMContentLoaded', function() {
         ]
     };
 
-    // Crear instancia de TablaDinamica
+    // === CREAR TABLA DINÁMICA ===
     window.tablaRepresentantes = new TablaDinamica(config);
 
-    // Referencias de filtros
+    // === REFERENCIAS ===
     const filtroParentesco = document.getElementById('filtro-parentesco');
     const buscar = document.getElementById('buscar');
     const entries = document.getElementById('entries');
 
-    // Función de filtrado (por parentesco y buscador)
+    // === FUNCIÓN DE FILTRADO ===
     function aplicarFiltros() {
         const parentescoVal = filtroParentesco.value;
-        const texto = (buscar.value || '').trim().toLowerCase();
+        const textoBuscar = (buscar.value || '').trim().toLowerCase();
 
         const filtrados = config.data.filter(item => {
-            // Parentesco
+            // Filtro por parentesco
             if (parentescoVal && parentescoVal !== '') {
                 if (!item.IdParentesco) return false;
                 if (item.IdParentesco.toString() !== parentescoVal.toString()) return false;
             }
 
-            // Buscador: nombre, apellido, cédula, parentesco
-            if (texto) {
-                const hay = (
-                    (item.nombreCompleto || '').toLowerCase().includes(texto) ||
-                    (item.cedulaCompleta || '').toLowerCase().includes(texto) ||
-                    (item.parentesco || '').toLowerCase().includes(texto)
-                );
-                if (!hay) return false;
+            // Filtro por texto (nombre, cédula, parentesco)
+            if (textoBuscar) {
+                const coincide =
+                    (item.nombreCompleto || '').toLowerCase().includes(textoBuscar) ||
+                    (item.cedulaCompleta || '').toLowerCase().includes(textoBuscar) ||
+                    (item.parentesco || '').toLowerCase().includes(textoBuscar);
+                if (!coincide) return false;
             }
 
             return true;
         });
 
-        // Actualizar tabla
+        // === ACTUALIZAR TABLA ===
         window.tablaRepresentantes.updateData(filtrados);
+
+        // ✅ Restaurar valor del buscador (evita que se borre al escribir)
+        buscar.value = textoBuscar;
     }
 
-    // Listeners
+    // === EVENTOS ===
     filtroParentesco.addEventListener('change', aplicarFiltros);
     buscar.addEventListener('input', aplicarFiltros);
-    entries.addEventListener('change', function() {
-        // Reaplicar para que TablaDinamica pueda leer nueva cantidad
-        aplicarFiltros();
-    });
+    entries.addEventListener('change', aplicarFiltros);
 
-    // Carga inicial
+    // === CARGA INICIAL ===
     aplicarFiltros();
 
-    // IMPRIMIR
+    // === IMPRIMIR ===
     window.imprimirLista = function() {
         const nombreCompleto = "<?= htmlspecialchars($_SESSION['nombre_completo'] ?? ($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '') ?? $_SESSION['usuario'] ?? 'Sistema') ?>";
         generarReporteImprimible(

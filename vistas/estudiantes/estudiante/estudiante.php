@@ -123,13 +123,6 @@ $tiposDiscapacidad = $conexion->query("SELECT IdTipo_Discapacidad, tipo_discapac
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-
-                                <!-- Botón Nuevo Estudiante -->
-                                <div class="mb-2">
-                                    <a href="nuevo_estudiante.php" class="btn btn-danger d-flex align-items-center">
-                                        <i class='bx bx-plus-medical me-1'></i> Nuevo Estudiante
-                                    </a>
-                                </div>
                             </div>
 
                             <!-- 🔹 Línea inferior: Buscador, filtros (nivel/curso/sección) y entradas -->
@@ -322,6 +315,9 @@ $tiposDiscapacidad = $conexion->query("SELECT IdTipo_Discapacidad, tipo_discapac
             });
 
             window.tablaEstudiantes.updateData(filtrados);
+
+            // 🔹 Restaura el texto del buscador por si el DOM fue reemplazado
+            filtroBuscar.value = textoBuscar;
         }
 
         [filtroCurso, filtroSeccion, filtroDiscapacidad, filtroBuscar, filtroEntries].forEach(el => {
