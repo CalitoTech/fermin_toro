@@ -456,9 +456,6 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                             <a href="inscripcion.php" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-1"></i> Volver
                             </a>
-                            <a href="editar_inscripcion.php?id=<?= $inscripcion['IdInscripcion'] ?>" class="btn btn-primary">
-                                <i class="fas fa-edit me-1"></i> Editar
-                            </a>
                         </div>
                     </div>
 

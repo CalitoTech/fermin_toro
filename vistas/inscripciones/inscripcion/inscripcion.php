@@ -312,7 +312,6 @@ document.addEventListener('DOMContentLoaded', function() {
             { label: 'Status', key: 'status' }
         ],
         acciones: [
-            { url: 'editar_inscripcion.php?id={id}', class: 'btn-outline-primary', icon: '<i class="bx bxs-edit"></i>' },
             { url: 'ver_inscripcion.php?id={id}', class: 'btn-outline-info', icon: '<i class="bx bxs-show"></i>' },
             { url: 'reporte_inscripcion.php?id={id}', class: 'btn-outline-danger', icon: '<i class="bx bxs-file-pdf"></i>', target: '_blank' }
         ]
