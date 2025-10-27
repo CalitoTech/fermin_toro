@@ -3,22 +3,7 @@ session_start();
 
 // Verificación de sesión
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
-    echo '
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            Swal.fire({
-                title: "Acceso Denegado",
-                text: "Por favor, debes iniciar sesión",
-                icon: "warning",
-                confirmButtonText: "Aceptar",
-                confirmButtonColor: "#c90000"
-            }).then(() => {
-                window.location.href = "../../login/login.php";
-            });
-        });
-    </script>';
-    session_destroy();
+    header("Location: ../../login/login.php");
     exit();
 }
 
@@ -28,403 +13,478 @@ require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 // Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
 $message = $_SESSION['message'] ?? '';
-unset($_SESSION['alert']);
-unset($_SESSION['message']);
+unset($_SESSION['alert'], $_SESSION['message']);
 
-if ($alert) {
-    switch ($alert) {
-        case 'success':
-            $alerta = Notificaciones::exito($message ?: 'Operación realizada correctamente.');
-            break;
-        case 'error':
-            $alerta = Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.');
-            break;
-        default:
-            $alerta = null;
-    }
+// Conexión y modelos
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Nacionalidad.php';
+require_once __DIR__ . '/../../../modelos/Sexo.php';
+require_once __DIR__ . '/../../../modelos/Nivel.php';
+require_once __DIR__ . '/../../../modelos/Curso.php';
+require_once __DIR__ . '/../../../modelos/Seccion.php';
+require_once __DIR__ . '/../../../modelos/Urbanismo.php';
+require_once __DIR__ . '/../../../modelos/Parentesco.php';
 
-    if ($alerta) {
-        Notificaciones::mostrar($alerta);
-    }
-}
+// Instancias de los modelos
+$modeloNacionalidad = new Nacionalidad($conexion);
+$modeloSexo = new Sexo($conexion);
+$modeloNivel = new Nivel($conexion);
+$modeloCurso = new Curso($conexion);
+$modeloSeccion = new Seccion($conexion);
+$modeloUrbanismo = new Urbanismo($conexion);
+$modeloParentesco = new Parentesco($conexion);
 
-// === Cargar Roles desde el Modelo Perfil ===
-$roles = [];
-
-try {
-    // Asegurarnos de que conexion.php define la clase Database
-    require_once __DIR__ . '/../../../config/conexion.php';
-
-    $database = new Database();
-    $conexion = $database->getConnection();
-
-    require_once __DIR__ . '/../../../modelos/Perfil.php';
-    $perfil = new Perfil($conexion);
-    $roles = $perfil->obtenerTodos();
-
-} catch (Exception $e) {
-    error_log("Error al cargar roles en nuevo_usuario.php: " . $e->getMessage());
-    // Opcional: mostrar mensaje de advertencia
-    $roles = []; // Dejar vacío si hay error
-}
-
-// === Cargar Status desde la base de datos ===
-$statuses = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Status.php'; // Asumo que tienes un modelo Status
-    $statusModel = new Status($conexion);
-    $statuses = $statusModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar statuses en nuevo_usuario.php: " . $e->getMessage());
-    $statuses = [];
-}
-
-// Después de cargar los roles, añade esto:
-require_once __DIR__ . '/../../../modelos/TipoTelefono.php';
-
-// Luego carga los tipos de teléfono
-try {
-    $tipoTelefonoModel = new TipoTelefono($conexion);
-    $tiposTelefono = $tipoTelefonoModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar tipos de teléfono: " . $e->getMessage());
-    $tiposTelefono = [];
-}
+// Obtener datos
+$nacionalidades = $modeloNacionalidad->obtenerTodos();
+$sexos = $modeloSexo->obtenerTodos();
+$niveles = $modeloNivel->obtenerTodos();
+$cursos = $modeloCurso->obtenerTodos();
+$secciones = $modeloSeccion->obtenerTodos();
+$urbanismos = $modeloUrbanismo->obtenerTodos();
+$parentescos = $modeloParentesco->obtenerTodos();
 ?>
 
 <head>
-    <title>UECFT Araure - Nuevo Usuario</title>
+    <title>UECFT Araure - Nueva Inscripción</title>
+    <link rel="stylesheet" href="../../../assets/css/solicitud_cupo.css">
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
-<!-- Sección Principal -->
-<section class="home-section">
-    <div class="main-content">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-12 col-md-10 col-lg-8">
-                    <div class="card shadow-sm border-0" >
-                        <div class="card-header bg-danger text-white text-center">
-                            <h4 class="mb-0"><i class='bx bxs-user-plus'></i> Nuevo Usuario</h4>
+
+
+<div class="container mt-4">
+    <form id="formNuevaInscripcion" method="POST" action="../../../controladores/InscripcionController.php">
+        
+        <!-- ===================== DATOS DEL ESTUDIANTE ===================== -->
+        <div class="card mb-4">
+            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosEstudiante">
+                <h5><i class="fas fa-child mr-2"></i>Datos del Estudiante</h5>
+            </div>
+
+            <div class="card-body collapse show" id="datosEstudiante">
+                <div class="form-legend">
+                    <i class="fas fa-asterisk"></i> Campos obligatorios
+                </div>
+
+                
+
+                <!-- Nivel, Curso y Sección -->
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="form-group required-field">
+                            <label for="nivel">Nivel</label>
+                            <select class="form-control" id="nivel" name="nivel" required>
+                                <option value="">Seleccione un nivel</option>
+                                <?php foreach ($niveles as $nivel): ?>
+                                    <option value="<?= $nivel['IdNivel'] ?>"><?= $nivel['nivel'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                        <div class="card-body p-4">
+                    </div>
 
-                            <form action="../../../controladores/PersonaController.php" method="POST" id="añadir">
-                                <input type="hidden" name="action" value="crear">
-                                <div class="row">
-                                    <!-- Columna Izquierda -->
-                                    <div class="col-md-6">
-                                        <!-- Nombre -->
-                                        <div class="añadir__grupo" id="grupo__nombre">
-                                            <label for="nombre" class="form-label">Nombre *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="nombre" 
-                                                    id="nombre" 
-                                                    required 
-                                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                                    minlength="3" 
-                                                    maxlength="40"
-                                                    oninput="formatearTexto1()" 
-                                                    onkeypress="return onlyText(event)">
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">El nombre debe tener entre 3 y 40 letras.</p>
-                                        </div>
+                    <div class="col-md-4">
+                        <div class="form-group required-field">
+                            <label for="curso">Curso</label>
+                            <select class="form-control" id="curso" name="curso" required>
+                                <option value="">Seleccione un curso</option>
+                                <?php foreach ($cursos as $curso): ?>
+                                    <option value="<?= $curso['IdCurso'] ?>"><?= $curso['curso'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
 
-                                        <!-- Apellido -->
-                                        <div class="añadir__grupo" id="grupo__apellido">
-                                            <label for="apellido" class="form-label">Apellido *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="apellido" 
-                                                    id="apellido" 
-                                                    required 
-                                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                                    minlength="3" 
-                                                    maxlength="40"
-                                                    oninput="formatearTexto2()"
-                                                    onkeypress="return onlyText(event)">
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">El apellido debe tener entre 3 y 40 letras.</p>
-                                        </div>
-
-                                        <!-- Cédula -->
-                                        <div class="añadir__grupo" id="grupo__cedula">
-                                            <label for="cedula" class="form-label">Cédula *</label>
-                                            <div class="input-group">
-                                                <!-- Nacionalidad (V/E) -->
-                                                <select 
-                                                    name="nacionalidad" 
-                                                    id="nacionalidad" 
-                                                    class="form-select form-select-sm"
-                                                    style="
-                                                        border-top-right-radius: 0;
-                                                        border-bottom-right-radius: 0;
-                                                        border-right: none;
-                                                        max-width: 60px;
-                                                        text-align: center;
-                                                        font-weight: bold;
-                                                        background: #f8f9fa;
-                                                        color: #c90000;
-                                                        font-size: 0.9rem;
-                                                    ">
-                                                    <option value="V">V</option>
-                                                    <option value="E">E</option>
-                                                </select>
-                                                
-                                                <!-- Número de cédula -->
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="cedula" 
-                                                    id="cedula" 
-                                                    required 
-                                                    minlength="7"
-                                                    maxlength="8"
-                                                    pattern="^[0-9]+"
-                                                    onkeypress="return onlyNumber(event)"
-                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
-                                                
-                                                <!-- Icono de documento -->
-                                                <span class="input-group-text">
-                                                    <i class='bx bxs-id-card' style="color: #c90000;"></i>
-                                                </span>
-                                                
-                                                <!-- Icono de estado (✔️/❌) -->
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">La cédula debe tener entre 7 y 8 números.</p>
-                                        </div>
-
-                                        <!-- Correo -->
-                                        <div class="añadir__grupo" id="grupo__correo">
-                                            <label for="correo" class="form-label">Correo</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-envelope'></i></span>
-                                                <input 
-                                                    type="email" 
-                                                    class="form-control añadir__input" 
-                                                    name="correo" 
-                                                    id="correo" 
-                                                    maxlength="50"
-                                                    required>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">El correo no es válido.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Columna Derecha -->
-                                    <div class="col-md-6">
-                                        <!-- Usuario -->
-                                        <div class="añadir__grupo" id="grupo__usuario">
-                                            <label for="usuario" class="form-label">Usuario *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="usuario" 
-                                                    id="usuario" 
-                                                    required 
-                                                    maxlength="20">
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">El usuario debe tener entre 4 y 20 dígitos (letras, números, guion).</p>
-                                        </div>
-
-                                        <!-- Contraseña -->
-                                        <div class="añadir__grupo" id="grupo__password">
-                                            <label for="password" class="form-label">Contraseña *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-lock-alt'></i></span>
-                                                <input 
-                                                    type="password" 
-                                                    class="form-control añadir__input" 
-                                                    name="password" 
-                                                    id="password" 
-                                                    required 
-                                                    maxlength="20">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
-                                                    <i class="bx bx-low-vision"></i>
-                                                </button>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">La contraseña debe tener entre 4 y 20 dígitos.</p>
-                                        </div>
-
-                                        <!-- Confirmar Contraseña -->
-                                        <div class="añadir__grupo" id="grupo__password2">
-                                            <label for="password2" class="form-label">Repetir Contraseña *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-lock-alt'></i></span>
-                                                <input 
-                                                    type="password" 
-                                                    class="form-control añadir__input" 
-                                                    name="password2" 
-                                                    id="password2" 
-                                                    required 
-                                                    maxlength="20">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password2')">
-                                                    <i class="bx bx-low-vision"></i>
-                                                </button>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">Las contraseñas deben coincidir.</p>
-                                        </div>
-
-                                        <!-- Status -->
-                                        <div class="añadir__grupo" id="grupo__status">
-                                            <label for="status" class="form-label">Status *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="status" 
-                                                    id="status" 
-                                                    required>
-                                                    <?php foreach ($statuses as $status): ?>
-                                                        <option value="<?= $status['IdStatus'] ?>" <?= $status['IdStatus'] == 1 ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($status['status']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">Debe seleccionar un status.</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Roles -->
-                                    <div class="añadir__grupo" id="grupo__roles">
-                                        <label for="roles" class="form-label">Rol(es) *</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class='bx bxs-group'></i></span>
-                                            
-                                            <!-- Contenedor de chips (etiquetas seleccionadas) -->
-                                            <div class="chips-container" style="flex-grow: 1; min-height: 45px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; background: white; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                                                <input 
-                                                    type="text" 
-                                                    id="roles-search" 
-                                                    style="border: none; outline: none; flex-grow: 1; min-width: 120px;">
-                                            </div>
-                                            
-                                            <!-- Select oculto para enviar datos -->
-                                            <select 
-                                                name="roles[]" 
-                                                id="roles" 
-                                                multiple 
-                                                required 
-                                                style="position: absolute; opacity: 0; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;">
-                                                <?php foreach ($roles as $rol): ?>
-                                                    <option value="<?= $rol['IdPerfil'] ?>">
-                                                        <?= htmlspecialchars($rol['nombre_perfil']) ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                            
-                                            <!-- <i class="añadir__validacion-estado fas fa-times-circle"></i> -->
-                                        </div>
-                                        <p class="añadir__input-error">Debe seleccionar al menos un rol.</p>
-                                    </div>
-                                </div>
-
-                                <!-- Campos de teléfono -->
-                                <div class="añadir__grupo" id="grupo__telefonos">
-                                    <label class="form-label">Teléfono(s)</label>
-                                    
-                                    <div id="telefonos-container">
-                                        <!-- Teléfono inicial -->
-                                        <div class="telefono-item mb-3">
-                                            <div class="input-group">
-                                                <!-- Selector de tipo -->
-                                                <select class="form-select añadir__input tipo-telefono" name="telefonos[0][tipo]"
-                                                        style="max-width: 150px; border-top-right-radius: 0; border-bottom-right-radius: 0;">
-                                                    <?php foreach ($tiposTelefono as $tipo): ?>
-                                                         <option value="<?= $tipo['IdTipo_Telefono'] ?>" 
-                                                                <?= $tipo['IdTipo_Telefono'] == 2 ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($tipo['tipo_telefono']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                
-                                                <!-- Resto del código permanece igual -->
-                                                <input type="text" 
-                                                    class="form-control añadir__input numero-telefono" 
-                                                    name="telefonos[0][numero]"
-                                                    placeholder="Ej: 04141234567"
-                                                    pattern="^[0-9]+"
-                                                    minlength="11"
-                                                    maxlength="11"
-                                                    onkeypress="return onlyNumber(event)"
-                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;" required>
-                                                
-                                                <button type="button" class="btn btn-outline-danger btn-eliminar-telefono" style="display: none;">
-                                                    <i class='bx bx-trash'></i>
-                                                </button>
-                                                <button type="button" class="btn btn-outline-success btn-agregar-telefono">
-                                                    <i class='bx bx-plus'></i>
-                                                </button>
-                                            </div>
-                                            <p class="añadir__input-error">El teléfono debe ser válido</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Botones para Volver y Guardar -->
-                                <div class="d-flex justify-content-between mt-4">
-                                    <a href="usuario.php" class="btn btn-outline-danger btn-lg">
-                                        <i class='bx bx-arrow-back'></i> Volver a Usuarios
-                                    </a>
-                                    <button type="submit" class="btn btn-danger btn-lg">
-                                        <i class='bx bxs-save'></i> Guardar Usuario
-                                    </button>
-                                </div>
-                            </form>
+                    <div class="col-md-4">
+                        <div class="form-group required-field">
+                            <label for="seccion">Sección</label>
+                            <select class="form-control" id="seccion" name="seccion" required>
+                                <option value="">Seleccione una sección</option>
+                                <?php foreach ($secciones as $seccion): ?>
+                                    <option value="<?= $seccion['IdSeccion'] ?>"><?= $seccion['seccion'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group required-field">
+                            <label for="estudianteApellidos">Apellidos</label>
+                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos" 
+                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40"
+                                   onkeypress="return onlyText(event)" oninput="formatearTexto2()" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group required-field">
+                            <label for="estudianteNombres">Nombres</label>
+                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres" 
+                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40"
+                                   onkeypress="return onlyText(event)" oninput="formatearTexto1()" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="estudianteNacionalidad">Nacionalidad</label>
+                            <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
+                                <option value="">Seleccione una nacionalidad</option>
+                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="estudianteCedulaContainer">
+                        <div class="form-group required-field">
+                            <label for="estudianteCedula">Cédula</label>
+                            <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
+                                   minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="estudianteSexo">Sexo</label>
+                            <select class="form-control" id="estudianteSexo" name="estudianteSexo" required>
+                                <option value="">Seleccione un sexo</option>
+                                <?php foreach ($sexos as $sexo): ?>
+                                    <option value="<?= $sexo['IdSexo'] ?>"><?= $sexo['sexo'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="estudianteFechaNacimiento">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="estudianteFechaNacimiento" name="estudianteFechaNacimiento" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group required-field">
+                            <label for="estudianteLugarNacimiento">Lugar de Nacimiento</label>
+                            <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento"
+                                   minlength="3" maxlength="40" oninput="formatearTexto1()" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="estudianteTelefonoContainer">
+                        <div class="form-group required-field">
+                            <label for="estudianteTelefono">Teléfono</label>
+                            <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono" 
+                                   minlength="11" maxlength="20" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group required-field">
+                    <label for="estudianteCorreo">Correo Electrónico</label>
+                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" minlength="10" maxlength="50" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Discapacidades o condiciones especiales:</label>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="discapacidadesTable">
+                            <thead>
+                                <tr>
+                                    <th>Tipo de Discapacidad</th>
+                                    <th>Descripción</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="discapacidadesBody"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" id="btn-agregar-discapacidad" class="btn btn-sm btn-primary mt-2">
+                        <i class="fas fa-plus"></i> Agregar otra discapacidad
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
-</section>
+
+        <!-- ===================== DATOS DE PADRES Y REPRESENTANTE ===================== -->
+        <?php
+        $campos_persona = [
+            'Apellidos' => 'text',
+            'Nombres' => 'text',
+            'Cedula' => 'text',
+            'Nacionalidad' => 'select',
+            'Ocupacion' => 'text',
+            'Urbanismo' => 'select',
+            'Direccion' => 'text',
+            'TelefonoHabitacion' => 'text',
+            'Celular' => 'text',
+            'Correo' => 'email',
+            'LugarTrabajo' => 'text'
+        ];
+
+        $labels_amistosos = [
+            'Apellidos' => 'Apellidos',
+            'Nombres' => 'Nombres',
+            'Cedula' => 'Cédula',
+            'Nacionalidad' => 'Nacionalidad',
+            'Ocupacion' => 'Ocupación',
+            'Urbanismo' => 'Urbanismo / Sector',
+            'Direccion' => 'Dirección',
+            'TelefonoHabitacion' => 'Teléfono de Habitación',
+            'Celular' => 'Celular',
+            'Correo' => 'Correo Electrónico',
+            'LugarTrabajo' => 'Lugar de Trabajo'
+        ];
+
+        $tipos = [
+            'madre' => 'Datos de la Madre',
+            'padre' => 'Datos del Padre',
+            'representante' => 'Datos del Representante Legal'
+        ];
+        ?>
+
+        <?php foreach ($tipos as $tipo => $titulo): ?>
+            <div class="card mb-4 <?= $tipo === 'representante' ? 'd-none' : '' ?>" id="seccion<?= ucfirst($tipo) ?>">
+                <div class="card-header form-title" style="background-color: #c90000; color: white;">
+                    <h5><i class="fas fa-user mr-2"></i><?= $titulo ?></h5>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <?php foreach ($campos_persona as $campo => $tipo_input): ?>
+                            <div class="col-md-4 mb-3">
+                                <label for="<?= $tipo . $campo ?>" class="form-label"><?= $labels_amistosos[$campo] ?></label>
+                                <?php if ($campo === 'Nacionalidad'): ?>
+                                    <select class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
+                                        <option value="">Seleccione...</option>
+                                        <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                            <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php elseif ($campo === 'Urbanismo'): ?>
+                                    <select class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
+                                        <option value="">Seleccione un urbanismo</option>
+                                        <?php foreach ($urbanismos as $urbanismo): ?>
+                                            <option value="<?= $urbanismo['IdUrbanismo'] ?>"><?= $urbanismo['urbanismo'] ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                <?php else: ?>
+                                    <input type="<?= $tipo_input ?>" class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+
+            <?php if ($tipo === 'madre'): ?>
+                <!-- ======================================= -->
+                <!-- CONTACTO DE EMERGENCIA -->
+                <!-- ======================================= -->
+                <div class="card mb-4">
+                    <div class="card-header" style="background-color: #c90000; color: white;">
+                        <h5><i class="fas fa-phone-alt mr-2"></i>Contacto de Emergencia</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group required-field">
+                                    <label for="emergenciaNombre">En caso de emergencia, llamar a:</label>
+                                    <input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre"
+                                        pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                        minlength="3" maxlength="40"
+                                        onkeypress="return onlyText(event)"
+                                        oninput="formatearTexto1()" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group required-field">
+                                    <label for="emergenciaParentesco">Parentesco</label>
+                                    <select class="form-control" id="emergenciaParentesco" name="emergenciaParentesco" required>
+                                        <option value="">Seleccione un parentesco</option>
+                                        <?php
+                                        foreach ($parentescos as $parentesco) {
+                                            if ($parentesco['IdParentesco'] >= 3) {
+                                                echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group required-field">
+                                    <label for="emergenciaCelular">Celular</label>
+                                    <input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
+                                        minlength="11" maxlength="20"
+                                        pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+
+            <!-- Radio para seleccionar el representante legal (después del bloque del padre) -->
+            <?php if ($tipo === 'padre'): ?>
+                
+                <div class="card mb-4">
+                        <div class="card-header" style="background-color: #c90000; color: white;">
+                            <h5><i class="fas fa-user-tie mr-2"></i>Representante Legal</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>El representante legal es:</label>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" id="repMadre" name="tipoRepresentante" class="custom-control-input" value="madre" checked>
+                                            <label class="custom-control-label" for="repMadre">
+                                                <i class="fas fa-female mr-1"></i> La Madre
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" id="repPadre" name="tipoRepresentante" class="custom-control-input" value="padre">
+                                            <label class="custom-control-label" for="repPadre">
+                                                <i class="fas fa-male mr-1"></i> El Padre
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input type="radio" id="repOtro" name="tipoRepresentante" class="custom-control-input" value="otro">
+                                            <label class="custom-control-label" for="repOtro">
+                                                <i class="fas fa-user-tie mr-1"></i> Otro
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            <?php endif; ?>
+        <?php endforeach; ?>
+
+        <div class="text-center mb-5">
+            <button type="submit" class="btn btn-success px-5">
+                <i class="fas fa-save"></i> Registrar Inscripción
+            </button>
+        </div>
+    </form>
+</div>
 
 <?php include '../../layouts/footer.php'; ?>
-
+<script src="../../../assets/js/solicitud_cupo.js"></script>
 <script src="../../../assets/js/validacion.js"></script>
-<script src="../../../assets/js/formulario.js"></script>
-<script src="../../../assets/js/usuario_chips.js"></script>
-<script src="../../../assets/js/telefonos.js"></script>
 
 <script>
-    function togglePassword(id) {
-        const input = document.getElementById(id);
-        const icon = input.nextElementSibling.querySelector('i');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.classList.replace('bx-low-vision', 'bx-show');
+document.addEventListener('DOMContentLoaded', function () {
+    const radios = document.querySelectorAll('input[name="tipoRepresentante"]');
+    const seccionRepresentante = document.getElementById('seccionRepresentante');
+    const camposRepresentante = seccionRepresentante ? seccionRepresentante.querySelectorAll('input, select, textarea') : [];
+
+    function actualizarVisibilidad() {
+        const seleccionado = document.querySelector('input[name="tipoRepresentante"]:checked');
+        const valor = seleccionado ? seleccionado.value : 'madre';
+
+        if (valor === 'otro') {
+            // Mostrar sección de representante
+            seccionRepresentante.classList.remove('d-none');
+
+            // Marcar campos como requeridos
+            camposRepresentante.forEach(campo => {
+                campo.setAttribute('required', 'required');
+            });
         } else {
-            input.type = 'password';
-            icon.classList.replace('bx-show', 'bx-low-vision');
+            // Ocultar sección
+            seccionRepresentante.classList.add('d-none');
+
+            // Quitar required y limpiar valores
+            camposRepresentante.forEach(campo => {
+                campo.removeAttribute('required');
+                if (campo.tagName === 'SELECT') {
+                    campo.selectedIndex = 0;
+                } else {
+                    campo.value = '';
+                }
+            });
         }
     }
 
-    document.getElementById('status').addEventListener('mousedown', function(e) {
-        e.preventDefault();
-        this.blur();
-        return false;
+    // Escuchar cambios
+    radios.forEach(radio => {
+        radio.addEventListener('change', actualizarVisibilidad);
     });
+
+    // Aplicar estado inicial
+    actualizarVisibilidad();
+});
 </script>
-</body>
-</html>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const selectNivel = document.getElementById("nivel");
+    const selectCurso = document.getElementById("curso");
+    const selectSeccion = document.getElementById("seccion");
+
+    // Traemos todos los cursos desde PHP (vienen cargados al inicio del archivo)
+    const cursosOriginales = <?= json_encode($cursos) ?>;
+    const niveles = <?= json_encode($niveles) ?>;
+
+    // === CUANDO CAMBIA EL NIVEL ===
+    selectNivel.addEventListener("change", function() {
+        const nivelSeleccionado = this.value.trim();
+        selectCurso.innerHTML = '<option value="">Seleccione un curso</option>';
+
+        if (nivelSeleccionado === "") {
+            // Si no hay nivel seleccionado, mostramos todos los cursos
+            cursosOriginales.forEach(curso => {
+                const opt = document.createElement("option");
+                opt.value = curso.IdCurso;
+                opt.textContent = curso.curso;
+                selectCurso.appendChild(opt);
+            });
+        } else {
+            // Buscamos el nivel seleccionado
+            const nivelObj = niveles.find(n => n.IdNivel == nivelSeleccionado);
+            if (nivelObj) {
+                // Filtramos los cursos que pertenecen a ese nivel
+                const cursosFiltrados = cursosOriginales.filter(curso =>
+                    parseInt(curso.IdNivel) === parseInt(nivelObj.IdNivel)
+                );
+                cursosFiltrados.forEach(curso => {
+                    const opt = document.createElement("option");
+                    opt.value = curso.IdCurso;
+                    opt.textContent = curso.curso;
+                    selectCurso.appendChild(opt);
+                });
+            }
+        }
+
+        // Limpiar secciones al cambiar nivel
+        selectSeccion.selectedIndex = 0;
+    });
+
+    // === OPCIONAL: limpiar curso y sección al enviar formulario ===
+    const form = document.querySelector("form");
+    if (form) {
+        form.addEventListener("submit", function() {
+            // Previene errores si algo quedó vacío
+            if (!selectNivel.value || !selectCurso.value || !selectSeccion.value) {
+                Swal.fire({
+                    title: "Campos incompletos",
+                    text: "Debes seleccionar el nivel, curso y sección.",
+                    icon: "warning",
+                    confirmButtonColor: "#c90000"
+                });
+                event.preventDefault();
+            }
+        });
+    }
+});
+</script>

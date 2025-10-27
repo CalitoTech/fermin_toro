@@ -203,9 +203,9 @@ $yearSelected = $añoActivo ? $añoActivo['IdFecha_Escolar'] : ($añosEscolares[
 
                                 <!-- Botón Nueva Inscripción -->
                                 <div class="mb-2">
-                                    <button id="btnNuevoRegistro" class="btn btn-danger d-flex align-items-center">
+                                    <a href="nuevo_inscripcion.php" id="btnNuevoRegistro" class="btn btn-danger d-flex align-items-center">
                                         <i class='bx bx-plus-medical me-1'></i> Nueva Inscripción
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
 
