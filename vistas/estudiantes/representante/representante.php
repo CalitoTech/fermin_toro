@@ -3,6 +3,8 @@ session_start();
 
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Representante.php';
+require_once __DIR__ . '/../../../modelos/Parentesco.php';
 
 $database = new Database();
 $conexion = $database->getConnection();
@@ -34,11 +36,6 @@ elseif (isset($_GET['success'])) $_SESSION['alert'] = 'success';
 elseif (isset($_GET['actualizar'])) $_SESSION['alert'] = 'actualizar';
 elseif (isset($_GET['error'])) $_SESSION['alert'] = 'error';
 
-if (isset($_SESSION['alert'])) {
-    header("Location: representante.php");
-    exit();
-}
-
 $alert = $_SESSION['alert'] ?? null;
 unset($_SESSION['alert']);
 
@@ -53,38 +50,10 @@ if ($alert) {
     if ($alerta) Notificaciones::mostrar($alerta);
 }
 
-// === CONSULTA PRINCIPAL ===
-// Traemos representantes (aquellos que aparecen en la tabla representante) y indicamos si tienen perfil 5 (contacto de emergencia)
-$query = "
-    SELECT 
-        p.IdPersona,
-        p.cedula,
-        p.IdNacionalidad,
-        n.nacionalidad,
-        p.nombre,
-        p.apellido,
-        p.IdSexo,
-        sx.sexo,
-        r.IdRepresentante,
-        r.IdParentesco,
-        par.parentesco,
-        COUNT(DISTINCT r.IdEstudiante) AS cantidad_estudiantes,
-        MAX(dp.IdPerfil = 5) AS contacto_emergencia
-    FROM representante AS r
-    INNER JOIN persona AS p ON p.IdPersona = r.IdPersona
-    LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
-    LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
-    LEFT JOIN parentesco AS par ON par.IdParentesco = r.IdParentesco
-    LEFT JOIN detalle_perfil AS dp ON dp.IdPersona = p.IdPersona
-    GROUP BY p.IdPersona
-    ORDER BY p.apellido, p.nombre
-";
-$stmt = $conexion->prepare($query);
-$stmt->execute();
-$representantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Obtener lista de parentescos para filtro
-$parentescos = $conexion->query("SELECT IdParentesco, parentesco FROM parentesco ORDER BY parentesco ASC")->fetchAll(PDO::FETCH_ASSOC);
+$representanteModel = new Representante($conexion);
+$representantes = $representanteModel->obtenerTodos();
+$parentescoModel = new Parentesco($conexion);
+$parentescos = $parentescoModel->obtenerTodos();
 ?>
 
 <head>

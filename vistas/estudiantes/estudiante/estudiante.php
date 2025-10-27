@@ -23,57 +23,49 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
 }
 
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
-require_once __DIR__ . '/../../../config/conexion.php';
 
+// === ALERTAS ===
+if (isset($_GET['deleted'])) $_SESSION['alert'] = 'deleted';
+elseif (isset($_GET['success'])) $_SESSION['alert'] = 'success';
+elseif (isset($_GET['actualizar'])) $_SESSION['alert'] = 'actualizar';
+elseif (isset($_GET['error'])) $_SESSION['alert'] = 'error';
+
+$alert = $_SESSION['alert'] ?? null;
+unset($_SESSION['alert']);
+
+if ($alert) {
+    switch ($alert) {
+        case 'success': $alerta = Notificaciones::exito("El representante se creó correctamente."); break;
+        case 'actualizar': $alerta = Notificaciones::exito("El representante se actualizó correctamente."); break;
+        case 'deleted': $alerta = Notificaciones::exito("El representante se eliminó correctamente."); break;
+        case 'error': $alerta = Notificaciones::advertencia("Este representante ya existe, verifique por favor."); break;
+        default: $alerta = null;
+    }
+    if ($alerta) Notificaciones::mostrar($alerta);
+}
+
+
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Persona.php';
+require_once __DIR__ . '/../../../modelos/Nivel.php';
+require_once __DIR__ . '/../../../modelos/Curso.php';
+require_once __DIR__ . '/../../../modelos/Seccion.php';
+require_once __DIR__ . '/../../../modelos/TipoDiscapacidad.php';
 $database = new Database();
 $conexion = $database->getConnection();
 
-// === CONSULTA PRINCIPAL ===
-$query = "
-    SELECT 
-        p.IdPersona,
-        p.cedula,
-        p.IdNacionalidad,
-        n.nacionalidad,
-        p.nombre,
-        p.apellido,
-        p.IdSexo,
-        sx.sexo,
-        niv.IdNivel,
-        niv.nivel,
-        c.IdCurso,
-        c.curso,
-        s.IdSeccion,
-        s.seccion,
-        fe.IdFecha_Escolar,
-        fe.fecha_escolar AS anio_escolar,
-        -- Agrupamos posibles múltiples tipos en una sola columna separada por coma
-        GROUP_CONCAT(DISTINCT td.tipo_discapacidad SEPARATOR ', ') AS tipo_discapacidad
-    FROM persona AS p
-    INNER JOIN detalle_perfil AS dp ON p.IdPersona = dp.IdPersona
-    INNER JOIN inscripcion AS i ON i.IdEstudiante = p.IdPersona
-    INNER JOIN curso_seccion AS cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
-    INNER JOIN curso AS c ON c.IdCurso = cs.IdCurso
-    INNER JOIN nivel AS niv ON niv.IdNivel = c.IdNivel
-    INNER JOIN seccion AS s ON s.IdSeccion = cs.IdSeccion
-    INNER JOIN fecha_escolar AS fe ON fe.IdFecha_Escolar = i.IdFecha_Escolar
-    LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
-    LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
-    LEFT JOIN discapacidad AS d ON d.IdPersona = p.IdPersona
-    LEFT JOIN tipo_discapacidad AS td ON td.IdTipo_Discapacidad = d.IdTipo_Discapacidad
-    WHERE dp.IdPerfil = 3
-    GROUP BY p.IdPersona
-    ORDER BY niv.IdNivel, c.IdCurso, s.IdSeccion, p.apellido
-";
-$stmt = $conexion->prepare($query);
-$stmt->execute();
-$estudiantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$personaModel = new Persona($conexion);
+$estudiantes = $personaModel->obtenerEstudiantes();
+$nivelModel = new Nivel($conexion);
+$cursoModel = new Curso($conexion);
+$seccionModel = new Seccion($conexion);
+$tipoDiscapacidadModel = new TipoDiscapacidad($conexion);
 
 // === FILTROS ===
-$niveles = $conexion->query("SELECT IdNivel, nivel FROM nivel ORDER BY nivel ASC")->fetchAll(PDO::FETCH_ASSOC);
-$cursos = $conexion->query("SELECT IdCurso, curso, IdNivel FROM curso ORDER BY IdNivel, curso ASC")->fetchAll(PDO::FETCH_ASSOC);
-$secciones = $conexion->query("SELECT IdSeccion, seccion FROM seccion ORDER BY seccion ASC")->fetchAll(PDO::FETCH_ASSOC);
-$tiposDiscapacidad = $conexion->query("SELECT IdTipo_Discapacidad, tipo_discapacidad FROM tipo_discapacidad ORDER BY tipo_discapacidad ASC")->fetchAll(PDO::FETCH_ASSOC);
+$niveles = $nivelModel->obtenerTodos();
+$cursos = $cursoModel->obtenerTodos();
+$secciones = $seccionModel->obtenerTodos();
+$tiposDiscapacidad = $tipoDiscapacidadModel->obtenerTodos();
 ?>
 
 <head>

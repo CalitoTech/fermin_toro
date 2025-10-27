@@ -32,118 +32,22 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $idPersona = intval($_GET['id']);
 
-// === CONSULTA DEL ESTUDIANTE ===
-$query = "
-    SELECT 
-        p.IdPersona,
-        p.cedula,
-        n.nacionalidad,
-        p.nombre,
-        p.apellido,
-        p.fecha_nacimiento,
-        sx.sexo,
-        p.correo,
-        p.direccion,
-        u.urbanismo,
-        ea.status AS estado_acceso,
-        ei.status AS estado_institucional,
-        GROUP_CONCAT(DISTINCT tel.numero_telefono SEPARATOR ' || ') AS numeros,
-        GROUP_CONCAT(DISTINCT tipo_tel.tipo_telefono SEPARATOR ' || ') AS tipos
-    FROM persona AS p
-    LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
-    LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
-    LEFT JOIN urbanismo AS u ON u.IdUrbanismo = p.IdUrbanismo
-    LEFT JOIN status AS ea ON ea.IdStatus = p.IdEstadoAcceso
-    LEFT JOIN status AS ei ON ei.IdStatus = p.IdEstadoInstitucional
-    LEFT JOIN telefono AS tel ON tel.IdPersona = p.IdPersona
-    LEFT JOIN tipo_telefono AS tipo_tel ON tipo_tel.IdTipo_Telefono = tel.IdTipo_Telefono
-    WHERE p.IdPersona = :id
-    GROUP BY p.IdPersona
-";
-$stmt = $conexion->prepare($query);
-$stmt->bindParam(':id', $idPersona, PDO::PARAM_INT);
-$stmt->execute();
-$estudiante = $stmt->fetch(PDO::FETCH_ASSOC);
+require_once __DIR__ . '/../../../modelos/Persona.php';
+require_once __DIR__ . '/../../../modelos/Representante.php';
 
-// Si no existe
+$personaModel = new Persona($conexion);
+$representanteModel = new Representante($conexion);
+
+// Consultas del estudiante
+$estudiante = $personaModel->obtenerEstudiantePorId($idPersona);
 if (!$estudiante) {
     header("Location: estudiante.php");
     exit();
 }
 
-// === SECCIÓN ACTUAL DEL ESTUDIANTE ===
-$querySeccion = "
-    SELECT 
-        nvl.nivel,
-        c.curso,
-        s.seccion,
-        a.fecha_escolar
-    FROM inscripcion i
-    INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
-    INNER JOIN curso c ON c.IdCurso = cs.IdCurso
-    INNER JOIN nivel nvl ON nvl.IdNivel = c.IdNivel
-    INNER JOIN seccion s ON s.IdSeccion = cs.IdSeccion
-    INNER JOIN fecha_escolar a ON a.IdFecha_Escolar = i.IdFecha_Escolar
-    WHERE i.IdEstudiante = :id
-    ORDER BY i.IdInscripcion DESC
-    LIMIT 1
-";
-$stmtSec = $conexion->prepare($querySeccion);
-$stmtSec->bindParam(':id', $idPersona, PDO::PARAM_INT);
-$stmtSec->execute();
-$seccionActual = $stmtSec->fetch(PDO::FETCH_ASSOC);
-
-// === DISCAPACIDADES DEL ESTUDIANTE ===
-$queryDisc = "
-    SELECT 
-        td.tipo_discapacidad,
-        d.discapacidad
-    FROM discapacidad d
-    LEFT JOIN tipo_discapacidad td ON td.IdTipo_Discapacidad = d.IdTipo_Discapacidad
-    WHERE d.IdPersona = :id
-";
-$stmtDisc = $conexion->prepare($queryDisc);
-$stmtDisc->bindParam(':id', $idPersona, PDO::PARAM_INT);
-$stmtDisc->execute();
-$discapacidades = $stmtDisc->fetchAll(PDO::FETCH_ASSOC);
-
-// === REPRESENTANTES ASOCIADOS ===
-$queryRepre = "
-    SELECT 
-        p.IdPersona,
-        p.cedula,
-        n.nacionalidad,
-        p.nombre,
-        p.apellido,
-        sx.sexo,
-        u.urbanismo,
-        p.correo,
-        p.direccion,
-        r.ocupacion,
-        r.lugar_trabajo,
-        par.parentesco,
-        ea.status AS estado_acceso,
-        ei.status AS estado_institucional,
-        GROUP_CONCAT(DISTINCT tel.numero_telefono SEPARATOR ' || ') AS numeros,
-        GROUP_CONCAT(DISTINCT tipo_tel.tipo_telefono SEPARATOR ' || ') AS tipos
-    FROM representante AS r
-    INNER JOIN persona AS p ON p.IdPersona = r.IdPersona
-    LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
-    LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
-    LEFT JOIN urbanismo AS u ON u.IdUrbanismo = p.IdUrbanismo
-    LEFT JOIN parentesco AS par ON par.IdParentesco = r.IdParentesco
-    LEFT JOIN telefono AS tel ON tel.IdPersona = p.IdPersona
-    LEFT JOIN tipo_telefono AS tipo_tel ON tipo_tel.IdTipo_Telefono = tel.IdTipo_Telefono
-    LEFT JOIN status AS ea ON ea.IdStatus = p.IdEstadoAcceso
-    LEFT JOIN status AS ei ON ei.IdStatus = p.IdEstadoInstitucional
-    WHERE r.IdEstudiante = :id
-    GROUP BY p.IdPersona
-    ORDER BY p.apellido, p.nombre
-";
-$stmtRepre = $conexion->prepare($queryRepre);
-$stmtRepre->bindParam(':id', $idPersona, PDO::PARAM_INT);
-$stmtRepre->execute();
-$representantes = $stmtRepre->fetchAll(PDO::FETCH_ASSOC);
+$seccionActual = $personaModel->obtenerSeccionActualEstudiante($idPersona);
+$discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idPersona);
+$representantes = $representanteModel->obtenerPorEstudiante($idPersona);
 
 // === FUNCIÓN DE LIMPIEZA ===
 function mostrar($valor, $texto = 'No registrado') {
