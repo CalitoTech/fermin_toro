@@ -4,7 +4,6 @@ session_start();
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/Persona.php';
 
-error_log("=== INICIO CONTROLADOR ACTUALIZAR REPRESENTANTE (Optimizado) ===");
 
 try {
     if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
@@ -76,7 +75,6 @@ try {
     if (!$persona->actualizar()) {
         throw new Exception("Error al actualizar la persona");
     }
-    error_log("✅ Persona actualizada correctamente (ID={$idPersona})");
 
     // ✅ Actualizar representante
     $sqlRep = "
@@ -117,7 +115,6 @@ try {
     }
 
     $conn->commit();
-    error_log("🎉 Representante actualizado correctamente (ID={$idPersona})");
 
     $_SESSION['alert'] = 'actualizar';
     $_SESSION['message'] = 'Representante actualizado correctamente.';

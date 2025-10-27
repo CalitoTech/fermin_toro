@@ -5,11 +5,6 @@ require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/Persona.php';
 require_once __DIR__ . '/../modelos/Telefono.php';
 
-error_log("=== INICIO CONTROLADOR ACTUALIZAR ESTUDIANTE (Optimizado) ===");
-
-error_log("POST recibido:");
-error_log(print_r($_POST, true));
-
 try {
     // --- Validar sesión ---
     if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
@@ -82,12 +77,6 @@ try {
     // --- Iniciar transacción ---
     $conn->beginTransaction();
 
-    error_log("=== Valores antes de actualizar ===");
-    error_log("IdPersona=" . $persona->IdPersona);
-    error_log("IdNacionalidad=" . var_export($persona->IdNacionalidad, true));
-    error_log("IdSexo=" . var_export($persona->IdSexo, true));
-    error_log("IdUrbanismo=" . var_export($persona->IdUrbanismo, true));
-
     // --- Actualizar persona ---
     if (!$persona->actualizar()) {
         throw new Exception("Error al actualizar los datos del estudiante");
@@ -147,7 +136,6 @@ try {
     if (!empty($conn) && $conn->inTransaction()) {
         $conn->rollBack();
     }
-    error_log("💥 ERROR actualizar estudiante: " . $e->getMessage());
     $_SESSION['alert'] = 'error';
     $_SESSION['message'] = 'Error al actualizar: ' . $e->getMessage();
     header("Location: ../vistas/estudiantes/estudiante/editar_estudiante.php?id=" . ($idPersona ?? 0));
