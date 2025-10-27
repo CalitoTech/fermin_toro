@@ -1,382 +1,149 @@
 <?php
 session_start();
 
-// Verificación de sesión
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     header("Location: ../../login/login.php");
     exit();
 }
 
-// Incluir Notificaciones
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Inscripcion.php';
+require_once __DIR__ . '/../../../modelos/Status.php';
+require_once __DIR__ . '/../../../modelos/Requisito.php';
+require_once __DIR__ . '/../../../modelos/Seccion.php';
+require_once __DIR__ . '/../../../modelos/Discapacidad.php';
 
-// Manejo de alertas
+// 🔹 Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
 $message = $_SESSION['message'] ?? '';
-unset($_SESSION['alert']);
-unset($_SESSION['message']);
+unset($_SESSION['alert'], $_SESSION['message']);
 
 if ($alert) {
-    switch ($alert) {
-        case 'success':
-            $alerta = Notificaciones::exito($message ?: 'Operación realizada correctamente.');
-            break;
-        case 'error':
-            $alerta = Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.');
-            break;
-        default:
-            $alerta = null;
-    }
-
-    if ($alerta) {
-        Notificaciones::mostrar($alerta);
-    }
+    $alerta = match ($alert) {
+        'success' => Notificaciones::exito($message ?: 'Operación realizada correctamente.'),
+        'error' => Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.'),
+        default => null
+    };
+    if ($alerta) Notificaciones::mostrar($alerta);
 }
 
-// Obtener ID de la inscripción
+// 🔹 Obtener ID de inscripción
 $idInscripcion = $_GET['id'] ?? 0;
 if ($idInscripcion <= 0) {
     header("Location: inscripcion.php?error=id_invalido");
     exit();
 }
 
-require_once __DIR__ . '/../../../config/conexion.php';
+// 🔹 Conexión
 $database = new Database();
 $conexion = $database->getConnection();
 
-// Consulta para obtener todos los datos de la inscripción
-$query = "SELECT 
-    -- Datos de la inscripción
-    i.IdInscripcion,
-    i.codigo_inscripcion,
-    i.fecha_inscripcion,
-    i.ultimo_plantel,
-    i.nro_hermanos,
-    i.modificado_por,
-    i.ultima_modificacion,
-    i.IdCurso_Seccion,
-
-    -- Curso, sección, nivel, año escolar
-    c.curso, 
-    c.IdCurso,
-    s.seccion,
-    n.nivel,
-    fe.fecha_escolar,
-    st.status AS status_inscripcion,
-    st.IdStatus,
-
-    -- Estudiante
-    e.IdPersona AS id_estudiante,
-    e.nombre AS estudiante_nombre,
-    e.apellido AS estudiante_apellido,
-    e.cedula AS estudiante_cedula,
-    e.fecha_nacimiento AS estudiante_fecha_nacimiento,
-    e.correo AS estudiante_correo,
-    e.direccion AS estudiante_direccion,
-    sexo_e.sexo AS estudiante_sexo,
-    urb_e.urbanismo AS estudiante_urbanismo,
-    urb_e.IdUrbanismo AS estudiante_id_urbanismo,
-    nac_e.nacionalidad AS estudiante_nacionalidad,
-
-    -- Teléfonos del estudiante
-    tel_e.numero_telefono AS estudiante_telefono,
-    tipo_tel_e.tipo_telefono AS estudiante_tipo_telefono,
-
-    -- Representante Legal
-    rp.IdRepresentante,
-    rp.IdParentesco,
-    resp.IdPersona AS id_responsable,
-    resp.nombre AS responsable_nombre,
-    resp.apellido AS responsable_apellido,
-    resp.cedula AS responsable_cedula,
-    resp.correo AS responsable_correo,
-    resp.direccion AS responsable_direccion,
-    sexo_r.sexo AS responsable_sexo,
-    urb_r.urbanismo AS responsable_urbanismo,
-    nac_r.nacionalidad AS responsable_nacionalidad,
-    parent.parentesco AS responsable_parentesco,
-    rp.ocupacion AS responsable_ocupacion,
-    rp.lugar_trabajo AS responsable_lugar_trabajo,
-
-    
-    -- Teléfonos del representante legal (múltiples)
-    GROUP_CONCAT(DISTINCT tel_r.numero_telefono SEPARATOR '||') AS responsable_numeros,
-    GROUP_CONCAT(DISTINCT tipo_tel_r.tipo_telefono SEPARATOR '||') AS responsable_tipos,
-
-    -- Padre
-    padre.IdPersona AS id_padre,
-    padre.nombre AS padre_nombre,
-    padre.apellido AS padre_apellido,
-    padre.cedula AS padre_cedula,
-    padre.correo AS padre_correo,
-    padre.direccion AS padre_direccion,
-    sexo_p.sexo AS padre_sexo,
-    urb_p.urbanismo AS padre_urbanismo,
-    nac_p.nacionalidad AS padre_nacionalidad,
-    rp_padre.ocupacion AS padre_ocupacion,
-    rp_padre.lugar_trabajo AS padre_lugar_trabajo,
-
-     -- Teléfonos del padre (múltiples)
-    GROUP_CONCAT(DISTINCT tel_p.numero_telefono SEPARATOR '||') AS padre_numeros,
-    GROUP_CONCAT(DISTINCT tipo_tel_p.tipo_telefono SEPARATOR '||') AS padre_tipos,
-
-    -- Madre
-    madre.IdPersona AS id_madre,
-    madre.nombre AS madre_nombre,
-    madre.apellido AS madre_apellido,
-    madre.cedula AS madre_cedula,
-    madre.correo AS madre_correo,
-    madre.direccion AS madre_direccion,
-    sexo_m.sexo AS madre_sexo,
-    urb_m.urbanismo AS madre_urbanismo,
-    nac_m.nacionalidad AS madre_nacionalidad,
-    rp_madre.ocupacion AS madre_ocupacion,
-    rp_madre.lugar_trabajo AS madre_lugar_trabajo,
-    
-    -- Teléfonos de la madre (múltiples)
-    GROUP_CONCAT(DISTINCT tel_m.numero_telefono SEPARATOR '||') AS madre_numeros,
-    GROUP_CONCAT(DISTINCT tipo_tel_m.tipo_telefono SEPARATOR '||') AS madre_tipos,
-
-    -- Contacto de emergencia CORREGIDO
-    ce.IdPersona AS id_contacto,
-    ce.nombre AS contacto_nombre,
-    ce.apellido AS contacto_apellido,
-    ce.cedula AS contacto_cedula,
-    ce.correo AS contacto_correo,
-    ce.direccion AS contacto_direccion,
-    parent_ce.parentesco AS contacto_parentesco,
-    rp_ce.ocupacion AS contacto_ocupacion,
-    rp_ce.lugar_trabajo AS contacto_lugar_trabajo,
-
-    -- Teléfonos del contacto de emergencia
-    tel_ce.numero_telefono AS contacto_telefono,
-    tipo_tel.tipo_telefono AS contacto_tipo_telefono
-
-FROM inscripcion i
-INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
-INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
-INNER JOIN curso c ON cs.IdCurso = c.IdCurso
-INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
-INNER JOIN nivel n ON c.IdNivel = n.IdNivel
-INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
-INNER JOIN status st ON i.IdStatus = st.IdStatus
-
--- Representante Legal
-INNER JOIN representante rp ON i.responsable_inscripcion = rp.IdRepresentante
-INNER JOIN persona resp ON rp.IdPersona = resp.IdPersona
-LEFT JOIN sexo sexo_r ON resp.IdSexo = sexo_r.IdSexo
-LEFT JOIN urbanismo urb_r ON resp.IdUrbanismo = urb_r.IdUrbanismo
-LEFT JOIN nacionalidad nac_r ON resp.IdNacionalidad = nac_r.IdNacionalidad
-LEFT JOIN parentesco parent ON rp.IdParentesco = parent.IdParentesco
-LEFT JOIN telefono tel_r ON resp.IdPersona = tel_r.IdPersona
-LEFT JOIN tipo_telefono tipo_tel_r ON tel_r.IdTipo_Telefono = tipo_tel_r.IdTipo_Telefono
-
--- Padre
-LEFT JOIN representante rp_padre ON e.IdPersona = rp_padre.IdEstudiante AND rp_padre.IdParentesco = 1
-LEFT JOIN persona padre ON rp_padre.IdPersona = padre.IdPersona
-LEFT JOIN sexo sexo_p ON padre.IdSexo = sexo_p.IdSexo
-LEFT JOIN urbanismo urb_p ON padre.IdUrbanismo = urb_p.IdUrbanismo
-LEFT JOIN nacionalidad nac_p ON padre.IdNacionalidad = nac_p.IdNacionalidad
-LEFT JOIN telefono tel_p ON padre.IdPersona = tel_p.IdPersona
-LEFT JOIN tipo_telefono tipo_tel_p ON tel_p.IdTipo_Telefono = tipo_tel_p.IdTipo_Telefono
-
--- Madre
-LEFT JOIN representante rp_madre ON e.IdPersona = rp_madre.IdEstudiante AND rp_madre.IdParentesco = 2
-LEFT JOIN persona madre ON rp_madre.IdPersona = madre.IdPersona
-LEFT JOIN sexo sexo_m ON madre.IdSexo = sexo_m.IdSexo
-LEFT JOIN urbanismo urb_m ON madre.IdUrbanismo = urb_m.IdUrbanismo
-LEFT JOIN nacionalidad nac_m ON madre.IdNacionalidad = nac_m.IdNacionalidad
-LEFT JOIN telefono tel_m ON madre.IdPersona = tel_m.IdPersona
-LEFT JOIN tipo_telefono tipo_tel_m ON tel_m.IdTipo_Telefono = tipo_tel_m.IdTipo_Telefono
-
--- Contacto de emergencia - SOLO el que tiene perfil 5
-LEFT JOIN representante rp_ce ON e.IdPersona = rp_ce.IdEstudiante 
-    AND EXISTS (
-        SELECT 1 
-        FROM detalle_perfil dp 
-        WHERE dp.IdPersona = rp_ce.IdPersona 
-        AND dp.IdPerfil = 5
-    )
-LEFT JOIN persona ce ON rp_ce.IdPersona = ce.IdPersona
-LEFT JOIN parentesco parent_ce ON rp_ce.IdParentesco = parent_ce.IdParentesco
--- Teléfonos del contacto de emergencia
-LEFT JOIN telefono tel_ce ON ce.IdPersona = tel_ce.IdPersona
-LEFT JOIN tipo_telefono tipo_tel ON tel_ce.IdTipo_Telefono = tipo_tel.IdTipo_Telefono
-
--- Datos del estudiante
-LEFT JOIN sexo sexo_e ON e.IdSexo = sexo_e.IdSexo
-LEFT JOIN urbanismo urb_e ON e.IdUrbanismo = urb_e.IdUrbanismo
-LEFT JOIN nacionalidad nac_e ON e.IdNacionalidad = nac_e.IdNacionalidad
-LEFT JOIN telefono tel_e ON e.IdPersona = tel_e.IdPersona
-LEFT JOIN tipo_telefono tipo_tel_e ON tel_e.IdTipo_Telefono = tipo_tel_e.IdTipo_Telefono
-
-WHERE i.IdInscripcion = :id;";
-
-$stmt = $conexion->prepare($query);
-$stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
-$stmt->execute();
-$inscripcion = $stmt->fetch(PDO::FETCH_ASSOC);
-
+$inscripcionModel = new Inscripcion($conexion);
+$inscripcion = $inscripcionModel->obtenerDetallePorId($idInscripcion);
 if (!$inscripcion) {
     header("Location: inscripcion.php?error=inscripcion_no_encontrada");
     exit();
 }
 
-// Obtener requisitos del nivel
-$queryRequisitos = "SELECT 
-    r.IdRequisito,
-    r.requisito,
-    r.obligatorio,
-    ir.cumplido
-FROM requisito r
-LEFT JOIN inscripcion_requisito ir ON r.IdRequisito = ir.IdRequisito AND ir.IdInscripcion = :id
-WHERE r.IdNivel = (SELECT c.IdNivel FROM curso c INNER JOIN curso_seccion cs ON c.IdCurso = cs.IdCurso INNER JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion WHERE i.IdInscripcion = :id)
-ORDER BY r.obligatorio DESC, r.requisito";
+// 🔹 Status y Requisitos
+$statusModel = new Status($conexion);
+$todosStatus = $statusModel->obtenerStatusInscripcion();
 
-$stmtRequisitos = $conexion->prepare($queryRequisitos);
-$stmtRequisitos->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
-$stmtRequisitos->execute();
-$requisitos = $stmtRequisitos->fetchAll(PDO::FETCH_ASSOC);
+$requisitoModel = new Requisito($conexion);
+$requisitos = $requisitoModel->obtenerConCumplidoPorNivel($idInscripcion);
 
-// Obtener todos los status disponibles
-$queryStatus = "SELECT IdStatus, status FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus";
-$stmtStatus = $conexion->prepare($queryStatus);
-$stmtStatus->execute();
-$todosStatus = $stmtStatus->fetchAll(PDO::FETCH_ASSOC);
-
-$idInscrito = 11; // Valor por defecto
-
-foreach ($todosStatus as $status) {
-    if ($status['status'] === 'Inscrito') {
-        $idInscrito = $status['IdStatus'];
+// 🔹 Obtener Id del status “Inscrito”
+$idInscrito = 11;
+foreach ($todosStatus as $st) {
+    if ($st['status'] === 'Inscrito') {
+        $idInscrito = $st['IdStatus'];
         break;
     }
 }
 
-// Obtener discapacidades del estudiante
-$queryDiscapacidades = "SELECT 
-    td.tipo_discapacidad,
-    d.discapacidad
-FROM discapacidad d
-INNER JOIN tipo_discapacidad td ON d.IdTipo_Discapacidad = td.IdTipo_Discapacidad
-WHERE d.IdPersona = :id_estudiante";
+// 🔹 Discapacidades
+$discapacidadModel = new Discapacidad($conexion);
+$discapacidades = $discapacidadModel->obtenerPorPersona($inscripcion['id_estudiante']);
 
-$stmtDiscapacidades = $conexion->prepare($queryDiscapacidades);
-$stmtDiscapacidades->bindParam(':id_estudiante', $inscripcion['id_estudiante'], PDO::PARAM_INT);
-$stmtDiscapacidades->execute();
-$discapacidades = $stmtDiscapacidades->fetchAll(PDO::FETCH_ASSOC);
-
-// Mostrar mensajes de éxito/error específicos de inscripción
+// 🔹 Mensajes GET (opcional)
 if (isset($_GET['success'])) {
-    $mensaje = match($_GET['success']) {
+    $_SESSION['alert'] = 'success';
+    $_SESSION['message'] = match ($_GET['success']) {
         'status_actualizado' => 'Estado actualizado correctamente',
         'requisito_actualizado' => 'Requisito actualizado correctamente',
         default => 'Operación realizada con éxito'
     };
-    $_SESSION['alert'] = 'success';
-    $_SESSION['message'] = $mensaje;
 }
 
 if (isset($_GET['error'])) {
-    $mensaje = match($_GET['error']) {
+    $_SESSION['alert'] = 'error';
+    $_SESSION['message'] = match ($_GET['error']) {
         'error_actualizacion' => 'Error al actualizar',
         'error_interno' => 'Error interno del servidor',
         default => 'Ocurrió un error'
     };
-    $_SESSION['alert'] = 'error';
-    $_SESSION['message'] = $mensaje;
 }
 
-// Función helper para separar teléfonos por tipo
+// 🔹 Helpers de teléfonos
 function separarTelefonosPorTipo($numerosStr, $tiposStr) {
     if (empty($numerosStr)) return ['personales' => [], 'laborales' => []];
-    
     $numeros = explode('||', $numerosStr);
     $tipos = explode('||', $tiposStr);
-    
-    $telefonos = [
-        'personales' => [], // Celular, Habitación, etc.
-        'laborales' => []   // Trabajo
-    ];
-    
-    foreach ($numeros as $index => $numero) {
-        $tipo = $tipos[$index] ?? '';
-        $categoria = ($tipo === 'Trabajo') ? 'laborales' : 'personales';
-        
-        $telefonos[$categoria][] = [
-            'numero' => $numero,
-            'tipo' => $tipo
-        ];
+    $telefonos = ['personales' => [], 'laborales' => []];
+    foreach ($numeros as $i => $num) {
+        $tipo = $tipos[$i] ?? '';
+        $cat = ($tipo === 'Trabajo') ? 'laborales' : 'personales';
+        $telefonos[$cat][] = ['numero' => $num, 'tipo' => $tipo];
     }
-    
     return $telefonos;
 }
 
 // Función para mostrar teléfonos con estilo
 function mostrarTelefonos($telefonos) {
     if (empty($telefonos)) return null;
-    
     $html = '<div class="telefonos-list">';
-    foreach ($telefonos as $telefono) {
-        $badgeClass = match($telefono['tipo']) {
-            'Celular' => 'bg-primary',
-            'Trabajo' => 'bg-warning text-dark',
-            'Habitación' => 'bg-info',
-            default => 'bg-secondary'
+    foreach ($telefonos as $t) {
+        $badge = match($t['tipo']) {
+            'Celular' => 'bg-primary', 'Trabajo' => 'bg-warning text-dark',
+            'Habitación' => 'bg-info', default => 'bg-secondary'
         };
-        
-        $icon = match($telefono['tipo']) {
-            'Celular' => 'fa-mobile-alt',
-            'Trabajo' => 'fa-briefcase',
-            'Habitación' => 'fa-phone',
-            default => 'fa-phone'
+        $icon = match($t['tipo']) {
+            'Celular' => 'fa-mobile-alt', 'Trabajo' => 'fa-briefcase',
+            'Habitación' => 'fa-phone', default => 'fa-phone'
         };
-        
-        $html .= '
-        <div class="telefono-item d-flex align-items-center mb-1">
-            <i class="fas ' . $icon . ' me-2 text-muted"></i>
-            <span class="telefono-numero">' . htmlspecialchars($telefono['numero']) . '</span>
-            <span class="badge ' . $badgeClass . ' ms-2">' . htmlspecialchars($telefono['tipo']) . '</span>
-        </div>';
+        $html .= "<div class='telefono-item d-flex align-items-center mb-1'>
+                    <i class='fas {$icon} me-2 text-muted'></i>
+                    <span class='telefono-numero'>" . htmlspecialchars($t['numero']) . "</span>
+                    <span class='badge {$badge} ms-2'>" . htmlspecialchars($t['tipo']) . "</span>
+                 </div>";
     }
-    $html .= '</div>';
-    
-    return $html;
-}
-// Después de obtener los datos de la inscripción, agregamos esta verificación
-$esPadreRepresentante = false;
-$esMadreRepresentante = false;
-
-if ($inscripcion) {
-    // Verificar si el representante legal es el padre (IdParentesco = 1)
-    if ($inscripcion['responsable_parentesco'] === 'Padre' || $inscripcion['IdParentesco'] == 1) {
-        $esPadreRepresentante = true;
-    }
-    // Verificar si el representante legal es la madre (IdParentesco = 2)
-    elseif ($inscripcion['responsable_parentesco'] === 'Madre' || $inscripcion['IdParentesco'] == 2) {
-        $esMadreRepresentante = true;
-    }
+    return $html . '</div>';
 }
 
-// Obtener información del modificador
+// 🔹 Verificar parentesco del representante
+$esPadreRepresentante = ($inscripcion['responsable_parentesco'] === 'Padre' || $inscripcion['IdParentesco'] == 1);
+$esMadreRepresentante = ($inscripcion['responsable_parentesco'] === 'Madre' || $inscripcion['IdParentesco'] == 2);
+
+// 🔹 Información del modificador
 if (!empty($inscripcion['modificado_por'])) {
-    $queryModificador = "SELECT nombre, apellido FROM persona WHERE IdPersona = :id_modificador";
-    $stmtModificador = $conexion->prepare($queryModificador);
-    $stmtModificador->bindParam(':id_modificador', $inscripcion['modificado_por'], PDO::PARAM_INT);
-    $stmtModificador->execute();
-    $modificador = $stmtModificador->fetch(PDO::FETCH_ASSOC);
-    
-    $nombreModificador = $modificador ? htmlspecialchars($modificador['nombre'] . ' ' . $modificador['apellido']) : 'Usuario no encontrado';
+    $queryModificador = "SELECT nombre, apellido FROM persona WHERE IdPersona = :id";
+    $stmt = $conexion->prepare($queryModificador);
+    $stmt->bindParam(':id', $inscripcion['modificado_por'], PDO::PARAM_INT);
+    $stmt->execute();
+    $modificador = $stmt->fetch(PDO::FETCH_ASSOC);
+    $nombreModificador = $modificador
+        ? htmlspecialchars($modificador['nombre'] . ' ' . $modificador['apellido'])
+        : 'Usuario no encontrado';
 } else {
     $nombreModificador = 'No modificado aún';
 }
 
-// Formatear la fecha de modificación
-$fechaModificacion = !empty($inscripcion['ultima_modificacion']) ? 
-    date('d/m/Y H:i', strtotime($inscripcion['ultima_modificacion'])) : 
-    'No modificado aún';
+$fechaModificacion = !empty($inscripcion['ultima_modificacion'])
+    ? date('d/m/Y H:i', strtotime($inscripcion['ultima_modificacion']))
+    : 'No modificado aún';
 
-// Después de obtener los datos de la inscripción:
+// 🔹 Secciones disponibles (optimizadas)
 $idCursoActual = $inscripcion['IdCurso'] ?? null;
 $idCursoSeccionActual = $inscripcion['IdCurso_Seccion'] ?? null;
 
@@ -385,53 +152,18 @@ $seccionesDisponibles = [];
 $seccionesConCupo = [];
 $maxMismosUrbanismo = 0;
 $hayRecomendada = false;
+
 if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
-    $querySecciones = "SELECT 
-                        cs.IdCurso_Seccion,
-                        s.seccion,
-                        a.aula,
-                        a.capacidad,
-                        (SELECT COUNT(*) FROM inscripcion i2 
-                         WHERE i2.IdCurso_Seccion = cs.IdCurso_Seccion 
-                         AND i2.IdStatus = 11) as estudiantes_actuales,
-                        (SELECT COUNT(*) FROM inscripcion i3 
-                         INNER JOIN persona e ON i3.IdEstudiante = e.IdPersona
-                         WHERE i3.IdCurso_Seccion = cs.IdCurso_Seccion 
-                         AND i3.IdStatus = 11 
-                         AND e.IdUrbanismo = :id_urbanismo) as mismos_urbanismo
-                      FROM curso_seccion cs
-                      INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
-                      LEFT JOIN aula a ON cs.IdAula = a.IdAula
-                      WHERE cs.IdCurso = :id_curso
-                      AND s.seccion != 'Inscripción'
-                      AND cs.IdCurso_Seccion != :id_curso_seccion_actual
-                      ORDER BY s.seccion";
-    
-    $stmtSecciones = $conexion->prepare($querySecciones);
-    $stmtSecciones->bindParam(':id_curso', $idCursoActual, PDO::PARAM_INT);
-    $stmtSecciones->bindParam(':id_urbanismo', $inscripcion['estudiante_id_urbanismo'], PDO::PARAM_INT);
-    $stmtSecciones->bindParam(':id_curso_seccion_actual', $idCursoSeccionActual, PDO::PARAM_INT);
-    $stmtSecciones->execute();
-    $seccionesDisponibles = $stmtSecciones->fetchAll(PDO::FETCH_ASSOC);
-    
-
-     // Encontrar el máximo de estudiantes con mismo urbanismo
-    foreach ($seccionesDisponibles as $seccion) {
-        if (($seccion['mismos_urbanismo'] ?? 0) > $maxMismosUrbanismo) {
-            $maxMismosUrbanismo = $seccion['mismos_urbanismo'];
-        }
-    }
-    
-    $hayRecomendada = $maxMismosUrbanismo > 0;
-
-   // Filtrar solo las que tienen cupo
-    $seccionesConCupo = array_filter($seccionesDisponibles, function($sec) {
-        // Si no hay capacidad definida, consideramos que hay cupo
-        if (empty($sec['capacidad'])) {
-            return true;
-        }
-        return (int)$sec['estudiantes_actuales'] < (int)$sec['capacidad'];
-    });
+    $seccionModel = new Seccion($conexion);
+    $resultadoSecciones = $seccionModel->obtenerDisponiblesConCupo(
+        $idCursoActual,
+        $inscripcion['estudiante_id_urbanismo'],
+        $idCursoSeccionActual
+    );
+    $seccionesDisponibles = $resultadoSecciones['todas'];
+    $seccionesConCupo = $resultadoSecciones['con_cupo'];
+    $maxMismosUrbanismo = $resultadoSecciones['max_urbanismo'];
+    $hayRecomendada = $resultadoSecciones['hay_recomendada'];
 }
 ?>
 

@@ -91,5 +91,32 @@ class Requisito {
         
         return false;
     }
+
+    public function obtenerConCumplidoPorNivel($idInscripcion) {
+        $query = "
+            SELECT 
+                r.IdRequisito,
+                r.requisito,
+                r.obligatorio,
+                ir.cumplido
+            FROM requisito r
+            LEFT JOIN inscripcion_requisito ir 
+                ON r.IdRequisito = ir.IdRequisito 
+                AND ir.IdInscripcion = :id
+            WHERE r.IdNivel = (
+                SELECT c.IdNivel 
+                FROM curso c
+                INNER JOIN curso_seccion cs ON c.IdCurso = cs.IdCurso
+                INNER JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+                WHERE i.IdInscripcion = :id
+            )
+            ORDER BY r.obligatorio DESC, r.requisito
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

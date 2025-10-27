@@ -104,4 +104,163 @@ class Inscripcion {
         $this->codigo_inscripcion = $prefix . date('Ymd') . '-' . $random;
         return $this->codigo_inscripcion;
     }
+
+    public function obtenerDetallePorId($idInscripcion) {
+        $query = "SELECT 
+            -- Datos de la inscripción
+            i.IdInscripcion,
+            i.codigo_inscripcion,
+            i.fecha_inscripcion,
+            i.ultimo_plantel,
+            i.nro_hermanos,
+            i.modificado_por,
+            i.ultima_modificacion,
+            i.IdCurso_Seccion,
+            c.curso, 
+            c.IdCurso,
+            s.seccion,
+            n.nivel,
+            fe.fecha_escolar,
+            st.status AS status_inscripcion,
+            st.IdStatus,
+
+            -- Estudiante
+            e.IdPersona AS id_estudiante,
+            e.nombre AS estudiante_nombre,
+            e.apellido AS estudiante_apellido,
+            e.cedula AS estudiante_cedula,
+            e.fecha_nacimiento AS estudiante_fecha_nacimiento,
+            e.correo AS estudiante_correo,
+            e.direccion AS estudiante_direccion,
+            sexo_e.sexo AS estudiante_sexo,
+            urb_e.urbanismo AS estudiante_urbanismo,
+            urb_e.IdUrbanismo AS estudiante_id_urbanismo,
+            nac_e.nacionalidad AS estudiante_nacionalidad,
+            tel_e.numero_telefono AS estudiante_telefono,
+            tipo_tel_e.tipo_telefono AS estudiante_tipo_telefono,
+
+            -- Representante Legal
+            rp.IdRepresentante,
+            rp.IdParentesco,
+            resp.IdPersona AS id_responsable,
+            resp.nombre AS responsable_nombre,
+            resp.apellido AS responsable_apellido,
+            resp.cedula AS responsable_cedula,
+            resp.correo AS responsable_correo,
+            resp.direccion AS responsable_direccion,
+            sexo_r.sexo AS responsable_sexo,
+            urb_r.urbanismo AS responsable_urbanismo,
+            nac_r.nacionalidad AS responsable_nacionalidad,
+            parent.parentesco AS responsable_parentesco,
+            rp.ocupacion AS responsable_ocupacion,
+            rp.lugar_trabajo AS responsable_lugar_trabajo,
+            GROUP_CONCAT(DISTINCT tel_r.numero_telefono SEPARATOR '||') AS responsable_numeros,
+            GROUP_CONCAT(DISTINCT tipo_tel_r.tipo_telefono SEPARATOR '||') AS responsable_tipos,
+
+            -- Padre
+            padre.IdPersona AS id_padre,
+            padre.nombre AS padre_nombre,
+            padre.apellido AS padre_apellido,
+            padre.cedula AS padre_cedula,
+            padre.correo AS padre_correo,
+            padre.direccion AS padre_direccion,
+            sexo_p.sexo AS padre_sexo,
+            urb_p.urbanismo AS padre_urbanismo,
+            nac_p.nacionalidad AS padre_nacionalidad,
+            rp_padre.ocupacion AS padre_ocupacion,
+            rp_padre.lugar_trabajo AS padre_lugar_trabajo,
+            GROUP_CONCAT(DISTINCT tel_p.numero_telefono SEPARATOR '||') AS padre_numeros,
+            GROUP_CONCAT(DISTINCT tipo_tel_p.tipo_telefono SEPARATOR '||') AS padre_tipos,
+
+            -- Madre
+            madre.IdPersona AS id_madre,
+            madre.nombre AS madre_nombre,
+            madre.apellido AS madre_apellido,
+            madre.cedula AS madre_cedula,
+            madre.correo AS madre_correo,
+            madre.direccion AS madre_direccion,
+            sexo_m.sexo AS madre_sexo,
+            urb_m.urbanismo AS madre_urbanismo,
+            nac_m.nacionalidad AS madre_nacionalidad,
+            rp_madre.ocupacion AS madre_ocupacion,
+            rp_madre.lugar_trabajo AS madre_lugar_trabajo,
+            GROUP_CONCAT(DISTINCT tel_m.numero_telefono SEPARATOR '||') AS madre_numeros,
+            GROUP_CONCAT(DISTINCT tipo_tel_m.tipo_telefono SEPARATOR '||') AS madre_tipos,
+
+            -- Contacto de emergencia
+            ce.IdPersona AS id_contacto,
+            ce.nombre AS contacto_nombre,
+            ce.apellido AS contacto_apellido,
+            ce.cedula AS contacto_cedula,
+            ce.correo AS contacto_correo,
+            ce.direccion AS contacto_direccion,
+            parent_ce.parentesco AS contacto_parentesco,
+            rp_ce.ocupacion AS contacto_ocupacion,
+            rp_ce.lugar_trabajo AS contacto_lugar_trabajo,
+            tel_ce.numero_telefono AS contacto_telefono,
+            tipo_tel.tipo_telefono AS contacto_tipo_telefono
+
+        FROM inscripcion i
+        INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
+        INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+        INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+        INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+        INNER JOIN nivel n ON c.IdNivel = n.IdNivel
+        INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+        INNER JOIN status st ON i.IdStatus = st.IdStatus
+
+        -- Representante Legal
+        INNER JOIN representante rp ON i.responsable_inscripcion = rp.IdRepresentante
+        INNER JOIN persona resp ON rp.IdPersona = resp.IdPersona
+        LEFT JOIN sexo sexo_r ON resp.IdSexo = sexo_r.IdSexo
+        LEFT JOIN urbanismo urb_r ON resp.IdUrbanismo = urb_r.IdUrbanismo
+        LEFT JOIN nacionalidad nac_r ON resp.IdNacionalidad = nac_r.IdNacionalidad
+        LEFT JOIN parentesco parent ON rp.IdParentesco = parent.IdParentesco
+        LEFT JOIN telefono tel_r ON resp.IdPersona = tel_r.IdPersona
+        LEFT JOIN tipo_telefono tipo_tel_r ON tel_r.IdTipo_Telefono = tipo_tel_r.IdTipo_Telefono
+
+        -- Padre
+        LEFT JOIN representante rp_padre ON e.IdPersona = rp_padre.IdEstudiante AND rp_padre.IdParentesco = 1
+        LEFT JOIN persona padre ON rp_padre.IdPersona = padre.IdPersona
+        LEFT JOIN sexo sexo_p ON padre.IdSexo = sexo_p.IdSexo
+        LEFT JOIN urbanismo urb_p ON padre.IdUrbanismo = urb_p.IdUrbanismo
+        LEFT JOIN nacionalidad nac_p ON padre.IdNacionalidad = nac_p.IdNacionalidad
+        LEFT JOIN telefono tel_p ON padre.IdPersona = tel_p.IdPersona
+        LEFT JOIN tipo_telefono tipo_tel_p ON tel_p.IdTipo_Telefono = tipo_tel_p.IdTipo_Telefono
+
+        -- Madre
+        LEFT JOIN representante rp_madre ON e.IdPersona = rp_madre.IdEstudiante AND rp_madre.IdParentesco = 2
+        LEFT JOIN persona madre ON rp_madre.IdPersona = madre.IdPersona
+        LEFT JOIN sexo sexo_m ON madre.IdSexo = sexo_m.IdSexo
+        LEFT JOIN urbanismo urb_m ON madre.IdUrbanismo = urb_m.IdUrbanismo
+        LEFT JOIN nacionalidad nac_m ON madre.IdNacionalidad = nac_m.IdNacionalidad
+        LEFT JOIN telefono tel_m ON madre.IdPersona = tel_m.IdPersona
+        LEFT JOIN tipo_telefono tipo_tel_m ON tel_m.IdTipo_Telefono = tipo_tel_m.IdTipo_Telefono
+
+        -- Contacto de emergencia
+        LEFT JOIN representante rp_ce ON e.IdPersona = rp_ce.IdEstudiante 
+            AND EXISTS (
+                SELECT 1 FROM detalle_perfil dp 
+                WHERE dp.IdPersona = rp_ce.IdPersona AND dp.IdPerfil = 5
+            )
+        LEFT JOIN persona ce ON rp_ce.IdPersona = ce.IdPersona
+        LEFT JOIN parentesco parent_ce ON rp_ce.IdParentesco = parent_ce.IdParentesco
+        LEFT JOIN telefono tel_ce ON ce.IdPersona = tel_ce.IdPersona
+        LEFT JOIN tipo_telefono tipo_tel ON tel_ce.IdTipo_Telefono = tipo_tel.IdTipo_Telefono
+
+        -- Datos del estudiante
+        LEFT JOIN sexo sexo_e ON e.IdSexo = sexo_e.IdSexo
+        LEFT JOIN urbanismo urb_e ON e.IdUrbanismo = urb_e.IdUrbanismo
+        LEFT JOIN nacionalidad nac_e ON e.IdNacionalidad = nac_e.IdNacionalidad
+        LEFT JOIN telefono tel_e ON e.IdPersona = tel_e.IdPersona
+        LEFT JOIN tipo_telefono tipo_tel_e ON tel_e.IdTipo_Telefono = tipo_tel_e.IdTipo_Telefono
+
+        WHERE i.IdInscripcion = :id;";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
 }
