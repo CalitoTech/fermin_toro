@@ -367,7 +367,7 @@ function enviarFormulario() {
     formData.append('IdCurso', $('#idCursoSeleccionado').val());
 
     // Enviar formulario
-    fetch('../../controladores/InscripcionController.php', {
+    fetch('http://localhost/mis_apps/fermin_toro/controladores/InscripcionController.php', {
         method: 'POST',
         body: formData
     })
@@ -382,7 +382,18 @@ function enviarFormulario() {
                 'Número de solicitud: ' + data.numeroSolicitud + '<br>' +
                 'Código de inscripción: ' + data.codigo_inscripcion
             );
-            $('#formularioModal').modal('hide');
+
+            const origen = form.getAttribute('data-origen');
+
+            if (origen === 'modal') {
+                // ✅ Si se envió desde un modal, solo lo cerramos
+                $('#formularioModal').modal('hide');
+            } else if (origen === 'pagina') {
+                // ✅ Si se envió desde inscripcion.php, redirigimos
+                setTimeout(() => {
+                    window.location.href = 'inscripcion.php';
+                }, 1500);
+            }
         } else {
             throw new Error(data.message || 'Error al procesar la solicitud');
         }

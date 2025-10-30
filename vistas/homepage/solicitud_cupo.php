@@ -340,7 +340,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="formInscripcion">
+                    <form id="formInscripcion" data-origen="modal">
                         <input type="hidden" id="idCursoSeleccionado" name="idCurso">
                         <input type="hidden" id="idNivelSeleccionado" name="idNivelSeleccionado">
                         

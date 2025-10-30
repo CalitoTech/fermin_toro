@@ -754,9 +754,16 @@ function procesarInscripcion($conexion) {
                     }
                 }
                 
-                // Obtener curso_seccion para la inscripción (IdSeccion = 1 para inscripción)
+                // ========================================================
+                // === OBTENER CURSO_SECCION ==============================
+                // ========================================================
                 $cursoSeccionModel = new CursoSeccion($conexion);
-                $cursoSeccion = $cursoSeccionModel->obtenerPorCursoYSeccion($_POST['idCurso'], 1);
+                if (!empty($_POST['idSeccion'])) {
+                    $cursoSeccion = $cursoSeccionModel->obtenerPorCursoYSeccion($_POST['idCurso'], (int)$_POST['idSeccion']);
+                } else {
+                    // Si no viene, usar la sección 1 por defecto (inscripción inicial)
+                    $cursoSeccion = $cursoSeccionModel->obtenerPorCursoYSeccion($_POST['idCurso'], 1);
+                }
                 
                 if (!$cursoSeccion) {
                     throw new Exception("No se encontró una sección de inscripción para el curso seleccionado");
@@ -801,16 +808,6 @@ function procesarInscripcion($conexion) {
                 if ($stmtDup->fetchColumn() > 0) {
                     throw new Exception("El estudiante ya posee una inscripción en este año escolar.");
                 }
-                
-                // Obtener status de inscripción (IdTipo_Status = 2 para inscripciones)
-                $sqlStatus = "SELECT IdStatus FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus LIMIT 1";
-                $stmtStatus = $conexion->prepare($sqlStatus);
-                $stmtStatus->execute();
-                $statusInscripcion = $stmtStatus->fetch(PDO::FETCH_ASSOC);
-                
-                if (!$statusInscripcion) {
-                    throw new Exception("No se encontró un estado válido para la inscripción");
-                }
 
                 // Crear inscripción
                 $inscripcion = new Inscripcion($conexion);
@@ -821,9 +818,29 @@ function procesarInscripcion($conexion) {
                 $inscripcion->nro_hermanos = $_POST['nroHermanos'] ?? 0;
                 $inscripcion->responsable_inscripcion = $idRelacionRepresentante;
                 $inscripcion->IdFecha_Escolar = $anioEscolar['IdFecha_Escolar'];
-                $inscripcion->IdStatus = $statusInscripcion['IdStatus']; // Primer estado de inscripción
                 $inscripcion->IdCurso_Seccion = $cursoSeccion['IdCurso_Seccion'];
                 $inscripcion->codigo_inscripcion = $codigo_inscripcion;
+
+                // ========================================================
+                // === OBTENER STATUS DE INSCRIPCIÓN ======================
+                // ========================================================
+
+                if (!empty($_POST['idStatus'])) {
+                    // Si se envía explícitamente el IdStatus, usar ese
+                    $inscripcion->IdStatus = (int)$_POST['idStatus'];
+                } else {
+                    // Caso contrario, usar el primer estado de tipo 'inscripción'
+                    $sqlStatus = "SELECT IdStatus FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus LIMIT 1";
+                    $stmtStatus = $conexion->prepare($sqlStatus);
+                    $stmtStatus->execute();
+                    $statusInscripcion = $stmtStatus->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$statusInscripcion) {
+                        throw new Exception("No se encontró un estado válido para la inscripción");
+                    }
+
+                    $inscripcion->IdStatus = $statusInscripcion['IdStatus']; // Estado por defecto
+                }
                 
                 $numeroSolicitud = $inscripcion->guardar();
                 if (!$numeroSolicitud) {
@@ -840,18 +857,18 @@ function procesarInscripcion($conexion) {
                     'message' => 'Solicitud registrada correctamente'
                 ]);
 
-                // ========================================================
-                // === ENVÍO DE MENSAJE POR WHATSAPP (NO BLOQUEANTE) =====
-                // ========================================================
                 try {
-                    require_once __DIR__ . '/../controladores/WhatsAppController.php';
-                    $whatsAppCtrl = new WhatsAppController($conexion);
+                    $idUsuario = obtenerIdUsuario(); // desde sesión o helper
+                    if (!$idUsuario) {
+                        $idUsuario = null;
+                    }
 
-                    // 👇 Estado inicial 7 = "Solicitud en Proceso"
-                    $whatsAppCtrl->enviarMensajesCambioEstado($numeroSolicitud, 8);
+                    // ✅ Usa el mismo IdStatus que acaba de asignarse arriba (ya sea el enviado o el por defecto)
+                    activarInscripcionCompleta($conexion, $numeroSolicitud, $inscripcion->IdStatus, $idUsuario);
+
                 } catch (Exception $e) {
-                    // Registrar error pero NO interrumpir el flujo
-                    error_log("Error enviando WhatsApp en inscripción $numeroSolicitud: " . $e->getMessage());
+                    error_log("Error al activar status inicial: " . $e->getMessage());
+                    // No se lanza al cliente, pero se registra en logs
                 }
                 
             } catch (Exception $e) {
@@ -894,36 +911,51 @@ function cambiarStatus($conexion) {
             exit();
         }
 
-        // Obtener datos actuales de la inscripción
+        $resultado = activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $idUsuario);
+        echo json_encode($resultado);
+        exit();
+
+    } catch (Exception $e) {
+        error_log("Error al cambiar status: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+    }
+}
+
+function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $idUsuario = null) {
+    try {
+        // Obtener datos de inscripción
         $queryInscripcion = "SELECT i.*, e.IdUrbanismo, cs.IdCurso, i.IdEstudiante, i.IdStatus as status_actual
-                           FROM inscripcion i
-                           INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
-                           INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
-                           WHERE i.IdInscripcion = :idInscripcion";
-        $stmtInscripcion = $conexion->prepare($queryInscripcion);
-        $stmtInscripcion->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
-        $stmtInscripcion->execute();
-        $inscripcionData = $stmtInscripcion->fetch(PDO::FETCH_ASSOC);
+                            FROM inscripcion i
+                            INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
+                            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                            WHERE i.IdInscripcion = :idInscripcion";
+        $stmt = $conexion->prepare($queryInscripcion);
+        $stmt->execute([':idInscripcion' => $idInscripcion]);
+        $inscripcionData = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$inscripcionData) {
-            echo json_encode(['success' => false, 'message' => 'Inscripción no encontrada']);
-            exit();
+            throw new Exception('Inscripción no encontrada');
         }
 
         $estadoAnterior = $inscripcionData['status_actual'];
-
-        // =========================================
-        // BLOQUE EXTRA → activar estudiante/representantes
-        // =========================================
         $alertaCapacidad = '';
-        if ($nuevoStatus == 11) {
+        $mensajesEnviados = false;
+        $cambioRealizado = false;
+        $seccionNueva = null;
+
+        // ======================================================
+        // === ACTIVAR ESTUDIANTE Y REPRESENTANTES ===============
+        // ======================================================
+        if ($nuevoStatus == 11) { // 11 = inscrito
             $idEstudiante = $inscripcionData['IdEstudiante'];
 
-            // 1) Activar estudiante
-            $stmt = $conexion->prepare("UPDATE persona SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 WHERE IdPersona = :id");
-            $stmt->execute([':id' => $idEstudiante]);
+            // Activar estudiante
+            $conexion->prepare("UPDATE persona 
+                SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 
+                WHERE IdPersona = :id")
+                ->execute([':id' => $idEstudiante]);
 
-            // 2) Activar representantes y crear usuario/clave
+            // Activar representantes
             $stmtRep = $conexion->prepare("
                 SELECT r.IdPersona, p.cedula,
                     CASE WHEN dp.IdPerfil = 5 THEN 1 ELSE 0 END AS es_contacto_emergencia
@@ -937,33 +969,32 @@ function cambiarStatus($conexion) {
 
             foreach ($representantes as $rep) {
                 $idPersona = $rep['IdPersona'];
-                $cedula = $rep['cedula'];
+                $cedula = trim($rep['cedula']);
                 $esEmergencia = (int)$rep['es_contacto_emergencia'];
 
-                // Activar representante
-                $stmt = $conexion->prepare("UPDATE persona SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 WHERE IdPersona = :id");
-                $stmt->execute([':id' => $idPersona]);
+                // Activar persona
+                $conexion->prepare("UPDATE persona 
+                    SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 
+                    WHERE IdPersona = :id")
+                    ->execute([':id' => $idPersona]);
 
-                // Crear credenciales solo si NO es el estudiante y NO es contacto de emergencia
+                // Crear credenciales si no existen
                 if ($idPersona != $idEstudiante && !$esEmergencia) {
                     $persona = new Persona($conexion);
                     $persona->IdPersona = $idPersona;
-                    
                     $credenciales = $persona->obtenerCredenciales();
 
                     if (empty($credenciales['usuario']) || empty($credenciales['password'])) {
-                        // Crear usuario = cédula, contraseña = cédula (hasheada)
-                        $cedula = trim($cedula); // quita espacios al inicio y fin
                         $persona->actualizarCredenciales($cedula, $cedula);
                     }
                 }
             }
 
-            // =========================================
-            // Chequear capacidad de aulas
-            // =========================================
+            // ======================================================
+            // === CHEQUEAR CAPACIDAD DE AULAS ======================
+            // ======================================================
             $aulas = verificarCapacidadAulas($conexion, $inscripcionData['IdCurso']);
-            $todasAulasLlenas = !empty($aulas);
+            $todasAulasLlenas = true;
 
             foreach ($aulas as $aula) {
                 if ((int)$aula['tiene_cupo'] === 1) {
@@ -973,97 +1004,65 @@ function cambiarStatus($conexion) {
             }
 
             if ($todasAulasLlenas) {
-                $alertaCapacidad = 'Todas las aulas han alcanzado su capacidad máxima. Se recomienda considerar un cambio de aula o remodelación del espacio antes de continuar las inscripciones.';
+                $alertaCapacidad = 'Todas las aulas han alcanzado su capacidad máxima.';
+            }
+
+            // ======================================================
+            // === CAMBIO AUTOMÁTICO DE SECCIÓN =====================
+            // ======================================================
+            $seccionRecomendada = obtenerSeccionRecomendada(
+                $conexion,
+                $inscripcionData['IdCurso'],
+                $inscripcionData['IdUrbanismo'],
+                $inscripcionData['IdCurso_Seccion']
+            );
+
+            if ($seccionRecomendada && $seccionRecomendada != $inscripcionData['IdCurso_Seccion']) {
+                $conexion->prepare("UPDATE inscripcion 
+                    SET IdCurso_Seccion = :nuevaSeccion 
+                    WHERE IdInscripcion = :id")
+                    ->execute([':nuevaSeccion' => $seccionRecomendada, ':id' => $idInscripcion]);
+                $cambioRealizado = true;
+                $seccionNueva = $seccionRecomendada;
             }
         }
 
-        // =========================================
-        // Actualizar status de la inscripción
-        // =========================================
-        $query = "UPDATE inscripcion SET IdStatus = :status WHERE IdInscripcion = :id";
-        $stmt = $conexion->prepare($query);
-        $stmt->bindParam(':status', $nuevoStatus, PDO::PARAM_INT);
-        $stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
+        // ======================================================
+        // === ACTUALIZAR STATUS PRINCIPAL =======================
+        // ======================================================
+        $conexion->prepare("UPDATE inscripcion SET IdStatus = :status WHERE IdInscripcion = :id")
+            ->execute([':status' => $nuevoStatus, ':id' => $idInscripcion]);
 
-        if ($stmt->execute()) {
-            // Si el nuevo estado es "Inscrito" (IdStatus = 11), intentar cambio automático de sección
-            $cambioRealizado = false;
-            $seccionAnterior = $inscripcionData['IdCurso_Seccion'];
-            $seccionNueva = null;
-
-            if ($nuevoStatus == 11) {
-                try {
-                    $seccionRecomendada = obtenerSeccionRecomendada(
-                        $conexion,
-                        $inscripcionData['IdCurso'],
-                        $inscripcionData['IdUrbanismo'],
-                        $inscripcionData['IdCurso_Seccion']
-                    );
-
-                    if ($seccionRecomendada && $seccionRecomendada != $inscripcionData['IdCurso_Seccion']) {
-                        $queryUpdateSeccion = "UPDATE inscripcion SET IdCurso_Seccion = :nuevaSeccion WHERE IdInscripcion = :idInscripcion";
-                        $stmtUpdate = $conexion->prepare($queryUpdateSeccion);
-                        $stmtUpdate->bindParam(':nuevaSeccion', $seccionRecomendada, PDO::PARAM_INT);
-                        $stmtUpdate->bindParam(':idInscripcion', $idInscripcion, PDO::PARAM_INT);
-
-                        if ($stmtUpdate->execute()) {
-                            $cambioRealizado = true;
-                            $seccionNueva = $seccionRecomendada;
-                            error_log("Cambio automático realizado: " . $inscripcionData['IdCurso_Seccion'] . " → " . $seccionRecomendada);
-                        }
-                    } else {
-                        error_log("No se realizó cambio automático. Razón: " .
-                            (!$seccionRecomendada ? "No hay sección recomendada" : "Ya está en la sección recomendada"));
-                    }
-                } catch (Exception $e) {
-                    error_log("Error en cambio automático de sección: " . $e->getMessage());
-                }
-            }
-
-            // Auditoría
+        // Auditoría
+        if ($idUsuario) {
             actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
-
-            // =========================================
-            // ✅ NUEVO: Enviar mensajes de WhatsApp
-            // =========================================
-            $mensajesEnviados = false;
-            try {
-                require_once __DIR__ . '/WhatsAppController.php';
-                $whatsappController = new WhatsAppController($conexion);
-                $resultadoWhatsApp = $whatsappController->enviarMensajesCambioEstado(
-                    $idInscripcion, 
-                    $nuevoStatus, 
-                    $estadoAnterior
-                );
-                
-                if ($resultadoWhatsApp) {
-                    $mensajesEnviados = true;
-                    error_log("Mensajes de WhatsApp enviados exitosamente para inscripción ID: $idInscripcion");
-                }
-            } catch (Exception $e) {
-                error_log("Error enviando WhatsApp (no crítico): " . $e->getMessage());
-                // No fallar la operación principal por error en WhatsApp
-            }
-
-            echo json_encode([
-                'success' => true,
-                'message' => 'Estado actualizado correctamente' . ($mensajesEnviados ? ' y notificaciones enviadas' : ''),
-                'nuevoStatus' => $nuevoStatus,
-                'cambioAutomatico' => $cambioRealizado,
-                'seccionAnterior' => $seccionAnterior,
-                'seccionNueva' => $seccionNueva,
-                'alertaCapacidad' => $alertaCapacidad,
-                'whatsappEnviado' => $mensajesEnviados
-            ]);
-
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Error al actualizar']);
         }
+
+        // ======================================================
+        // === ENVIAR WHATSAPP ==================================
+        // ======================================================
+        try {
+            require_once __DIR__ . '/WhatsAppController.php';
+            $whatsappController = new WhatsAppController($conexion);
+            $whatsappController->enviarMensajesCambioEstado($idInscripcion, $nuevoStatus, $estadoAnterior);
+            $mensajesEnviados = true;
+        } catch (Exception $e) {
+            error_log("Error enviando WhatsApp (no crítico): " . $e->getMessage());
+        }
+
+        return [
+            'success' => true,
+            'cambioAutomatico' => $cambioRealizado,
+            'seccionNueva' => $seccionNueva,
+            'alertaCapacidad' => $alertaCapacidad,
+            'whatsappEnviado' => $mensajesEnviados
+        ];
     } catch (Exception $e) {
-        error_log("Error al cambiar status: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+        error_log("Error en activarInscripcionCompleta: " . $e->getMessage());
+        return ['success' => false, 'message' => $e->getMessage()];
     }
 }
+
 
 function toggleRequisito($conexion) {
     // Forzar salida en JSON

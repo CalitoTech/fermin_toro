@@ -24,6 +24,7 @@ require_once __DIR__ . '/../../../modelos/Curso.php';
 require_once __DIR__ . '/../../../modelos/Seccion.php';
 require_once __DIR__ . '/../../../modelos/Urbanismo.php';
 require_once __DIR__ . '/../../../modelos/Parentesco.php';
+require_once __DIR__ . '/../../../modelos/Status.php';
 
 // Instancias de los modelos
 $modeloNacionalidad = new Nacionalidad($conexion);
@@ -33,6 +34,7 @@ $modeloCurso = new Curso($conexion);
 $modeloSeccion = new Seccion($conexion);
 $modeloUrbanismo = new Urbanismo($conexion);
 $modeloParentesco = new Parentesco($conexion);
+$statusModel = new Status($conexion);
 
 // Obtener datos
 $nacionalidades = $modeloNacionalidad->obtenerTodos();
@@ -42,6 +44,7 @@ $cursos = $modeloCurso->obtenerTodos();
 $secciones = $modeloSeccion->obtenerTodos();
 $urbanismos = $modeloUrbanismo->obtenerTodos();
 $parentescos = $modeloParentesco->obtenerTodos();
+$listaStatus = $statusModel->obtenerStatusInscripcion();
 ?>
 
 <head>
@@ -55,7 +58,67 @@ $parentescos = $modeloParentesco->obtenerTodos();
 
 
 <div class="container mt-4">
-    <form id="formNuevaInscripcion" method="POST" action="../../../controladores/InscripcionController.php">
+    <form id="formInscripcion" data-origen="pagina">
+
+        <!-- 🔹 BLOQUE: DATOS DE INSCRIPCIÓN -->
+        <div class="card mb-3">
+            <div class="card-header" style="background-color: #c90000; color: white;">
+                <h5 class="mb-0">
+                    <i class="fas fa-clipboard-list mr-2"></i>Datos de Inscripción
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <div class="row g-3 mt-2">
+                    <!-- Nivel -->
+                    <div class="col-md-4">
+                        <div class="form-group required-field">
+                            <label for="nivel">Nivel</label>
+                            <select class="form-control" id="nivel" name="idNivelSeleccionado" required>
+                                <option value="">Seleccione un nivel</option>
+                                <?php foreach ($niveles as $nivel): ?>
+                                    <option value="<?= $nivel['IdNivel'] ?>">
+                                        <?= htmlspecialchars($nivel['nivel']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Curso -->
+                    <div class="col-md-4">
+                        <div class="form-group required-field">
+                            <label for="curso">Curso</label>
+                            <select class="form-control" id="curso" name="idCurso" required>
+                                <option value="">Seleccione un curso</option>
+                                <?php foreach ($cursos as $curso): ?>
+                                    <option value="<?= $curso['IdCurso'] ?>">
+                                        <?= htmlspecialchars($curso['curso']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-md-4">
+                        <div class="form-group required-field">
+                            <label for="IdStatus" class="form-label">Status</label>
+                            <select class="form-select" id="IdStatus" name="idStatus" required>
+                                <option value="">Seleccione un status</option>
+                                <?php foreach ($listaStatus as $status): ?>
+                                    <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
+                                        <?= htmlspecialchars($status['status']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         
         <!-- ===================== DATOS DEL ESTUDIANTE ===================== -->
         <div class="card mb-4">
@@ -66,47 +129,6 @@ $parentescos = $modeloParentesco->obtenerTodos();
             <div class="card-body collapse show" id="datosEstudiante">
                 <div class="form-legend">
                     <i class="fas fa-asterisk"></i> Campos obligatorios
-                </div>
-
-                
-
-                <!-- Nivel, Curso y Sección -->
-                <div class="row mt-4">
-                    <div class="col-md-4">
-                        <div class="form-group required-field">
-                            <label for="nivel">Nivel</label>
-                            <select class="form-control" id="nivel" name="nivel" required>
-                                <option value="">Seleccione un nivel</option>
-                                <?php foreach ($niveles as $nivel): ?>
-                                    <option value="<?= $nivel['IdNivel'] ?>"><?= $nivel['nivel'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group required-field">
-                            <label for="curso">Curso</label>
-                            <select class="form-control" id="curso" name="curso" required>
-                                <option value="">Seleccione un curso</option>
-                                <?php foreach ($cursos as $curso): ?>
-                                    <option value="<?= $curso['IdCurso'] ?>"><?= $curso['curso'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="col-md-4">
-                        <div class="form-group required-field">
-                            <label for="seccion">Sección</label>
-                            <select class="form-control" id="seccion" name="seccion" required>
-                                <option value="">Seleccione una sección</option>
-                                <?php foreach ($secciones as $seccion): ?>
-                                    <option value="<?= $seccion['IdSeccion'] ?>"><?= $seccion['seccion'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="row">
@@ -371,9 +393,13 @@ $parentescos = $modeloParentesco->obtenerTodos();
             <?php endif; ?>
         <?php endforeach; ?>
 
-        <div class="text-center mb-5">
-            <button type="submit" class="btn btn-success px-5">
-                <i class="fas fa-save"></i> Registrar Inscripción
+        <!-- Botones para Volver y Guardar -->
+        <div class="d-flex justify-content-between mt-4 mb-5">
+            <a href="inscripcion.php" class="btn btn-outline-danger btn-lg">
+                <i class='bx bx-arrow-back'></i> Volver a Inscripciones
+            </a>
+            <button type="submit" class="btn btn-danger btn-lg" id="btnEnviarFormulario">
+                <i class='bx bxs-save'></i> Guardar Inscripción
             </button>
         </div>
     </form>
@@ -486,5 +512,45 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
     }
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const selectNivel = document.getElementById("nivel");
+    const cedulaContainer = document.getElementById("estudianteCedulaContainer");
+    const telefonoContainer = document.getElementById("estudianteTelefonoContainer");
+
+    // Función para mostrar u ocultar los campos según el nivel
+    function actualizarCamposEstudiante() {
+        const nivelSeleccionado = parseInt(selectNivel.value);
+
+        if (nivelSeleccionado === 1) {
+            // Ocultar solo cédula y teléfono
+            cedulaContainer.style.display = "none";
+            telefonoContainer.style.display = "none";
+
+            // Quitar "required" para evitar errores de validación
+            document.getElementById("estudianteCedula").removeAttribute("required");
+            document.getElementById("estudianteTelefono").removeAttribute("required");
+
+            // Limpiar valores si se desea
+            document.getElementById("estudianteCedula").value = "";
+            document.getElementById("estudianteTelefono").value = "";
+        } else {
+            // Mostrar cédula y teléfono
+            cedulaContainer.style.display = "";
+            telefonoContainer.style.display = "";
+
+            // Restaurar "required"
+            document.getElementById("estudianteCedula").setAttribute("required", "required");
+            document.getElementById("estudianteTelefono").setAttribute("required", "required");
+        }
+    }
+
+    // Escuchar cambios en el select de nivel
+    selectNivel.addEventListener("change", actualizarCamposEstudiante);
+
+    // Aplicar estado inicial al cargar la página
+    actualizarCamposEstudiante();
 });
 </script>
