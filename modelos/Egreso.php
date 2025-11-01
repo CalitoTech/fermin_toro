@@ -37,7 +37,7 @@ class Egreso {
     }
 
     public function obtenerPorPersona($idPersona) {
-        $query = "SELECT e.*, s.status 
+        $query = "SELECT e.*, s.status
                  FROM egreso e
                  JOIN status s ON e.IdStatus = s.IdStatus
                  WHERE e.IdPersona = ?";
@@ -45,5 +45,67 @@ class Egreso {
         $stmt->bindParam(1, $idPersona, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerPorId($idEgreso) {
+        $query = "SELECT e.*, s.status
+                 FROM egreso e
+                 JOIN status s ON e.IdStatus = s.IdStatus
+                 WHERE e.IdEgreso = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $idEgreso, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function actualizar() {
+        $query = "UPDATE egreso
+                 SET fecha_egreso = :fecha_egreso,
+                     motivo = :motivo,
+                     IdPersona = :IdPersona,
+                     IdStatus = :IdStatus
+                 WHERE IdEgreso = :IdEgreso";
+
+        $stmt = $this->conn->prepare($query);
+
+        $this->fecha_egreso = htmlspecialchars(strip_tags($this->fecha_egreso));
+        $this->motivo = htmlspecialchars(strip_tags($this->motivo));
+        $this->IdPersona = htmlspecialchars(strip_tags($this->IdPersona));
+        $this->IdStatus = htmlspecialchars(strip_tags($this->IdStatus));
+        $this->IdEgreso = htmlspecialchars(strip_tags($this->IdEgreso));
+
+        $stmt->bindParam(":fecha_egreso", $this->fecha_egreso);
+        $stmt->bindParam(":motivo", $this->motivo);
+        $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
+        $stmt->bindParam(":IdStatus", $this->IdStatus, PDO::PARAM_INT);
+        $stmt->bindParam(":IdEgreso", $this->IdEgreso, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
+    }
+
+    public function obtenerTodos() {
+        $query = "SELECT e.*, s.status, p.nombre, p.apellido, p.cedula
+                 FROM egreso e
+                 JOIN status s ON e.IdStatus = s.IdStatus
+                 JOIN persona p ON e.IdPersona = p.IdPersona
+                 ORDER BY e.fecha_egreso DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function eliminar() {
+        $query = "DELETE FROM egreso WHERE IdEgreso = :IdEgreso";
+        $stmt = $this->conn->prepare($query);
+        $this->IdEgreso = htmlspecialchars(strip_tags($this->IdEgreso));
+        $stmt->bindParam(":IdEgreso", $this->IdEgreso, PDO::PARAM_INT);
+
+        if ($stmt->execute()) {
+            return true;
+        }
+        return false;
     }
 }
