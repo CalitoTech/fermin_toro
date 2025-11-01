@@ -123,7 +123,7 @@ try {
                     <ul class="sub-menu">
                         <li><a href="../../estudiantes/estudiante/estudiante.php">Estudiantes</a></li>
                         <li><a href="../../estudiantes/representante/representante.php">Representantes</a></li>
-                        <li><a href="#">Egresos</a></li>
+                        <li><a href="../../estudiantes/egreso/egreso.php">Egresos</a></li>
                     </ul>
                 </li>
 
