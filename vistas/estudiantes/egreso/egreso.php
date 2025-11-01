@@ -222,7 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ],
         acciones: [
             { url: 'ver_egreso.php?id={id}', class: 'btn-outline-info', icon: '<i class="bx bxs-show"></i>' },
-            { url: 'editar_egreso.php?id={id}', class: 'btn-outline-primary', icon: '<i class="bx bxs-edit"></i>' }
+            { url: 'editar_egreso.php?id={id}', class: 'btn-outline-primary', icon: '<i class="bx bxs-edit"></i>' },
+            { url: '#', class: 'btn-outline-danger', icon: '<i class="bx bxs-trash"></i>', onclick: 'eliminarEgreso({id})' }
         ]
     };
 
@@ -288,6 +289,24 @@ window.imprimirLista = function() {
 };
 
 document.getElementById('btnImprimir').addEventListener('click', window.imprimirLista);
+
+// === FUNCIÓN PARA ELIMINAR EGRESO ===
+window.eliminarEgreso = function(id) {
+    Swal.fire({
+        title: '¿Está seguro?',
+        text: "Esta acción eliminará el registro de egreso. ¿Desea continuar?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#c90000',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = `../../../controladores/EgresoController.php?action=eliminar&id=${id}`;
+        }
+    });
+};
 </script>
 
 </body>
