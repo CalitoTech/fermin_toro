@@ -123,170 +123,197 @@ $telefonos = separarTelefonosPorTipo($egreso['telefonos'] ?? '');
 <head>
     <title>UECFT Araure - Detalles de Egreso</title>
     <style>
-        .egreso-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 15px 15px 0 0;
-            margin-bottom: 0;
+    .egreso-header {
+        background: linear-gradient(135deg, #dc3545 0%, #b71c1c 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px 15px 0 0;
+        margin-bottom: 0;
+    }
+
+    .egreso-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.15);
+        overflow: hidden;
+        margin-bottom: 2rem;
+        background: #fff;
+    }
+
+    .info-section {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #dc3545;
+        box-shadow: 0 2px 10px rgba(220, 53, 69, 0.1);
+    }
+
+    .info-section h6 {
+        color: #dc3545;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .info-section h6 i {
+        margin-right: 0.5rem;
+        color: #dc3545;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #444;
+        min-width: 180px;
+    }
+
+    .info-value {
+        color: #333;
+        flex: 1;
+    }
+
+    .status-badge-large {
+        font-size: 1.2rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+
+    .timeline-date {
+        background: linear-gradient(135deg, #ff6f61 0%, #dc3545 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        display: inline-block;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .motivo-box {
+        background: #fff5f5;
+        border-left: 4px solid #dc3545;
+        padding: 1.5rem;
+        border-radius: 10px;
+        font-style: italic;
+        color: #555;
+        min-height: 80px;
+    }
+
+    .student-name {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .student-id {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+    }
+
+    .telefonos-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .telefono-item {
+        background: #fff5f5;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #dc3545;
+    }
+
+    .icon-box {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #ff6f61 0%, #dc3545 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #dc3545 0%, #b71c1c 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .stat-card h3 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .stat-card p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
+
+    /* Ajustes para impresión */
+    @media print {
+        .home-section {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .sidebar, .action-buttons, .btn {
+            display: none !important;
         }
 
         .egreso-card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 2rem;
+            box-shadow: none !important;
+            page-break-inside: avoid;
         }
 
-        .info-section {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid #667eea;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        .egreso-header {
+            background: #dc3545 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
+    }
+</style>
 
-        .info-section h6 {
-            color: #667eea;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .info-section h6 i {
-            margin-right: 0.5rem;
-        }
-
-        .info-row {
-            display: flex;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #555;
-            min-width: 180px;
-        }
-
-        .info-value {
-            color: #333;
-            flex: 1;
-        }
-
-        .status-badge-large {
-            font-size: 1.2rem;
-            padding: 0.75rem 1.5rem;
-            border-radius: 25px;
-            display: inline-block;
-            margin-top: 1rem;
-        }
-
-        .timeline-date {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 10px;
-            display: inline-block;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .motivo-box {
-            background: #f8f9fa;
-            border-left: 4px solid #f5576c;
-            padding: 1.5rem;
-            border-radius: 10px;
-            font-style: italic;
-            color: #555;
-            min-height: 80px;
-        }
-
-        .student-name {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .student-id {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-action {
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-action:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .telefonos-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .telefono-item {
-            background: #f8f9fa;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-        }
-
-        .icon-box {
-            width: 50px;
-            height: 50px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 1.5rem;
-            margin-right: 1rem;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .stat-card h3 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .stat-card p {
-            margin: 0.5rem 0 0 0;
-            opacity: 0.9;
-        }
-    </style>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
@@ -333,12 +360,6 @@ $telefonos = separarTelefonosPorTipo($egreso['telefonos'] ?? '');
                                 <a href="egreso.php" class="btn btn-secondary btn-action">
                                     <i class="fas fa-arrow-left"></i> Volver al Listado
                                 </a>
-                                <a href="editar_egreso.php?id=<?= $egreso['IdEgreso'] ?>" class="btn btn-primary btn-action">
-                                    <i class="fas fa-edit"></i> Editar Egreso
-                                </a>
-                                <button onclick="window.print()" class="btn btn-danger btn-action">
-                                    <i class="fas fa-print"></i> Imprimir
-                                </button>
                             </div>
 
                             <!-- Información del Egreso -->

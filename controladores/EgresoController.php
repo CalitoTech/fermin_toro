@@ -23,13 +23,13 @@ switch ($action) {
         eliminarEgreso();
         break;
     default:
-        manejarError('Acción no válida', '../vistas/registros/egreso/egreso.php');
+        manejarError('Acción no válida', '../vistas/estudiantes/egreso/egreso.php');
 }
 
 function crearEgreso() {
     // Solo POST para creación
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        manejarError('Método no permitido', '../vistas/registros/egreso/nuevo_egreso.php');
+        manejarError('Método no permitido', '../vistas/estudiantes/egreso/nuevo_egreso.php');
     }
 
     // Obtener datos
@@ -40,13 +40,13 @@ function crearEgreso() {
 
     // Validar campos requeridos
     if (empty($fecha_egreso)) {
-        manejarError('La fecha de egreso es requerida', '../vistas/registros/egreso/nuevo_egreso.php');
+        manejarError('La fecha de egreso es requerida', '../vistas/estudiantes/egreso/nuevo_egreso.php');
     }
     if ($idPersona <= 0) {
-        manejarError('Debe seleccionar un estudiante', '../vistas/registros/egreso/nuevo_egreso.php');
+        manejarError('Debe seleccionar un estudiante', '../vistas/estudiantes/egreso/nuevo_egreso.php');
     }
     if ($idStatus <= 0) {
-        manejarError('Debe seleccionar un status', '../vistas/registros/egreso/nuevo_egreso.php');
+        manejarError('Debe seleccionar un status', '../vistas/estudiantes/egreso/nuevo_egreso.php');
     }
 
     try {
@@ -61,7 +61,7 @@ function crearEgreso() {
         $stmtCheck->execute();
 
         if ($stmtCheck->rowCount() > 0) {
-            manejarError('Esta persona ya tiene un egreso registrado', '../vistas/registros/egreso/nuevo_egreso.php');
+            manejarError('Esta persona ya tiene un egreso registrado', '../vistas/estudiantes/egreso/nuevo_egreso.php');
         }
 
         // Configurar datos del egreso
@@ -77,24 +77,24 @@ function crearEgreso() {
 
         $_SESSION['alert'] = 'success';
         $_SESSION['message'] = 'Egreso creado exitosamente';
-        header("Location: ../vistas/registros/egreso/egreso.php");
+        header("Location: ../vistas/estudiantes/egreso/egreso.php");
         exit();
 
     } catch (Exception $e) {
-        manejarError('Error al crear el egreso: ' . $e->getMessage(), '../vistas/registros/egreso/nuevo_egreso.php');
+        manejarError('Error al crear el egreso: ' . $e->getMessage(), '../vistas/estudiantes/egreso/nuevo_egreso.php');
     }
 }
 
 function editarEgreso() {
     // Solo POST para edición
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        manejarError('Método no permitido', '../vistas/registros/egreso/egreso.php');
+        manejarError('Método no permitido', '../vistas/estudiantes/egreso/egreso.php');
     }
 
     // Obtener ID
     $id = (int)($_POST['IdEgreso'] ?? 0);
     if ($id <= 0) {
-        manejarError('ID de egreso inválido', '../vistas/registros/egreso/egreso.php');
+        manejarError('ID de egreso inválido', '../vistas/estudiantes/egreso/egreso.php');
     }
 
     // Obtener datos
@@ -105,13 +105,13 @@ function editarEgreso() {
 
     // Validar campos requeridos
     if (empty($fecha_egreso)) {
-        manejarError('La fecha de egreso es requerida', "../vistas/registros/egreso/editar_egreso.php?id=$id");
+        manejarError('La fecha de egreso es requerida', "../vistas/estudiantes/egreso/editar_egreso.php?id=$id");
     }
     if ($idPersona <= 0) {
-        manejarError('Debe seleccionar un estudiante', "../vistas/registros/egreso/editar_egreso.php?id=$id");
+        manejarError('Debe seleccionar un estudiante', "../vistas/estudiantes/egreso/editar_egreso.php?id=$id");
     }
     if ($idStatus <= 0) {
-        manejarError('Debe seleccionar un status', "../vistas/registros/egreso/editar_egreso.php?id=$id");
+        manejarError('Debe seleccionar un status', "../vistas/estudiantes/egreso/editar_egreso.php?id=$id");
     }
 
     try {
@@ -121,7 +121,7 @@ function editarEgreso() {
 
         // Verificar que el egreso existe
         if (!$egresoModel->obtenerPorId($id)) {
-            manejarError('Egreso no encontrado', '../vistas/registros/egreso/egreso.php');
+            manejarError('Egreso no encontrado', '../vistas/estudiantes/egreso/egreso.php');
         }
 
         // Verificar que no exista otro egreso para esta persona (excluyendo el actual)
@@ -132,7 +132,7 @@ function editarEgreso() {
         $stmtCheck->execute();
 
         if ($stmtCheck->rowCount() > 0) {
-            manejarError('Esta persona ya tiene otro egreso registrado', "../vistas/registros/egreso/editar_egreso.php?id=$id");
+            manejarError('Esta persona ya tiene otro egreso registrado', "../vistas/estudiantes/egreso/editar_egreso.php?id=$id");
         }
 
         // Configurar datos actualizados
@@ -149,24 +149,24 @@ function editarEgreso() {
 
         $_SESSION['alert'] = 'success';
         $_SESSION['message'] = 'Egreso actualizado correctamente';
-        header("Location: ../vistas/registros/egreso/editar_egreso.php?id=$id");
+        header("Location: ../vistas/estudiantes/egreso/editar_egreso.php?id=$id");
         exit();
 
     } catch (Exception $e) {
-        manejarError('Error al actualizar: ' . $e->getMessage(), "../vistas/registros/egreso/editar_egreso.php?id=$id");
+        manejarError('Error al actualizar: ' . $e->getMessage(), "../vistas/estudiantes/egreso/editar_egreso.php?id=$id");
     }
 }
 
 function eliminarEgreso() {
     // Solo permitir método GET
     if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-        manejarError('Método no permitido', '../vistas/registros/egreso/egreso.php');
+        manejarError('Método no permitido', '../vistas/estudiantes/egreso/egreso.php');
     }
 
     // Obtener ID
     $id = (int)($_GET['id'] ?? 0);
     if ($id <= 0) {
-        manejarError('ID inválido', '../vistas/registros/egreso/egreso.php');
+        manejarError('ID inválido', '../vistas/estudiantes/egreso/egreso.php');
     }
 
     try {
@@ -176,7 +176,7 @@ function eliminarEgreso() {
 
         // Verificar que el egreso existe
         if (!$egresoModel->obtenerPorId($id)) {
-            manejarError('Egreso no encontrado', '../vistas/registros/egreso/egreso.php');
+            manejarError('Egreso no encontrado', '../vistas/estudiantes/egreso/egreso.php');
         }
 
         // Configurar ID para eliminar
@@ -188,11 +188,11 @@ function eliminarEgreso() {
         }
 
         $_SESSION['alert'] = 'deleted';
-        header("Location: ../vistas/registros/egreso/egreso.php");
+        header("Location: ../vistas/estudiantes/egreso/egreso.php");
         exit();
 
     } catch (Exception $e) {
-        manejarError('Error al eliminar: ' . $e->getMessage(), '../vistas/registros/egreso/egreso.php');
+        manejarError('Error al eliminar: ' . $e->getMessage(), '../vistas/estudiantes/egreso/egreso.php');
     }
 }
 
@@ -201,7 +201,7 @@ function eliminarEgreso() {
  * @param string $mensaje Mensaje de error a mostrar
  * @param string $urlRedireccion URL a la que redirigir (opcional)
  */
-function manejarError(string $mensaje, string $urlRedireccion = '../vistas/registros/egreso/nuevo_egreso.php') {
+function manejarError(string $mensaje, string $urlRedireccion = '../vistas/estudiantes/egreso/nuevo_egreso.php') {
     $_SESSION['alert'] = 'error';
     $_SESSION['message'] = $mensaje;
     header("Location: $urlRedireccion");

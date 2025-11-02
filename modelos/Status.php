@@ -120,4 +120,25 @@ class Status {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function obtenerStatusPersona() {
+        $query = "SELECT IdStatus, status 
+                  FROM status 
+                  WHERE IdTipo_Status = 1 
+                  ORDER BY IdStatus";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerStatusEgreso() {
+        $query = "SELECT IdStatus, status 
+                  FROM status 
+                  WHERE IdTipo_Status = 1
+                  AND IdStatus IN (6,7) 
+                  ORDER BY IdStatus";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

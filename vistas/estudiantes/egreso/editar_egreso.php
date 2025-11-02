@@ -94,7 +94,7 @@ $status_list = [];
 try {
     require_once __DIR__ . '/../../../modelos/Status.php';
     $statusModel = new Status($conexion);
-    $status_list = $statusModel->obtenerStatusPersona();
+    $status_list = $statusModel->obtenerStatusEgreso();
 } catch (Exception $e) {
     error_log("Error al cargar status: " . $e->getMessage());
     $status_list = [];
@@ -105,6 +105,53 @@ try {
 <head>
     <title>UECFT Araure - Editar Egreso</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <style>
+        /* === ESTILO PERSONALIZADO === */
+        .card-header {
+            background: linear-gradient(90deg, #c90000, #8b0000);
+            color: #fff;
+        }
+
+        .autocomplete-results {
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .autocomplete-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .autocomplete-item:hover {
+            background: #f8d7da;
+        }
+
+        .autocomplete-item strong {
+            color: #c90000;
+        }
+
+        .input-group-text {
+            background-color: #c90000;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background-color: #c90000;
+            border: none;
+        }
+
+        .btn-outline-danger:hover {
+            background-color: #c90000;
+            color: #fff;
+        }
+    </style>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
@@ -127,30 +174,6 @@ try {
                                 <input type="hidden" name="IdEgreso" value="<?= $egreso['IdEgreso'] ?>">
 
                                 <div class="row">
-                                    <!-- Estudiante -->
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="IdPersona" class="form-label">Estudiante *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <select
-                                                    class="form-control"
-                                                    name="IdPersona"
-                                                    id="IdPersona"
-                                                    required>
-                                                    <option value="">Seleccione un estudiante</option>
-                                                    <?php foreach ($estudiantes as $est): ?>
-                                                        <option value="<?= $est['IdPersona'] ?>"
-                                                            <?= $est['IdPersona'] == $egreso['IdPersona'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($est['apellido'] . ' ' . $est['nombre']) ?>
-                                                            (<?= htmlspecialchars($est['nacionalidad'] . '-' . $est['cedula']) ?>)
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <!-- Fecha de Egreso -->
                                     <div class="col-md-6">
                                         <div class="mb-3">
@@ -180,7 +203,6 @@ try {
                                                     name="IdStatus"
                                                     id="IdStatus"
                                                     required>
-                                                    <option value="">Seleccione un status</option>
                                                     <?php foreach ($status_list as $status): ?>
                                                         <option value="<?= $status['IdStatus'] ?>"
                                                             <?= $status['IdStatus'] == $egreso['IdStatus'] ? 'selected' : '' ?>>
@@ -217,9 +239,6 @@ try {
                                         <i class='bx bx-arrow-back'></i> Volver a Egresos
                                     </a>
                                     <div>
-                                        <a href="ver_egreso.php?id=<?= $egreso['IdEgreso'] ?>" class="btn btn-outline-info btn-lg me-2">
-                                            <i class='bx bxs-show'></i> Ver Detalle
-                                        </a>
                                         <button type="submit" class="btn btn-primary btn-lg">
                                             <i class='bx bxs-save'></i> Actualizar Egreso
                                         </button>

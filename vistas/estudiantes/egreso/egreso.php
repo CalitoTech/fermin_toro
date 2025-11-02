@@ -25,6 +25,8 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
 // Incluir Notificaciones y conexión
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Status.php';
+
 $database = new Database();
 $conexion = $database->getConnection();
 
@@ -93,10 +95,9 @@ $stmt = $conexion->prepare($query);
 $stmt->execute();
 $egresos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// === CONSULTA DE STATUS (solo de tipo Persona) ===
-$sth = $conexion->prepare("SELECT IdStatus, status FROM status WHERE IdTipo_Status = 1 ORDER BY IdStatus");
-$sth->execute();
-$estados_persona = $sth->fetchAll(PDO::FETCH_ASSOC);
+
+$statusModel = new Status($conexion);
+$statuses = $statusModel->obtenerStatusEgreso();
 ?>
 
 <head>
@@ -149,7 +150,7 @@ $estados_persona = $sth->fetchAll(PDO::FETCH_ASSOC);
                                     <label for="filtroStatus" class="fw-semibold mb-0">Status:</label>
                                     <select id="filtroStatus" class="form-select" style="width:auto;">
                                         <option value="">Todos</option>
-                                        <?php foreach ($estados_persona as $status): ?>
+                                        <?php foreach ($statuses as $status): ?>
                                             <option value="<?= $status['status']; ?>"><?= htmlspecialchars($status['status']); ?></option>
                                         <?php endforeach; ?>
                                     </select>
@@ -175,7 +176,6 @@ $estados_persona = $sth->fetchAll(PDO::FETCH_ASSOC);
                                             <th>Estudiante</th>
                                             <th>Cédula</th>
                                             <th>Fecha Egreso</th>
-                                            <th>Motivo</th>
                                             <th>Status</th>
                                             <th>Acciones</th>
                                         </tr>
@@ -217,7 +217,6 @@ document.addEventListener('DOMContentLoaded', function() {
             { label: 'Estudiante', key: 'nombreCompleto' },
             { label: 'Cédula', key: 'cedulaCompleta' },
             { label: 'Fecha Egreso', key: 'fecha_egreso' },
-            { label: 'Motivo', key: 'motivoCorto' },
             { label: 'Status', key: 'status' }
         ],
         acciones: [
