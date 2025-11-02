@@ -132,8 +132,8 @@ class Egreso {
     public function desactivarPersona($idPersona) {
         try {
             $query = "UPDATE persona 
-                      SET IdStatusInstitucional = 2, 
-                          IdStatusAcceso = 2 
+                      SET IdEstadoInstitucional = 2, 
+                          IdEstadoAcceso = 2 
                       WHERE IdPersona = :IdPersona";
 
             $stmt = $this->conn->prepare($query);

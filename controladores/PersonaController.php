@@ -366,7 +366,7 @@ function editarUsuario() {
         if (!empty($tel['numero'])) {
             $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
             if (strlen($digitos) < 11) {
-                manejarError('El número de teléfono debe contener al menos 11 dígitos');
+                manejarError('El número de teléfono debe contener al menos 11 dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
             }
         }
     }

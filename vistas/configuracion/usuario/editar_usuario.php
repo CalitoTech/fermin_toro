@@ -34,15 +34,17 @@ require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
 // Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
+$message = $_SESSION['message'] ?? '';
 unset($_SESSION['alert']);
+unset($_SESSION['message']);
 
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El usuario se actualizó correctamente.");
+            $alerta = Notificaciones::exito($message ?: 'Operación realizada correctamente.');
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Error al actualizar el usuario.");
+            $alerta = Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.');
             break;
         default:
             $alerta = null;
