@@ -60,6 +60,28 @@ try {
     $userPerfil = 'Error';
     $idPerfil = null;
 }
+
+// === CLASIFICAR PERFILES ===
+// 1=Administrador, 2=Docente, 3=Estudiante, 4=Representante, 5=Contacto de Emergencia
+// 6=Director, 7=Control de estudios, 8=Coordinador Inicial, 9=Coordinador Primaria, 10=Coordinador Media General
+
+$perfilesExternos = [3, 4, 5]; // Estudiante, Representante, Contacto de Emergencia
+$perfilesInternos = [1, 2, 6, 7, 8, 9, 10]; // Todos los trabajadores
+$perfilesSinAcceso = [2, 3]; // Docente y Estudiante - sin acceso al menú completo
+$perfiles_autorizados = [1, 6, 7]; // Administrador, Director, Control de Estudios
+
+// Obtener TODOS los perfiles del usuario
+$sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+$stmtPerfiles = $conexion->prepare($sqlPerfiles);
+$stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+$stmtPerfiles->execute();
+$todosLosPerfiles = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+// Determinar si el usuario tiene perfiles internos o externos
+$tienePerfilInterno = !empty(array_intersect($todosLosPerfiles, $perfilesInternos));
+$tienePerfilExterno = !empty(array_intersect($todosLosPerfiles, $perfilesExternos));
+$esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo actual
+
 ?>
 
 <button class="mobile-menu-toggle" style="display: none;">
@@ -76,8 +98,24 @@ try {
     <div class="sidebar-scroll">
         <ul class="nav-links">
 
-            <!-- === PERFIL ADMIN / SECRETARIA === -->
-            <?php if ($idPerfil == 1 || $idPerfil == 2): ?>
+            <!-- === MENÚ PARA DOCENTE Y ESTUDIANTE (Sin acceso completo) === -->
+            <?php if ($esSinAcceso): ?>
+                <li>
+                    <a href="../../inicio/inicio/inicio.php">
+                        <i class='bx bx-home-alt'></i>
+                        <span class="link_name">Inicio</span>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="../../configuracion/contrasena/contrasena.php">
+                        <i class='bx bx-lock-alt'></i>
+                        <span class="link_name">Cambiar Contraseña</span>
+                    </a>
+                </li>
+
+            <!-- === MENÚ INTERNO (TRABAJADORES CON ACCESO) === -->
+            <?php elseif ($tienePerfilInterno): ?>
                 <!-- Inicio -->
                 <li>
                     <a href="../../inicio/inicio/inicio.php">
@@ -102,12 +140,15 @@ try {
                         <li><a href="../../registros/aula/aula.php">Aulas</a></li>
                         <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
                         <li><a href="../../registros/requisito/requisito.php">Requisitos</a></li>
-                        <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
-                        <li><a href="../../registros/status/status.php">Status</a></li>
-                        <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
                         <li><a href="../../registros/materia/materia.php">Materias</a></li>
-                        <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
-                        <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
+                        <!-- Enlaces visibles SOLO para Administrador, Director y Control de Estudios -->
+                        <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
+                            <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
+                            <li><a href="../../registros/status/status.php">Status</a></li>
+                            <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
+                            <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
+                            <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
+                        <?php endif; ?>
                     </ul>
                 </li>
 
@@ -123,7 +164,10 @@ try {
                     <ul class="sub-menu">
                         <li><a href="../../estudiantes/estudiante/estudiante.php">Estudiantes</a></li>
                         <li><a href="../../estudiantes/representante/representante.php">Representantes</a></li>
-                        <li><a href="../../estudiantes/egreso/egreso.php">Egresos</a></li>
+                        <!-- Enlaces visibles SOLO para Administrador, Director y Control de Estudios -->
+                        <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
+                            <li><a href="../../estudiantes/egreso/egreso.php">Egresos</a></li>
+                        <?php endif; ?>
                     </ul>
                 </li>
 
@@ -138,13 +182,10 @@ try {
                     </div>
                     <ul class="sub-menu">
                         <li><a href="../../inscripciones/inscripcion/inscripcion.php">Inscripciones</a></li>
-                        <!-- <li><a href="#">Insc. Grupo C.</a></li> -->
                     </ul>
                 </li>
-            <?php endif; ?>
 
-            <!-- === PERFIL ADMIN === -->
-            <?php if ($idPerfil == 1): ?>
+                <!-- Configuración -->
                 <li>
                     <div class="icon-link">
                         <a href="#">
@@ -155,23 +196,31 @@ try {
                     </div>
                     <ul class="sub-menu">
                         <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
-                        <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
-                        <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
+                        <!-- Solo para Administrador, Director y Control de Estudios -->
+                        <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
+                            <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
+                            <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
+                        <?php endif; ?>
                     </ul>
                 </li>
             <?php endif; ?>
 
-            <!-- === PERFIL REPRESENTANTE === -->
-            <?php if (in_array($idPerfil, [3, 4, 5])): ?>
-                <!-- Inicio Representante -->
-                <li>
-                    <a href="../../inicio/inicio/inicio.php">
-                        <i class='bx bx-home-alt'></i>
-                        <span class="link_name">Inicio</span>
-                    </a>
-                </li>
 
-                <!-- Mis hijos -->
+            <!-- === MENÚ EXTERNO (ESTUDIANTE / REPRESENTANTE / CONTACTO) === -->
+            <?php if ($tienePerfilExterno && !$esSinAcceso): ?>
+                <?php if ($tienePerfilInterno): ?>
+                <?php endif; ?>
+
+                <?php if (!$tienePerfilInterno): ?>
+                    <li>
+                        <a href="../../inicio/inicio/inicio.php">
+                            <i class='bx bx-home-alt'></i>
+                            <span class="link_name">Inicio</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
+
+                <!-- Mis Representados -->
                 <li>
                     <a href="#">
                         <i class='bx bx-user-voice'></i>
@@ -187,16 +236,18 @@ try {
                     </a>
                 </li>
 
-                <!-- Cambiar contraseña -->
-                <li>
-                    <a href="../../configuracion/contrasena/contrasena.php">
-                        <i class='bx bx-lock-alt'></i>
-                        <span class="link_name">Cambiar Contraseña</span>
-                    </a>
-                </li>
+                <?php if (!$tienePerfilInterno): ?>
+                    <!-- Cambiar Contraseña (solo si no tiene perfil interno) -->
+                    <li>
+                        <a href="../../configuracion/contrasena/contrasena.php">
+                            <i class='bx bx-lock-alt'></i>
+                            <span class="link_name">Cambiar Contraseña</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
             <?php endif; ?>
 
-            <!-- Cerrar sesión -->
+            <!-- Cerrar sesión (siempre visible) -->
             <li>
                 <div class="icon-link">
                     <a href="../../../controladores/login/cerrar_sesion.php">
@@ -206,7 +257,7 @@ try {
                 </div>
             </li>
 
-            <!-- Perfil de usuario -->
+            <!-- Perfil de usuario (siempre visible) -->
             <li>
                 <div class="profile-details">
                     <div class="profile-content">
@@ -241,8 +292,7 @@ try {
                 <i class='bx bxs-school'></i>
                 <span>2025-2026</span>
             </div>
-            <?php if (!in_array($idPerfil, [3, 4, 5])): ?>
-
+            <?php if (!$esSinAcceso && !in_array($idPerfil, [3, 4, 5])): ?>
                 <div class="notification" id="notification-btn">
                     <i class='bx bxs-bell' id="notification-btn-icon"></i>
                     <span class="badge" id="notification-badge">3</span>

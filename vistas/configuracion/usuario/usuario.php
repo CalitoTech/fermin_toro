@@ -1,7 +1,9 @@
 <?php
 session_start();
 
-// Verificación de sesión
+// ========================
+// 🔒 Verificación de sesión
+// ========================
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     echo '
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,39 +24,52 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     exit();
 }
 
-// Incluir Notificaciones
+// ========================
+// 📦 Dependencias
+// ========================
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 require_once __DIR__ . '/../../../config/conexion.php';
 
 $database = new Database();
 $conexion = $database->getConnection();
 
-// Manejo de alertas
+// ========================
+// ⚠️ Manejo de alertas (GET → sesión temporal)
+// ========================
 if (isset($_GET['deleted'])) $_SESSION['alert'] = 'deleted';
 elseif (isset($_GET['success'])) $_SESSION['alert'] = 'success';
 elseif (isset($_GET['actualizar'])) $_SESSION['alert'] = 'actualizar';
 elseif (isset($_GET['error'])) $_SESSION['alert'] = 'error';
 
-if (isset($_SESSION['alert'])) {
-    header("Location: usuario.php");
-    exit();
-}
-
+// Guardar y limpiar alerta
 $alert = $_SESSION['alert'] ?? null;
-unset($_SESSION['alert']);
+unset($_SESSION['alert']); // 🔹 Limpieza inmediata
 
+// Mostrar alerta si existe
 if ($alert) {
     switch ($alert) {
-        case 'success': $alerta = Notificaciones::exito("El usuario se creó correctamente."); break;
-        case 'actualizar': $alerta = Notificaciones::exito("El usuario se actualizó correctamente."); break;
-        case 'deleted': $alerta = Notificaciones::exito("El usuario se eliminó correctamente."); break;
-        case 'error': $alerta = Notificaciones::advertencia("Este usuario ya existe, verifique por favor."); break;
-        default: $alerta = null;
+        case 'success':
+            $alerta = Notificaciones::exito("El usuario se creó correctamente.");
+            break;
+        case 'actualizar':
+            $alerta = Notificaciones::exito("El usuario se actualizó correctamente.");
+            break;
+        case 'deleted':
+            $alerta = Notificaciones::exito("El usuario se eliminó correctamente.");
+            break;
+        case 'error':
+            $alerta = Notificaciones::advertencia("Este usuario ya existe, verifique por favor.");
+            break;
+        default:
+            $alerta = null;
     }
+
     if ($alerta) Notificaciones::mostrar($alerta);
 }
 
-// === CONSULTA DE USUARIOS CON PERFIL ===
+// ========================
+// 👥 Consulta de usuarios con perfil
+// ========================
 $query = "
     SELECT 
         p.IdPersona,
@@ -74,6 +89,7 @@ $stmt = $conexion->prepare($query);
 $stmt->execute();
 $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 <head>
     <title>UECFT Araure - Usuarios</title>
