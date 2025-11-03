@@ -18,23 +18,6 @@ INSERT INTO `perfil` (`IdPerfil`, `nombre_perfil`) VALUES
 (9, 'Coordinador Primaria'),
 (10, 'Coordinador Media General');
 
-CREATE TABLE tabla (
-    IdTabla int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    nombre_tabla varchar(50) NOT NULL
-);
-
-CREATE TABLE permiso (
-    IdPermiso int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    permiso_leer BOOLEAN NOT NULL DEFAULT FALSE,
-    permiso_guardar BOOLEAN NOT NULL DEFAULT FALSE,
-    permiso_modificar BOOLEAN NOT NULL DEFAULT FALSE,
-    permiso_eliminar BOOLEAN NOT NULL DEFAULT FALSE,
-    IdTabla int NOT NULL,
-    IdPerfil int NOT NULL,
-    FOREIGN KEY (IdTabla) REFERENCES tabla(IdTabla),
-    FOREIGN KEY (IdPerfil) REFERENCES perfil(IdPerfil)
-);
-
 CREATE TABLE nivel (
     IdNivel int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     nivel varchar(50) NOT NULL
