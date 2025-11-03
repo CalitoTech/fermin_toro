@@ -259,7 +259,25 @@ class Representante {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function obtenerTodos() {
+    public function obtenerTodos($idPerfil, $idPersona) {
+        // === 1. Obtener los perfiles del usuario ===
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conn->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+        // === 2. Determinar si tiene acceso total ===
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
+
+        // === 3. Determinar niveles que puede ver ===
+        $nivelesPermitidos = [];
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // === 4. Consulta base ===
         $query = "
             SELECT 
                 p.IdPersona,
@@ -273,7 +291,8 @@ class Representante {
                 r.IdRepresentante,
                 r.IdParentesco,
                 par.parentesco,
-                COUNT(DISTINCT r.IdEstudiante) AS cantidad_estudiantes,
+                COUNT(DISTINCT i.IdEstudiante) AS cantidad_estudiantes,
+                GROUP_CONCAT(DISTINCT niv.nivel SEPARATOR ', ') AS niveles_hijos,
                 MAX(dp.IdPerfil = 5) AS contacto_emergencia
             FROM representante AS r
             INNER JOIN persona AS p ON p.IdPersona = r.IdPersona
@@ -281,10 +300,25 @@ class Representante {
             LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
             LEFT JOIN parentesco AS par ON par.IdParentesco = r.IdParentesco
             LEFT JOIN detalle_perfil AS dp ON dp.IdPersona = p.IdPersona
+            INNER JOIN inscripcion AS i ON i.IdEstudiante = r.IdEstudiante
+            INNER JOIN curso_seccion AS cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+            INNER JOIN curso AS c ON c.IdCurso = cs.IdCurso
+            INNER JOIN nivel AS niv ON niv.IdNivel = c.IdNivel
+        ";
+
+        // === 5. Aplicar filtro si no tiene acceso total ===
+        if (!$tieneAccesoTotal && !empty($nivelesPermitidos)) {
+            $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+            $query .= " AND niv.IdNivel IN ($nivelesIn)";
+        }
+
+        // === 6. Agrupar y ordenar ===
+        $query .= "
             GROUP BY p.IdPersona
             ORDER BY p.apellido, p.nombre
         ";
 
+        // === 7. Ejecutar ===
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
 

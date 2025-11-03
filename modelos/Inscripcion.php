@@ -263,4 +263,68 @@ class Inscripcion {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function obtenerTodas($idPerfil, $idPersona) {
+        // === Obtener todos los perfiles del usuario ===
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conn->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+        // === Perfiles con acceso total ===
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
+
+        // === Determinar qué niveles puede ver ===
+        $nivelesPermitidos = [];
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // === Construir condición WHERE dinámica ===
+        $filtroNivel = "";
+        if (!$tieneAccesoTotal && !empty($nivelesPermitidos)) {
+            $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+            $filtroNivel = "WHERE n.IdNivel IN ($nivelesIn)";
+        }
+
+        // === Consulta principal ===
+        $query = "
+            SELECT 
+                i.IdInscripcion,
+                e.nombre AS nombre_estudiante,
+                e.apellido AS apellido_estudiante,
+                i.codigo_inscripcion,
+                rps.nombre AS nombre_responsable,
+                rps.apellido AS apellido_responsable,
+                i.fecha_inscripcion,
+                cs.IdCurso AS IdCurso,
+                cs.IdSeccion AS IdSeccion,
+                c.curso,
+                s.seccion,
+                n.IdNivel,
+                n.nivel AS nivel,
+                i.IdFecha_Escolar,
+                fe.fecha_escolar,
+                st.status,
+                i.IdStatus
+            FROM inscripcion i
+            INNER JOIN persona AS e ON i.IdEstudiante = e.IdPersona
+            INNER JOIN representante rp ON i.responsable_inscripcion = rp.IdRepresentante
+            INNER JOIN persona AS rps ON rp.IdPersona = rps.IdPersona
+            INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+            LEFT JOIN curso c ON cs.IdCurso = c.IdCurso
+            LEFT JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+            LEFT JOIN nivel n ON c.IdNivel = n.IdNivel
+            INNER JOIN status st ON i.IdStatus = st.IdStatus
+            $filtroNivel
+            ORDER BY i.fecha_inscripcion ASC
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

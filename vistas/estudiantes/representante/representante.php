@@ -51,7 +51,6 @@ if ($alert) {
 }
 
 $representanteModel = new Representante($conexion);
-$representantes = $representanteModel->obtenerTodos();
 $parentescoModel = new Parentesco($conexion);
 $parentescos = $parentescoModel->obtenerTodos();
 ?>
@@ -69,6 +68,10 @@ $parentescos = $parentescoModel->obtenerTodos();
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+$representantes = $representanteModel->obtenerTodos($idPerfil, $idPersona);
+?>
 
 <section class="home-section">
     <div class="main-content">

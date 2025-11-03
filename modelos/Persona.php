@@ -403,53 +403,73 @@ class Persona {
         return $stmt->execute();
     }
 
-    public function obtenerEstudiantes() {
-        try {
-            $query = "
-                SELECT 
-                    p.IdPersona,
-                    p.cedula,
-                    p.IdNacionalidad,
-                    n.nacionalidad,
-                    p.nombre,
-                    p.apellido,
-                    p.IdSexo,
-                    sx.sexo,
-                    niv.IdNivel,
-                    niv.nivel,
-                    c.IdCurso,
-                    c.curso,
-                    s.IdSeccion,
-                    s.seccion,
-                    fe.IdFecha_Escolar,
-                    fe.fecha_escolar AS anio_escolar,
-                    -- Agrupamos posibles múltiples tipos en una sola columna separada por coma
-                    GROUP_CONCAT(DISTINCT td.tipo_discapacidad SEPARATOR ', ') AS tipo_discapacidad
-                FROM persona AS p
-                INNER JOIN detalle_perfil AS dp ON p.IdPersona = dp.IdPersona
-                INNER JOIN inscripcion AS i ON i.IdEstudiante = p.IdPersona
-                INNER JOIN curso_seccion AS cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
-                INNER JOIN curso AS c ON c.IdCurso = cs.IdCurso
-                INNER JOIN nivel AS niv ON niv.IdNivel = c.IdNivel
-                INNER JOIN seccion AS s ON s.IdSeccion = cs.IdSeccion
-                INNER JOIN fecha_escolar AS fe ON fe.IdFecha_Escolar = i.IdFecha_Escolar
-                LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
-                LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
-                LEFT JOIN discapacidad AS d ON d.IdPersona = p.IdPersona
-                LEFT JOIN tipo_discapacidad AS td ON td.IdTipo_Discapacidad = d.IdTipo_Discapacidad
-                WHERE dp.IdPerfil = 3
-                GROUP BY p.IdPersona
-                ORDER BY niv.IdNivel, c.IdCurso, s.IdSeccion, p.apellido
-            ";
+    public function obtenerEstudiantes($idPerfil, $idPersona) {
+        // Obtener todos los perfiles del usuario
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conn->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
 
-            $stmt = $this->conn->prepare($query);
-            $stmt->execute();
+        // Determinar si tiene algún perfil con acceso total
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("💥 Error al obtener estudiantes: " . $e->getMessage());
-            return [];
+        // Determinar qué niveles puede ver (por IdNivel)
+        $nivelesPermitidos = [];
+
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // Construir condición WHERE según los permisos
+        $filtroNivel = "WHERE dp.IdPerfil = 3"; // Siempre mostrar solo estudiantes
+
+        if (!$tieneAccesoTotal && !empty($nivelesPermitidos)) {
+            // Generar lista segura para el filtro
+            $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+            $filtroNivel .= " AND niv.IdNivel IN ($nivelesIn)";
         }
+
+        $query = "
+            SELECT 
+                p.IdPersona,
+                p.cedula,
+                p.IdNacionalidad,
+                n.nacionalidad,
+                p.nombre,
+                p.apellido,
+                p.IdSexo,
+                sx.sexo,
+                niv.IdNivel,
+                niv.nivel,
+                c.IdCurso,
+                c.curso,
+                s.IdSeccion,
+                s.seccion,
+                fe.IdFecha_Escolar,
+                fe.fecha_escolar AS anio_escolar,
+                GROUP_CONCAT(DISTINCT td.tipo_discapacidad SEPARATOR ', ') AS tipo_discapacidad
+            FROM persona AS p
+            INNER JOIN detalle_perfil AS dp ON p.IdPersona = dp.IdPersona
+            INNER JOIN inscripcion AS i ON i.IdEstudiante = p.IdPersona
+            INNER JOIN curso_seccion AS cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+            INNER JOIN curso AS c ON c.IdCurso = cs.IdCurso
+            INNER JOIN nivel AS niv ON niv.IdNivel = c.IdNivel
+            INNER JOIN seccion AS s ON s.IdSeccion = cs.IdSeccion
+            INNER JOIN fecha_escolar AS fe ON fe.IdFecha_Escolar = i.IdFecha_Escolar
+            LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
+            LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
+            LEFT JOIN discapacidad AS d ON d.IdPersona = p.IdPersona
+            LEFT JOIN tipo_discapacidad AS td ON td.IdTipo_Discapacidad = d.IdTipo_Discapacidad
+            $filtroNivel
+            GROUP BY p.IdPersona
+            ORDER BY niv.IdNivel, c.IdCurso, s.IdSeccion, p.apellido
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function obtenerEstudiantePorId($idPersona) {

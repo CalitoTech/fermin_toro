@@ -55,7 +55,6 @@ $database = new Database();
 $conexion = $database->getConnection();
 
 $personaModel = new Persona($conexion);
-$estudiantes = $personaModel->obtenerEstudiantes();
 $nivelModel = new Nivel($conexion);
 $cursoModel = new Curso($conexion);
 $seccionModel = new Seccion($conexion);
@@ -80,6 +79,9 @@ $tiposDiscapacidad = $tipoDiscapacidadModel->obtenerTodos();
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php
+    $estudiantes = $personaModel->obtenerEstudiantes($idPerfil, $idPersona);
+?>
 
 <section class="home-section">
     <div class="main-content">

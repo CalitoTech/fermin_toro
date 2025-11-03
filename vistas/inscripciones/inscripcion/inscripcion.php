@@ -70,56 +70,13 @@ if ($alert) {
     if ($alerta) Notificaciones::mostrar($alerta);
 }
 
-// === CONSULTA DE INSCRIPCIONES ===
-$query = "SELECT 
-            inscripcion.IdInscripcion,
-            estudiante.nombre AS nombre_estudiante,
-            estudiante.apellido AS apellido_estudiante,
-            codigo_inscripcion,
-            responsable.nombre AS nombre_responsable,
-            responsable.apellido AS apellido_responsable,
-            fecha_inscripcion,
-            curso_seccion.IdCurso AS IdCurso,
-            curso_seccion.IdSeccion AS IdSeccion,
-            curso.curso,
-            seccion.seccion,
-            nivel.IdNivel,
-            nivel.nivel AS nivel,
-            inscripcion.IdFecha_Escolar,
-            fecha_escolar,
-            status,
-            inscripcion.IdStatus
-          FROM inscripcion
-          INNER JOIN persona as estudiante ON inscripcion.IdEstudiante = estudiante.IdPersona
-          INNER JOIN representante ON inscripcion.responsable_inscripcion = representante.IdRepresentante
-          INNER JOIN persona as responsable ON representante.IdPersona = responsable.IdPersona
-          INNER JOIN fecha_escolar ON inscripcion.IdFecha_Escolar = fecha_escolar.IdFecha_Escolar
-          INNER JOIN curso_seccion ON inscripcion.IdCurso_Seccion = curso_seccion.IdCurso_Seccion
-          LEFT JOIN curso ON curso_seccion.IdCurso = curso.IdCurso
-          LEFT JOIN seccion ON curso_seccion.IdSeccion = seccion.IdSeccion
-          LEFT JOIN nivel ON curso.IdNivel = nivel.IdNivel
-          INNER JOIN status ON inscripcion.IdStatus = status.IdStatus
-          ORDER BY fecha_inscripcion ASC";
-$stmt = $conexion->prepare($query);
-$stmt->execute();
-$inscripciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 // === CONSULTA DE STATUS ===
 $sth = $conexion->prepare("SELECT IdStatus, status FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus");
 $sth->execute();
 $estados_inscripcion = $sth->fetchAll(PDO::FETCH_ASSOC);
 $defaultStatus = 8; // Pendiente de aprobación
 
-// Contar inscripciones por status
-$statusCounts = [];
-foreach ($estados_inscripcion as $st) {
-    $count = 0;
-    foreach ($inscripciones as $insc) {
-        if ($insc['IdStatus'] == $st['IdStatus']) $count++;
-    }
-    $statusCounts[$st['IdStatus']] = $count;
-}
-
+require_once __DIR__ . '/../../../modelos/Inscripcion.php';
 require_once __DIR__ . '/../../../modelos/Nivel.php';
 require_once __DIR__ . '/../../../modelos/Curso.php';
 require_once __DIR__ . '/../../../modelos/Seccion.php';
@@ -130,6 +87,7 @@ $modeloNivel = new Nivel($conexion);
 $modeloCurso = new Curso($conexion);
 $modeloSeccion = new Seccion($conexion);
 $modeloFechaEscolar = new FechaEscolar($conexion);
+$modeloInscripcion = new Inscripcion($conexion);
 
 // Obtener los datos dinámicos
 $niveles = $modeloNivel->obtenerTodos();
@@ -150,6 +108,20 @@ $yearSelected = $añoActivo ? $añoActivo['IdFecha_Escolar'] : ($añosEscolares[
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+$inscripciones = $modeloInscripcion->obtenerTodas($idPerfil, $idPersona);
+
+// Contar inscripciones por status
+$statusCounts = [];
+foreach ($estados_inscripcion as $st) {
+    $count = 0;
+    foreach ($inscripciones as $insc) {
+        if ($insc['IdStatus'] == $st['IdStatus']) $count++;
+    }
+    $statusCounts[$st['IdStatus']] = $count;
+}
+?>
 
 <!-- Filtro de Status fuera del card -->
 <div class="container">
