@@ -82,6 +82,17 @@ if ($alert) {
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
+<?php
+// Obtener aulas según permisos del usuario
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Aula.php';
+
+$database = new Database();
+$conexion = $database->getConnection();
+$aulaModel = new Aula($conexion);
+$aulas = $aulaModel->obtenerAulas($idPersona);
+?>
+
 <!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
@@ -133,19 +144,7 @@ if ($alert) {
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php
-                                        require_once __DIR__ . '/../../../config/conexion.php';
-                                        $database = new Database();
-                                        $conexion = $database->getConnection();
-
-                                        $query = "SELECT IdAula, aula, capacidad, nivel
-                                                  FROM aula
-                                                  INNER JOIN nivel ON aula.IdNivel = nivel.IdNivel";
-                                        $stmt = $conexion->prepare($query);
-                                        $stmt->execute();
-                                        $aulas = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($aulas as $user): ?>
+                                        <?php foreach ($aulas as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($user['IdAula']) ?></td>
                                                 <td><?= htmlspecialchars($user['nivel']) ?></td>

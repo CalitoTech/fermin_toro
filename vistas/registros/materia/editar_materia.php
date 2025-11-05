@@ -66,9 +66,6 @@ $conexion = $database->getConnection();
 $materiaModel = new Materia($conexion);
 $materia = $materiaModel->obtenerPorId($idMateria); // Cargar datos
 
-$nivelModel = new Nivel($conexion);
-$niveles = $nivelModel->obtenerTodos();
-
 if (!$materia) {
     header("Location: materia.php");
     exit();
@@ -81,6 +78,12 @@ if (!$materia) {
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Cargar niveles con filtro por permisos
+$nivelModel = new Nivel($conexion);
+$niveles = $nivelModel->obtenerNiveles($idPersona);
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">

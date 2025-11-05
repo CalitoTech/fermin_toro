@@ -36,11 +36,9 @@ $modeloUrbanismo = new Urbanismo($conexion);
 $modeloParentesco = new Parentesco($conexion);
 $statusModel = new Status($conexion);
 
-// Obtener datos
+// Obtener datos sin filtro
 $nacionalidades = $modeloNacionalidad->obtenerTodos();
 $sexos = $modeloSexo->obtenerTodos();
-$niveles = $modeloNivel->obtenerTodos();
-$cursos = $modeloCurso->obtenerTodos();
 $secciones = $modeloSeccion->obtenerTodos();
 $urbanismos = $modeloUrbanismo->obtenerTodos();
 $parentescos = $modeloParentesco->obtenerTodos();
@@ -54,6 +52,12 @@ $listaStatus = $statusModel->obtenerStatusInscripcion();
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Obtener datos con filtro por permisos
+$niveles = $modeloNivel->obtenerNiveles($idPersona);
+$cursos = $modeloCurso->obtenerCursos($idPersona);
+?>
 
 
 

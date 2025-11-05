@@ -94,17 +94,17 @@ class Requisito {
 
     public function obtenerConCumplidoPorNivel($idInscripcion) {
         $query = "
-            SELECT 
+            SELECT
                 r.IdRequisito,
                 r.requisito,
                 r.obligatorio,
                 ir.cumplido
             FROM requisito r
-            LEFT JOIN inscripcion_requisito ir 
-                ON r.IdRequisito = ir.IdRequisito 
+            LEFT JOIN inscripcion_requisito ir
+                ON r.IdRequisito = ir.IdRequisito
                 AND ir.IdInscripcion = :id
             WHERE r.IdNivel = (
-                SELECT c.IdNivel 
+                SELECT c.IdNivel
                 FROM curso c
                 INNER JOIN curso_seccion cs ON c.IdCurso = cs.IdCurso
                 INNER JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion
@@ -115,6 +115,51 @@ class Requisito {
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $idInscripcion, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerRequisitos($idPersona) {
+        // Obtener todos los perfiles del usuario
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conn->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+        // Determinar si tiene algún perfil con acceso total
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
+
+        // Determinar qué niveles puede ver (por IdNivel)
+        $nivelesPermitidos = [];
+
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // Construir condición WHERE según los permisos
+        $filtroNivel = "";
+
+        if (!$tieneAccesoTotal && !empty($nivelesPermitidos)) {
+            // Generar lista segura para el filtro
+            $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+            $filtroNivel = "WHERE r.IdNivel IN ($nivelesIn)";
+        }
+
+        $query = "
+            SELECT
+                r.IdRequisito,
+                r.requisito,
+                n.nivel,
+                r.obligatorio
+            FROM requisito r
+            INNER JOIN nivel n ON r.IdNivel = n.IdNivel
+            $filtroNivel
+            ORDER BY n.IdNivel, r.obligatorio DESC, r.requisito
+        ";
+
+        $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

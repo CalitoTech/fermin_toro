@@ -462,7 +462,7 @@ class Persona {
             LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
             LEFT JOIN discapacidad AS d ON d.IdPersona = p.IdPersona
             LEFT JOIN tipo_discapacidad AS td ON td.IdTipo_Discapacidad = d.IdTipo_Discapacidad
-            $filtroNivel
+            $filtroNivel AND p.IdEstadoInstitucional != 2
             GROUP BY p.IdPersona
             ORDER BY niv.IdNivel, c.IdCurso, s.IdSeccion, p.apellido
         ";

@@ -74,21 +74,11 @@ if (!$curso_seccion) {
     exit();
 }
 
-$nivelModel = new Nivel($conexion);
-$niveles = $nivelModel->obtenerTodos();
-
 $cursoModel = new Curso($conexion);
-$cursos = $cursoModel->obtenerTodos();
 $curso = $cursoModel->obtenerPorId($curso_seccion['IdCurso']);
 
 // Agregar el IdNivel al array curso_seccion para usarlo en la vista
 $curso_seccion['IdNivel'] = $curso['IdNivel'] ?? null;
-
-$seccionModel = new Seccion($conexion);
-$secciones = $seccionModel->obtenerTodos();
-
-$aulaModel = new Aula($conexion);
-$aulas = $aulaModel->obtenerTodos();
 ?>
 
 <head>
@@ -97,6 +87,20 @@ $aulas = $aulaModel->obtenerTodos();
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Cargar datos con filtro por permisos
+$nivelModel = new Nivel($conexion);
+$niveles = $nivelModel->obtenerNiveles($idPersona);
+
+$cursos = $cursoModel->obtenerCursos($idPersona);
+
+$seccionModel = new Seccion($conexion);
+$secciones = $seccionModel->obtenerTodos();
+
+$aulaModel = new Aula($conexion);
+$aulas = $aulaModel->obtenerAulas($idPersona);
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">

@@ -84,5 +84,49 @@ class Materia {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function obtenerMaterias($idPersona) {
+        // Obtener todos los perfiles del usuario
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conn->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+        // Determinar si tiene algún perfil con acceso total
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
+
+        // Determinar qué niveles puede ver (por IdNivel)
+        $nivelesPermitidos = [];
+
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // Construir condición WHERE según los permisos
+        $filtroNivel = "";
+
+        if (!$tieneAccesoTotal && !empty($nivelesPermitidos)) {
+            // Generar lista segura para el filtro
+            $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+            $filtroNivel = "WHERE m.IdNivel IN ($nivelesIn)";
+        }
+
+        $query = "
+            SELECT
+                m.IdMateria,
+                m.materia,
+                n.nivel
+            FROM materia m
+            INNER JOIN nivel n ON m.IdNivel = n.IdNivel
+            $filtroNivel
+            ORDER BY n.IdNivel, m.materia
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }
 ?>

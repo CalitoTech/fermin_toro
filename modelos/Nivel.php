@@ -83,12 +83,55 @@ class Nivel {
     }
 
     public function obtenerRequisitos($idNivel) {
-        $consulta = "SELECT IdRequisito, requisito, obligatorio 
-                     FROM requisito 
+        $consulta = "SELECT IdRequisito, requisito, obligatorio
+                     FROM requisito
                      WHERE IdNivel = ?";
-        
+
         $stmt = $this->conexion->prepare($consulta);
         $stmt->execute([$idNivel]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerNiveles($idPersona = null) {
+        // Si no hay persona logeada (caso público como solicitud_cupo), mostrar todos
+        if ($idPersona === null) {
+            return $this->obtenerTodos();
+        }
+
+        // Obtener todos los perfiles del usuario
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conexion->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+        // Determinar si tiene algún perfil con acceso total
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
+
+        // Si tiene acceso total, mostrar todos los niveles
+        if ($tieneAccesoTotal) {
+            return $this->obtenerTodos();
+        }
+
+        // Determinar qué niveles puede ver (por IdNivel)
+        $nivelesPermitidos = [];
+
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // Si no tiene permisos específicos, retornar array vacío
+        if (empty($nivelesPermitidos)) {
+            return [];
+        }
+
+        // Filtrar niveles según permisos
+        $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+        $query = "SELECT IdNivel, nivel FROM nivel WHERE IdNivel IN ($nivelesIn) ORDER BY IdNivel";
+
+        $stmt = $this->conexion->prepare($query);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

@@ -82,6 +82,17 @@ if ($alert) {
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
+<?php
+// Obtener curso/sección según permisos del usuario
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/CursoSeccion.php';
+
+$database = new Database();
+$conexion = $database->getConnection();
+$cursoSeccionModel = new CursoSeccion($conexion);
+$curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
+?>
+
 <!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
@@ -134,22 +145,7 @@ if ($alert) {
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php
-                                        require_once __DIR__ . '/../../../config/conexion.php';
-                                        $database = new Database();
-                                        $conexion = $database->getConnection();
-
-                                        $query = "SELECT IdCurso_Seccion, curso, seccion, cantidad_estudiantes, 
-                                                  COALESCE(aula, 'Sin Asignar') AS aula
-                                                  FROM curso_seccion
-                                                  INNER JOIN curso ON curso_seccion.IdCurso = curso.IdCurso
-                                                  INNER JOIN seccion ON curso_seccion.IdSeccion = seccion.IdSeccion
-                                                  LEFT JOIN aula ON curso_seccion.IdAula = aula.IdAula";
-                                        $stmt = $conexion->prepare($query);
-                                        $stmt->execute();
-                                        $curso_seccions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($curso_seccions as $user): ?>
+                                        <?php foreach ($curso_seccions as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($user['IdCurso_Seccion']) ?></td>
                                                 <td><?= htmlspecialchars($user['curso']) ?></td>

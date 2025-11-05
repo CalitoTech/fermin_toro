@@ -82,6 +82,22 @@ if ($alert) {
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
+<?php
+// Obtener requisitos según permisos del usuario
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Requisito.php';
+
+$database = new Database();
+$conexion = $database->getConnection();
+$requisitoModel = new Requisito($conexion);
+$requisitos = $requisitoModel->obtenerRequisitos($idPersona);
+
+// Obtener niveles para el selector (también filtrados por permisos)
+require_once __DIR__ . '/../../../modelos/Nivel.php';
+$nivelModel = new Nivel($conexion);
+$niveles = $nivelModel->obtenerTodos();
+?>
+
 <!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
@@ -101,15 +117,9 @@ if ($alert) {
                                         <label for="nivelReporte" class="mb-0">Seleccionar Nivel:</label>
                                         <select id="nivelReporte" class="form-select" style="width: auto;">
                                             <option value="">Todos los niveles</option>
-                                            <?php
-                                            $query = "SELECT IdNivel, nivel FROM nivel ORDER BY nivel ASC";
-                                            $stmt = $conexion->prepare($query);
-                                            $stmt->execute();
-                                            $niveles = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                                            foreach ($niveles as $n) {
-                                                echo '<option value="'. $n['IdNivel'] .'">'. htmlspecialchars($n['nivel']) .'</option>';
-                                            }
-                                            ?>
+                                            <?php foreach ($niveles as $n): ?>
+                                                <option value="<?= $n['IdNivel'] ?>"><?= htmlspecialchars($n['nivel']) ?></option>
+                                            <?php endforeach; ?>
                                         </select>
                                     </div>
 
@@ -152,19 +162,7 @@ if ($alert) {
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php
-                                        require_once __DIR__ . '/../../../config/conexion.php';
-                                        $database = new Database();
-                                        $conexion = $database->getConnection();
-
-                                        $query = "SELECT IdRequisito, requisito, nivel, obligatorio
-                                                  FROM requisito
-                                                  INNER JOIN nivel ON requisito.IdNivel = nivel.IdNivel";
-                                        $stmt = $conexion->prepare($query);
-                                        $stmt->execute();
-                                        $requisitos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($requisitos as $user): ?>
+                                        <?php foreach ($requisitos as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($user['IdRequisito']) ?></td>
                                                 <td><?= htmlspecialchars($user['nivel']) ?></td>

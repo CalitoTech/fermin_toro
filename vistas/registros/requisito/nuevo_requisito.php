@@ -59,18 +59,6 @@ try {
     error_log("Error al conectar a la base de datos: " . $e->getMessage());
 }
 
-// === Cargar Niveles desde la base de datos ===
-$niveles = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Nivel.php'; // Asumo que tienes un modelo Niveles
-    $nivelModel = new Nivel($conexion);
-    $niveles = $nivelModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar niveles en nuevo_requisito.php: " . $e->getMessage());
-    $niveles = [];
-}
-
 ?>
 
 <head>
@@ -79,6 +67,19 @@ try {
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Cargar niveles con filtro por permisos
+$niveles = [];
+try {
+    require_once __DIR__ . '/../../../modelos/Nivel.php';
+    $nivelModel = new Nivel($conexion);
+    $niveles = $nivelModel->obtenerNiveles($idPersona);
+} catch (Exception $e) {
+    error_log("Error al cargar niveles: " . $e->getMessage());
+    $niveles = [];
+}
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">

@@ -314,6 +314,7 @@ class Representante {
 
         // === 6. Agrupar y ordenar ===
         $query .= "
+            AND p.IdEstadoInstitucional != 2
             GROUP BY p.IdPersona
             ORDER BY p.apellido, p.nombre
         ";

@@ -89,9 +89,7 @@ $modeloSeccion = new Seccion($conexion);
 $modeloFechaEscolar = new FechaEscolar($conexion);
 $modeloInscripcion = new Inscripcion($conexion);
 
-// Obtener los datos dinámicos
-$niveles = $modeloNivel->obtenerTodos();
-$cursos = $modeloCurso->obtenerTodos();
+// Obtener secciones y fechas escolares sin filtro
 $secciones = $modeloSeccion->obtenerTodos();
 $añoActivo = $modeloFechaEscolar->obtenerActivo();
 $añosEscolares = $modeloFechaEscolar->obtenerTodos();
@@ -108,6 +106,12 @@ $yearSelected = $añoActivo ? $añoActivo['IdFecha_Escolar'] : ($añosEscolares[
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Obtener datos con filtro por permisos
+$niveles = $modeloNivel->obtenerNiveles($idPersona);
+$cursos = $modeloCurso->obtenerCursos($idPersona);
+?>
 
 <?php
 $inscripciones = $modeloInscripcion->obtenerTodas($idPerfil, $idPersona);

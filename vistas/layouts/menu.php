@@ -137,9 +137,9 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
                         
                         <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
                             <li><a href="../../registros/nivel/nivel.php">Niveles</a></li>
+                            <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
                         <?php endif; ?>
                         <li><a href="../../registros/curso/curso.php">Cursos</a></li>
-                        <li><a href="../../registros/seccion/seccion.php">Secciones</a></li>
                         <li><a href="../../registros/aula/aula.php">Aulas</a></li>
                         <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
                         <li><a href="../../registros/requisito/requisito.php">Requisitos</a></li>

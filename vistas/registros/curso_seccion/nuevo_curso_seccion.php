@@ -59,50 +59,6 @@ try {
     error_log("Error al conectar a la base de datos: " . $e->getMessage());
 }
 
-$niveles = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Nivel.php'; // Asumo que tienes un modelo Niveles
-    $nivelModel = new Nivel($conexion);
-    $niveles = $nivelModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar niveles en nuevo_curso_seccion.php: " . $e->getMessage());
-    $niveles = [];
-}
-
-$cursos = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Curso.php'; // Asumo que tienes un modelo Cursos
-    $cursoModel = new Curso($conexion);
-    $cursos = $cursoModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar cursos en nuevo_curso_seccion.php: " . $e->getMessage());
-    $cursos = [];
-}
-
-$secciones = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Seccion.php'; // Asumo que tienes un modelo Secciones
-    $seccionModel = new Seccion($conexion);
-    $secciones = $seccionModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar secciones en nuevo_curso_seccion.php: " . $e->getMessage());
-    $secciones = [];
-}
-
-$aulas = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Aula.php'; // Asumo que tienes un modelo Aulas
-    $aulaModel = new Aula($conexion);
-    $aulas = $aulaModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar aulas en nuevo_curso_seccion.php: " . $e->getMessage());
-    $aulas = [];
-}
-
 ?>
 
 <head>
@@ -111,6 +67,35 @@ try {
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Cargar datos con filtro por permisos
+$niveles = [];
+$cursos = [];
+$secciones = [];
+$aulas = [];
+
+try {
+    require_once __DIR__ . '/../../../modelos/Nivel.php';
+    require_once __DIR__ . '/../../../modelos/Curso.php';
+    require_once __DIR__ . '/../../../modelos/Seccion.php';
+    require_once __DIR__ . '/../../../modelos/Aula.php';
+
+    $nivelModel = new Nivel($conexion);
+    $niveles = $nivelModel->obtenerNiveles($idPersona);
+
+    $cursoModel = new Curso($conexion);
+    $cursos = $cursoModel->obtenerCursos($idPersona);
+
+    $seccionModel = new Seccion($conexion);
+    $secciones = $seccionModel->obtenerTodos();
+
+    $aulaModel = new Aula($conexion);
+    $aulas = $aulaModel->obtenerAulas($idPersona);
+} catch (Exception $e) {
+    error_log("Error al cargar datos: " . $e->getMessage());
+}
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">

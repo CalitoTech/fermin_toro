@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Verificación de sesión
+// === Verificación de sesión ===
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     echo '
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -21,10 +21,13 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     session_destroy();
     exit();
 }
-// Incluir Notificaciones
-require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
-// Manejo de alertas por GET (para redirigir limpiando la URL)
+// === Incluir dependencias ===
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../controladores/Notificaciones.php';
+require_once __DIR__ . '/../../../modelos/Curso.php';
+
+// === Manejo de alertas por GET ===
 if (isset($_GET['deleted'])) {
     $_SESSION['alert'] = 'deleted';
     header("Location: curso.php");
@@ -43,11 +46,11 @@ if (isset($_GET['deleted'])) {
     exit();
 }
 
-// Obtener alerta
+// === Obtener alerta ===
 $alert = $_SESSION['alert'] ?? null;
 unset($_SESSION['alert']);
 
-// Mostrar alerta si existe
+// === Mostrar alerta si existe ===
 if ($alert) {
     switch ($alert) {
         case 'success':
@@ -73,14 +76,25 @@ if ($alert) {
         Notificaciones::mostrar($alerta);
     }
 }
-?>
 
+// === Conexión y obtención de cursos ===
+$database = new Database();
+$conexion = $database->getConnection();
+
+$cursoModel = new Curso($conexion);
+?>
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <title>UECFT Araure - Cursos</title>
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php
+// Obtener cursos según permisos del usuario
+$cursos = $cursoModel->obtenerCursos($idPersona);
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">
@@ -93,19 +107,17 @@ if ($alert) {
                             <i class='bx bxs-user-detail'></i> Gestión de Cursos
                         </div>
                         <div class="card-body">
-                            <!-- Botones de acción (intercambiados) -->
+                            <!-- Botones de acción -->
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <!-- Imprimir Lista a la izquierda -->
                                 <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
                                     <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
                                 </button>
-                                <!-- Nuevo Curso a la derecha -->
                                 <a href="nuevo_curso.php" class="btn btn-danger d-flex align-items-center">
                                     <i class='bx bx-plus-medical me-1'></i> Nuevo Curso
                                 </a>
                             </div>
 
-                            <!-- Búsqueda y Entradas por página en la misma línea -->
+                            <!-- Buscador y Entradas -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <div class="flex-grow-1" style="max-width: 300px;">
                                     <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
@@ -132,28 +144,16 @@ if ($alert) {
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php
-                                        require_once __DIR__ . '/../../../config/conexion.php';
-                                        $database = new Database();
-                                        $conexion = $database->getConnection();
-
-                                        $query = "SELECT IdCurso, curso, nivel
-                                                  FROM curso
-                                                  INNER JOIN nivel ON curso.IdNivel = nivel.IdNivel";
-                                        $stmt = $conexion->prepare($query);
-                                        $stmt->execute();
-                                        $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($cursos as $user): ?>
+                                        <?php foreach ($cursos as $curso): ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($user['IdCurso']) ?></td>
-                                                <td><?= htmlspecialchars($user['nivel']) ?></td>
-                                                <td><?= htmlspecialchars($user['curso']) ?></td>
+                                                <td><?= htmlspecialchars($curso['IdCurso']) ?></td>
+                                                <td><?= htmlspecialchars($curso['nombre_nivel']) ?></td>
+                                                <td><?= htmlspecialchars($curso['curso']) ?></td>
                                                 <td>
-                                                    <a href="editar_curso.php?id=<?= $user['IdCurso'] ?>" class="btn btn-sm btn-outline-primary me-1">
+                                                    <a href="editar_curso.php?id=<?= $curso['IdCurso'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
                                                     </a>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $user['IdCurso'] ?>)">
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $curso['IdCurso'] ?>)">
                                                         <i class='bx bxs-trash'></i>
                                                     </button>
                                                 </td>
@@ -176,6 +176,7 @@ if ($alert) {
 </section>
 
 <?php include '../../layouts/footer.php'; ?>
+
 <script src="../../../assets/js/tablas.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../../assets/js/reportes.js"></script>
@@ -186,19 +187,19 @@ if ($alert) {
     let currentPage = 1;
     let entriesPerPage = parseInt(document.getElementById('entries').value) || 10;
 
-    // Inicialización de TablaDinamica
+    // Inicializar tabla dinámica
     document.addEventListener('DOMContentLoaded', function() {
         const config = {
-            tablaId: 'tabla-cursos',  // Coincide con tu HTML
-            tbodyId: 'table-body',      // Coincide con tu HTML
-            buscarId: 'buscar',         // Coincide con tu HTML
-            entriesId: 'entries',       // Coincide con tu HTML
-            paginationId: 'pagination', // Coincide con tu HTML
+            tablaId: 'tabla-cursos',
+            tbodyId: 'table-body',
+            buscarId: 'buscar',
+            entriesId: 'entries',
+            paginationId: 'pagination',
             data: allData,
             idField: 'IdCurso',
             columns: [
                 { label: 'ID', key: 'IdCurso' },
-                { label: 'Nivel', key: 'nivel' },
+                { label: 'Nivel', key: 'nombre_nivel' },
                 { label: 'Curso', key: 'curso' }
             ],
             acciones: [
@@ -225,7 +226,7 @@ if ($alert) {
         window.tablaCursos = new TablaDinamica(config);
     });
 
-    // === FUNCIONES ===
+    // Confirmar eliminación
     function confirmDelete(id) {
         Swal.fire({
             title: "¿Está seguro que desea eliminar este curso?",
@@ -242,16 +243,9 @@ if ($alert) {
         });
     }
 
+    // Imprimir reporte
     window.imprimirLista = function() {
-        const nombreCompleto = "<?php 
-            echo htmlspecialchars(
-                $_SESSION['nombre_completo'] ?? 
-                ($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '') ??
-                $_SESSION['usuario'] ?? 
-                'Sistema'
-            );
-        ?>";
-        
+        const nombreCompleto = "<?= htmlspecialchars($_SESSION['nombre_completo'] ?? ($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '') ?? $_SESSION['usuario'] ?? 'Sistema') ?>";
         generarReporteImprimible(
             'REPORTE DE CURSOS DEL SISTEMA',
             '#tabla-cursos',

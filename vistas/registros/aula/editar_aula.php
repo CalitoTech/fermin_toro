@@ -70,10 +70,6 @@ if (!$aula) {
     header("Location: aula.php");
     exit();
 }
-
-
-$nivelModel = new Nivel($conexion);
-$niveles = $nivelModel->obtenerTodos();
 ?>
 
 <head>
@@ -82,6 +78,12 @@ $niveles = $nivelModel->obtenerTodos();
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Cargar niveles con filtro por permisos
+$nivelModel = new Nivel($conexion);
+$niveles = $nivelModel->obtenerNiveles($idPersona);
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">

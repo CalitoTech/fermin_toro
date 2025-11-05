@@ -82,6 +82,17 @@ if ($alert) {
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
 
+<?php
+// Obtener materias según permisos del usuario
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/Materia.php';
+
+$database = new Database();
+$conexion = $database->getConnection();
+$materiaModel = new Materia($conexion);
+$materias = $materiaModel->obtenerMaterias($idPersona);
+?>
+
 <!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
@@ -132,19 +143,7 @@ if ($alert) {
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php
-                                        require_once __DIR__ . '/../../../config/conexion.php';
-                                        $database = new Database();
-                                        $conexion = $database->getConnection();
-
-                                        $query = "SELECT IdMateria, materia, nivel
-                                                  FROM materia
-                                                  INNER JOIN nivel ON materia.IdNivel = nivel.IdNivel";
-                                        $stmt = $conexion->prepare($query);
-                                        $stmt->execute();
-                                        $materias = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($materias as $user): ?>
+                                        <?php foreach ($materias as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($user['IdMateria']) ?></td>
                                                 <td><?= htmlspecialchars($user['nivel']) ?></td>

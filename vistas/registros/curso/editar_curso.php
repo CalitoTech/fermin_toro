@@ -66,9 +66,6 @@ $conexion = $database->getConnection();
 $cursoModel = new Curso($conexion);
 $curso = $cursoModel->obtenerPorId($idCurso); // Cargar datos
 
-$nivelModel = new Nivel($conexion);
-$niveles = $nivelModel->obtenerTodos();
-
 if (!$curso) {
     header("Location: curso.php");
     exit();
@@ -81,6 +78,12 @@ if (!$curso) {
 
 <?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+
+<?php
+// Cargar niveles con filtro por permisos
+$nivelModel = new Nivel($conexion);
+$niveles = $nivelModel->obtenerNiveles($idPersona);
+?>
 
 <!-- Sección Principal -->
 <section class="home-section">

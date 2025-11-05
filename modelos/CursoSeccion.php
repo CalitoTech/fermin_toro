@@ -133,12 +133,61 @@ class CursoSeccion {
                  JOIN nivel n ON c.IdNivel = n.IdNivel
                  WHERE cs.IdCurso = ? AND cs.IdSeccion = ?
                  LIMIT 1";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $idCurso, PDO::PARAM_INT);
         $stmt->bindParam(2, $idSeccion, PDO::PARAM_INT);
         $stmt->execute();
-        
+
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function obtenerCursosSecciones($idPersona) {
+        // Obtener todos los perfiles del usuario
+        $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+        $stmtPerfiles = $this->conn->prepare($sqlPerfiles);
+        $stmtPerfiles->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+        $stmtPerfiles->execute();
+        $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+        // Determinar si tiene algún perfil con acceso total
+        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
+
+        // Determinar qué niveles puede ver (por IdNivel)
+        $nivelesPermitidos = [];
+
+        if (in_array(8, $perfilesUsuario)) $nivelesPermitidos[] = 1; // Inicial
+        if (in_array(9, $perfilesUsuario)) $nivelesPermitidos[] = 2; // Primaria
+        if (in_array(10, $perfilesUsuario)) $nivelesPermitidos[] = 3; // Media General
+
+        // Construir condición WHERE según los permisos
+        $filtroNivel = "";
+
+        if (!$tieneAccesoTotal && !empty($nivelesPermitidos)) {
+            // Generar lista segura para el filtro
+            $nivelesIn = implode(",", array_map('intval', $nivelesPermitidos));
+            $filtroNivel = "WHERE c.IdNivel IN ($nivelesIn)";
+        }
+
+        $query = "
+            SELECT
+                cs.*,
+                c.curso,
+                s.seccion,
+                COALESCE(a.aula, 'Sin Asignar') AS aula,
+                n.nivel
+            FROM curso_seccion cs
+            JOIN curso c ON cs.IdCurso = c.IdCurso
+            JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+            LEFT JOIN aula a ON cs.IdAula = a.IdAula
+            JOIN nivel n ON c.IdNivel = n.IdNivel
+            $filtroNivel
+            ORDER BY n.IdNivel, c.curso, s.seccion
+        ";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

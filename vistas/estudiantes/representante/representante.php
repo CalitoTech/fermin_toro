@@ -171,8 +171,12 @@ document.addEventListener('DOMContentLoaded', function() {
         paginationId: 'pagination',
         data: allData.map(item => ({
             ...item,
-            nombreCompleto: `${item.nombre} ${item.apellido}`,
-            cedulaCompleta: `${item.nacionalidad ? item.nacionalidad + ' ' : ''}${item.cedula || ''}`,
+            nombreCompleto: `${item.nombre || 'No registrado'} ${item.apellido || ''}`.trim() || 'No registrado',
+            cedulaCompleta: item.cedula
+                ? `${item.nacionalidad ? item.nacionalidad + ' ' : ''}${item.cedula}`
+                : '<span class="text-muted">No registrado</span>',
+            sexo: item.sexo || '<span class="text-muted">No registrado</span>',
+            parentesco: item.parentesco || '<span class="text-muted">No registrado</span>',
             cantidad_estudiantes: parseInt(item.cantidad_estudiantes || 0, 10),
             contacto_emergencia: item.contacto_emergencia == 1 ? 1 : 0,
             contacto_html: (item.contacto_emergencia == 1)
