@@ -28,6 +28,9 @@ switch ($action) {
     case 'toggle_inscripcion':
         toggleInscripcion();
         break;
+    case 'toggle_renovacion':
+        toggleRenovacion();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/configuracion/fecha_escolar/fecha_escolar.php');
 }
@@ -64,6 +67,54 @@ function toggleInscripcion() {
             echo json_encode([
                 'success' => true,
                 'message' => 'Estado de inscripción actualizado',
+                'nuevo_estado' => $estado
+            ]);
+        } else {
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'No se puede modificar: el año escolar no está activo'
+            ]);
+        }
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Error interno: ' . $e->getMessage()]);
+    }
+    exit();
+}
+
+function toggleRenovacion() {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $id = (int)($_POST['id'] ?? 0);
+    $estado = isset($_POST['estado']) ? (int)$_POST['estado'] : 0;
+
+    if ($id <= 0 || ($estado !== 0 && $estado !== 1)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
+        exit();
+    }
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+        $fecha_escolarModel = new FechaEscolar($conexion);
+
+        if (!$fecha_escolarModel->obtenerPorId($id)) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'Año escolar no encontrado']);
+            exit();
+        }
+
+        if ($fecha_escolarModel->actualizarRenovacion($id, $estado)) {
+            http_response_code(200);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Estado de renovación actualizado',
                 'nuevo_estado' => $estado
             ]);
         } else {

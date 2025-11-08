@@ -7,6 +7,7 @@ class FechaEscolar {
     public $fecha_escolar;
     public $fecha_activa;
     public $inscripcion_activa;
+    public $renovacion_activa;
 
     public function __construct($conexionPDO) {
         $this->conexion = $conexionPDO;
@@ -47,6 +48,7 @@ class FechaEscolar {
             $this->fecha_escolar = $row['fecha_escolar'];
             $this->fecha_activa = $row['fecha_activa'];
             $this->inscripcion_activa = $row['inscripcion_activa'];
+            $this->renovacion_activa = $row['renovacion_activa'];
             return $row;
         }
         
@@ -61,13 +63,17 @@ class FechaEscolar {
         if (!isset($this->inscripcion_activa)) {
             $this->inscripcion_activa = 0;
         }
+        if (!isset($this->renovacion_activa)) {
+            $this->renovacion_activa = 0;
+        }
 
-        $query = "INSERT INTO fecha_escolar (fecha_escolar, fecha_activa, inscripcion_activa) 
-        VALUES (:fecha_escolar, :fecha_activa, :inscripcion_activa)";
+        $query = "INSERT INTO fecha_escolar (fecha_escolar, fecha_activa, inscripcion_activa, renovacion_activa)
+        VALUES (:fecha_escolar, :fecha_activa, :inscripcion_activa, :renovacion_activa)";
         $stmt = $this->conexion->prepare($query);
         $stmt->bindParam(':fecha_escolar', $this->fecha_escolar);
         $stmt->bindParam(':fecha_activa', $this->fecha_activa);
         $stmt->bindParam(':inscripcion_activa', $this->inscripcion_activa);
+        $stmt->bindParam(':renovacion_activa', $this->renovacion_activa);
         
         if ($stmt->execute()) {
             $this->IdFecha_Escolar = $this->conexion->lastInsertId();
@@ -78,11 +84,13 @@ class FechaEscolar {
     
     public function actualizar() {
         $query = "UPDATE fecha_escolar SET fecha_escolar = :fecha_escolar,
-        fecha_activa = :fecha_activa, inscripcion_activa = :inscripcion_activa WHERE IdFecha_Escolar = :id";
+        fecha_activa = :fecha_activa, inscripcion_activa = :inscripcion_activa,
+        renovacion_activa = :renovacion_activa WHERE IdFecha_Escolar = :id";
         $stmt = $this->conexion->prepare($query);
         $stmt->bindParam(':fecha_escolar', $this->fecha_escolar);
         $stmt->bindParam(':fecha_activa', $this->fecha_activa);
         $stmt->bindParam(':inscripcion_activa', $this->inscripcion_activa);
+        $stmt->bindParam(':renovacion_activa', $this->renovacion_activa);
         $stmt->bindParam(':id', $this->IdFecha_Escolar);
         return $stmt->execute();
     }
@@ -124,12 +132,12 @@ class FechaEscolar {
             $this->conexion->beginTransaction();
 
             // 1. Desactivar todos los años escolares
-            $queryDesactivar = "UPDATE fecha_escolar SET fecha_activa = 0, inscripcion_activa = 0";
+            $queryDesactivar = "UPDATE fecha_escolar SET fecha_activa = 0, inscripcion_activa = 0, renovacion_activa = 0";
             $stmtDesactivar = $this->conexion->prepare($queryDesactivar);
             $stmtDesactivar->execute();
 
             // 2. Activar el año escolar específico
-            $queryActivar = "UPDATE fecha_escolar SET fecha_activa = 1, inscripcion_activa = 1 WHERE IdFecha_Escolar = :id";
+            $queryActivar = "UPDATE fecha_escolar SET fecha_activa = 1, inscripcion_activa = 1, renovacion_activa = 1 WHERE IdFecha_Escolar = :id";
             $stmtActivar = $this->conexion->prepare($queryActivar);
             $stmtActivar->bindParam(':id', $id);
             $stmtActivar->execute();
@@ -165,6 +173,32 @@ class FechaEscolar {
 
         // Actualizar inscripcion_activa
         $update = "UPDATE fecha_escolar SET inscripcion_activa = :estado WHERE IdFecha_Escolar = :id";
+        $stmt = $this->conexion->prepare($update);
+        $stmt->bindParam(':estado', $estado, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $id);
+        return $stmt->execute();
+    }
+
+    /**
+     * Activa o desactiva solo la renovación de cupo del año escolar
+     * @param int $id ID del año escolar
+     * @param bool $estado Nuevo estado (1 o 0)
+     * @return bool Éxito o fracaso
+     */
+    public function actualizarRenovacion($id, $estado) {
+        // Validar que el año escolar esté activo
+        $query = "SELECT fecha_activa FROM fecha_escolar WHERE IdFecha_Escolar = :id";
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row || $row['fecha_activa'] != 1) {
+            return false; // Solo se puede cambiar si está activo
+        }
+
+        // Actualizar renovacion_activa
+        $update = "UPDATE fecha_escolar SET renovacion_activa = :estado WHERE IdFecha_Escolar = :id";
         $stmt = $this->conexion->prepare($update);
         $stmt->bindParam(':estado', $estado, PDO::PARAM_INT);
         $stmt->bindParam(':id', $id);

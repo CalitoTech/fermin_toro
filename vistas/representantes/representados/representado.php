@@ -37,6 +37,18 @@ $representanteModel = new Representante($conexion);
 // Obtener estudiantes representados
 $estudiantes = $representanteModel->obtenerEstudiantesPorRepresentante($idPersona);
 
+// Obtener estado de renovacion_activa del año escolar activo
+$queryRenovacion = "SELECT renovacion_activa FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+$stmtRenovacion = $conexion->prepare($queryRenovacion);
+$stmtRenovacion->execute();
+$añoEscolar = $stmtRenovacion->fetch(PDO::FETCH_ASSOC);
+$renovacionActiva = $añoEscolar ? (bool)$añoEscolar['renovacion_activa'] : false;
+
+// Capturar mensajes de sesión
+$mensajeExito = $_SESSION['mensaje_exito'] ?? null;
+$mensajeError = $_SESSION['mensaje_error'] ?? null;
+unset($_SESSION['mensaje_exito'], $_SESSION['mensaje_error']);
+
 // --- FUNCIONES AUXILIARES ---
 function mostrar($valor, $default = 'No registrado') {
     return !empty(trim($valor)) ? htmlspecialchars($valor, ENT_QUOTES, 'UTF-8') : '<span class="text-muted">' . $default . '</span>';
@@ -48,6 +60,21 @@ function calcularEdad($fechaNacimiento) {
     $hoy = new DateTime();
     $edad = $hoy->diff($fecha);
     return $edad->y;
+}
+
+function tieneCupoPendiente($idEstudiante, $conexion) {
+    // Verificar si el estudiante tiene una renovación pendiente
+    // IdTipo_Inscripcion = 2 (Estudiante Regular) y IdStatus != 11 (Inscrito)
+    $query = "SELECT COUNT(*) as total FROM inscripcion
+              WHERE IdEstudiante = :idEstudiante
+              AND IdTipo_Inscripcion = 2
+              AND IdStatus != 11
+              ORDER BY fecha_inscripcion DESC LIMIT 1";
+    $stmt = $conexion->prepare($query);
+    $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+    $stmt->execute();
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $result['total'] > 0;
 }
 ?>
 
@@ -379,10 +406,29 @@ function calcularEdad($fechaNacimiento) {
                                             <i class='bx bx-show'></i>
                                             Ver Detalles Completos
                                         </a>
-                                        <a href="renovar_cupo.php?id=<?= $estudiante['IdEstudiante'] ?>" class="btn btn-renew-quota">
-                                            <i class='bx bx-refresh'></i>
-                                            Renovar Cupo
-                                        </a>
+                                        <?php
+                                        $tienePendiente = tieneCupoPendiente($estudiante['IdEstudiante'], $conexion);
+
+                                        if ($tienePendiente):
+                                            // Si ya tiene una renovación pendiente
+                                        ?>
+                                            <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                                <i class='bx bx-check-circle'></i>
+                                                Cupo Renovado Exitosamente
+                                            </button>
+                                        <?php elseif (!$renovacionActiva): ?>
+                                            <!-- Si las renovaciones están desactivadas -->
+                                            <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;" title="Las renovaciones de cupo están cerradas actualmente">
+                                                <i class='bx bx-lock'></i>
+                                                Renovaciones Cerradas
+                                            </button>
+                                        <?php else: ?>
+                                            <!-- Si puede renovar -->
+                                            <a href="renovar_cupo.php?id=<?= $estudiante['IdEstudiante'] ?>" class="btn btn-renew-quota">
+                                                <i class='bx bx-refresh'></i>
+                                                Renovar Cupo
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -409,5 +455,29 @@ function calcularEdad($fechaNacimiento) {
         </div>
     </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // Mostrar alertas de éxito o error
+    <?php if ($mensajeExito): ?>
+        Swal.fire({
+            icon: 'success',
+            title: '¡Éxito!',
+            text: '<?= addslashes($mensajeExito) ?>',
+            confirmButtonColor: '#28a745',
+            confirmButtonText: 'Aceptar'
+        });
+    <?php endif; ?>
+
+    <?php if ($mensajeError): ?>
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: '<?= addslashes($mensajeError) ?>',
+            confirmButtonColor: '#c90000',
+            confirmButtonText: 'Aceptar'
+        });
+    <?php endif; ?>
+</script>
 
 <?php include '../../layouts/footer.php'; ?>
