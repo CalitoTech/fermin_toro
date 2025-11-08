@@ -25,6 +25,7 @@ require_once __DIR__ . '/../../../modelos/Seccion.php';
 require_once __DIR__ . '/../../../modelos/Urbanismo.php';
 require_once __DIR__ . '/../../../modelos/Parentesco.php';
 require_once __DIR__ . '/../../../modelos/Status.php';
+require_once __DIR__ . '/../../../modelos/TipoInscripcion.php';
 
 // Instancias de los modelos
 $modeloNacionalidad = new Nacionalidad($conexion);
@@ -35,6 +36,7 @@ $modeloSeccion = new Seccion($conexion);
 $modeloUrbanismo = new Urbanismo($conexion);
 $modeloParentesco = new Parentesco($conexion);
 $statusModel = new Status($conexion);
+$tipoInscripcionModel = new TipoInscripcion($conexion);
 
 // Obtener datos sin filtro
 $nacionalidades = $modeloNacionalidad->obtenerTodos();
@@ -43,6 +45,7 @@ $secciones = $modeloSeccion->obtenerTodos();
 $urbanismos = $modeloUrbanismo->obtenerTodos();
 $parentescos = $modeloParentesco->obtenerTodos();
 $listaStatus = $statusModel->obtenerStatusInscripcion();
+$tiposInscripcion = $tipoInscripcionModel->obtenerTodos();
 ?>
 
 <head>
@@ -74,8 +77,23 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
 
             <div class="card-body">
                 <div class="row g-3 mt-2">
+                    <!-- Tipo de Inscripción -->
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="tipoInscripcion">Tipo de Inscripción</label>
+                            <select class="form-control" id="tipoInscripcion" name="idTipoInscripcion" required>
+                                <option value="">Seleccione tipo</option>
+                                <?php foreach ($tiposInscripcion as $tipo): ?>
+                                    <option value="<?= $tipo['IdTipo_Inscripcion'] ?>">
+                                        <?= htmlspecialchars($tipo['tipo_inscripcion']) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+
                     <!-- Nivel -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="nivel">Nivel</label>
                             <select class="form-control" id="nivel" name="idNivelSeleccionado" required>
@@ -90,7 +108,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                     </div>
 
                     <!-- Curso -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="curso">Curso</label>
                             <select class="form-control" id="curso" name="idCurso" required>
@@ -105,7 +123,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                     </div>
 
                     <!-- Status -->
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="IdStatus" class="form-label">Status</label>
                             <select class="form-select" id="IdStatus" name="idStatus" required>

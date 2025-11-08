@@ -4,6 +4,7 @@ require_once __DIR__ . '/../config/conexion.php';
 class Inscripcion {
     private $conn;
     public $IdInscripcion;
+    public $IdTipo_Inscripcion;
     public $codigo_inscripcion;
     public $IdEstudiante;
     public $fecha_inscripcion;
@@ -20,16 +21,17 @@ class Inscripcion {
 
     public function guardar() {
         $query = "INSERT INTO inscripcion (
-            codigo_inscripcion, IdEstudiante, fecha_inscripcion, ultimo_plantel, 
+            IdTipo_Inscripcion, codigo_inscripcion, IdEstudiante, fecha_inscripcion, ultimo_plantel,
             nro_hermanos, responsable_inscripcion, IdFecha_Escolar, IdStatus, IdCurso_Seccion
         ) VALUES (
-            :codigo_inscripcion, :IdEstudiante, :fecha_inscripcion, :ultimo_plantel, 
+            :IdTipo_Inscripcion, :codigo_inscripcion, :IdEstudiante, :fecha_inscripcion, :ultimo_plantel,
             :nro_hermanos, :responsable_inscripcion, :IdFecha_Escolar, :IdStatus, :IdCurso_Seccion
         )";
 
         $stmt = $this->conn->prepare($query);
 
         // Limpiar datos
+        $this->IdTipo_Inscripcion = htmlspecialchars(strip_tags($this->IdTipo_Inscripcion));
         $this->codigo_inscripcion = htmlspecialchars(strip_tags($this->codigo_inscripcion));
         $this->IdEstudiante = htmlspecialchars(strip_tags($this->IdEstudiante));
         $this->ultimo_plantel = htmlspecialchars(strip_tags($this->ultimo_plantel));
@@ -40,6 +42,7 @@ class Inscripcion {
         $this->IdCurso_Seccion = htmlspecialchars(strip_tags($this->IdCurso_Seccion));
 
         // Vincular valores
+        $stmt->bindParam(":IdTipo_Inscripcion", $this->IdTipo_Inscripcion, PDO::PARAM_INT);
         $stmt->bindParam(":codigo_inscripcion", $this->codigo_inscripcion);
         $stmt->bindParam(":IdEstudiante", $this->IdEstudiante, PDO::PARAM_INT);
         $stmt->bindParam(":fecha_inscripcion", $this->fecha_inscripcion);
@@ -290,7 +293,7 @@ class Inscripcion {
 
         // === Consulta principal ===
         $query = "
-            SELECT 
+            SELECT
                 i.IdInscripcion,
                 e.nombre AS nombre_estudiante,
                 e.apellido AS apellido_estudiante,
@@ -326,5 +329,69 @@ class Inscripcion {
         $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Calcula el número de hermanos de un estudiante
+     * Cuenta los estudiantes del padre + los de la madre, sin duplicados y sin contar al propio estudiante
+     *
+     * @param int $idEstudiante ID del estudiante para calcular hermanos
+     * @return int Número de hermanos
+     */
+    public function calcularNumeroHermanos($idEstudiante) {
+        try {
+            $query = "SELECT COUNT(DISTINCT CASE
+                        WHEN r.IdEstudiante != :idEstudiante THEN r.IdEstudiante
+                        ELSE NULL
+                    END) as total_hermanos
+                    FROM representante r
+                    WHERE r.IdPersona IN (
+                        -- Obtener IDs del padre y la madre del estudiante
+                        SELECT r2.IdPersona
+                        FROM representante r2
+                        WHERE r2.IdEstudiante = :idEstudiante
+                        AND r2.IdParentesco IN (1, 2) -- 1 = Padre, 2 = Madre
+                    )";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (int)($resultado['total_hermanos'] ?? 0);
+
+        } catch (Exception $e) {
+            error_log("Error al calcular hermanos: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Obtiene el último plantel del estudiante basado en su inscripción más reciente
+     *
+     * @param int $idEstudiante ID del estudiante
+     * @return string|null Último plantel o null si no tiene inscripciones previas
+     */
+    public function obtenerUltimoPlantel($idEstudiante) {
+        try {
+            $query = "SELECT ultimo_plantel
+                     FROM inscripcion
+                     WHERE IdEstudiante = :idEstudiante
+                     AND ultimo_plantel IS NOT NULL
+                     AND ultimo_plantel != ''
+                     ORDER BY fecha_inscripcion DESC
+                     LIMIT 1";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $resultado['ultimo_plantel'] ?? null;
+
+        } catch (Exception $e) {
+            error_log("Error al obtener último plantel: " . $e->getMessage());
+            return null;
+        }
     }
 }

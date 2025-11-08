@@ -343,7 +343,8 @@
                     <form id="formInscripcion" data-origen="modal">
                         <input type="hidden" id="idCursoSeleccionado" name="idCurso">
                         <input type="hidden" id="idNivelSeleccionado" name="idNivelSeleccionado">
-                        
+                        <input type="hidden" name="idTipoInscripcion" value="1">
+
                         <!-- Datos del Estudiante -->
                         <div class="card mb-4">
                             <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosEstudiante">

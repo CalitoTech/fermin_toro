@@ -462,7 +462,7 @@ class Persona {
             LEFT JOIN sexo AS sx ON sx.IdSexo = p.IdSexo
             LEFT JOIN discapacidad AS d ON d.IdPersona = p.IdPersona
             LEFT JOIN tipo_discapacidad AS td ON td.IdTipo_Discapacidad = d.IdTipo_Discapacidad
-            $filtroNivel AND p.IdEstadoInstitucional != 2
+            $filtroNivel AND p.IdEstadoInstitucional NOT IN (2, 7)
             GROUP BY p.IdPersona
             ORDER BY niv.IdNivel, c.IdCurso, s.IdSeccion, p.apellido
         ";
@@ -483,6 +483,7 @@ class Persona {
                     p.nombre,
                     p.apellido,
                     p.fecha_nacimiento,
+                    p.lugar_nacimiento,
                     sx.sexo,
                     sx.IdSexo,
                     p.correo,
@@ -517,18 +518,22 @@ class Persona {
     public function obtenerSeccionActualEstudiante($idPersona) {
         try {
             $query = "
-                SELECT 
+                SELECT
                     nvl.nivel,
                     c.curso,
                     s.seccion,
-                    a.fecha_escolar
+                    aula.aula,
+                    a.fecha_escolar,
+                    st.status
                 FROM inscripcion i
                 INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
                 INNER JOIN curso c ON c.IdCurso = cs.IdCurso
                 INNER JOIN nivel nvl ON nvl.IdNivel = c.IdNivel
                 INNER JOIN seccion s ON s.IdSeccion = cs.IdSeccion
+                LEFT JOIN aula ON aula.IdAula = cs.IdAula
                 INNER JOIN fecha_escolar a ON a.IdFecha_Escolar = i.IdFecha_Escolar
-                WHERE i.IdEstudiante = :id
+                LEFT JOIN status st ON st.IdStatus = i.IdStatus
+                WHERE i.IdEstudiante = :id AND i.IdStatus = 11
                 ORDER BY i.IdInscripcion DESC
                 LIMIT 1
             ";

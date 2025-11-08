@@ -380,7 +380,7 @@ function enviarFormulario() {
             showSuccessAlert(
                 'Solicitud enviada correctamente.<br>' +
                 'Número de solicitud: ' + data.numeroSolicitud + '<br>' +
-                'Código de inscripción: ' + data.codigo_inscripcion
+                'Código de Seguimiento: ' + data.codigo_inscripcion
             );
 
             const origen = form.getAttribute('data-origen');

@@ -322,8 +322,17 @@ CREATE TABLE representante (
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona)
 );
 
+CREATE TABLE tipo_inscripcion (
+    IdTipo_Inscripcion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    tipo_inscripcion varchar(50) NOT NULL
+);
+
+INSERT INTO `tipo_inscripcion` (`IdTipo_Inscripcion`, `tipo_inscripcion`) VALUES
+(1, 'Nuevo Ingreso'), (2, 'Estudiante Regular');
+
 CREATE TABLE inscripcion (
     IdInscripcion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdTipo_Inscripcion int NOT NULL,
     codigo_inscripcion varchar(20) NOT NULL,
     IdEstudiante int NOT NULL,
     fecha_inscripcion datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -336,6 +345,7 @@ CREATE TABLE inscripcion (
     ultima_modificacion datetime DEFAULT NULL,
     modificado_por int DEFAULT NULL,
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
+    FOREIGN KEY (IdTipo_Inscripcion) REFERENCES tipo_inscripcion(IdTipo_Inscripcion),
     FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),

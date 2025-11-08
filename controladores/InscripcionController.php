@@ -809,13 +809,21 @@ function procesarInscripcion($conexion) {
                     throw new Exception("El estudiante ya posee una inscripción en este año escolar.");
                 }
 
+                // Obtener tipo de inscripción (por defecto 1 = Nuevo Ingreso si no se especifica)
+                $idTipo_Inscripcion = isset($_POST['idTipoInscripcion']) ? (int)$_POST['idTipoInscripcion'] : 1;
+
                 // Crear inscripción
                 $inscripcion = new Inscripcion($conexion);
+
+                // Calcular número de hermanos usando la función del modelo
+                $nroHermanos = $inscripcion->calcularNumeroHermanos($idEstudiante);
+
                 $inscripcion->IdEstudiante = $idEstudiante;
+                $inscripcion->IdTipo_Inscripcion = $idTipo_Inscripcion;
                 $now = new DateTime('now', new DateTimeZone('America/Caracas')); // Ajusta la zona horaria
                 $inscripcion->fecha_inscripcion = $now->format('Y-m-d H:i:s');
                 $inscripcion->ultimo_plantel = $_POST['ultimoPlantel'] ?? '';
-                $inscripcion->nro_hermanos = $_POST['nroHermanos'] ?? 0;
+                $inscripcion->nro_hermanos = $nroHermanos; // Usar el valor calculado
                 $inscripcion->responsable_inscripcion = $idRelacionRepresentante;
                 $inscripcion->IdFecha_Escolar = $anioEscolar['IdFecha_Escolar'];
                 $inscripcion->IdCurso_Seccion = $cursoSeccion['IdCurso_Seccion'];
@@ -1052,6 +1060,7 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
 
         return [
             'success' => true,
+            'message' => 'Estado actualizado correctamente',
             'cambioAutomatico' => $cambioRealizado,
             'seccionNueva' => $seccionNueva,
             'alertaCapacidad' => $alertaCapacidad,

@@ -126,10 +126,14 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                     .then(res => res.json())
                     .then(data => {
                         if (data.success) {
-                            let mensaje = data.message;
+                            let mensaje = data.message || 'Estado actualizado correctamente';
 
                             if (data.cambioAutomatico) {
                                 mensaje += '\nSe asignó automáticamente a la sección recomendada';
+                            }
+
+                            if (data.alertaCapacidad && data.alertaCapacidad.trim() !== '') {
+                                mensaje += '\n\n⚠️ ' + data.alertaCapacidad;
                             }
 
                             Swal.fire({

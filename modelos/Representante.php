@@ -229,7 +229,7 @@ class Representante {
 
     public function obtenerEstudiantesPorRepresentante($idPersona) {
         $sql = "
-            SELECT 
+            SELECT
                 p.IdPersona AS IdEstudiante,
                 p.cedula,
                 n.nacionalidad,
@@ -250,6 +250,7 @@ class Representante {
             LEFT JOIN curso c ON c.IdCurso = cs.IdCurso
             LEFT JOIN seccion s ON s.IdSeccion = cs.IdSeccion
             WHERE r.IdPersona = :id
+                AND (p.IdEstadoInstitucional IS NULL OR p.IdEstadoInstitucional != 7)
             GROUP BY p.IdPersona
             ORDER BY p.apellido, p.nombre
         ";

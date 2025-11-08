@@ -5,7 +5,26 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Verificación de la sesión
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
-    die('Error: La sesión no está configurada correctamente.');
+    // Destruir sesión y redirigir al login
+    session_unset();
+    session_destroy();
+
+    echo '
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: "Sesión Inválida",
+                text: "Tu sesión ha expirado o no es válida. Por favor, inicia sesión nuevamente.",
+                icon: "warning",
+                confirmButtonText: "Aceptar",
+                confirmButtonColor: "#c90000"
+            }).then(() => {
+                window.location.href = "../../login/login.php";
+            });
+        });
+    </script>';
+    exit;
 }
 
 $idPersona = $_SESSION['idPersona'];
@@ -20,9 +39,9 @@ if (!isset($conexion)) {
 
 try {
     // Consulta única para obtener nombre, apellido y perfil
-    $sql = "SELECT 
-                p.nombre, 
-                p.apellido, 
+    $sql = "SELECT
+                p.nombre,
+                p.apellido,
                 pr.nombre_perfil,
                 pr.IdPerfil
             FROM persona p
@@ -37,7 +56,27 @@ try {
     $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$userData) {
-        die('Error: No se encontró el usuario en la base de datos.');
+        // Usuario no encontrado - destruir sesión y redirigir
+        error_log("Usuario no encontrado en BD - IdPersona: " . $idPersona);
+        session_unset();
+        session_destroy();
+
+        echo '
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                Swal.fire({
+                    title: "Usuario No Encontrado",
+                    text: "No se encontró información del usuario. Por favor, contacta al administrador.",
+                    icon: "error",
+                    confirmButtonText: "Ir al Login",
+                    confirmButtonColor: "#c90000"
+                }).then(() => {
+                    window.location.href = "../../login/login.php";
+                });
+            });
+        </script>';
+        exit;
     }
 
     // Variables de sesión adicionales
@@ -54,11 +93,27 @@ try {
     $idPerfil = $_SESSION['idPerfil'];
 
 } catch (PDOException $e) {
-    error_log("Error en menu.php: " . $e->getMessage());
-    $userNombre = 'Usuario';
-    $userApellido = '';
-    $userPerfil = 'Error';
-    $idPerfil = null;
+    // Error de base de datos - registrar y redirigir
+    error_log("Error crítico en menu.php: " . $e->getMessage());
+    session_unset();
+    session_destroy();
+
+    echo '
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: "Error del Sistema",
+                text: "Ocurrió un error al cargar tu información. Por favor, intenta nuevamente.",
+                icon: "error",
+                confirmButtonText: "Ir al Login",
+                confirmButtonColor: "#c90000"
+            }).then(() => {
+                window.location.href = "../../login/login.php";
+            });
+        });
+    </script>';
+    exit;
 }
 
 // === CLASIFICAR PERFILES ===
@@ -225,17 +280,9 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
 
                 <!-- Mis Representados -->
                 <li>
-                    <a href="#">
+                    <a href="../../representantes/representados/representado.php">
                         <i class='bx bx-user-voice'></i>
                         <span class="link_name">Mis Representados</span>
-                    </a>
-                </li>
-
-                <!-- Documentos -->
-                <li>
-                    <a href="#">
-                        <i class='bx bx-folder'></i>
-                        <span class="link_name">Documentos</span>
                     </a>
                 </li>
 
