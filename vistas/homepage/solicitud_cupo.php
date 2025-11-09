@@ -466,316 +466,24 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Datos de la Madre -->
-                        <div class="card mb-4">
-                            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosMadre">
-                                <h5><i class="fas fa-female mr-2"></i>Datos de la Madre</h5>
-                            </div>
-                            <div class="card-body collapse" id="datosMadre">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="madreApellidos" name="madreApellidos"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto2()"
-                                            required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="madreNombres" name="madreNombres"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="madreNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="madreNacionalidad" name="madreNacionalidad" required>
-                                                <option value="">Seleccione una nacionalidad</option>
-                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="madreCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="madreCedula" name="madreCedula"
-                                            minlength="7" maxlength="8"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber(event)" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="madreParentesco">Parentesco</label>
-                                            <input type="text" class="form-control" id="madreParentesco" name="madreParentesco" value="Madre" readonly>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group required-field">
-                                    <label for="madreOcupacion">Ocupación</label>
-                                    <input type="text" class="form-control" id="madreOcupacion" name="madreOcupacion"
-                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                    minlength="3" maxlength="40"
-                                    onkeypress="return onlyText(event)"
-                                    oninput="formatearTexto1()" required>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreUrbanismo">Urbanismo / Sector</label>
-                                            <select class="form-control" id="madreUrbanismo" name="madreUrbanismo" required>
-                                                <option value="">Seleccione un urbanismo</option>
-                                                <?php
-                                                foreach ($urbanismos as $urbanismo) {
-                                                    echo '<option value="'.$urbanismo['IdUrbanismo'].'">'.$urbanismo['urbanismo'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreDireccion">Dirección de Habitación</label>
-                                            <input type="text" class="form-control" id="madreDireccion" name="madreDireccion"
-                                            minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="madreTelefonoHabitacion">Teléfono de Habitación</label>
-                                            <input type="tel" class="form-control" id="madreTelefonoHabitacion" name="madreTelefonoHabitacion"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="madreCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="madreCelular" name="madreCelular"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="madreCorreo">Correo electrónico</label>
-                                            <input type="email" class="form-control" id="madreCorreo" name="madreCorreo"
-                                            minlength="10" maxlength="50" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreLugarTrabajo">Lugar de Trabajo</label>
-                                            <input type="text" class="form-control" id="madreLugarTrabajo" name="madreLugarTrabajo"
-                                            minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="madreTelefonoTrabajo">Teléfono del Trabajo</label>
-                                            <input type="tel" class="form-control" id="madreTelefonoTrabajo"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" name="madreTelefonoTrabajo">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="emergenciaNombre">En caso de emergencia, llamar a:</label>
-                                            <input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="emergenciaParentesco">Parentesco</label>
-                                            <select class="form-control" id="emergenciaParentesco" name="emergenciaParentesco" required>
-                                                <option value="">Seleccione un parentesco</option>
-                                                <?php
-                                                foreach ($parentescos as $parentesco) {
-                                                    if ($parentesco['IdParentesco'] >= 3) {
-                                                        echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
-                                                    }
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="emergenciaCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Datos del Padre -->
-                        <div class="card mb-4">
-                            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosPadre">
-                                <h5><i class="fas fa-male mr-2"></i>Datos del Padre</h5>
-                            </div>
-                            <div class="card-body collapse" id="datosPadre">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="padreApellidos" name="padreApellidos"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto2()" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="padreNombres" name="padreNombres"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="padreNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="padreNacionalidad" name="padreNacionalidad" required>
-                                                <option value="">Seleccione una nacionalidad</option>
-                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="padreCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="padreCedula" name="padreCedula"
-                                            minlength="7" maxlength="8"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber(event)" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="padreParentesco">Parentesco</label>
-                                            <input type="text" class="form-control" id="padreParentesco" name="padreParentesco" value="Padre" readonly>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group required-field">
-                                    <label for="padreOcupacion">Ocupación</label>
-                                    <input type="text" class="form-control" id="padreOcupacion" name="padreOcupacion"
-                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                    minlength="3" maxlength="40"
-                                    onkeypress="return onlyText(event)"
-                                    oninput="formatearTexto1()" required>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreUrbanismo">Urbanismo / Sector</label>
-                                            <select class="form-control" id="padreUrbanismo" name="padreUrbanismo" required>
-                                                <option value="">Seleccione un urbanismo</option>
-                                                <?php
-                                                foreach ($urbanismos as $urbanismo) {
-                                                    echo '<option value="'.$urbanismo['IdUrbanismo'].'">'.$urbanismo['urbanismo'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreDireccion">Dirección de Habitación</label>
-                                            <input type="text" class="form-control" id="padreDireccion" name="padreDireccion"
-                                            minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="padreTelefonoHabitacion">Teléfono de Habitación</label>
-                                            <input type="tel" class="form-control" id="padreTelefonoHabitacion" name="padreTelefonoHabitacion"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="padreCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="padreCelular" name="padreCelular"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="padreCorreo">Correo electrónico</label>
-                                            <input type="email" class="form-control" id="padreCorreo" name="padreCorreo"
-                                            minlength="10" maxlength="50" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreLugarTrabajo">Lugar de Trabajo</label>
-                                            <input type="text" class="form-control" id="padreLugarTrabajo" name="padreLugarTrabajo"
-                                            minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="padreTelefonoTrabajo">Teléfono del Trabajo</label>
-                                            <input type="tel" class="form-control" id="padreTelefonoTrabajo"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" name="padreTelefonoTrabajo">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <?php
+                        // Incluir funciones auxiliares para renderizar formularios
+                        require_once __DIR__ . '/includes/form_persona_fields.php';
+
+                        // Preparar opciones para los selects
+                        $data_options = [
+                            'nacionalidades' => $nacionalidades,
+                            'urbanismos' => $urbanismos,
+                            'parentescos' => $parentescos
+                        ];
+
+                        // Renderizar bloque de la Madre (con contacto de emergencia)
+                        renderizarBloquePersona('madre', 'Datos de la Madre', 'fa-female', 'datosMadre', 'Madre', $data_options, '', true);
+
+                        // Renderizar bloque del Padre
+                        renderizarBloquePersona('padre', 'Datos del Padre', 'fa-male', 'datosPadre', 'Padre', $data_options, '', false);
+                        ?>
                         
                         <div id="repAutoInfo" class="representante-auto" style="display: none;">
                             <i class="fas fa-info-circle mr-2"></i>
@@ -820,148 +528,67 @@
                         </div>
 
                         <!-- Datos del Representante Legal -->
-                        <div class="card mb-4" id="seccionRepresentante" style="display: none;">
-                            <div class="card-header" style="background-color: #c90000; color: white;">
-                                <h5><i class="fas fa-user-tie mr-2"></i>Datos del Representante Legal</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="representanteApellidos" name="representanteApellidos"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto2()">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="representanteNombres" name="representanteNombres"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="representanteNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="representanteNacionalidad" name="representanteNacionalidad">
-                                                <option value="">Seleccione una nacionalidad</option>
-                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="representanteCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="representanteCedula" name="representanteCedula"
-                                            minlength="7" maxlength="8"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber(event)">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="representanteParentesco">Parentesco</label>
-                                            <select class="form-control required-field" id="representanteParentesco" name="representanteParentesco">
-                                                <option value="">Seleccione un parentesco</option>
-                                                <?php
-                                                foreach ($parentescos as $parentesco) {
-                                                    if ($parentesco['IdParentesco'] >= 3) {
-                                                        echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
-                                                    }
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group required-field">
-                                    <label for="representanteOcupacion">Ocupación</label>
-                                    <input type="text" class="form-control" id="representanteOcupacion" name="representanteOcupacion"
-                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                    minlength="3" maxlength="40"
-                                    onkeypress="return onlyText(event)"
-                                    oninput="formatearTexto1()">
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteUrbanismo">Urbanismo / Sector</label>
-                                            <select class="form-control" id="representanteUrbanismo" name="representanteUrbanismo">
-                                                <option value="">Seleccione un urbanismo</option>
-                                                <?php
-                                                foreach ($urbanismos as $urbanismo) {
-                                                    echo '<option value="'.$urbanismo['IdUrbanismo'].'">'.$urbanismo['urbanismo'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteDireccion">Dirección de Habitación</label>
-                                            <input type="text" class="form-control" id="representanteDireccion" name="representanteDireccion"
-                                            minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="representanteTelefonoHabitacion">Teléfono de Habitación</label>
-                                            <input type="tel" class="form-control" id="representanteTelefonoHabitacion" name="representanteTelefonoHabitacion"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="representanteCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="representanteCelular" name="representanteCelular"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="representanteCorreo">Correo electrónico</label>
-                                            <input type="email" class="form-control" id="representanteCorreo" name="representanteCorreo"
-                                            minlength="10" maxlength="50">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteLugarTrabajo">Lugar de Trabajo</label>
-                                            <input type="text" class="form-control" id="representanteLugarTrabajo" name="representanteLugarTrabajo"
-                                            minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="representanteTelefonoTrabajo">Teléfono del Trabajo</label>
-                                            <input type="tel" class="form-control" id="representanteTelefonoTrabajo" name="representanteTelefonoTrabajo"
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="seccionRepresentante" style="display: none;">
+                            <?php
+                            // Renderizar bloque del Representante Legal (con Parentesco como select)
+                            echo '<div class="card mb-4">';
+                            echo '<div class="card-header" style="background-color: #c90000; color: white;">';
+                            echo '<h5><i class="fas fa-user-tie mr-2"></i>Datos del Representante Legal</h5>';
+                            echo '</div>';
+                            echo '<div class="card-body">';
+
+                            // Renderizar campos organizados por filas
+                            $fila_actual = [];
+                            $cols_actuales = 0;
+
+                            foreach ($campos_persona as $nombre_campo => $config) {
+                                $fila_actual[] = ['nombre' => $nombre_campo, 'config' => $config];
+                                $cols_actuales += $config['col'];
+
+                                // Si completamos 12 columnas o es el último campo, renderizamos la fila
+                                if ($cols_actuales >= 12 || $nombre_campo === array_key_last($campos_persona)) {
+                                    echo '<div class="row">';
+                                    foreach ($fila_actual as $item) {
+                                        // Para el representante, el Parentesco debe ser un buscador
+                                        if ($item['nombre'] === 'Parentesco') {
+                                            $id = 'representanteParentesco';
+                                            $name = 'representanteParentesco';
+                                            $inputId = $id . '_input';
+                                            $hiddenId = $id;
+                                            $hiddenNombre = $id . '_nombre';
+                                            $resultadosId = $id . '_resultados';
+
+                                            echo '<div class="col-md-6">';
+                                            echo '<div class="form-group required-field">';
+                                            echo '<label for="' . $id . '">Parentesco</label>';
+                                            echo '<div class="position-relative">';
+                                            echo '<input type="text" class="form-control buscador-input" id="' . $inputId . '" autocomplete="off" placeholder="Buscar o escribir nuevo parentesco...">';
+                                            echo '<input type="hidden" id="' . $hiddenId . '" name="' . $name . '" required>';
+                                            echo '<input type="hidden" id="' . $hiddenNombre . '" name="' . $name . '_nombre">';
+                                            echo '<div id="' . $resultadosId . '" class="autocomplete-results d-none"></div>';
+                                            echo '</div>';
+                                            echo '<script>
+                                            document.addEventListener("DOMContentLoaded", function() {
+                                                new BuscadorGenerico("' . $inputId . '", "' . $resultadosId . '", "parentesco", "' . $hiddenId . '", "' . $hiddenNombre . '");
+                                            });
+                                            </script>';
+                                            echo '</div>';
+                                            echo '</div>';
+                                        } else {
+                                            renderizarCampoPersona('representante', $item['nombre'], $item['config'], $data_options, '');
+                                        }
+                                    }
+                                    echo '</div>';
+
+                                    // Resetear para la siguiente fila
+                                    $fila_actual = [];
+                                    $cols_actuales = 0;
+                                }
+                            }
+
+                            echo '</div>';
+                            echo '</div>';
+                            ?>
                         </div>
                     </form>
                 </div>
@@ -982,6 +609,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <!-- Tus scripts personalizados -->
+    <script src="../../assets/js/buscador_generico.js"></script>
     <script src="../../assets/js/solicitud_cupo.js"></script>
     <script src="../../assets/js/validacion.js"></script>
 

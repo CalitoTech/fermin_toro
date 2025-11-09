@@ -309,12 +309,23 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                                         <?php endforeach; ?>
                                     </select>
                                 <?php elseif ($campo === 'Urbanismo'): ?>
-                                    <select class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
-                                        <option value="">Seleccione un urbanismo</option>
-                                        <?php foreach ($urbanismos as $urbanismo): ?>
-                                            <option value="<?= $urbanismo['IdUrbanismo'] ?>"><?= $urbanismo['urbanismo'] ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <?php
+                                    $inputId = $tipo . $campo . '_input';
+                                    $hiddenId = $tipo . $campo;
+                                    $hiddenNombre = $tipo . $campo . '_nombre';
+                                    $resultadosId = $tipo . $campo . '_resultados';
+                                    ?>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control buscador-input" id="<?= $inputId ?>" autocomplete="off" placeholder="Buscar o escribir nuevo urbanismo...">
+                                        <input type="hidden" id="<?= $hiddenId ?>" name="<?= $hiddenId ?>" required>
+                                        <input type="hidden" id="<?= $hiddenNombre ?>" name="<?= $hiddenNombre ?>">
+                                        <div id="<?= $resultadosId ?>" class="autocomplete-results d-none"></div>
+                                    </div>
+                                    <script>
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        new BuscadorGenerico("<?= $inputId ?>", "<?= $resultadosId ?>", "urbanismo", "<?= $hiddenId ?>", "<?= $hiddenNombre ?>");
+                                    });
+                                    </script>
                                 <?php else: ?>
                                     <input type="<?= $tipo_input ?>" class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
                                 <?php endif; ?>
@@ -347,16 +358,17 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                             <div class="col-md-4">
                                 <div class="form-group required-field">
                                     <label for="emergenciaParentesco">Parentesco</label>
-                                    <select class="form-control" id="emergenciaParentesco" name="emergenciaParentesco" required>
-                                        <option value="">Seleccione un parentesco</option>
-                                        <?php
-                                        foreach ($parentescos as $parentesco) {
-                                            if ($parentesco['IdParentesco'] >= 3) {
-                                                echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
-                                            }
-                                        }
-                                        ?>
-                                    </select>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control buscador-input" id="emergenciaParentesco_input" autocomplete="off" placeholder="Buscar o escribir nuevo parentesco...">
+                                        <input type="hidden" id="emergenciaParentesco" name="emergenciaParentesco" required>
+                                        <input type="hidden" id="emergenciaParentesco_nombre" name="emergenciaParentesco_nombre">
+                                        <div id="emergenciaParentesco_resultados" class="autocomplete-results d-none"></div>
+                                    </div>
+                                    <script>
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        new BuscadorGenerico("emergenciaParentesco_input", "emergenciaParentesco_resultados", "parentesco", "emergenciaParentesco", "emergenciaParentesco_nombre");
+                                    });
+                                    </script>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -430,6 +442,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
 <?php include '../../layouts/footer.php'; ?>
 <script src="../../../assets/js/solicitud_cupo.js"></script>
 <script src="../../../assets/js/validacion.js"></script>
+<script src="../../../assets/js/buscador_generico.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

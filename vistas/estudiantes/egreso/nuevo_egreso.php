@@ -55,35 +55,12 @@ try {
 <head>
     <title>UECFT Araure - Nuevo Egreso</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="../../../assets/css/solicitud_cupo.css">
     <style>
         /* === ESTILO PERSONALIZADO === */
         .card-header {
             background: linear-gradient(90deg, #c90000, #8b0000);
             color: #fff;
-        }
-
-        .autocomplete-results {
-            position: absolute;
-            z-index: 1000;
-            width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        .autocomplete-item {
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-
-        .autocomplete-item:hover {
-            background: #f8d7da;
-        }
-
-        .autocomplete-item strong {
-            color: #c90000;
         }
 
         .input-group-text {
@@ -203,6 +180,7 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+<script src="../../../assets/js/buscador_generico.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -212,48 +190,17 @@ document.addEventListener('DOMContentLoaded', function() {
         locale: "es"
     });
 
-    const buscador = document.getElementById('buscadorEstudiante');
-    const resultados = document.getElementById('resultadosBusqueda');
-    const idPersonaInput = document.getElementById('IdPersona');
-
-    buscador.addEventListener('input', async function() {
-        const texto = this.value.trim();
-        if (texto.length < 2) {
-            resultados.classList.add('d-none');
-            resultados.innerHTML = '';
-            return;
-        }
-
-        const resp = await fetch('../../../controladores/BuscarEstudiante.php?q=' + encodeURIComponent(texto));
-        const data = await resp.json();
-
-        resultados.innerHTML = '';
-        if (data.length === 0) {
-            resultados.innerHTML = '<div class="autocomplete-item text-muted">No se encontraron resultados</div>';
-        } else {
-            data.forEach(est => {
-                const item = document.createElement('div');
-                item.classList.add('autocomplete-item');
-                item.innerHTML = `<strong>${est.apellido} ${est.nombre}</strong> - ${est.nacionalidad}-${est.cedula}`;
-                item.addEventListener('click', () => {
-                    buscador.value = `${est.apellido} ${est.nombre} (${est.nacionalidad}-${est.cedula})`;
-                    idPersonaInput.value = est.IdPersona;
-                    resultados.classList.add('d-none');
-                });
-                resultados.appendChild(item);
-            });
-        }
-        resultados.classList.remove('d-none');
-    });
-
-    document.addEventListener('click', (e) => {
-        if (!resultados.contains(e.target) && e.target !== buscador) {
-            resultados.classList.add('d-none');
-        }
-    });
+    // Usar el buscador genérico para estudiantes
+    const buscadorEstudiante = new BuscadorGenerico(
+        'buscadorEstudiante',
+        'resultadosBusqueda',
+        'estudiante',
+        'IdPersona'
+    );
 
     // Validación del formulario
     document.getElementById('formEgreso').addEventListener('submit', function(e) {
+        const idPersonaInput = document.getElementById('IdPersona');
         if (!idPersonaInput.value) {
             e.preventDefault();
             Swal.fire({

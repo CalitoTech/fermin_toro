@@ -43,6 +43,64 @@ function obtenerIdUsuario() {
 }
 
 /**
+ * Obtiene o crea un urbanismo
+ * Si el ID es 'nuevo', crea un nuevo registro en la tabla urbanismo
+ *
+ * @param PDO $conexion Conexión a la base de datos
+ * @param mixed $idUrbanismo ID del urbanismo o 'nuevo'
+ * @param string $nombreUrbanismo Nombre del urbanismo (usado si es nuevo)
+ * @return int ID del urbanismo
+ */
+function obtenerOCrearUrbanismo($conexion, $idUrbanismo, $nombreUrbanismo = '') {
+    if ($idUrbanismo === 'nuevo' || $idUrbanismo === '0' || empty($idUrbanismo)) {
+        // Verificar si ya existe un urbanismo con ese nombre
+        $stmt = $conexion->prepare("SELECT IdUrbanismo FROM urbanismo WHERE LOWER(urbanismo) = LOWER(:nombre)");
+        $stmt->execute([':nombre' => trim($nombreUrbanismo)]);
+        $existe = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existe) {
+            return (int)$existe['IdUrbanismo'];
+        }
+
+        // Crear nuevo urbanismo
+        $stmt = $conexion->prepare("INSERT INTO urbanismo (urbanismo) VALUES (:nombre)");
+        $stmt->execute([':nombre' => trim($nombreUrbanismo)]);
+        return (int)$conexion->lastInsertId();
+    }
+
+    return (int)$idUrbanismo;
+}
+
+/**
+ * Obtiene o crea un parentesco
+ * Si el ID es 'nuevo', crea un nuevo registro en la tabla parentesco
+ *
+ * @param PDO $conexion Conexión a la base de datos
+ * @param mixed $idParentesco ID del parentesco o 'nuevo'
+ * @param string $nombreParentesco Nombre del parentesco (usado si es nuevo)
+ * @return int ID del parentesco
+ */
+function obtenerOCrearParentesco($conexion, $idParentesco, $nombreParentesco = '') {
+    if ($idParentesco === 'nuevo' || $idParentesco === '0' || empty($idParentesco)) {
+        // Verificar si ya existe un parentesco con ese nombre
+        $stmt = $conexion->prepare("SELECT IdParentesco FROM parentesco WHERE LOWER(parentesco) = LOWER(:nombre)");
+        $stmt->execute([':nombre' => trim($nombreParentesco)]);
+        $existe = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existe) {
+            return (int)$existe['IdParentesco'];
+        }
+
+        // Crear nuevo parentesco
+        $stmt = $conexion->prepare("INSERT INTO parentesco (parentesco) VALUES (:nombre)");
+        $stmt->execute([':nombre' => trim($nombreParentesco)]);
+        return (int)$conexion->lastInsertId();
+    }
+
+    return (int)$idParentesco;
+}
+
+/**
  * Genera una cédula para el estudiante basada en la cédula de la madre y el año de nacimiento.
  * Formato: <prefijo><2 dígitos año><cedulaMadre>
  * Prefijo comienza en 1 y aumenta hasta encontrar una cédula no existente.
@@ -462,12 +520,22 @@ function procesarInscripcion($conexion) {
                     $personaEstudiante->IdSexo = isset($_POST['estudianteSexo']) ? (int)$_POST['estudianteSexo'] : null;
 
                     // Urbanismo y dirección según representante
-                    $personaEstudiante->IdUrbanismo = match($_POST['tipoRepresentante']) {
+                    // Obtener o crear el urbanismo correspondiente
+                    $urbanismoId = match($_POST['tipoRepresentante']) {
                         'padre' => $_POST['padreUrbanismo'] ?? null,
                         'madre' => $_POST['madreUrbanismo'] ?? null,
                         'otro' => $_POST['representanteUrbanismo'] ?? null,
                         default => null
                     };
+
+                    $urbanismoNombre = match($_POST['tipoRepresentante']) {
+                        'padre' => $_POST['padreUrbanismo_nombre'] ?? '',
+                        'madre' => $_POST['madreUrbanismo_nombre'] ?? '',
+                        'otro' => $_POST['representanteUrbanismo_nombre'] ?? '',
+                        default => ''
+                    };
+
+                    $personaEstudiante->IdUrbanismo = obtenerOCrearUrbanismo($conexion, $urbanismoId, $urbanismoNombre);
 
                     $personaEstudiante->direccion = match($_POST['tipoRepresentante']) {
                         'padre' => $_POST['padreDireccion'] ?? null,
@@ -559,7 +627,11 @@ function procesarInscripcion($conexion) {
                         $personaPadre->correo = $_POST['padreCorreo'] ?? '';
                         $personaPadre->direccion = $_POST['padreDireccion'] ?? '';
                         $personaPadre->IdSexo = 1; // Masculino
-                        $personaPadre->IdUrbanismo = $_POST['padreUrbanismo'];
+                        $personaPadre->IdUrbanismo = obtenerOCrearUrbanismo(
+                            $conexion,
+                            $_POST['padreUrbanismo'] ?? null,
+                            $_POST['padreUrbanismo_nombre'] ?? ''
+                        );
                         $idPadre = $personaPadre->guardar();
                     }
 
@@ -607,7 +679,11 @@ function procesarInscripcion($conexion) {
                         $personaMadre->correo = $_POST['madreCorreo'] ?? '';
                         $personaMadre->direccion = $_POST['madreDireccion'] ?? '';
                         $personaMadre->IdSexo = 2; // Femenino
-                        $personaMadre->IdUrbanismo = $_POST['madreUrbanismo'];
+                        $personaMadre->IdUrbanismo = obtenerOCrearUrbanismo(
+                            $conexion,
+                            $_POST['madreUrbanismo'] ?? null,
+                            $_POST['madreUrbanismo_nombre'] ?? ''
+                        );
                         $idMadre = $personaMadre->guardar();
                     }
 
@@ -689,7 +765,11 @@ function procesarInscripcion($conexion) {
                         $personaRep->correo = $_POST['representanteCorreo'] ?? '';
                         $personaRep->direccion = $_POST['representanteDireccion'] ?? '';
                         $personaRep->IdSexo = null; // puede venir del form si lo necesitas
-                        $personaRep->IdUrbanismo = $_POST['representanteUrbanismo'];
+                        $personaRep->IdUrbanismo = obtenerOCrearUrbanismo(
+                            $conexion,
+                            $_POST['representanteUrbanismo'] ?? null,
+                            $_POST['representanteUrbanismo_nombre'] ?? ''
+                        );
                         $idRepresentante = $personaRep->guardar();
                     }
 
@@ -703,7 +783,12 @@ function procesarInscripcion($conexion) {
                     // Relación representante-estudiante
                     $representante = new Representante($conexion);
                     $representante->IdPersona = $idRepresentante;
-                    $representante->IdParentesco = 3; // Representante Legal
+                    // Obtener o crear el parentesco
+                    $representante->IdParentesco = obtenerOCrearParentesco(
+                        $conexion,
+                        $_POST['representanteParentesco'] ?? null,
+                        $_POST['representanteParentesco_nombre'] ?? ''
+                    );
                     $representante->IdEstudiante = $idEstudiante;
                     $representante->ocupacion = trim($_POST['representanteOcupacion'] ?? '');
                     $representante->lugar_trabajo = trim($_POST['representanteLugarTrabajo'] ?? '');
@@ -724,7 +809,12 @@ function procesarInscripcion($conexion) {
                 if (!empty($_POST['emergenciaNombre'])) {
                     try {
                         $emergencia = new Representante($conexion);
-                        $emergencia->IdParentesco = $_POST['emergenciaParentesco'];
+                        // Obtener o crear el parentesco de emergencia
+                        $emergencia->IdParentesco = obtenerOCrearParentesco(
+                            $conexion,
+                            $_POST['emergenciaParentesco'] ?? null,
+                            $_POST['emergenciaParentesco_nombre'] ?? ''
+                        );
                         $emergencia->IdEstudiante = $idEstudiante;
                         $emergencia->nombre_contacto = trim($_POST['emergenciaNombre']);
                         $emergencia->telefono_contacto = trim($_POST['emergenciaCelular']);
