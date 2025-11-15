@@ -9,6 +9,7 @@ class Representante {
     public $IdEstudiante;
     public $nombre_contacto;
     public $telefono_contacto;
+    public $IdPrefijo;
     public $nacionalidad;
     public $ocupacion;
     public $lugar_trabajo;
@@ -112,7 +113,8 @@ class Representante {
         $telefono->numero_telefono = $this->telefono_contacto;
         $telefono->IdTipo_Telefono = 2; // Celular
         $telefono->IdPersona = $idPersona;
-        
+        $telefono->IdPrefijo = !empty($this->IdPrefijo) ? $this->IdPrefijo : null;
+
         if (!$telefono->guardar()) {
             throw new Exception("Error al guardar el teléfono del contacto de emergencia");
         }
@@ -124,7 +126,7 @@ class Representante {
 
      public function obtenerPorEstudiante($idEstudiante) {
         $query = "
-            SELECT 
+            SELECT
                 p.IdPersona,
                 p.cedula,
                 n.nacionalidad,
@@ -139,7 +141,7 @@ class Representante {
                 par.parentesco,
                 ea.status AS estado_acceso,
                 ei.status AS estado_institucional,
-                GROUP_CONCAT(DISTINCT tel.numero_telefono SEPARATOR ' || ') AS numeros,
+                GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref.codigo_prefijo, ''), tel.numero_telefono) SEPARATOR ' || ') AS numeros,
                 GROUP_CONCAT(DISTINCT tipo_tel.tipo_telefono SEPARATOR ' || ') AS tipos
             FROM representante AS r
             INNER JOIN persona AS p ON p.IdPersona = r.IdPersona
@@ -149,6 +151,7 @@ class Representante {
             LEFT JOIN parentesco AS par ON par.IdParentesco = r.IdParentesco
             LEFT JOIN telefono AS tel ON tel.IdPersona = p.IdPersona
             LEFT JOIN tipo_telefono AS tipo_tel ON tipo_tel.IdTipo_Telefono = tel.IdTipo_Telefono
+            LEFT JOIN prefijo AS pref ON pref.IdPrefijo = tel.IdPrefijo
             LEFT JOIN status AS ea ON ea.IdStatus = p.IdEstadoAcceso
             LEFT JOIN status AS ei ON ei.IdStatus = p.IdEstadoInstitucional
             WHERE r.IdEstudiante = :id

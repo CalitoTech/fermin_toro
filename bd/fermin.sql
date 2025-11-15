@@ -382,13 +382,83 @@ CREATE TABLE tipo_telefono (
 INSERT INTO `tipo_telefono` (`IdTipo_Telefono`, `tipo_telefono`) VALUES
 (1, 'Habitación'), (2, 'Celular'), (3, 'Trabajo');
 
+CREATE TABLE prefijo (
+    IdPrefijo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    codigo_prefijo varchar(10) NOT NULL,
+    pais varchar(100) NOT NULL,
+    max_digitos int NOT NULL DEFAULT 10
+);
+
+INSERT INTO `prefijo` (`IdPrefijo`, `codigo_prefijo`, `pais`, `max_digitos`) VALUES
+(1, '+58', 'Venezuela', 10),
+(2, '+1', 'Estados Unidos / Canadá', 10),
+(3, '+52', 'México', 10),
+(4, '+57', 'Colombia', 10),
+(5, '+51', 'Perú', 9),
+(6, '+56', 'Chile', 9),
+(7, '+54', 'Argentina', 10),
+(8, '+55', 'Brasil', 11),
+(9, '+593', 'Ecuador', 9),
+(10, '+591', 'Bolivia', 8),
+(11, '+595', 'Paraguay', 9),
+(12, '+598', 'Uruguay', 8),
+(13, '+507', 'Panamá', 8),
+(14, '+506', 'Costa Rica', 8),
+(15, '+503', 'El Salvador', 8),
+(16, '+504', 'Honduras', 8),
+(17, '+505', 'Nicaragua', 8),
+(18, '+502', 'Guatemala', 8),
+(19, '+509', 'Haití', 8),
+(20, '+53', 'Cuba', 8),
+(21, '+34', 'España', 9),
+(22, '+39', 'Italia', 10),
+(23, '+33', 'Francia', 9),
+(24, '+49', 'Alemania', 11),
+(25, '+44', 'Reino Unido', 10),
+(26, '+351', 'Portugal', 9),
+(27, '+41', 'Suiza', 9),
+(28, '+31', 'Países Bajos', 9),
+(29, '+32', 'Bélgica', 9),
+(30, '+86', 'China', 11),
+(31, '+81', 'Japón', 10),
+(32, '+82', 'Corea del Sur', 10),
+(33, '+91', 'India', 10),
+(34, '+7', 'Rusia', 10),
+(35, '+61', 'Australia', 9),
+(36, '+64', 'Nueva Zelanda', 9),
+(37, '+27', 'Sudáfrica', 9),
+(38, '+20', 'Egipto', 10),
+(39, '+971', 'Emiratos Árabes Unidos', 9),
+(40, '+966', 'Arabia Saudita', 9),
+(41, '+90', 'Turquía', 10),
+(42, '+98', 'Irán', 10),
+(43, '+92', 'Pakistán', 10),
+(44, '+880', 'Bangladesh', 10),
+(45, '+62', 'Indonesia', 10),
+(46, '+63', 'Filipinas', 10),
+(47, '+66', 'Tailandia', 9),
+(48, '+84', 'Vietnam', 9),
+(49, '+60', 'Malasia', 9),
+(50, '+65', 'Singapur', 8),
+(51, '+852', 'Hong Kong', 8),
+(52, '+886', 'Taiwán', 9),
+(53, '+972', 'Israel', 9),
+(54, '+234', 'Nigeria', 10),
+(55, '+254', 'Kenia', 9),
+(56, '+213', 'Argelia', 9),
+(57, '+212', 'Marruecos', 9),
+(58, '+216', 'Túnez', 8),
+(59, '0255', 'Venezuela - Portuguesa (Fijo)', 7);
+
 CREATE TABLE telefono (
     IdTelefono int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdTipo_Telefono int NOT NULL,
     numero_telefono varchar(50) NOT NULL,
     IdPersona int NOT NULL,
+    IdPrefijo int DEFAULT NULL,
     FOREIGN KEY (IdTipo_Telefono) REFERENCES tipo_telefono(IdTipo_Telefono),
-    FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona)
+    FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona),
+    FOREIGN KEY (IdPrefijo) REFERENCES prefijo(IdPrefijo)
 );
 
 INSERT INTO `telefono` (`IdTelefono`, `IdTipo_Telefono`, `numero_telefono`, `IdPersona`) VALUES

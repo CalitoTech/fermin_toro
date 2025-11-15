@@ -139,7 +139,7 @@ class Inscripcion {
             urb_e.urbanismo AS estudiante_urbanismo,
             urb_e.IdUrbanismo AS estudiante_id_urbanismo,
             nac_e.nacionalidad AS estudiante_nacionalidad,
-            tel_e.numero_telefono AS estudiante_telefono,
+            CONCAT(COALESCE(pref_e.codigo_prefijo, ''), tel_e.numero_telefono) AS estudiante_telefono,
             tipo_tel_e.tipo_telefono AS estudiante_tipo_telefono,
 
             -- Representante Legal
@@ -157,8 +157,8 @@ class Inscripcion {
             parent.parentesco AS responsable_parentesco,
             rp.ocupacion AS responsable_ocupacion,
             rp.lugar_trabajo AS responsable_lugar_trabajo,
-            GROUP_CONCAT(DISTINCT tel_r.numero_telefono SEPARATOR '||') AS responsable_numeros,
-            GROUP_CONCAT(DISTINCT tipo_tel_r.tipo_telefono SEPARATOR '||') AS responsable_tipos,
+            GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref_r.codigo_prefijo, ''), tel_r.numero_telefono) ORDER BY tel_r.IdTelefono SEPARATOR '||') AS responsable_numeros,
+            GROUP_CONCAT(DISTINCT tipo_tel_r.tipo_telefono ORDER BY tel_r.IdTelefono SEPARATOR '||') AS responsable_tipos,
 
             -- Padre
             padre.IdPersona AS id_padre,
@@ -172,8 +172,8 @@ class Inscripcion {
             nac_p.nacionalidad AS padre_nacionalidad,
             rp_padre.ocupacion AS padre_ocupacion,
             rp_padre.lugar_trabajo AS padre_lugar_trabajo,
-            GROUP_CONCAT(DISTINCT tel_p.numero_telefono SEPARATOR '||') AS padre_numeros,
-            GROUP_CONCAT(DISTINCT tipo_tel_p.tipo_telefono SEPARATOR '||') AS padre_tipos,
+            GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref_p.codigo_prefijo, ''), tel_p.numero_telefono) ORDER BY tel_p.IdTelefono SEPARATOR '||') AS padre_numeros,
+            GROUP_CONCAT(DISTINCT tipo_tel_p.tipo_telefono ORDER BY tel_p.IdTelefono SEPARATOR '||') AS padre_tipos,
 
             -- Madre
             madre.IdPersona AS id_madre,
@@ -187,8 +187,8 @@ class Inscripcion {
             nac_m.nacionalidad AS madre_nacionalidad,
             rp_madre.ocupacion AS madre_ocupacion,
             rp_madre.lugar_trabajo AS madre_lugar_trabajo,
-            GROUP_CONCAT(DISTINCT tel_m.numero_telefono SEPARATOR '||') AS madre_numeros,
-            GROUP_CONCAT(DISTINCT tipo_tel_m.tipo_telefono SEPARATOR '||') AS madre_tipos,
+            GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref_m.codigo_prefijo, ''), tel_m.numero_telefono) ORDER BY tel_m.IdTelefono SEPARATOR '||') AS madre_numeros,
+            GROUP_CONCAT(DISTINCT tipo_tel_m.tipo_telefono ORDER BY tel_m.IdTelefono SEPARATOR '||') AS madre_tipos,
 
             -- Contacto de emergencia
             ce.IdPersona AS id_contacto,
@@ -200,7 +200,7 @@ class Inscripcion {
             parent_ce.parentesco AS contacto_parentesco,
             rp_ce.ocupacion AS contacto_ocupacion,
             rp_ce.lugar_trabajo AS contacto_lugar_trabajo,
-            tel_ce.numero_telefono AS contacto_telefono,
+            CONCAT(COALESCE(pref_ce.codigo_prefijo, ''), tel_ce.numero_telefono) AS contacto_telefono,
             tipo_tel.tipo_telefono AS contacto_tipo_telefono
 
         FROM inscripcion i
@@ -221,6 +221,7 @@ class Inscripcion {
         LEFT JOIN parentesco parent ON rp.IdParentesco = parent.IdParentesco
         LEFT JOIN telefono tel_r ON resp.IdPersona = tel_r.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_r ON tel_r.IdTipo_Telefono = tipo_tel_r.IdTipo_Telefono
+        LEFT JOIN prefijo pref_r ON tel_r.IdPrefijo = pref_r.IdPrefijo
 
         -- Padre
         LEFT JOIN representante rp_padre ON e.IdPersona = rp_padre.IdEstudiante AND rp_padre.IdParentesco = 1
@@ -230,6 +231,7 @@ class Inscripcion {
         LEFT JOIN nacionalidad nac_p ON padre.IdNacionalidad = nac_p.IdNacionalidad
         LEFT JOIN telefono tel_p ON padre.IdPersona = tel_p.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_p ON tel_p.IdTipo_Telefono = tipo_tel_p.IdTipo_Telefono
+        LEFT JOIN prefijo pref_p ON tel_p.IdPrefijo = pref_p.IdPrefijo
 
         -- Madre
         LEFT JOIN representante rp_madre ON e.IdPersona = rp_madre.IdEstudiante AND rp_madre.IdParentesco = 2
@@ -239,17 +241,19 @@ class Inscripcion {
         LEFT JOIN nacionalidad nac_m ON madre.IdNacionalidad = nac_m.IdNacionalidad
         LEFT JOIN telefono tel_m ON madre.IdPersona = tel_m.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_m ON tel_m.IdTipo_Telefono = tipo_tel_m.IdTipo_Telefono
+        LEFT JOIN prefijo pref_m ON tel_m.IdPrefijo = pref_m.IdPrefijo
 
         -- Contacto de emergencia
-        LEFT JOIN representante rp_ce ON e.IdPersona = rp_ce.IdEstudiante 
+        LEFT JOIN representante rp_ce ON e.IdPersona = rp_ce.IdEstudiante
             AND EXISTS (
-                SELECT 1 FROM detalle_perfil dp 
+                SELECT 1 FROM detalle_perfil dp
                 WHERE dp.IdPersona = rp_ce.IdPersona AND dp.IdPerfil = 5
             )
         LEFT JOIN persona ce ON rp_ce.IdPersona = ce.IdPersona
         LEFT JOIN parentesco parent_ce ON rp_ce.IdParentesco = parent_ce.IdParentesco
         LEFT JOIN telefono tel_ce ON ce.IdPersona = tel_ce.IdPersona
         LEFT JOIN tipo_telefono tipo_tel ON tel_ce.IdTipo_Telefono = tipo_tel.IdTipo_Telefono
+        LEFT JOIN prefijo pref_ce ON tel_ce.IdPrefijo = pref_ce.IdPrefijo
 
         -- Datos del estudiante
         LEFT JOIN sexo sexo_e ON e.IdSexo = sexo_e.IdSexo
@@ -257,6 +261,7 @@ class Inscripcion {
         LEFT JOIN nacionalidad nac_e ON e.IdNacionalidad = nac_e.IdNacionalidad
         LEFT JOIN telefono tel_e ON e.IdPersona = tel_e.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_e ON tel_e.IdTipo_Telefono = tipo_tel_e.IdTipo_Telefono
+        LEFT JOIN prefijo pref_e ON tel_e.IdPrefijo = pref_e.IdPrefijo
 
         WHERE i.IdInscripcion = :id;";
 

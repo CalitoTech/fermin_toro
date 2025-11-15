@@ -467,43 +467,60 @@ class WhatsAppController {
 }
 
     /**
-     * Formatea el número de teléfono para WhatsApp
+     * Formatea el número de teléfono para WhatsApp usando el prefijo de la base de datos
      */
     private function formatearTelefono($telefono) {
         // Eliminar todo excepto números y el signo +
         $telefonoLimpio = preg_replace('/[^0-9+]/', '', $telefono);
-        
+
         // Si empieza con +, es formato internacional
         if (strpos($telefonoLimpio, '+') === 0) {
             // Eliminar el + y mantener solo números
-            $telefonoLimpio = substr($telefonoLimpio, 1);
-            return $telefonoLimpio; // Ya está en formato internacional correcto
+            return substr($telefonoLimpio, 1);
         }
-        
-        // Si no tiene +, asumimos que es número venezolano
+
+        // Intentar obtener el número con prefijo de la base de datos
+        try {
+            $query = "SELECT t.numero_telefono, p.codigo_prefijo
+                     FROM telefono t
+                     LEFT JOIN prefijo p ON t.IdPrefijo = p.IdPrefijo
+                     WHERE t.numero_telefono = :telefono
+                     LIMIT 1";
+
+            $stmt = $this->conexion->prepare($query);
+            $stmt->bindParam(':telefono', $telefonoLimpio);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($result && !empty($result['codigo_prefijo'])) {
+                // Usar el prefijo de la base de datos
+                $codigoPrefijo = str_replace('+', '', $result['codigo_prefijo']);
+                return $codigoPrefijo . $telefonoLimpio;
+            }
+        } catch (Exception $e) {
+            error_log("Error al obtener prefijo: " . $e->getMessage());
+        }
+
+        // Fallback: lógica antigua para números venezolanos sin prefijo en BD
         $longitud = strlen($telefonoLimpio);
-        
+
         // Formato 10 dígitos (0412-3456789)
         if ($longitud === 10 && substr($telefonoLimpio, 0, 1) === '0') {
-            return '58' . substr($telefonoLimpio, 1); // 04123456789 → 584123456789
+            return '58' . substr($telefonoLimpio, 1);
         }
         // Formato 11 dígitos que empieza con 0 (04263519830)
         elseif ($longitud === 11 && substr($telefonoLimpio, 0, 1) === '0') {
-            return '58' . substr($telefonoLimpio, 1); // 04263519830 → 584263519830
+            return '58' . substr($telefonoLimpio, 1);
         }
         // Formato 9 dígitos (4123456789) - sin el 0 inicial
         elseif ($longitud === 9) {
-            return '58' . $telefonoLimpio; // 4123456789 → 584123456789
+            return '58' . $telefonoLimpio;
         }
         // Ya está en formato internacional (584123456789)
-        elseif ($longitud === 11 && substr($telefonoLimpio, 0, 2) === '58') {
+        elseif ($longitud >= 11 && substr($telefonoLimpio, 0, 2) === '58') {
             return $telefonoLimpio;
         }
-        // Formato internacional de 12 dígitos (584123456789)
-        elseif ($longitud === 12 && substr($telefonoLimpio, 0, 2) === '58') {
-            return $telefonoLimpio;
-        }
-        
+
         error_log("Formato de teléfono no reconocido: $telefono (limpio: $telefonoLimpio)");
         return false;
     }

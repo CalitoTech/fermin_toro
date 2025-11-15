@@ -64,17 +64,21 @@ $campos_persona = [
         'required' => true
     ],
     'TelefonoHabitacion' => [
-        'type' => 'tel',
+        'type' => 'tel_con_prefijo',
         'label' => 'Teléfono de Habitación',
         'col' => 4,
-        'attrs' => 'minlength="11" maxlength="20" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
+        'prefijo_tipo' => 'fijo', // filtra prefijos sin +
+        'prefijo_default' => '0255',
+        'tel_attrs' => 'minlength="7" maxlength="7" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
         'required' => true
     ],
     'Celular' => [
-        'type' => 'tel',
+        'type' => 'tel_con_prefijo',
         'label' => 'Celular',
         'col' => 4,
-        'attrs' => 'minlength="11" maxlength="20" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
+        'prefijo_tipo' => 'internacional', // filtra prefijos con +
+        'prefijo_default' => '+58',
+        'tel_attrs' => 'minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
         'required' => true
     ],
     'Correo' => [
@@ -92,10 +96,12 @@ $campos_persona = [
         'required' => true
     ],
     'TelefonoTrabajo' => [
-        'type' => 'tel',
+        'type' => 'tel_con_prefijo',
         'label' => 'Teléfono del Trabajo',
         'col' => 6,
-        'attrs' => 'minlength="11" maxlength="20" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
+        'prefijo_tipo' => 'internacional', // filtra prefijos con +
+        'prefijo_default' => '+58',
+        'tel_attrs' => 'minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
         'required' => false
     ],
 ];
@@ -147,6 +153,111 @@ function renderizarCampoPersona($tipo, $campo, $config, $data_options, $parentes
         echo '<script>
         document.addEventListener("DOMContentLoaded", function() {
             new BuscadorGenerico("' . $inputId . '", "' . $resultadosId . '", "' . $buscadorTipo . '", "' . $hiddenId . '", "' . $hiddenNombre . '");
+        });
+        </script>';
+    } elseif ($config['type'] === 'tel_con_prefijo') {
+        // Renderizar teléfono con prefijo integrado (estilo cédula)
+        $prefijoTipo = $config['prefijo_tipo'] ?? 'internacional';
+        $prefijoDefault = $config['prefijo_default'] ?? '+58';
+        $telAttrs = $config['tel_attrs'] ?? '';
+
+        $prefijoInputId = $id . 'Prefijo_input';
+        $prefijoHiddenId = $id . 'Prefijo';
+        $prefijoHiddenNombre = $id . 'Prefijo_nombre';
+        $prefijoResultadosId = $id . 'Prefijo_resultados';
+
+        echo '<div class="input-group">';
+
+        // Select de prefijo (estilo cédula)
+        echo '<div class="position-relative" style="max-width: 100px;">';
+        echo '<input type="text"
+                class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                id="' . $prefijoInputId . '"
+                autocomplete="off"
+                placeholder="' . $prefijoDefault . '"
+                data-prefijo-tipo="' . $prefijoTipo . '"
+                maxlength="4"
+                onkeypress="return /[0-9+]/.test(event.key)"
+                oninput="this.value = this.value.replace(/[^0-9+]/g, \'\')"
+                style="
+                    border-top-right-radius: 0;
+                    border-bottom-right-radius: 0;
+                    border-right: none;
+                    background: #f8f9fa;
+                    color: #c90000;
+                    font-size: 0.9rem;
+                    font-weight: bold;
+                ">';
+        echo '<input type="hidden" id="' . $prefijoHiddenId . '" name="' . $name . 'Prefijo" value="">';
+        echo '<input type="hidden" id="' . $prefijoHiddenNombre . '" name="' . $name . 'Prefijo_nombre">';
+        echo '<div id="' . $prefijoResultadosId . '" class="autocomplete-results d-none" style="z-index: 10000;"></div>';
+        echo '</div>';
+
+        // Input del número de teléfono
+        echo '<input type="tel"
+                class="form-control"
+                id="' . $id . '"
+                name="' . $name . '"
+                ' . $telAttrs . '
+                ' . $requiredAttr . '
+                style="border-top-left-radius: 0; border-bottom-left-radius: 0;">';
+
+        // Icono de teléfono
+        echo '<span class="input-group-text"><i class="fas fa-phone" style="color: #c90000;"></i></span>';
+
+        echo '</div>';
+
+        // Script para inicializar el buscador de prefijos
+        echo '<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const buscador = new BuscadorGenerico(
+                "' . $prefijoInputId . '",
+                "' . $prefijoResultadosId . '",
+                "prefijo",
+                "' . $prefijoHiddenId . '",
+                "' . $prefijoHiddenNombre . '"
+            );
+
+            // Establecer valor por defecto y buscar ID en BD
+            const inputPrefijo = document.getElementById("' . $prefijoInputId . '");
+            inputPrefijo.value = "' . $prefijoDefault . '";
+
+            // Formatear prefijo: evitar que se borre el + en internacionales
+            const esInternacional = "' . $prefijoTipo . '" === "internacional";
+            if (esInternacional) {
+                inputPrefijo.addEventListener("input", function(e) {
+                    let valor = this.value;
+                    // Si no empieza con +, agregarlo
+                    if (!valor.startsWith("+")) {
+                        this.value = "+" + valor.replace(/\+/g, "");
+                    }
+                    // Asegurar que solo haya un + al inicio
+                    if (valor.indexOf("+") > 0) {
+                        this.value = "+" + valor.replace(/\+/g, "");
+                    }
+                });
+                inputPrefijo.addEventListener("keydown", function(e) {
+                    // Evitar que se borre el + cuando está al inicio
+                    if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Buscar el ID del prefijo por defecto
+            const prefijoTipo = "' . $prefijoTipo . '";
+            const baseUrl = buscador.baseUrl;
+            fetch(`${baseUrl}?tipo=prefijo&q=' . urlencode($prefijoDefault) . '&filtro=${prefijoTipo}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const prefijoEncontrado = data.find(p => p.codigo_prefijo === "' . $prefijoDefault . '");
+                        if (prefijoEncontrado) {
+                            document.getElementById("' . $prefijoHiddenId . '").value = prefijoEncontrado.IdPrefijo;
+                        }
+                    }
+                })
+                .catch(err => console.error("Error al cargar prefijo por defecto:", err));
         });
         </script>';
     } elseif ($config['type'] === 'readonly') {
@@ -233,7 +344,74 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
         echo '<div class="col-md-4">';
         echo '<div class="form-group required-field">';
         echo '<label for="emergenciaCelular">Celular</label>';
-        echo '<input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular" minlength="11" maxlength="20" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>';
+        echo '<div class="input-group">';
+
+        // Prefix selector
+        echo '<div class="position-relative" style="max-width: 100px;">';
+        echo '<input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                id="emergenciaCelularPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
+                onkeypress="return /[0-9+]/.test(event.key)"
+                oninput="this.value = this.value.replace(/[^0-9+]/g, \'\')"
+                style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">';
+        echo '<input type="hidden" id="emergenciaCelularPrefijo" name="emergenciaCelularPrefijo" required>';
+        echo '<input type="hidden" id="emergenciaCelularPrefijo_nombre" name="emergenciaCelularPrefijo_nombre">';
+        echo '<div id="emergenciaCelularPrefijo_resultados" class="autocomplete-results d-none"></div>';
+        echo '</div>';
+
+        // Phone number input
+        echo '<input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
+                minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
+                style="border-top-left-radius: 0; border-bottom-left-radius: 0;">';
+
+        // Phone icon
+        echo '<span class="input-group-text"><i class="fas fa-phone"></i></span>';
+        echo '</div>';
+
+        echo '<script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const buscador = new BuscadorGenerico(
+                "emergenciaCelularPrefijo_input",
+                "emergenciaCelularPrefijo_resultados",
+                "prefijo",
+                "emergenciaCelularPrefijo",
+                "emergenciaCelularPrefijo_nombre"
+            );
+
+            // Establecer valor por defecto
+            const inputPrefijo = document.getElementById("emergenciaCelularPrefijo_input");
+            inputPrefijo.value = "+58";
+
+            // Formatear prefijo: evitar que se borre el +
+            inputPrefijo.addEventListener("input", function(e) {
+                let valor = this.value;
+                if (!valor.startsWith("+")) {
+                    this.value = "+" + valor.replace(/\+/g, "");
+                }
+                if (valor.indexOf("+") > 0) {
+                    this.value = "+" + valor.replace(/\+/g, "");
+                }
+            });
+            inputPrefijo.addEventListener("keydown", function(e) {
+                if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
+                    e.preventDefault();
+                }
+            });
+
+            // Buscar el ID del prefijo por defecto
+            const baseUrl = buscador.baseUrl;
+            fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const prefijoEncontrado = data.find(p => p.codigo_prefijo === "+58");
+                        if (prefijoEncontrado) {
+                            document.getElementById("emergenciaCelularPrefijo").value = prefijoEncontrado.IdPrefijo;
+                        }
+                    }
+                })
+                .catch(err => console.error("Error al cargar prefijo por defecto:", err));
+        });
+        </script>';
         echo '</div>';
         echo '</div>';
         echo '</div>';

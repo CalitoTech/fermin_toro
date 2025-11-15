@@ -20,11 +20,11 @@ class BuscadorGenerico {
         this.hiddenIdField = document.getElementById(hiddenIdField);
         this.hiddenNombreField = hiddenNombreField ? document.getElementById(hiddenNombreField) : null;
         this.options = {
-            minLength: 2,
+            minLength: tipo === 'prefijo' ? 1 : 2, // Prefijos con 1 carácter mínimo
             delay: 300,
             placeholder: this.getPlaceholder(tipo),
-            allowCreate: tipo !== 'estudiante', // Solo permitir crear en urbanismo y parentesco
-            showOnFocus: tipo !== 'estudiante', // Mostrar lista al hacer click (solo urbanismo y parentesco)
+            allowCreate: tipo !== 'estudiante', // Solo permitir crear en urbanismo, parentesco y prefijo
+            showOnFocus: tipo !== 'estudiante', // Mostrar lista al hacer click (todos excepto estudiante)
             ...options
         };
 
@@ -59,7 +59,8 @@ class BuscadorGenerico {
         const placeholders = {
             'estudiante': 'Buscar por nombre, apellido o cédula...',
             'urbanismo': 'Buscar o escribir nuevo urbanismo...',
-            'parentesco': 'Buscar o escribir nuevo parentesco...'
+            'parentesco': 'Buscar o escribir nuevo parentesco...',
+            'prefijo': 'Buscar por código (+58) o país...'
         };
         return placeholders[tipo] || 'Buscar...';
     }
@@ -98,7 +99,14 @@ class BuscadorGenerico {
 
     async cargarPrecargados() {
         try {
-            const url = `${this.baseUrl}?tipo=${this.tipo}&q=&limit=20`;
+            let url = `${this.baseUrl}?tipo=${this.tipo}&q=&limit=20`;
+
+            // Si es búsqueda de prefijo, agregar filtro según tipo
+            if (this.tipo === 'prefijo') {
+                const prefijoTipo = this.input.getAttribute('data-prefijo-tipo') || 'internacional';
+                url += `&filtro=${prefijoTipo}`;
+            }
+
             const response = await fetch(url);
             const data = await response.json();
 
@@ -132,7 +140,14 @@ class BuscadorGenerico {
 
     async buscar(texto) {
         try {
-            const url = `${this.baseUrl}?tipo=${this.tipo}&q=${encodeURIComponent(texto)}`;
+            let url = `${this.baseUrl}?tipo=${this.tipo}&q=${encodeURIComponent(texto)}`;
+
+            // Si es búsqueda de prefijo, agregar filtro según tipo
+            if (this.tipo === 'prefijo') {
+                const prefijoTipo = this.input.getAttribute('data-prefijo-tipo') || 'internacional';
+                url += `&filtro=${prefijoTipo}`;
+            }
+
             const response = await fetch(url);
             const data = await response.json();
 
@@ -192,6 +207,9 @@ class BuscadorGenerico {
             case 'parentesco':
                 return `<i class="fas fa-users mr-2"></i>${item.parentesco}`;
 
+            case 'prefijo':
+                return `<strong>${item.codigo_prefijo}</strong>`;
+
             default:
                 return JSON.stringify(item);
         }
@@ -204,6 +222,9 @@ class BuscadorGenerico {
 
             case 'parentesco':
                 return `<i class="fas fa-plus-circle mr-2 text-success"></i><strong>Crear nuevo:</strong> "${item.parentesco}"`;
+
+            case 'prefijo':
+                return `<i class="fas fa-plus-circle mr-2 text-success"></i><strong>Crear nuevo:</strong> ${item.codigo_prefijo}`;
 
             default:
                 return `<strong>Nuevo:</strong> ${textoBuscado}`;
@@ -231,6 +252,22 @@ class BuscadorGenerico {
             if (item.nuevo && this.hiddenNombreField) {
                 this.hiddenNombreField.value = item.parentesco;
             }
+        } else if (this.tipo === 'prefijo') {
+            this.input.value = item.codigo_prefijo;
+            this.hiddenIdField.value = item.IdPrefijo;
+
+            // Si es nuevo, guardar código, país y max_digitos
+            if (item.nuevo && this.hiddenNombreField) {
+                // Guardar en formato JSON para poder extraer todos los datos
+                this.hiddenNombreField.value = JSON.stringify({
+                    codigo: item.codigo_prefijo,
+                    pais: item.pais,
+                    max_digitos: item.max_digitos
+                });
+            }
+
+            // Actualizar atributo data-max-digitos del input para validación
+            this.input.setAttribute('data-max-digitos', item.max_digitos);
         }
 
         this.ocultarResultados();

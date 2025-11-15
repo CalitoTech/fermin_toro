@@ -101,6 +101,50 @@ function obtenerOCrearParentesco($conexion, $idParentesco, $nombreParentesco = '
 }
 
 /**
+ * Obtiene o crea un prefijo telefónico
+ * Si el ID es 'nuevo', crea un nuevo registro en la tabla prefijo
+ *
+ * @param PDO $conexion Conexión a la base de datos
+ * @param mixed $idPrefijo ID del prefijo o 'nuevo'
+ * @param string $jsonPrefijo JSON con datos del prefijo (codigo, pais, max_digitos)
+ * @return int|null ID del prefijo o null si está vacío
+ */
+function obtenerOCrearPrefijo($conexion, $idPrefijo, $jsonPrefijo = '') {
+    if (empty($idPrefijo) && empty($jsonPrefijo)) {
+        return null;
+    }
+
+    if ($idPrefijo === 'nuevo' || $idPrefijo === '0' || empty($idPrefijo)) {
+        // Decodificar JSON con datos del prefijo
+        $datosPrefijo = json_decode($jsonPrefijo, true);
+
+        if (!$datosPrefijo || empty($datosPrefijo['codigo'])) {
+            return null;
+        }
+
+        // Verificar si ya existe un prefijo con ese código
+        $stmt = $conexion->prepare("SELECT IdPrefijo FROM prefijo WHERE codigo_prefijo = :codigo");
+        $stmt->execute([':codigo' => trim($datosPrefijo['codigo'])]);
+        $existe = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existe) {
+            return (int)$existe['IdPrefijo'];
+        }
+
+        // Crear nuevo prefijo
+        $stmt = $conexion->prepare("INSERT INTO prefijo (codigo_prefijo, pais, max_digitos) VALUES (:codigo, :pais, :max_digitos)");
+        $stmt->execute([
+            ':codigo' => trim($datosPrefijo['codigo']),
+            ':pais' => trim($datosPrefijo['pais'] ?? 'Desconocido'),
+            ':max_digitos' => (int)($datosPrefijo['max_digitos'] ?? 10)
+        ]);
+        return (int)$conexion->lastInsertId();
+    }
+
+    return (int)$idPrefijo;
+}
+
+/**
  * Genera una cédula para el estudiante basada en la cédula de la madre y el año de nacimiento.
  * Formato: <prefijo><2 dígitos año><cedulaMadre>
  * Prefijo comienza en 1 y aumenta hasta encontrar una cédula no existente.
@@ -585,6 +629,11 @@ function procesarInscripcion($conexion) {
                     $telefonoEstudiante->IdPersona = $idEstudiante;
                     $telefonoEstudiante->IdTipo_Telefono = 2; // Celular
                     $telefonoEstudiante->numero_telefono = $_POST['estudianteTelefono'];
+                    $telefonoEstudiante->IdPrefijo = obtenerOCrearPrefijo(
+                        $conexion,
+                        $_POST['estudianteTelefonoPrefijo'] ?? null,
+                        $_POST['estudianteTelefonoPrefijo_nombre'] ?? ''
+                    );
                     try {
                         $telefonoEstudiante->guardar();
                     } catch (Exception $e) {
@@ -640,6 +689,22 @@ function procesarInscripcion($conexion) {
                         'TelefonoHabitacion' => $_POST['padreTelefonoHabitacion'] ?? '',
                         'Celular' => $_POST['padreCelular'] ?? '',
                         'TelefonoTrabajo' => $_POST['padreTelefonoTrabajo'] ?? ''
+                    ], [
+                        'TelefonoHabitacion' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['padreTelefonoHabitacionPrefijo'] ?? null,
+                            $_POST['padreTelefonoHabitacionPrefijo_nombre'] ?? ''
+                        ),
+                        'Celular' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['padreCelularPrefijo'] ?? null,
+                            $_POST['padreCelularPrefijo_nombre'] ?? ''
+                        ),
+                        'TelefonoTrabajo' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['padreTelefonoTrabajoPrefijo'] ?? null,
+                            $_POST['padreTelefonoTrabajoPrefijo_nombre'] ?? ''
+                        )
                     ]);
 
                     // Relación padre-estudiante
@@ -692,6 +757,22 @@ function procesarInscripcion($conexion) {
                         'TelefonoHabitacion' => $_POST['madreTelefonoHabitacion'] ?? '',
                         'Celular' => $_POST['madreCelular'] ?? '',
                         'TelefonoTrabajo' => $_POST['madreTelefonoTrabajo'] ?? ''
+                    ], [
+                        'TelefonoHabitacion' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['madreTelefonoHabitacionPrefijo'] ?? null,
+                            $_POST['madreTelefonoHabitacionPrefijo_nombre'] ?? ''
+                        ),
+                        'Celular' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['madreCelularPrefijo'] ?? null,
+                            $_POST['madreCelularPrefijo_nombre'] ?? ''
+                        ),
+                        'TelefonoTrabajo' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['madreTelefonoTrabajoPrefijo'] ?? null,
+                            $_POST['madreTelefonoTrabajoPrefijo_nombre'] ?? ''
+                        )
                     ]);
 
                     // Relación madre-estudiante
@@ -778,6 +859,22 @@ function procesarInscripcion($conexion) {
                         'TelefonoHabitacion' => $_POST['representanteTelefonoHabitacion'] ?? '',
                         'Celular' => $_POST['representanteCelular'] ?? '',
                         'TelefonoTrabajo' => $_POST['representanteTelefonoTrabajo'] ?? ''
+                    ], [
+                        'TelefonoHabitacion' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['representanteTelefonoHabitacionPrefijo'] ?? null,
+                            $_POST['representanteTelefonoHabitacionPrefijo_nombre'] ?? ''
+                        ),
+                        'Celular' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['representanteCelularPrefijo'] ?? null,
+                            $_POST['representanteCelularPrefijo_nombre'] ?? ''
+                        ),
+                        'TelefonoTrabajo' => obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['representanteTelefonoTrabajoPrefijo'] ?? null,
+                            $_POST['representanteTelefonoTrabajoPrefijo_nombre'] ?? ''
+                        )
                     ]);
 
                     // Relación representante-estudiante
@@ -818,6 +915,11 @@ function procesarInscripcion($conexion) {
                         $emergencia->IdEstudiante = $idEstudiante;
                         $emergencia->nombre_contacto = trim($_POST['emergenciaNombre']);
                         $emergencia->telefono_contacto = trim($_POST['emergenciaCelular']);
+                        $emergencia->IdPrefijo = obtenerOCrearPrefijo(
+                            $conexion,
+                            $_POST['emergenciaCelularPrefijo'] ?? null,
+                            $_POST['emergenciaCelularPrefijo_nombre'] ?? ''
+                        );
                         
                         // Validación adicional para el nombre de emergencia
                         if (str_word_count($emergencia->nombre_contacto) < 2) {

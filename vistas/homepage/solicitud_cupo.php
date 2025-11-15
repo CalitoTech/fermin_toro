@@ -431,9 +431,26 @@
                                     <div class="col-md-6" id="estudianteTelefonoContainer">
                                         <div class="form-group required-field">
                                             <label for="estudianteTelefono">Teléfono</label>
-                                            <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono" 
-                                            minlength="11" maxlength="20"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
+                                            <div class="input-group">
+                                                <!-- Prefix selector -->
+                                                <div class="position-relative" style="max-width: 90px;">
+                                                    <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                                                           id="estudianteTelefonoPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
+                                                           onkeypress="return /[0-9+]/.test(event.key)"
+                                                           oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;"
+                                                           value="+58">
+                                                    <input type="hidden" id="estudianteTelefonoPrefijo" name="estudianteTelefonoPrefijo">
+                                                    <input type="hidden" id="estudianteTelefonoPrefijo_nombre" name="estudianteTelefonoPrefijo_nombre">
+                                                    <div id="estudianteTelefonoPrefijo_resultados" class="autocomplete-results d-none"></div>
+                                                </div>
+
+                                                <!-- Phone number input -->
+                                                <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono"
+                                                       minlength="10" maxlength="10"
+                                                       pattern="[0-9]+" onkeypress="return onlyNumber(event)"
+                                                       style="border-top-left-radius: 0; border-bottom-left-radius: 0;" required>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -628,6 +645,74 @@
             "showMethod": "fadeIn",
             "hideMethod": "fadeOut"
         };
+
+        // Inicializar buscador de prefijo para teléfono de estudiante
+        document.addEventListener("DOMContentLoaded", function() {
+            new BuscadorGenerico(
+                "estudianteTelefonoPrefijo_input",
+                "estudianteTelefonoPrefijo_resultados",
+                "prefijo",
+                "estudianteTelefonoPrefijo",
+                "estudianteTelefonoPrefijo_nombre"
+            );
+
+            // Configurar restricciones de fecha de nacimiento (6-18 años)
+            const fechaNacimientoInput = document.getElementById('estudianteFechaNacimiento');
+            if (fechaNacimientoInput) {
+                const hoy = new Date();
+
+                // Fecha máxima: hace 6 años
+                const fechaMax = new Date(hoy.getFullYear() - 6, hoy.getMonth(), hoy.getDate());
+
+                // Fecha mínima: hace 18 años
+                const fechaMin = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+
+                // Formatear fechas a YYYY-MM-DD
+                const formatoFecha = (fecha) => {
+                    const year = fecha.getFullYear();
+                    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const day = String(fecha.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                fechaNacimientoInput.setAttribute('min', formatoFecha(fechaMin));
+                fechaNacimientoInput.setAttribute('max', formatoFecha(fechaMax));
+
+                // Validar cuando se cambia el valor
+                fechaNacimientoInput.addEventListener('blur', function() {
+                    const valorSeleccionado = this.value;
+                    if (!valorSeleccionado) return;
+
+                    const fechaSeleccionada = new Date(valorSeleccionado + 'T00:00:00');
+                    const hoy = new Date();
+
+                    // Calcular edad
+                    let edad = hoy.getFullYear() - fechaSeleccionada.getFullYear();
+                    const mes = hoy.getMonth() - fechaSeleccionada.getMonth();
+
+                    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaSeleccionada.getDate())) {
+                        edad--;
+                    }
+
+                    // Validar rango de edad
+                    if (edad < 6 || edad > 18) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Edad no válida',
+                            html: `La fecha de nacimiento seleccionada no es válida.<br><br>
+                                   <strong>El estudiante debe tener entre 6 y 18 años.</strong><br>
+                                   <small class="text-muted">Edad calculada: ${edad} años</small>`,
+                            confirmButtonColor: '#c90000',
+                            confirmButtonText: 'Entendido'
+                        });
+                        this.value = '';
+                        this.classList.add('is-invalid');
+                    } else {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

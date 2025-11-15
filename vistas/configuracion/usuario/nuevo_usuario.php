@@ -375,24 +375,37 @@ try {
                                                 <select class="form-select añadir__input tipo-telefono" name="telefonos[0][tipo]"
                                                         style="max-width: 150px; border-top-right-radius: 0; border-bottom-right-radius: 0;">
                                                     <?php foreach ($tiposTelefono as $tipo): ?>
-                                                         <option value="<?= $tipo['IdTipo_Telefono'] ?>" 
-                                                                <?= $tipo['IdTipo_Telefono'] == 2 ? 'selected' : '' ?>>
+                                                         <option value="<?= $tipo['IdTipo_Telefono'] ?>"
+                                                                <?= $tipo['IdTipo_Telefono'] == 2 ? 'selected' : '' ?>
+                                                                data-tipo="<?= $tipo['tipo_telefono'] ?>">
                                                             <?= htmlspecialchars($tipo['tipo_telefono']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
-                                                
-                                                <!-- Resto del código permanece igual -->
-                                                <input type="text" 
-                                                    class="form-control añadir__input numero-telefono" 
+
+                                                <!-- Prefix selector -->
+                                                <div class="position-relative" style="max-width: 90px;">
+                                                    <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono prefijo-input"
+                                                           data-index="0" maxlength="4" data-prefijo-tipo="internacional"
+                                                           onkeypress="return /[0-9+]/.test(event.key)"
+                                                           oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                           style="border-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
+                                                    <input type="hidden" class="prefijo-hidden" name="telefonos[0][prefijo]">
+                                                    <input type="hidden" class="prefijo-nombre-hidden" name="telefonos[0][prefijo_nombre]">
+                                                    <div class="prefijo-resultados autocomplete-results d-none"></div>
+                                                </div>
+
+                                                <!-- Número de teléfono -->
+                                                <input type="text"
+                                                    class="form-control añadir__input numero-telefono"
                                                     name="telefonos[0][numero]"
-                                                    placeholder="Ej: 04141234567"
+                                                    placeholder="Ej: 4141234567"
                                                     pattern="^[0-9]+"
-                                                    minlength="11"
-                                                    maxlength="11"
+                                                    minlength="10"
+                                                    maxlength="10"
                                                     onkeypress="return onlyNumber(event)"
-                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;" required>
-                                                
+                                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0;" required>
+
                                                 <button type="button" class="btn btn-outline-danger btn-eliminar-telefono" style="display: none;">
                                                     <i class='bx bx-trash'></i>
                                                 </button>
@@ -428,6 +441,7 @@ try {
 <script src="../../../assets/js/validacion.js"></script>
 <script src="../../../assets/js/formulario.js"></script>
 <script src="../../../assets/js/usuario_chips.js"></script>
+<script src="../../../assets/js/buscador_generico.js"></script>
 <script src="../../../assets/js/telefonos.js"></script>
 
 <script>

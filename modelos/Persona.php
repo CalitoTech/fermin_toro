@@ -475,7 +475,7 @@ class Persona {
     public function obtenerEstudiantePorId($idPersona) {
         try {
             $query = "
-                SELECT 
+                SELECT
                     p.IdPersona,
                     p.cedula,
                     n.nacionalidad,
@@ -492,7 +492,7 @@ class Persona {
                     u.IdUrbanismo,
                     ea.status AS estado_acceso,
                     ei.status AS estado_institucional,
-                    GROUP_CONCAT(DISTINCT tel.numero_telefono SEPARATOR ' || ') AS numeros,
+                    GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref.codigo_prefijo, ''), tel.numero_telefono) SEPARATOR ' || ') AS numeros,
                     GROUP_CONCAT(DISTINCT tipo_tel.tipo_telefono SEPARATOR ' || ') AS tipos
                 FROM persona AS p
                 LEFT JOIN nacionalidad AS n ON n.IdNacionalidad = p.IdNacionalidad
@@ -502,6 +502,7 @@ class Persona {
                 LEFT JOIN status AS ei ON ei.IdStatus = p.IdEstadoInstitucional
                 LEFT JOIN telefono AS tel ON tel.IdPersona = p.IdPersona
                 LEFT JOIN tipo_telefono AS tipo_tel ON tipo_tel.IdTipo_Telefono = tel.IdTipo_Telefono
+                LEFT JOIN prefijo AS pref ON pref.IdPrefijo = tel.IdPrefijo
                 WHERE p.IdPersona = :id
                 GROUP BY p.IdPersona
             ";

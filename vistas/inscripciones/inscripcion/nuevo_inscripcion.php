@@ -221,8 +221,73 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                     <div class="col-md-6" id="estudianteTelefonoContainer">
                         <div class="form-group required-field">
                             <label for="estudianteTelefono">Teléfono</label>
-                            <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono" 
-                                   minlength="11" maxlength="20" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
+                            <div class="input-group">
+                                <!-- Prefix selector -->
+                                <div class="position-relative" style="max-width: 100px;">
+                                    <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                                           id="estudianteTelefonoPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
+                                           onkeypress="return /[0-9+]/.test(event.key)"
+                                           oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
+                                    <input type="hidden" id="estudianteTelefonoPrefijo" name="estudianteTelefonoPrefijo" required>
+                                    <input type="hidden" id="estudianteTelefonoPrefijo_nombre" name="estudianteTelefonoPrefijo_nombre">
+                                    <div id="estudianteTelefonoPrefijo_resultados" class="autocomplete-results d-none"></div>
+                                </div>
+
+                                <!-- Phone number input -->
+                                <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono"
+                                       minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
+                                       style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+
+                                <!-- Phone icon -->
+                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            </div>
+
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const buscador = new BuscadorGenerico(
+                                    "estudianteTelefonoPrefijo_input",
+                                    "estudianteTelefonoPrefijo_resultados",
+                                    "prefijo",
+                                    "estudianteTelefonoPrefijo",
+                                    "estudianteTelefonoPrefijo_nombre"
+                                );
+
+                                // Establecer valor por defecto
+                                const inputPrefijo = document.getElementById("estudianteTelefonoPrefijo_input");
+                                inputPrefijo.value = "+58";
+
+                                // Formatear prefijo: evitar que se borre el +
+                                inputPrefijo.addEventListener("input", function(e) {
+                                    let valor = this.value;
+                                    if (!valor.startsWith("+")) {
+                                        this.value = "+" + valor.replace(/\+/g, "");
+                                    }
+                                    if (valor.indexOf("+") > 0) {
+                                        this.value = "+" + valor.replace(/\+/g, "");
+                                    }
+                                });
+                                inputPrefijo.addEventListener("keydown", function(e) {
+                                    if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
+                                        e.preventDefault();
+                                    }
+                                });
+
+                                // Buscar el ID del prefijo por defecto
+                                const baseUrl = buscador.baseUrl;
+                                fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (data && data.length > 0) {
+                                            const prefijoEncontrado = data.find(p => p.codigo_prefijo === "+58");
+                                            if (prefijoEncontrado) {
+                                                document.getElementById("estudianteTelefonoPrefijo").value = prefijoEncontrado.IdPrefijo;
+                                            }
+                                        }
+                                    })
+                                    .catch(err => console.error("Error al cargar prefijo por defecto:", err));
+                            });
+                            </script>
                         </div>
                     </div>
                 </div>
@@ -326,6 +391,90 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                                         new BuscadorGenerico("<?= $inputId ?>", "<?= $resultadosId ?>", "urbanismo", "<?= $hiddenId ?>", "<?= $hiddenNombre ?>");
                                     });
                                     </script>
+                                <?php elseif ($campo === 'TelefonoHabitacion' || $campo === 'Celular'): ?>
+                                    <?php
+                                    $prefijoInputId = $tipo . $campo . 'Prefijo_input';
+                                    $prefijoHiddenId = $tipo . $campo . 'Prefijo';
+                                    $prefijoHiddenNombre = $tipo . $campo . 'Prefijo_nombre';
+                                    $prefijoResultadosId = $tipo . $campo . 'Prefijo_resultados';
+                                    $telefonoId = $tipo . $campo;
+
+                                    // Configuración según tipo de teléfono
+                                    $prefijoTipo = ($campo === 'TelefonoHabitacion') ? 'fijo' : 'internacional';
+                                    $prefijoDefault = ($campo === 'TelefonoHabitacion') ? '0255' : '+58';
+                                    $minLength = ($campo === 'TelefonoHabitacion') ? '7' : '10';
+                                    $maxLength = ($campo === 'TelefonoHabitacion') ? '7' : '10';
+                                    ?>
+                                    <div class="input-group">
+                                        <!-- Prefix selector -->
+                                        <div class="position-relative" style="max-width: 100px;">
+                                            <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                                                   id="<?= $prefijoInputId ?>" maxlength="4" data-prefijo-tipo="<?= $prefijoTipo ?>"
+                                                   onkeypress="return /[0-9+]/.test(event.key)"
+                                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
+                                            <input type="hidden" id="<?= $prefijoHiddenId ?>" name="<?= $prefijoHiddenId ?>" required>
+                                            <input type="hidden" id="<?= $prefijoHiddenNombre ?>" name="<?= $prefijoHiddenNombre ?>">
+                                            <div id="<?= $prefijoResultadosId ?>" class="autocomplete-results d-none"></div>
+                                        </div>
+
+                                        <!-- Phone number input -->
+                                        <input type="tel" class="form-control" id="<?= $telefonoId ?>" name="<?= $telefonoId ?>"
+                                               minlength="<?= $minLength ?>" maxlength="<?= $maxLength ?>" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
+                                               style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+
+                                        <!-- Phone icon -->
+                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    </div>
+
+                                    <script>
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        const buscador = new BuscadorGenerico(
+                                            "<?= $prefijoInputId ?>",
+                                            "<?= $prefijoResultadosId ?>",
+                                            "prefijo",
+                                            "<?= $prefijoHiddenId ?>",
+                                            "<?= $prefijoHiddenNombre ?>"
+                                        );
+
+                                        // Establecer valor por defecto
+                                        const inputPrefijo = document.getElementById("<?= $prefijoInputId ?>");
+                                        inputPrefijo.value = "<?= $prefijoDefault ?>";
+
+                                        // Formatear prefijo para internacionales: evitar que se borre el +
+                                        <?php if ($prefijoTipo === 'internacional'): ?>
+                                        inputPrefijo.addEventListener("input", function(e) {
+                                            let valor = this.value;
+                                            if (!valor.startsWith("+")) {
+                                                this.value = "+" + valor.replace(/\+/g, "");
+                                            }
+                                            if (valor.indexOf("+") > 0) {
+                                                this.value = "+" + valor.replace(/\+/g, "");
+                                            }
+                                        });
+                                        inputPrefijo.addEventListener("keydown", function(e) {
+                                            if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
+                                                e.preventDefault();
+                                            }
+                                        });
+                                        <?php endif; ?>
+
+                                        // Buscar el ID del prefijo por defecto
+                                        const baseUrl = buscador.baseUrl;
+                                        const prefijoEncoded = encodeURIComponent("<?= $prefijoDefault ?>");
+                                        fetch(`${baseUrl}?tipo=prefijo&q=${prefijoEncoded}&filtro=<?= $prefijoTipo ?>`)
+                                            .then(res => res.json())
+                                            .then(data => {
+                                                if (data && data.length > 0) {
+                                                    const prefijoEncontrado = data.find(p => p.codigo_prefijo === "<?= $prefijoDefault ?>");
+                                                    if (prefijoEncontrado) {
+                                                        document.getElementById("<?= $prefijoHiddenId ?>").value = prefijoEncontrado.IdPrefijo;
+                                                    }
+                                                }
+                                            })
+                                            .catch(err => console.error("Error al cargar prefijo por defecto:", err));
+                                    });
+                                    </script>
                                 <?php else: ?>
                                     <input type="<?= $tipo_input ?>" class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
                                 <?php endif; ?>
@@ -374,9 +523,73 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                             <div class="col-md-4">
                                 <div class="form-group required-field">
                                     <label for="emergenciaCelular">Celular</label>
-                                    <input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
-                                        minlength="11" maxlength="20"
-                                        pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required>
+                                    <div class="input-group">
+                                        <!-- Prefix selector -->
+                                        <div class="position-relative" style="max-width: 100px;">
+                                            <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                                                   id="emergenciaCelularPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
+                                                   onkeypress="return /[0-9+]/.test(event.key)"
+                                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
+                                            <input type="hidden" id="emergenciaCelularPrefijo" name="emergenciaCelularPrefijo" required>
+                                            <input type="hidden" id="emergenciaCelularPrefijo_nombre" name="emergenciaCelularPrefijo_nombre">
+                                            <div id="emergenciaCelularPrefijo_resultados" class="autocomplete-results d-none"></div>
+                                        </div>
+
+                                        <!-- Phone number input -->
+                                        <input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
+                                               minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
+                                               style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+
+                                        <!-- Phone icon -->
+                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    </div>
+
+                                    <script>
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        const buscador = new BuscadorGenerico(
+                                            "emergenciaCelularPrefijo_input",
+                                            "emergenciaCelularPrefijo_resultados",
+                                            "prefijo",
+                                            "emergenciaCelularPrefijo",
+                                            "emergenciaCelularPrefijo_nombre"
+                                        );
+
+                                        // Establecer valor por defecto
+                                        const inputPrefijo = document.getElementById("emergenciaCelularPrefijo_input");
+                                        inputPrefijo.value = "+58";
+
+                                        // Formatear prefijo: evitar que se borre el +
+                                        inputPrefijo.addEventListener("input", function(e) {
+                                            let valor = this.value;
+                                            if (!valor.startsWith("+")) {
+                                                this.value = "+" + valor.replace(/\+/g, "");
+                                            }
+                                            if (valor.indexOf("+") > 0) {
+                                                this.value = "+" + valor.replace(/\+/g, "");
+                                            }
+                                        });
+                                        inputPrefijo.addEventListener("keydown", function(e) {
+                                            if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
+                                                e.preventDefault();
+                                            }
+                                        });
+
+                                        // Buscar el ID del prefijo por defecto
+                                        const baseUrl = buscador.baseUrl;
+                                        fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
+                                            .then(res => res.json())
+                                            .then(data => {
+                                                if (data && data.length > 0) {
+                                                    const prefijoEncontrado = data.find(p => p.codigo_prefijo === "+58");
+                                                    if (prefijoEncontrado) {
+                                                        document.getElementById("emergenciaCelularPrefijo").value = prefijoEncontrado.IdPrefijo;
+                                                    }
+                                                }
+                                            })
+                                            .catch(err => console.error("Error al cargar prefijo por defecto:", err));
+                                    });
+                                    </script>
                                 </div>
                             </div>
                         </div>
@@ -534,16 +747,75 @@ document.addEventListener("DOMContentLoaded", function() {
     // === OPCIONAL: limpiar curso y sección al enviar formulario ===
     const form = document.querySelector("form");
     if (form) {
-        form.addEventListener("submit", function() {
-            // Previene errores si algo quedó vacío
+        form.addEventListener("submit", function(event) {
+            let errores = [];
+
+            // Validar nivel, curso y sección
             if (!selectNivel.value || !selectCurso.value || !selectSeccion.value) {
+                errores.push('Debes seleccionar el nivel, curso y sección');
+            }
+
+            // Validar fecha de nacimiento (6-18 años)
+            const fechaNacimiento = document.getElementById('estudianteFechaNacimiento').value;
+            if (fechaNacimiento) {
+                const hoy = new Date();
+                const fechaNac = new Date(fechaNacimiento);
+                let edad = hoy.getFullYear() - fechaNac.getFullYear();
+                const mes = hoy.getMonth() - fechaNac.getMonth();
+
+                if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+                    edad--;
+                }
+
+                if (edad < 6 || edad > 18) {
+                    errores.push('La edad del estudiante debe estar entre 6 y 18 años');
+                    document.getElementById('estudianteFechaNacimiento').classList.add('is-invalid');
+                }
+            }
+
+            // Validar prefijos de teléfono
+            const validarPrefijo = (prefijoId, telefonoId, nombre) => {
+                const telefono = document.getElementById(telefonoId);
+                const prefijo = document.getElementById(prefijoId);
+
+                if (telefono && telefono.value && prefijo && !prefijo.value) {
+                    errores.push(`${nombre} es obligatorio cuando se ingresa un número de teléfono`);
+                    const prefijoInput = document.getElementById(prefijoId + '_input');
+                    if (prefijoInput) {
+                        prefijoInput.classList.add('is-invalid');
+                    }
+                }
+            };
+
+            // Validar prefijo del teléfono del estudiante
+            const nivelSeleccionado = parseInt(selectNivel.value);
+            if (nivelSeleccionado !== 1) {
+                validarPrefijo('estudianteTelefonoPrefijo', 'estudianteTelefono', 'El prefijo del teléfono del estudiante');
+            }
+
+            // Validar prefijos de padre, madre y emergencia
+            validarPrefijo('padreTelefonoHabitacionPrefijo', 'padreTelefonoHabitacion', 'El prefijo del teléfono de habitación del padre');
+            validarPrefijo('padreCelularPrefijo', 'padreCelular', 'El prefijo del celular del padre');
+            validarPrefijo('madreTelefonoHabitacionPrefijo', 'madreTelefonoHabitacion', 'El prefijo del teléfono de habitación de la madre');
+            validarPrefijo('madreCelularPrefijo', 'madreCelular', 'El prefijo del celular de la madre');
+            validarPrefijo('emergenciaCelularPrefijo', 'emergenciaCelular', 'El prefijo del teléfono de emergencia');
+
+            // Validar prefijos del representante si es "otro"
+            const tipoRepSeleccionado = document.querySelector('input[name="tipoRepresentante"]:checked');
+            if (tipoRepSeleccionado && tipoRepSeleccionado.value === 'otro') {
+                validarPrefijo('representanteTelefonoHabitacionPrefijo', 'representanteTelefonoHabitacion', 'El prefijo del teléfono de habitación del representante');
+                validarPrefijo('representanteCelularPrefijo', 'representanteCelular', 'El prefijo del celular del representante');
+            }
+
+            // Mostrar errores si existen
+            if (errores.length > 0) {
+                event.preventDefault();
                 Swal.fire({
-                    title: "Campos incompletos",
-                    text: "Debes seleccionar el nivel, curso y sección.",
+                    title: "Datos incompletos",
+                    html: '<ul style="text-align: left;">' + errores.map(e => '<li>' + e + '</li>').join('') + '</ul>',
                     icon: "warning",
                     confirmButtonColor: "#c90000"
                 });
-                event.preventDefault();
             }
         });
     }
@@ -587,5 +859,62 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Aplicar estado inicial al cargar la página
     actualizarCamposEstudiante();
+
+    // Configurar restricciones de fecha de nacimiento (6-18 años)
+    const fechaNacimientoInput = document.getElementById('estudianteFechaNacimiento');
+    if (fechaNacimientoInput) {
+        const hoy = new Date();
+
+        // Fecha máxima: hace 6 años
+        const fechaMax = new Date(hoy.getFullYear() - 6, hoy.getMonth(), hoy.getDate());
+
+        // Fecha mínima: hace 18 años
+        const fechaMin = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+
+        // Formatear fechas a YYYY-MM-DD
+        const formatoFecha = (fecha) => {
+            const year = fecha.getFullYear();
+            const month = String(fecha.getMonth() + 1).padStart(2, '0');
+            const day = String(fecha.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        fechaNacimientoInput.setAttribute('min', formatoFecha(fechaMin));
+        fechaNacimientoInput.setAttribute('max', formatoFecha(fechaMax));
+
+        // Validar cuando se cambia el valor
+        fechaNacimientoInput.addEventListener('change', function() {
+            const valorSeleccionado = this.value;
+            if (!valorSeleccionado) return;
+
+            const fechaSeleccionada = new Date(valorSeleccionado + 'T00:00:00');
+            const hoy = new Date();
+
+            // Calcular edad
+            let edad = hoy.getFullYear() - fechaSeleccionada.getFullYear();
+            const mes = hoy.getMonth() - fechaSeleccionada.getMonth();
+
+            if (mes < 0 || (mes === 0 && hoy.getDate() < fechaSeleccionada.getDate())) {
+                edad--;
+            }
+
+            // Validar rango de edad
+            if (edad < 6 || edad > 18) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Edad no válida',
+                    html: `La fecha de nacimiento seleccionada no es válida.<br><br>
+                           <strong>El estudiante debe tener entre 6 y 18 años.</strong><br>
+                           <small class="text-muted">Edad calculada: ${edad} años</small>`,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido'
+                });
+                this.value = '';
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
 });
 </script>

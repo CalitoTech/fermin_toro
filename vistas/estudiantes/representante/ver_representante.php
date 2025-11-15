@@ -110,7 +110,7 @@ function mostrar($valor, $porDefecto = 'No registrado') {
                                     <?php if ($telefonos): ?>
                                         <?php foreach ($telefonos as $t): ?>
                                             <div><i class="fas fa-phone me-1 text-danger"></i>
-                                                <?= mostrar($t['tipo_telefono']) ?>: <?= mostrar($t['numero_telefono']) ?>
+                                                <?= mostrar($t['tipo_telefono']) ?>: <?= mostrar(($t['codigo_prefijo'] ?? '') . $t['numero_telefono']) ?>
                                             </div>
                                         <?php endforeach; ?>
                                     <?php else: ?>

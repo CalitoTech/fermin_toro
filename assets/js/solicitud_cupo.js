@@ -194,9 +194,41 @@ function enviarFormulario() {
 
     // Limpiar validaciones anteriores
     $('.is-invalid').removeClass('is-invalid');
-    
-    // 1. Validación de campos requeridos básicos
+
+    // 1. Validación de prefijos de teléfono
     let camposFaltantes = [];
+
+    // Validar prefijos de teléfonos
+    const prefijosTelefono = [
+        {inputId: 'estudianteTelefonoPrefijo', hiddenId: 'estudianteTelefonoPrefijo', nombre: 'Prefijo del teléfono del estudiante', container: '#estudianteTelefonoContainer'},
+        {inputId: 'padreTelefonoHabitacionPrefijo', hiddenId: 'padreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del padre'},
+        {inputId: 'padreCelularPrefijo', hiddenId: 'padreCelularPrefijo', nombre: 'Prefijo del celular del padre'},
+        {inputId: 'madreTelefonoHabitacionPrefijo', hiddenId: 'madreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación de la madre'},
+        {inputId: 'madreCelularPrefijo', hiddenId: 'madreCelularPrefijo', nombre: 'Prefijo del celular de la madre'},
+        {inputId: 'emergenciaCelularPrefijo', hiddenId: 'emergenciaCelularPrefijo', nombre: 'Prefijo del teléfono de emergencia'}
+    ];
+
+    prefijosTelefono.forEach(prefijo => {
+        // Si tiene container, verificar si está visible
+        if (prefijo.container && $(prefijo.container).is(':hidden')) {
+            return; // Saltar validación si el contenedor está oculto
+        }
+
+        const hiddenValue = $(`#${prefijo.hiddenId}`).val();
+        const inputValue = $(`#${prefijo.inputId}_input`).val();
+
+        // El campo de teléfono asociado
+        const telefonoId = prefijo.inputId.replace('Prefijo', '');
+        const telefonoValue = $(`#${telefonoId}`).val();
+
+        // Si hay número de teléfono pero no hay prefijo seleccionado
+        if (telefonoValue && !hiddenValue) {
+            camposFaltantes.push(prefijo.nombre);
+            $(`#${prefijo.inputId}_input`).addClass('is-invalid');
+        }
+    });
+
+    // 2. Validación de campos requeridos básicos
 
     // Validar sección del estudiante (siempre requerido) pero omitir cédula/telefono si sus contenedores están ocultos
     const camposEstudiante = [
@@ -303,11 +335,29 @@ function enviarFormulario() {
             {id: 'representanteCorreo', nombre: 'Correo electrónico del representante legal'},
             {id: 'representanteLugarTrabajo', nombre: 'Lugar de trabajo del representante legal'}
         ];
-        
+
         camposRepresentante.forEach(campo => {
             if (!$(`#${campo.id}`).val()) {
                 camposFaltantes.push(campo.nombre);
                 $(`#${campo.id}`).addClass('is-invalid');
+                $('#seccionRepresentante').slideDown();
+            }
+        });
+
+        // Validar prefijos del representante legal
+        const prefijosRepresentante = [
+            {inputId: 'representanteTelefonoHabitacionPrefijo', hiddenId: 'representanteTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del representante legal'},
+            {inputId: 'representanteCelularPrefijo', hiddenId: 'representanteCelularPrefijo', nombre: 'Prefijo del celular del representante legal'}
+        ];
+
+        prefijosRepresentante.forEach(prefijo => {
+            const hiddenValue = $(`#${prefijo.hiddenId}`).val();
+            const telefonoId = prefijo.inputId.replace('Prefijo', '');
+            const telefonoValue = $(`#${telefonoId}`).val();
+
+            if (telefonoValue && !hiddenValue) {
+                camposFaltantes.push(prefijo.nombre);
+                $(`#${prefijo.inputId}_input`).addClass('is-invalid');
                 $('#seccionRepresentante').slideDown();
             }
         });
@@ -330,7 +380,25 @@ function enviarFormulario() {
         camposFaltantes.push('descripciones de discapacidades seleccionadas');
     }
 
-    // 6. Validación adicional del contacto de emergencia
+    // 6. Validación de fecha de nacimiento del estudiante (6-18 años)
+    const fechaNacimiento = $('#estudianteFechaNacimiento').val();
+    if (fechaNacimiento) {
+        const hoy = new Date();
+        const fechaNac = new Date(fechaNacimiento);
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const mes = hoy.getMonth() - fechaNac.getMonth();
+
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+            edad--;
+        }
+
+        if (edad < 6 || edad > 18) {
+            camposFaltantes.push('La edad del estudiante debe estar entre 6 y 18 años');
+            $('#estudianteFechaNacimiento').addClass('is-invalid');
+        }
+    }
+
+    // 7. Validación adicional del contacto de emergencia
     if ($('#emergenciaNombre').val()) {
         const nombreCompleto = $('#emergenciaNombre').val().trim();
         if (nombreCompleto.split(' ').length < 2) {
