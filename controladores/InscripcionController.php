@@ -532,6 +532,75 @@ function procesarInscripcion($conexion) {
                 throw new Exception($mensaje);
             }
 
+            // === Validación de cédulas de representantes duplicadas ===
+            // Verificar que las cédulas de padre, madre y representante no existan en la base de datos
+            $representantesParaValidar = [];
+
+            // Validar padre
+            if (!empty($_POST['padreCedula']) && !empty($_POST['padreNacionalidad'])) {
+                $representantesParaValidar[] = [
+                    'cedula' => $_POST['padreCedula'],
+                    'nacionalidad' => $_POST['padreNacionalidad'],
+                    'nombre' => 'Padre'
+                ];
+            }
+
+            // Validar madre
+            if (!empty($_POST['madreCedula']) && !empty($_POST['madreNacionalidad'])) {
+                $representantesParaValidar[] = [
+                    'cedula' => $_POST['madreCedula'],
+                    'nacionalidad' => $_POST['madreNacionalidad'],
+                    'nombre' => 'Madre'
+                ];
+            }
+
+            // Validar representante legal (si es otro)
+            if (isset($_POST['tipoRepresentante']) && $_POST['tipoRepresentante'] === 'otro') {
+                if (!empty($_POST['representanteCedula']) && !empty($_POST['representanteNacionalidad'])) {
+                    $representantesParaValidar[] = [
+                        'cedula' => $_POST['representanteCedula'],
+                        'nacionalidad' => $_POST['representanteNacionalidad'],
+                        'nombre' => 'Representante Legal'
+                    ];
+                }
+            }
+
+            // Verificar cada representante
+            foreach ($representantesParaValidar as $rep) {
+                $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, p.IdNacionalidad,
+                               n.nacionalidad,
+                               p.usuario, p.password,
+                               CASE
+                                   WHEN p.usuario IS NOT NULL AND p.usuario != ''
+                                        AND p.password IS NOT NULL AND p.password != ''
+                                   THEN 1
+                                   ELSE 0
+                               END AS tiene_credenciales
+                        FROM persona p
+                        INNER JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                        WHERE p.cedula = :cedula
+                        AND p.IdNacionalidad = :nacionalidad";
+
+                $stmt = $conexion->prepare($sql);
+                $stmt->bindParam(':cedula', $rep['cedula']);
+                $stmt->bindParam(':nacionalidad', $rep['nacionalidad'], PDO::PARAM_INT);
+                $stmt->execute();
+
+                if ($stmt->rowCount() > 0) {
+                    $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+                    $nombreCompleto = $persona['nombre'] . ' ' . $persona['apellido'];
+                    $cedulaCompleta = $persona['nacionalidad'] . '-' . $persona['cedula'];
+
+                    if ((bool)$persona['tiene_credenciales']) {
+                        // La persona tiene usuario y contraseña
+                        throw new Exception("La persona con cédula {$cedulaCompleta} ({$nombreCompleto}) ya tiene una cuenta en el sistema. Por favor, solicite que inicie sesión en su cuenta para realizar la inscripción.");
+                    } else {
+                        // La persona existe pero no tiene credenciales
+                        throw new Exception("La persona con cédula {$cedulaCompleta} ({$nombreCompleto}) ya está registrada en el sistema. No puede registrar nuevamente a una persona que ya existe en la base de datos.");
+                    }
+                }
+            }
+
             $conexion->beginTransaction();
 
             try {

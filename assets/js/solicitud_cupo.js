@@ -380,7 +380,43 @@ function enviarFormulario() {
         camposFaltantes.push('descripciones de discapacidades seleccionadas');
     }
 
-    // 6. Validación de fecha de nacimiento del estudiante (6-18 años)
+    // 6. Validación de cédulas duplicadas dentro del formulario
+    const cedulas = {};
+    const cedulasParaValidar = [
+        { id: 'estudianteCedula', nacionalidadId: 'estudianteNacionalidad', nombre: 'Estudiante', elemento: $('#estudianteCedula') },
+        { id: 'padreCedula', nacionalidadId: 'padreNacionalidad', nombre: 'Padre', elemento: $('#padreCedula') },
+        { id: 'madreCedula', nacionalidadId: 'madreNacionalidad', nombre: 'Madre', elemento: $('#madreCedula') }
+    ];
+
+    // Agregar representante si es "otro"
+    if (tipoRep === 'otro') {
+        cedulasParaValidar.push({
+            id: 'representanteCedula',
+            nacionalidadId: 'representanteNacionalidad',
+            nombre: 'Representante Legal',
+            elemento: $('#representanteCedula')
+        });
+    }
+
+    let cedulaDuplicada = false;
+    cedulasParaValidar.forEach(persona => {
+        const cedula = $(`#${persona.id}`).val();
+        const nacionalidad = $(`#${persona.nacionalidadId}`).val();
+
+        if (cedula && nacionalidad) {
+            const cedulaCompleta = nacionalidad + '-' + cedula;
+
+            if (cedulas[cedulaCompleta]) {
+                camposFaltantes.push(`La cédula ${cedulaCompleta} está duplicada (${cedulas[cedulaCompleta]} y ${persona.nombre})`);
+                persona.elemento.addClass('is-invalid');
+                cedulaDuplicada = true;
+            } else {
+                cedulas[cedulaCompleta] = persona.nombre;
+            }
+        }
+    });
+
+    // 7. Validación de fecha de nacimiento del estudiante (6-18 años)
     const fechaNacimiento = $('#estudianteFechaNacimiento').val();
     if (fechaNacimiento) {
         const hoy = new Date();
@@ -398,7 +434,7 @@ function enviarFormulario() {
         }
     }
 
-    // 7. Validación adicional del contacto de emergencia
+    // 8. Validación adicional del contacto de emergencia
     if ($('#emergenciaNombre').val()) {
         const nombreCompleto = $('#emergenciaNombre').val().trim();
         if (nombreCompleto.split(' ').length < 2) {
@@ -410,26 +446,116 @@ function enviarFormulario() {
     // Mostrar errores si hay campos faltantes
     if (camposFaltantes.length > 0) {
         let mensaje = '<strong>Datos incompletos</strong><br>Por favor complete los siguientes campos requeridos:<br><ul class="text-left">';
-        
+
         // Eliminar duplicados y ordenar
         const camposUnicos = [...new Set(camposFaltantes)];
         camposUnicos.forEach(campo => {
             mensaje += `<li>${campo}</li>`;
         });
-        
+
         mensaje += '</ul>';
-        
+
         showErrorAlert(mensaje);
-        
+
         // Enfocar el primer campo con error
         $('.is-invalid').first().focus();
         return false;
     }
 
+    // 9. Validar si algún representante tiene acceso al sistema
+    const cedulasRepresentantes = [];
+
+    // Agregar padre
+    if ($('#padreCedula').val() && $('#padreNacionalidad').val()) {
+        cedulasRepresentantes.push({
+            cedula: $('#padreCedula').val(),
+            nacionalidad: $('#padreNacionalidad').val(),
+            nombre: 'Padre'
+        });
+    }
+
+    // Agregar madre
+    if ($('#madreCedula').val() && $('#madreNacionalidad').val()) {
+        cedulasRepresentantes.push({
+            cedula: $('#madreCedula').val(),
+            nacionalidad: $('#madreNacionalidad').val(),
+            nombre: 'Madre'
+        });
+    }
+
+    // Agregar representante si es "otro"
+    if (tipoRep === 'otro' && $('#representanteCedula').val() && $('#representanteNacionalidad').val()) {
+        cedulasRepresentantes.push({
+            cedula: $('#representanteCedula').val(),
+            nacionalidad: $('#representanteNacionalidad').val(),
+            nombre: 'Representante Legal'
+        });
+    }
+
     // Configurar botón de envío
     const btn = $('#btnEnviarFormulario');
-    btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...');
+    btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Validando...');
     btn.prop('disabled', true);
+
+    // Verificar acceso de representantes
+    if (cedulasRepresentantes.length > 0) {
+        fetch('../../controladores/PersonaController.php?action=verificarAccesoRepresentantes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(cedulasRepresentantes)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.representantesConAcceso.length > 0) {
+                // Hay representantes con acceso al sistema
+                const nombres = data.representantesConAcceso.map(r => r.nombre).join(', ');
+                const plural = data.representantesConAcceso.length > 1;
+
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Acceso al sistema detectado',
+                    html: `
+                        <div class="text-left">
+                            <p><strong>${plural ? 'Los representantes' : 'El representante'} ${nombres} ${plural ? 'tienen' : 'tiene'} acceso al sistema.</strong></p>
+                            <p>Por favor, ${plural ? 'que inicien' : 'que inicie'} sesión en ${plural ? 'sus cuentas' : 'su cuenta'} y realicen la solicitud de inscripción desde allí.</p>
+                            <p class="text-muted small mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                ${plural ? 'Ellos pueden' : 'Puede'} acceder al sistema desde la página de inicio y gestionar la inscripción directamente.
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido',
+                    showCloseButton: true,
+                    customClass: {
+                        popup: 'swal-wide'
+                    }
+                });
+
+                btn.html('Enviar Solicitud');
+                btn.prop('disabled', false);
+                return;
+            }
+
+            // Si no hay representantes con acceso, continuar con el envío
+            enviarFormularioFinal(formData, btn);
+        })
+        .catch(error => {
+            console.error('Error al verificar acceso:', error);
+            // Si hay error en la verificación, continuar con el envío
+            enviarFormularioFinal(formData, btn);
+        });
+    } else {
+        // Si no hay representantes para verificar, enviar directamente
+        enviarFormularioFinal(formData, btn);
+    }
+}
+
+function enviarFormularioFinal(formData, btn) {
+    // Cambiar texto del botón
+    btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...');
 
     // Agregar ID del curso
     formData.append('IdCurso', $('#idCursoSeleccionado').val());
@@ -451,6 +577,7 @@ function enviarFormulario() {
                 'Código de Seguimiento: ' + data.codigo_inscripcion
             );
 
+            const form = document.getElementById('formInscripcion');
             const origen = form.getAttribute('data-origen');
 
             if (origen === 'modal') {
@@ -820,7 +947,206 @@ function instalarHandlersCedula() {
 // Llamar a la instalación cuando el formulario esté listo (ya tienes inicializarFormulario)
 $(document).ready(function () {
     instalarHandlersCedula();
+    instalarValidacionCedulasDuplicadas();
 });
+
+// Validación de cédulas duplicadas con blur
+function instalarValidacionCedulasDuplicadas() {
+    const campos = [
+        { cedula: 'estudianteCedula', nacionalidad: 'estudianteNacionalidad', nombre: 'Estudiante', esRepresentante: false },
+        { cedula: 'padreCedula', nacionalidad: 'padreNacionalidad', nombre: 'Padre', esRepresentante: true },
+        { cedula: 'madreCedula', nacionalidad: 'madreNacionalidad', nombre: 'Madre', esRepresentante: true },
+        { cedula: 'representanteCedula', nacionalidad: 'representanteNacionalidad', nombre: 'Representante Legal', esRepresentante: true }
+    ];
+
+    campos.forEach(campo => {
+        const cedulaInput = $(`#${campo.cedula}`);
+        const nacionalidadInput = $(`#${campo.nacionalidad}`);
+
+        if (cedulaInput.length && nacionalidadInput.length) {
+            // Validar al perder el foco de la cédula
+            cedulaInput.on('blur', function() {
+                // Primero validar duplicados en el formulario
+                validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
+
+                // Si es representante (padre, madre o representante legal),
+                // también validar si ya existe en la base de datos
+                if (campo.esRepresentante) {
+                    validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
+                }
+            });
+
+            // También validar al cambiar nacionalidad
+            nacionalidadInput.on('change', function() {
+                const cedula = cedulaInput.val();
+                if (cedula) {
+                    validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
+
+                    if (campo.esRepresentante) {
+                        validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
+                    }
+                }
+            });
+        }
+    });
+}
+
+function validarCedulaDuplicadaEnFormulario(cedulaId, nacionalidadId, nombrePersona) {
+    const cedula = $(`#${cedulaId}`).val();
+    const nacionalidad = $(`#${nacionalidadId}`).val();
+
+    if (!cedula || !nacionalidad) return;
+
+    const tipoRep = $('input[name="tipoRepresentante"]:checked').val();
+    const cedulaCompleta = nacionalidad + '-' + cedula;
+
+    // Construir lista de cédulas del formulario
+    const cedulasEnFormulario = [];
+
+    // Estudiante
+    if ($('#estudianteCedula').val() && $('#estudianteNacionalidad').val()) {
+        cedulasEnFormulario.push({
+            completa: $('#estudianteNacionalidad').val() + '-' + $('#estudianteCedula').val(),
+            nombre: 'Estudiante',
+            id: 'estudianteCedula'
+        });
+    }
+
+    // Padre
+    if ($('#padreCedula').val() && $('#padreNacionalidad').val()) {
+        cedulasEnFormulario.push({
+            completa: $('#padreNacionalidad').val() + '-' + $('#padreCedula').val(),
+            nombre: 'Padre',
+            id: 'padreCedula'
+        });
+    }
+
+    // Madre
+    if ($('#madreCedula').val() && $('#madreNacionalidad').val()) {
+        cedulasEnFormulario.push({
+            completa: $('#madreNacionalidad').val() + '-' + $('#madreCedula').val(),
+            nombre: 'Madre',
+            id: 'madreCedula'
+        });
+    }
+
+    // Representante (si es "otro")
+    if (tipoRep === 'otro' && $('#representanteCedula').val() && $('#representanteNacionalidad').val()) {
+        cedulasEnFormulario.push({
+            completa: $('#representanteNacionalidad').val() + '-' + $('#representanteCedula').val(),
+            nombre: 'Representante Legal',
+            id: 'representanteCedula'
+        });
+    }
+
+    // Buscar duplicados
+    const duplicados = cedulasEnFormulario.filter(c => c.completa === cedulaCompleta);
+
+    if (duplicados.length > 1) {
+        // Hay duplicado
+        const nombres = duplicados.map(d => d.nombre).join(' y ');
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Cédula duplicada',
+            html: `La cédula <strong>${cedulaCompleta}</strong> está duplicada.<br><br>
+                   Ya fue ingresada para: <strong>${nombres}</strong><br><br>
+                   <small class="text-muted">Cada persona debe tener una cédula única.</small>`,
+            confirmButtonColor: '#c90000',
+            confirmButtonText: 'Entendido'
+        });
+
+        $(`#${cedulaId}`).addClass('is-invalid');
+        $(`#${cedulaId}`).val('');
+    } else {
+        // No hay duplicado, quitar clase invalid
+        $(`#${cedulaId}`).removeClass('is-invalid');
+    }
+}
+
+/**
+ * Valida si la cédula de un representante ya existe en la base de datos
+ * Se ejecuta en el evento blur de las cédulas de padre, madre y representante
+ */
+function validarCedulaRepresentanteExistente(cedulaId, nacionalidadId, nombrePersona) {
+    const cedula = $(`#${cedulaId}`).val();
+    const nacionalidad = $(`#${nacionalidadId}`).val();
+
+    if (!cedula || !nacionalidad) return;
+
+    // Llamar al endpoint para verificar si la cédula existe
+    fetch('../../controladores/PersonaController.php?action=verificarCedulaRepresentante', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            cedula: cedula,
+            nacionalidad: nacionalidad
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.existe) {
+            // La persona ya existe en la base de datos
+            const nombreCompleto = data.persona ? data.persona.nombreCompleto : '';
+            const nacionalidadLetra = data.persona ? data.persona.nacionalidad : '';
+            const cedulaNumero = data.persona ? data.persona.cedula : '';
+            const cedulaCompletaCorrecta = nacionalidadLetra + '-' + cedulaNumero;
+
+            if (data.tieneAcceso) {
+                // Tiene usuario y contraseña
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Usuario registrado en el sistema',
+                    html: `
+                        <div class="text-left">
+                            <p>La persona con cédula <strong>${cedulaCompletaCorrecta}</strong> (${nombreCompleto}) ya tiene una cuenta en el sistema.</p>
+                            <p><strong>Por favor, solicite que inicie sesión en su cuenta para realizar la inscripción.</strong></p>
+                            <p class="text-muted small mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                Los usuarios registrados deben gestionar las inscripciones desde su propia cuenta.
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido',
+                    showCloseButton: true
+                });
+
+                $(`#${cedulaId}`).addClass('is-invalid');
+                $(`#${cedulaId}`).val('');
+            } else {
+                // Existe pero no tiene credenciales de acceso
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Persona ya registrada',
+                    html: `
+                        <div class="text-left">
+                            <p>La persona con cédula <strong>${cedulaCompletaCorrecta}</strong> (${nombreCompleto}) ya está registrada en el sistema.</p>
+                            <p class="text-muted small">
+                                <i class="fas fa-info-circle"></i>
+                                No puede registrar nuevamente a una persona que ya existe en la base de datos.
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido'
+                });
+
+                $(`#${cedulaId}`).addClass('is-invalid');
+                $(`#${cedulaId}`).val('');
+            }
+        } else {
+            // No existe, todo bien
+            $(`#${cedulaId}`).removeClass('is-invalid');
+        }
+    })
+    .catch(error => {
+        console.error('Error al verificar cédula de representante:', error);
+        // En caso de error de red, permitir continuar pero loguear el error
+    });
+}
 
 // Variable para guardar temporalmente el ID del curso
 let cursoSeleccionadoTemporal = null;

@@ -39,7 +39,7 @@ $statusModel = new Status($conexion);
 $tipoInscripcionModel = new TipoInscripcion($conexion);
 
 // Obtener datos sin filtro
-$nacionalidades = $modeloNacionalidad->obtenerTodos();
+$nacionalidades = $modeloNacionalidad->obtenerConNombresLargos();
 $sexos = $modeloSexo->obtenerTodos();
 $secciones = $modeloSeccion->obtenerTodos();
 $urbanismos = $modeloUrbanismo->obtenerTodos();
@@ -179,7 +179,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                             <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
                                 <option value="">Seleccione una nacionalidad</option>
                                 <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -370,7 +370,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                                     <select class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
                                         <option value="">Seleccione...</option>
                                         <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                            <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                            <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 <?php elseif ($campo === 'Urbanismo'): ?>
@@ -807,6 +807,38 @@ document.addEventListener("DOMContentLoaded", function() {
                 validarPrefijo('representanteCelularPrefijo', 'representanteCelular', 'El prefijo del celular del representante');
             }
 
+            // Validar cédulas duplicadas
+            const cedulas = {};
+            const cedulasParaValidar = [
+                { id: 'estudianteCedula', nacionalidadId: 'estudianteNacionalidad', nombre: 'Estudiante' },
+                { id: 'padreCedula', nacionalidadId: 'padreNacionalidad', nombre: 'Padre' },
+                { id: 'madreCedula', nacionalidadId: 'madreNacionalidad', nombre: 'Madre' }
+            ];
+
+            if (tipoRepSeleccionado && tipoRepSeleccionado.value === 'otro') {
+                cedulasParaValidar.push({
+                    id: 'representanteCedula',
+                    nacionalidadId: 'representanteNacionalidad',
+                    nombre: 'Representante Legal'
+                });
+            }
+
+            cedulasParaValidar.forEach(persona => {
+                const cedula = document.getElementById(persona.id)?.value;
+                const nacionalidad = document.getElementById(persona.nacionalidadId)?.value;
+
+                if (cedula && nacionalidad) {
+                    const cedulaCompleta = nacionalidad + '-' + cedula;
+
+                    if (cedulas[cedulaCompleta]) {
+                        errores.push(`La cédula ${cedulaCompleta} está duplicada (${cedulas[cedulaCompleta]} y ${persona.nombre})`);
+                        document.getElementById(persona.id).classList.add('is-invalid');
+                    } else {
+                        cedulas[cedulaCompleta] = persona.nombre;
+                    }
+                }
+            });
+
             // Mostrar errores si existen
             if (errores.length > 0) {
                 event.preventDefault();
@@ -815,6 +847,82 @@ document.addEventListener("DOMContentLoaded", function() {
                     html: '<ul style="text-align: left;">' + errores.map(e => '<li>' + e + '</li>').join('') + '</ul>',
                     icon: "warning",
                     confirmButtonColor: "#c90000"
+                });
+                return;
+            }
+
+            // Validar acceso de representantes
+            const cedulasRepresentantes = [];
+
+            if (document.getElementById('padreCedula').value && document.getElementById('padreNacionalidad').value) {
+                cedulasRepresentantes.push({
+                    cedula: document.getElementById('padreCedula').value,
+                    nacionalidad: document.getElementById('padreNacionalidad').value,
+                    nombre: 'Padre'
+                });
+            }
+
+            if (document.getElementById('madreCedula').value && document.getElementById('madreNacionalidad').value) {
+                cedulasRepresentantes.push({
+                    cedula: document.getElementById('madreCedula').value,
+                    nacionalidad: document.getElementById('madreNacionalidad').value,
+                    nombre: 'Madre'
+                });
+            }
+
+            if (tipoRepSeleccionado && tipoRepSeleccionado.value === 'otro' &&
+                document.getElementById('representanteCedula').value &&
+                document.getElementById('representanteNacionalidad').value) {
+                cedulasRepresentantes.push({
+                    cedula: document.getElementById('representanteCedula').value,
+                    nacionalidad: document.getElementById('representanteNacionalidad').value,
+                    nombre: 'Representante Legal'
+                });
+            }
+
+            // Si hay representantes para validar
+            if (cedulasRepresentantes.length > 0) {
+                event.preventDefault();
+
+                fetch('../../controladores/PersonaController.php?action=verificarAccesoRepresentantes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(cedulasRepresentantes)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.representantesConAcceso.length > 0) {
+                        const nombres = data.representantesConAcceso.map(r => r.nombre).join(', ');
+                        const plural = data.representantesConAcceso.length > 1;
+
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Acceso al sistema detectado',
+                            html: `
+                                <div style="text-align: left;">
+                                    <p><strong>${plural ? 'Los representantes' : 'El representante'} ${nombres} ${plural ? 'tienen' : 'tiene'} acceso al sistema.</strong></p>
+                                    <p>Por favor, ${plural ? 'que inicien' : 'que inicie'} sesión en ${plural ? 'sus cuentas' : 'su cuenta'} y realicen la solicitud de inscripción desde allí.</p>
+                                    <p class="text-muted small mt-3">
+                                        <i class="fas fa-info-circle"></i>
+                                        ${plural ? 'Ellos pueden' : 'Puede'} acceder al sistema desde la página de inicio y gestionar la inscripción directamente.
+                                    </p>
+                                </div>
+                            `,
+                            confirmButtonColor: '#c90000',
+                            confirmButtonText: 'Entendido',
+                            showCloseButton: true
+                        });
+                    } else {
+                        // Si no hay representantes con acceso, enviar el formulario
+                        event.target.submit();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar acceso:', error);
+                    // Si hay error, permitir envío
+                    event.target.submit();
                 });
             }
         });

@@ -56,8 +56,8 @@
                 // Obtener todos los sexos
                 $sexos = $modeloSexo->obtenerTodos();
 
-                // Obtener todos las nacionalidades
-                $nacionalidades = $modeloNacionalidad->obtenerTodos();
+                // Obtener todos las nacionalidades con nombres largos
+                $nacionalidades = $modeloNacionalidad->obtenerConNombresLargos();
 
                 // Obtener todos los urbanismos
                 $urbanismos = $modeloUrbanismo->obtenerTodos();
@@ -291,7 +291,7 @@
                                     font-size: 0.9rem;
                                 ">
                                     <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                        <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                        <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
                                     <?php endforeach; ?>
                                 </select>
 
@@ -303,7 +303,7 @@
                                     name="documentoEstudiante"
                                     placeholder="Ej: 12345678"
                                     minlength="7" 
-                                    maxlength="8" 
+                                    maxlength="11" 
                                     pattern="[0-9]+" 
                                     onkeypress="return onlyNumber(event)"
                                     required
@@ -387,7 +387,7 @@
                                             <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
                                                 <option value="">Seleccione una nacionalidad</option>
                                                 <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nacionalidad'] ?></option>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>

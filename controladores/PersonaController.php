@@ -3,7 +3,7 @@
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
 // Acciones que NO requieren sesión
-$accionesPublicas = ['verificarCedula'];
+$accionesPublicas = ['verificarCedula', 'verificarAccesoRepresentantes', 'verificarCedulaRepresentante'];
 
 if (!in_array($action, $accionesPublicas)) {
     session_start();
@@ -34,6 +34,12 @@ switch ($action) {
         break;
     case 'verificarCedula':
         verificarCedula();
+        break;
+    case 'verificarAccesoRepresentantes':
+        verificarAccesoRepresentantes();
+        break;
+    case 'verificarCedulaRepresentante':
+        verificarCedulaRepresentante();
         break;
     default:
         header("Location: ../vistas/configuracion/usuario/usuario.php");
@@ -102,6 +108,155 @@ function verificarCedula() {
         "existe" => false
     ]);
 }
+    exit();
+}
+
+function verificarAccesoRepresentantes() {
+    header('Content-Type: application/json');
+
+    try {
+        // Verificar método
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Método no permitido');
+        }
+
+        // Obtener las cédulas del POST
+        $cedulas = json_decode(file_get_contents('php://input'), true);
+
+        if (!is_array($cedulas) || empty($cedulas)) {
+            echo json_encode(['success' => true, 'representantesConAcceso' => []]);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        $representantesConAcceso = [];
+
+        foreach ($cedulas as $item) {
+            $cedula = $item['cedula'] ?? '';
+            $nacionalidad = $item['nacionalidad'] ?? '';
+            $nombre = $item['nombre'] ?? '';
+
+            if (empty($cedula) || empty($nacionalidad)) {
+                continue;
+            }
+
+            // Consultar si la persona existe y tiene IdEstadoAcceso = 1
+            $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.IdEstadoAcceso
+                    FROM persona p
+                    WHERE p.cedula = :cedula
+                    AND p.IdNacionalidad = :nacionalidad
+                    AND p.IdEstadoAcceso = 1";
+
+            $stmt = $conexion->prepare($sql);
+            $stmt->bindParam(':cedula', $cedula);
+            $stmt->bindParam(':nacionalidad', $nacionalidad, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+                $representantesConAcceso[] = [
+                    'cedula' => $cedula,
+                    'nacionalidad' => $nacionalidad,
+                    'nombre' => $nombre,
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido']
+                ];
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'representantesConAcceso' => $representantesConAcceso
+        ]);
+
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
+/**
+ * Verifica si una cédula de representante ya existe en el sistema
+ * Retorna si existe, si tiene usuario y contraseña, y datos básicos de la persona
+ */
+function verificarCedulaRepresentante() {
+    header('Content-Type: application/json');
+
+    try {
+        // Verificar método
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Método no permitido');
+        }
+
+        // Obtener los datos del POST
+        $data = json_decode(file_get_contents('php://input'), true);
+        $cedula = $data['cedula'] ?? '';
+        $nacionalidad = $data['nacionalidad'] ?? '';
+
+        if (empty($cedula) || empty($nacionalidad)) {
+            echo json_encode([
+                'existe' => false,
+                'tieneAcceso' => false
+            ]);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Consultar si la persona existe y verificar si tiene usuario y contraseña
+        $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, p.IdNacionalidad,
+                       n.nacionalidad,
+                       p.usuario, p.password,
+                       CASE
+                           WHEN p.usuario IS NOT NULL AND p.usuario != ''
+                                AND p.password IS NOT NULL AND p.password != ''
+                           THEN 1
+                           ELSE 0
+                       END AS tiene_credenciales
+                FROM persona p
+                INNER JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                WHERE p.cedula = :cedula
+                AND p.IdNacionalidad = :nacionalidad";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':nacionalidad', $nacionalidad, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'existe' => true,
+                'tieneAcceso' => (bool)$persona['tiene_credenciales'],
+                'persona' => [
+                    'nombre' => $persona['nombre'],
+                    'apellido' => $persona['apellido'],
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido'],
+                    'nacionalidad' => $persona['nacionalidad'],
+                    'cedula' => $persona['cedula']
+                ]
+            ]);
+        } else {
+            echo json_encode([
+                'existe' => false,
+                'tieneAcceso' => false
+            ]);
+        }
+
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'existe' => false,
+            'tieneAcceso' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
     exit();
 }
 

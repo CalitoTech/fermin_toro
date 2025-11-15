@@ -190,11 +190,13 @@ INSERT INTO `urbanismo` (`IdUrbanismo`, `urbanismo`) VALUES
 
 CREATE TABLE nacionalidad (
     IdNacionalidad int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    nacionalidad varchar(50) NOT NULL
+    nacionalidad varchar(50) NOT NULL,
+    nombre_largo varchar(100) NULL
 );
 
-INSERT INTO `nacionalidad` (`IdNacionalidad`, `nacionalidad`) VALUES
-(1, 'V'), (2, 'E');
+INSERT INTO `nacionalidad` (`IdNacionalidad`, `nacionalidad`, `nombre_largo`) VALUES
+(1, 'V', 'Venezolano'),
+(2, 'E', 'Extranjero');
 
 CREATE TABLE tipo_status (
     IdTipo_Status int NOT NULL AUTO_INCREMENT PRIMARY KEY,
