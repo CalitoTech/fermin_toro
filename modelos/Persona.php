@@ -67,7 +67,7 @@ class Persona {
         ) VALUES (
             :IdNacionalidad, :cedula, :nombre, :apellido, :fecha_nacimiento, :lugar_nacimiento,
             :correo, :direccion,
-            :IdSexo, :IdUrbanismo, :IdEstadoAcceso, :IdEstadoInstitucional
+            :IdSexo, :IdUrbanismo, :IdTipoTrabajador, :IdEstadoAcceso, :IdEstadoInstitucional
         )";
 
         $stmt = $this->conn->prepare($query);

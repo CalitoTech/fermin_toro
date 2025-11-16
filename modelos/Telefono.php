@@ -26,7 +26,15 @@ class Telefono {
         $this->IdPersona = (int)$this->IdPersona;
         try {
             // 1) Verificar si el número ya existe en la tabla
-            $checkSql = "SELECT IdTelefono, IdPersona FROM telefono WHERE numero_telefono = :numero LIMIT 1";
+            $checkSql = "SELECT t.IdTelefono, t.IdPersona, t.IdTipo_Telefono, t.numero_telefono,
+                                p.nombre, p.apellido, p.cedula, n.nacionalidad,
+                                tt.tipo_telefono, pref.codigo_prefijo
+                         FROM telefono t
+                         INNER JOIN persona p ON t.IdPersona = p.IdPersona
+                         LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                         LEFT JOIN tipo_telefono tt ON t.IdTipo_Telefono = tt.IdTipo_Telefono
+                         LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
+                         WHERE t.numero_telefono = :numero LIMIT 1";
             $checkStmt = $this->conn->prepare($checkSql);
             $checkStmt->bindParam(':numero', $this->numero_telefono);
             $checkStmt->execute();
@@ -38,8 +46,16 @@ class Telefono {
                     return (int)$found['IdTelefono'];
                 }
 
-                // Si ya existe para otra persona: error (debe hacer rollback en el controlador)
-                throw new Exception('El número de teléfono ya está registrado para otra persona');
+                // Si ya existe para otra persona: error detallado
+                $nombreCompleto = trim($found['nombre'] . ' ' . $found['apellido']);
+                $cedulaCompleta = ($found['nacionalidad'] ?? 'V') . '-' . $found['cedula'];
+                $tipoTelefono = $found['tipo_telefono'] ?? 'Teléfono';
+                $numeroCompleto = ($found['codigo_prefijo'] ?? '') . ($found['numero_telefono'] ?? $this->numero_telefono);
+
+                throw new Exception(
+                    "El número de {$tipoTelefono} ({$numeroCompleto}) ya está registrado para {$nombreCompleto} (Cédula: {$cedulaCompleta}). " .
+                    "Por favor, verifique el número ingresado o contacte al personal administrativo si cree que esto es un error."
+                );
             }
 
             // 2) Insertar nuevo teléfono

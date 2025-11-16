@@ -26,6 +26,8 @@ require_once __DIR__ . '/../../../modelos/Urbanismo.php';
 require_once __DIR__ . '/../../../modelos/Parentesco.php';
 require_once __DIR__ . '/../../../modelos/Status.php';
 require_once __DIR__ . '/../../../modelos/TipoInscripcion.php';
+require_once __DIR__ . '/../../../modelos/TipoTrabajador.php';
+require_once __DIR__ . '/../../../modelos/Plantel.php';
 
 // Instancias de los modelos
 $modeloNacionalidad = new Nacionalidad($conexion);
@@ -37,6 +39,8 @@ $modeloUrbanismo = new Urbanismo($conexion);
 $modeloParentesco = new Parentesco($conexion);
 $statusModel = new Status($conexion);
 $tipoInscripcionModel = new TipoInscripcion($conexion);
+$modeloTipoTrabajador = new TipoTrabajador($conexion);
+$modeloPlantel = new Plantel($conexion);
 
 // Obtener datos sin filtro
 $nacionalidades = $modeloNacionalidad->obtenerConNombresLargos();
@@ -46,6 +50,8 @@ $urbanismos = $modeloUrbanismo->obtenerTodos();
 $parentescos = $modeloParentesco->obtenerTodos();
 $listaStatus = $statusModel->obtenerStatusInscripcion();
 $tiposInscripcion = $tipoInscripcionModel->obtenerTodos();
+$tiposTrabajador = $modeloTipoTrabajador->obtenerTodos();
+$planteles = $modeloPlantel->obtenerTodos();
 ?>
 
 <head>
@@ -157,17 +163,17 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                     <div class="col-md-6">
                         <div class="form-group required-field">
                             <label for="estudianteApellidos">Apellidos</label>
-                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos" 
+                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40"
-                                   onkeypress="return onlyText(event)" oninput="formatearTexto2()" required>
+                                   onkeypress="return onlyText(event)" oninput="formatearTexto2()" placeholder="Ej: Pérez González" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group required-field">
                             <label for="estudianteNombres">Nombres</label>
-                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres" 
+                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
                                    pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40"
-                                   onkeypress="return onlyText(event)" oninput="formatearTexto1()" required>
+                                   onkeypress="return onlyText(event)" oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
                         </div>
                     </div>
                 </div>
@@ -188,7 +194,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                         <div class="form-group required-field">
                             <label for="estudianteCedula">Cédula</label>
                             <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
-                                   minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)" required>
+                                   minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)" placeholder="Ej: 12345678" required>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -215,7 +221,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                         <div class="form-group required-field">
                             <label for="estudianteLugarNacimiento">Lugar de Nacimiento</label>
                             <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento"
-                                   minlength="3" maxlength="40" oninput="formatearTexto1()" required>
+                                   minlength="3" maxlength="40" oninput="formatearTexto1()" placeholder="Ej: Araure, Portuguesa" required>
                         </div>
                     </div>
                     <div class="col-md-6" id="estudianteTelefonoContainer">
@@ -236,7 +242,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
 
                                 <!-- Phone number input -->
                                 <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono"
-                                       minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
+                                       minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" placeholder="4121234567" required
                                        style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
 
                                 <!-- Phone icon -->
@@ -294,7 +300,31 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
 
                 <div class="form-group required-field">
                     <label for="estudianteCorreo">Correo Electrónico</label>
-                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" minlength="10" maxlength="50" required>
+                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" minlength="10" maxlength="50" placeholder="Ej: estudiante@correo.com" required>
+                </div>
+
+                <div class="form-group required-field">
+                    <label for="estudiantePlantel">Plantel donde cursó el último año escolar</label>
+                    <div class="position-relative">
+                        <input type="text" class="form-control buscador-input" id="estudiantePlantel_input" autocomplete="off" placeholder="Buscar o escribir nuevo plantel...">
+                        <input type="hidden" id="estudiantePlantel" name="estudiantePlantel" required>
+                        <input type="hidden" id="estudiantePlantel_nombre" name="estudiantePlantel_nombre">
+                        <div id="estudiantePlantel_resultados" class="autocomplete-results d-none"></div>
+                    </div>
+                    <small class="form-text text-muted">
+                        <i class="fas fa-info-circle"></i> Busque o escriba el nombre del plantel educativo
+                    </small>
+                    <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        new BuscadorGenerico(
+                            "estudiantePlantel_input",
+                            "estudiantePlantel_resultados",
+                            "plantel",
+                            "estudiantePlantel",
+                            "estudiantePlantel_nombre"
+                        );
+                    });
+                    </script>
                 </div>
 
                 <div class="form-group">
@@ -480,6 +510,26 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
+                    </div>
+
+                    <!-- Campo Tipo de Trabajador -->
+                    <div class="form-group required-field mt-3">
+                        <label>Tipo de Trabajador</label>
+                        <div class="row">
+                            <?php foreach ($tiposTrabajador as $tipoTrab): ?>
+                                <div class="col-md-6">
+                                    <div class="custom-control custom-radio">
+                                        <input type="radio" id="<?= $tipo ?>TipoTrabajador_<?= $tipoTrab['IdTipoTrabajador'] ?>"
+                                               name="<?= $tipo ?>TipoTrabajador"
+                                               class="custom-control-input"
+                                               value="<?= $tipoTrab['IdTipoTrabajador'] ?>" required>
+                                        <label class="custom-control-label" for="<?= $tipo ?>TipoTrabajador_<?= $tipoTrab['IdTipoTrabajador'] ?>">
+                                            <?= htmlspecialchars($tipoTrab['tipo_trabajador']) ?>
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
                 </div>
             </div>

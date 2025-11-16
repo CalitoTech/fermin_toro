@@ -1,4 +1,7 @@
 <?php
+// Iniciar buffer de salida para evitar que warnings/notices rompan el JSON
+ob_start();
+
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/Persona.php';
 require_once __DIR__ . '/../modelos/Discapacidad.php';
@@ -11,6 +14,10 @@ require_once __DIR__ . '/../modelos/CursoSeccion.php';
 require_once __DIR__ . '/../modelos/TipoDiscapacidad.php';
 
 date_default_timezone_set('America/Caracas');
+
+// Limpiar buffer y establecer header JSON
+ob_clean();
+header('Content-Type: application/json; charset=utf-8');
 
 // Crear conexión
 $database = new Database();
@@ -145,27 +152,29 @@ function obtenerOCrearPrefijo($conexion, $idPrefijo, $jsonPrefijo = '') {
 }
 
 /**
- * Genera una cédula para el estudiante basada en la cédula de la madre y el año de nacimiento.
- * Formato: <prefijo><2 dígitos año><cedulaMadre>
- * Prefijo comienza en 1 y aumenta hasta encontrar una cédula no existente.
- * Retorna la cédula como string (solo números) o false si no pudo generarla.
+ * Genera una cédula escolar para el estudiante basada en la cédula de la madre y el año de nacimiento.
+ * Formato: <orden><año><cedulaMadre> (todo junto, sin separadores)
+ * Donde:
+ *   - orden: número del hijo (1, 2, 3...) según hermanos nacidos en el mismo año
+ *   - año: últimos 2 dígitos del año de nacimiento (ej: 15 para 2015)
+ *   - cedulaMadre: cédula completa de la madre
+ * Ejemplo: 1157424268 = primer hijo nacido en 2015 de madre con cédula 7424268
+ * Retorna la cédula como string o false si no pudo generarla.
+ * IMPORTANTE: El campo cedula debe ser VARCHAR en la BD para evitar overflow de INT.
  */
 function generarCedulaEscolar($conexion, $cedulaMadre, $anioNacimiento, $idNacionalidad = null) {
     // Limpiar la cédula de cualquier carácter no numérico
     $cedulaMadreClean = preg_replace('/[^0-9]/', '', $cedulaMadre);
     if (empty($cedulaMadreClean) || empty($anioNacimiento)) return false;
 
-    // Si la cédula es menor a 10 millones (tiene menos de 8 dígitos), anteponer un 0
-    if ((int)$cedulaMadreClean < 10000000) {
-        $cedulaMadreClean = str_pad($cedulaMadreClean, 8, '0', STR_PAD_LEFT);
-    }
-
+    // Obtener últimos 2 dígitos del año
     $dosDigitos = substr($anioNacimiento, -2);
 
-    // Intentar prefijos del 1 al 99
-    for ($pref = 1; $pref <= 99; $pref++) {
-        $prefStr = (string)$pref;
-        $cand = $prefStr . $dosDigitos . $cedulaMadreClean;
+    // Intentar prefijos del 1 al 99 (orden del hijo)
+    for ($orden = 1; $orden <= 99; $orden++) {
+        // Formato: ordenañocedulaMadre (ej: 1157424268 = primer hijo del 2015 de madre con cédula 7424268)
+        // Guardamos como STRING para evitar overflow de INT
+        $cand = (string)$orden . $dosDigitos . $cedulaMadreClean;
 
         // Verificar existencia en persona (mismo IdNacionalidad si se dio)
         if ($idNacionalidad) {
@@ -359,7 +368,6 @@ $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
 // Si no es una acción específica, usar el procesamiento normal JSON
 if (empty($action)) {
-    header('Content-Type: application/json');
     procesarInscripcion($conexion);
 } else {
     // Para acciones específicas, manejar según el método
@@ -380,7 +388,6 @@ if (empty($action)) {
             hayCupo($conexion);
             break;
         case 'verificar':
-            header('Content-Type: application/json');
             $anio = intval($_GET['anio'] ?? 0);
             $cedula = trim($_GET['cedula'] ?? '');
             $nacionalidad = trim($_GET['nacionalidad'] ?? '');
@@ -389,7 +396,6 @@ if (empty($action)) {
             echo json_encode(['existe' => $existe]);
             exit;
         default:
-            header('Content-Type: application/json');
             echo json_encode(['success' => false, 'message' => 'Acción no válida']);
             exit();
     }
@@ -445,6 +451,7 @@ function procesarInscripcion($conexion) {
                 'padreCedula' => 'Cédula del padre',
                 'padreNacionalidad' => 'Nacionalidad del padre',
                 'padreOcupacion' => 'Ocupación del padre',
+                'padreTipoTrabajador' => 'Tipo de trabajador del padre',
                 'padreUrbanismo' => 'Urbanismo/Sector del padre',
                 'padreDireccion' => 'Dirección del padre',
                 'padreTelefonoHabitacion' => 'Teléfono de habitación del padre',
@@ -466,6 +473,7 @@ function procesarInscripcion($conexion) {
                 'madreCedula' => 'Cédula de la madre',
                 'madreNacionalidad' => 'Nacionalidad de la madre',
                 'madreOcupacion' => 'Ocupación de la madre',
+                'madreTipoTrabajador' => 'Tipo de trabajador de la madre',
                 'madreUrbanismo' => 'Urbanismo/Sector de la madre',
                 'madreDireccion' => 'Dirección de la madre',
                 'madreTelefonoHabitacion' => 'Teléfono de habitación de la madre',
@@ -492,6 +500,7 @@ function procesarInscripcion($conexion) {
                     'representanteNacionalidad' => 'Nacionalidad del representante legal',
                     'representanteParentesco' => 'Parentesco del representante legal',
                     'representanteOcupacion' => 'Ocupación del representante legal',
+                    'representanteTipoTrabajador' => 'Tipo de trabajador del representante legal',
                     'representanteUrbanismo' => 'Urbanismo/Sector del representante legal',
                     'representanteDireccion' => 'Dirección del representante legal',
                     'representanteTelefonoHabitacion' => 'Teléfono de habitación del representante legal',
@@ -1088,12 +1097,29 @@ function procesarInscripcion($conexion) {
                 $now = new DateTime('now', new DateTimeZone('America/Caracas')); // Ajusta la zona horaria
                 $inscripcion->fecha_inscripcion = $now->format('Y-m-d H:i:s');
 
-                // Para el primer curso, asignar automáticamente "U.E.C Fermín Toro"
+                // Para el primer curso, buscar el ID del plantel "U.E.C Fermín Toro"
                 if ($esPrimerCurso) {
-                    $inscripcion->ultimo_plantel = 'U.E.C "Fermín Toro"';
+                    // Buscar el ID del plantel Fermín Toro
+                    $stmtPlantel = $conexion->prepare("SELECT IdPlantel FROM plantel WHERE plantel LIKE '%Fermín Toro%' LIMIT 1");
+                    $stmtPlantel->execute();
+                    $plantelFerminToro = $stmtPlantel->fetch(PDO::FETCH_ASSOC);
+
+                    if ($plantelFerminToro) {
+                        $inscripcion->ultimo_plantel = $plantelFerminToro['IdPlantel'];
+                    } else {
+                        // Si no existe, crearlo
+                        require_once __DIR__ . '/../modelos/Plantel.php';
+                        $modeloPlantel = new Plantel($conexion);
+                        $modeloPlantel->plantel = 'U.E.C "Fermín Toro"';
+                        if ($modeloPlantel->insertar()) {
+                            $inscripcion->ultimo_plantel = $modeloPlantel->IdPlantel;
+                        } else {
+                            $inscripcion->ultimo_plantel = null;
+                        }
+                    }
                 } else {
-                    // Usar el nombre del plantel (estudiantePlantel_nombre) que contiene el texto
-                    $inscripcion->ultimo_plantel = $_POST['estudiantePlantel_nombre'] ?? '';
+                    // Usar el ID del plantel seleccionado (estudiantePlantel contiene el ID)
+                    $inscripcion->ultimo_plantel = !empty($_POST['estudiantePlantel']) ? $_POST['estudiantePlantel'] : null;
                 }
 
                 $inscripcion->nro_hermanos = $nroHermanos; // Usar el valor calculado
@@ -1347,10 +1373,6 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
 
 
 function toggleRequisito($conexion) {
-    // Forzar salida en JSON
-    header('Content-Type: application/json; charset=utf-8');
-    ob_clean();
-
     $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
     $idRequisito   = intval($_POST['idRequisito'] ?? 0);
     $cumplido      = intval($_POST['cumplido'] ?? 0);
@@ -1415,8 +1437,6 @@ function toggleRequisito($conexion) {
 
 
 function actualizarMultiplesRequisitos($conexion) {
-    header('Content-Type: application/json');
-
     $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
     $requisitos = $_POST['requisitos'] ?? [];
 
@@ -1469,8 +1489,6 @@ function actualizarMultiplesRequisitos($conexion) {
 }
 
 function cambiarSeccion($conexion) {
-    header('Content-Type: application/json');
-
     $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
     $nuevaSeccion = intval($_POST['nuevaSeccion'] ?? 0);
 
@@ -1522,7 +1540,6 @@ function cambiarSeccion($conexion) {
 }
 
 function hayCupo($conexion) {
-    header('Content-Type: application/json');
     $idCurso = intval($_POST['idCurso'] ?? 0);
     if ($idCurso <= 0) {
         echo json_encode(['success' => false, 'message' => 'Curso inválido']); exit();

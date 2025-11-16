@@ -267,7 +267,7 @@ INSERT INTO `parentesco` (`IdParentesco`, `parentesco`) VALUES
 CREATE TABLE persona (
     IdPersona int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdNacionalidad int NULL,
-    cedula int NULL,
+    cedula varchar(11) NULL,
     nombre varchar(50) NOT NULL,
     apellido varchar(50) NOT NULL,
     fecha_nacimiento date NULL,
@@ -364,7 +364,7 @@ CREATE TABLE inscripcion (
     codigo_inscripcion varchar(20) NOT NULL,
     IdEstudiante int NOT NULL,
     fecha_inscripcion datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    ultimo_plantel varchar(100) DEFAULT NULL,
+    ultimo_plantel int DEFAULT NULL,
     nro_hermanos int DEFAULT 0,
     responsable_inscripcion int NOT NULL,
     IdFecha_Escolar int NOT NULL,
@@ -378,7 +378,8 @@ CREATE TABLE inscripcion (
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
     FOREIGN KEY (modificado_por) REFERENCES persona(IdPersona),
-    FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante)
+    FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante),
+    FOREIGN KEY (ultimo_plantel) REFERENCES plantel(IdPlantel)
 );
 
 CREATE TABLE inscripcion_requisito (

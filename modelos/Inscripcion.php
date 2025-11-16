@@ -46,7 +46,14 @@ class Inscripcion {
         $stmt->bindParam(":codigo_inscripcion", $this->codigo_inscripcion);
         $stmt->bindParam(":IdEstudiante", $this->IdEstudiante, PDO::PARAM_INT);
         $stmt->bindParam(":fecha_inscripcion", $this->fecha_inscripcion);
-        $stmt->bindParam(":ultimo_plantel", $this->ultimo_plantel);
+
+        // ultimo_plantel ahora es INT (ID del plantel), pero puede ser NULL
+        if ($this->ultimo_plantel === null || $this->ultimo_plantel === '') {
+            $stmt->bindValue(":ultimo_plantel", null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindParam(":ultimo_plantel", $this->ultimo_plantel, PDO::PARAM_INT);
+        }
+
         $stmt->bindParam(":nro_hermanos", $this->nro_hermanos, PDO::PARAM_INT);
         $stmt->bindParam(":responsable_inscripcion", $this->responsable_inscripcion, PDO::PARAM_INT);
         $stmt->bindParam(":IdFecha_Escolar", $this->IdFecha_Escolar, PDO::PARAM_INT);
@@ -109,17 +116,18 @@ class Inscripcion {
     }
 
     public function obtenerDetallePorId($idInscripcion) {
-        $query = "SELECT 
+        $query = "SELECT
             -- Datos de la inscripción
             i.IdInscripcion,
             i.codigo_inscripcion,
             i.fecha_inscripcion,
             i.ultimo_plantel,
+            pl.plantel AS plantel_nombre,
             i.nro_hermanos,
             i.modificado_por,
             i.ultima_modificacion,
             i.IdCurso_Seccion,
-            c.curso, 
+            c.curso,
             c.IdCurso,
             s.seccion,
             n.nivel,
@@ -157,6 +165,7 @@ class Inscripcion {
             parent.parentesco AS responsable_parentesco,
             rp.ocupacion AS responsable_ocupacion,
             rp.lugar_trabajo AS responsable_lugar_trabajo,
+            tt_r.tipo_trabajador AS responsable_tipo_trabajador,
             GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref_r.codigo_prefijo, ''), tel_r.numero_telefono) ORDER BY tel_r.IdTelefono SEPARATOR '||') AS responsable_numeros,
             GROUP_CONCAT(DISTINCT tipo_tel_r.tipo_telefono ORDER BY tel_r.IdTelefono SEPARATOR '||') AS responsable_tipos,
 
@@ -172,6 +181,7 @@ class Inscripcion {
             nac_p.nacionalidad AS padre_nacionalidad,
             rp_padre.ocupacion AS padre_ocupacion,
             rp_padre.lugar_trabajo AS padre_lugar_trabajo,
+            tt_p.tipo_trabajador AS padre_tipo_trabajador,
             GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref_p.codigo_prefijo, ''), tel_p.numero_telefono) ORDER BY tel_p.IdTelefono SEPARATOR '||') AS padre_numeros,
             GROUP_CONCAT(DISTINCT tipo_tel_p.tipo_telefono ORDER BY tel_p.IdTelefono SEPARATOR '||') AS padre_tipos,
 
@@ -187,6 +197,7 @@ class Inscripcion {
             nac_m.nacionalidad AS madre_nacionalidad,
             rp_madre.ocupacion AS madre_ocupacion,
             rp_madre.lugar_trabajo AS madre_lugar_trabajo,
+            tt_m.tipo_trabajador AS madre_tipo_trabajador,
             GROUP_CONCAT(DISTINCT CONCAT(COALESCE(pref_m.codigo_prefijo, ''), tel_m.numero_telefono) ORDER BY tel_m.IdTelefono SEPARATOR '||') AS madre_numeros,
             GROUP_CONCAT(DISTINCT tipo_tel_m.tipo_telefono ORDER BY tel_m.IdTelefono SEPARATOR '||') AS madre_tipos,
 
@@ -211,6 +222,7 @@ class Inscripcion {
         INNER JOIN nivel n ON c.IdNivel = n.IdNivel
         INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
         INNER JOIN status st ON i.IdStatus = st.IdStatus
+        LEFT JOIN plantel pl ON i.ultimo_plantel = pl.IdPlantel
 
         -- Representante Legal
         INNER JOIN representante rp ON i.responsable_inscripcion = rp.IdRepresentante
@@ -219,6 +231,7 @@ class Inscripcion {
         LEFT JOIN urbanismo urb_r ON resp.IdUrbanismo = urb_r.IdUrbanismo
         LEFT JOIN nacionalidad nac_r ON resp.IdNacionalidad = nac_r.IdNacionalidad
         LEFT JOIN parentesco parent ON rp.IdParentesco = parent.IdParentesco
+        LEFT JOIN tipo_trabajador tt_r ON resp.IdTipoTrabajador = tt_r.IdTipoTrabajador
         LEFT JOIN telefono tel_r ON resp.IdPersona = tel_r.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_r ON tel_r.IdTipo_Telefono = tipo_tel_r.IdTipo_Telefono
         LEFT JOIN prefijo pref_r ON tel_r.IdPrefijo = pref_r.IdPrefijo
@@ -229,6 +242,7 @@ class Inscripcion {
         LEFT JOIN sexo sexo_p ON padre.IdSexo = sexo_p.IdSexo
         LEFT JOIN urbanismo urb_p ON padre.IdUrbanismo = urb_p.IdUrbanismo
         LEFT JOIN nacionalidad nac_p ON padre.IdNacionalidad = nac_p.IdNacionalidad
+        LEFT JOIN tipo_trabajador tt_p ON padre.IdTipoTrabajador = tt_p.IdTipoTrabajador
         LEFT JOIN telefono tel_p ON padre.IdPersona = tel_p.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_p ON tel_p.IdTipo_Telefono = tipo_tel_p.IdTipo_Telefono
         LEFT JOIN prefijo pref_p ON tel_p.IdPrefijo = pref_p.IdPrefijo
@@ -239,6 +253,7 @@ class Inscripcion {
         LEFT JOIN sexo sexo_m ON madre.IdSexo = sexo_m.IdSexo
         LEFT JOIN urbanismo urb_m ON madre.IdUrbanismo = urb_m.IdUrbanismo
         LEFT JOIN nacionalidad nac_m ON madre.IdNacionalidad = nac_m.IdNacionalidad
+        LEFT JOIN tipo_trabajador tt_m ON madre.IdTipoTrabajador = tt_m.IdTipoTrabajador
         LEFT JOIN telefono tel_m ON madre.IdPersona = tel_m.IdPersona
         LEFT JOIN tipo_telefono tipo_tel_m ON tel_m.IdTipo_Telefono = tipo_tel_m.IdTipo_Telefono
         LEFT JOIN prefijo pref_m ON tel_m.IdPrefijo = pref_m.IdPrefijo
