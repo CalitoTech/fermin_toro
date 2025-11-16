@@ -198,6 +198,29 @@ INSERT INTO `nacionalidad` (`IdNacionalidad`, `nacionalidad`, `nombre_largo`) VA
 (1, 'V', 'Venezolano'),
 (2, 'E', 'Extranjero');
 
+CREATE TABLE tipo_trabajador (
+    IdTipoTrabajador int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    tipo_trabajador varchar(50) NOT NULL
+);
+
+INSERT INTO `tipo_trabajador` (`IdTipoTrabajador`, `tipo_trabajador`) VALUES
+(1, 'Sin actividad laboral'),
+(2, 'Independiente'),
+(3, 'Dependiente'),
+(4, 'Empresario');
+
+CREATE TABLE plantel (
+    IdPlantel int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    plantel varchar(100) NOT NULL
+);
+
+INSERT INTO `plantel` (`IdPlantel`, `plantel`) VALUES
+(1, 'U.E.C "Fermín Toro"'),
+(2, 'U.E. Simón Bolívar'),
+(3, 'U.E. José Antonio Páez'),
+(4, 'Colegio San Francisco de Asís'),
+(5, 'U.E. Andrés Bello');
+
 CREATE TABLE tipo_status (
     IdTipo_Status int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     tipo_status varchar(50) NOT NULL
@@ -257,10 +280,12 @@ CREATE TABLE persona (
     direccion varchar(555) NULL,
     IdSexo int NULL,
     IdUrbanismo int NULL,
+    IdTipoTrabajador int NULL,
     IdEstadoAcceso int NOT NULL,
     IdEstadoInstitucional int NOT NULL,
     FOREIGN KEY (IdNacionalidad) REFERENCES nacionalidad(IdNacionalidad),
     FOREIGN KEY (IdUrbanismo) REFERENCES urbanismo(IdUrbanismo),
+    FOREIGN KEY (IdTipoTrabajador) REFERENCES tipo_trabajador(IdTipoTrabajador),
     FOREIGN KEY (IdEstadoAcceso) REFERENCES status(IdStatus),
     FOREIGN KEY (IdEstadoInstitucional) REFERENCES status(IdStatus),
     FOREIGN KEY (IdSexo) REFERENCES sexo(IdSexo)

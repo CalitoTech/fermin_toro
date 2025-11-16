@@ -17,6 +17,7 @@ class Persona {
     public $direccion;
     public $IdSexo;
     public $IdUrbanismo;
+    public $IdTipoTrabajador;
     public $IdEstadoAcceso;
     public $IdEstadoInstitucional;
     public $codigo_temporal;
@@ -62,7 +63,7 @@ class Persona {
         $query = "INSERT INTO persona (
             IdNacionalidad, cedula, nombre, apellido, fecha_nacimiento, lugar_nacimiento,
             correo, direccion,
-            IdSexo, IdUrbanismo, IdEstadoAcceso, IdEstadoInstitucional
+            IdSexo, IdUrbanismo, IdTipoTrabajador, IdEstadoAcceso, IdEstadoInstitucional
         ) VALUES (
             :IdNacionalidad, :cedula, :nombre, :apellido, :fecha_nacimiento, :lugar_nacimiento,
             :correo, :direccion,
@@ -82,6 +83,7 @@ class Persona {
         $this->direccion = $this->cleanValue($this->direccion);
         $this->IdSexo = $this->cleanValue($this->IdSexo);
         $this->IdUrbanismo = $this->cleanValue($this->IdUrbanismo);
+        $this->IdTipoTrabajador = $this->cleanValue($this->IdTipoTrabajador);
         $this->IdEstadoAcceso = $this->cleanValue($this->IdEstadoAcceso);
         $this->IdEstadoInstitucional = $this->cleanValue($this->IdEstadoInstitucional);
 
@@ -96,6 +98,7 @@ class Persona {
         $stmt->bindParam(":direccion", $this->direccion, is_null($this->direccion) ? PDO::PARAM_NULL : PDO::PARAM_STR);
         $stmt->bindParam(":IdSexo", $this->IdSexo, is_null($this->IdSexo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(":IdUrbanismo", $this->IdUrbanismo, is_null($this->IdUrbanismo) ? PDO::PARAM_NULL : PDO::PARAM_INT);
+        $stmt->bindParam(":IdTipoTrabajador", $this->IdTipoTrabajador, is_null($this->IdTipoTrabajador) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(":IdEstadoAcceso", $this->IdEstadoAcceso, is_null($this->IdEstadoAcceso) ? PDO::PARAM_NULL : PDO::PARAM_INT);
         $stmt->bindParam(":IdEstadoInstitucional", $this->IdEstadoInstitucional, is_null($this->IdEstadoInstitucional) ? PDO::PARAM_NULL : PDO::PARAM_INT);
 

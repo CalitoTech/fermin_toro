@@ -21,7 +21,7 @@ if ($limit < 1 || $limit > 50) {
 }
 
 // Validar tipo de búsqueda
-$tiposPermitidos = ['estudiante', 'urbanismo', 'parentesco', 'prefijo'];
+$tiposPermitidos = ['estudiante', 'urbanismo', 'parentesco', 'prefijo', 'plantel'];
 if (!in_array($tipo, $tiposPermitidos)) {
     echo json_encode(['error' => 'Tipo de búsqueda no válido']);
     exit;
@@ -43,6 +43,10 @@ switch ($tipo) {
 
     case 'prefijo':
         buscarPrefijos($conexion, $q, $limit);
+        break;
+
+    case 'plantel':
+        buscarPlanteles($conexion, $q, $limit);
         break;
 }
 
@@ -306,6 +310,70 @@ function buscarPrefijos($conexion, $q, $limit = 10) {
             'codigo_prefijo' => $codigoNuevo,
             'pais' => 'Nuevo prefijo',
             'max_digitos' => 10,
+            'nuevo' => true
+        ];
+    }
+
+    echo json_encode($resultados);
+}
+
+/**
+ * Buscar planteles con búsqueda simple pero efectiva
+ */
+function buscarPlanteles($conexion, $q, $limit = 10) {
+    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
+    if (empty(trim($q))) {
+        $stmt = $conexion->prepare("
+            SELECT IdPlantel, plantel
+            FROM plantel
+            ORDER BY plantel ASC
+            LIMIT :limit
+        ");
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return;
+    }
+
+    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
+    $stmt = $conexion->prepare("
+        SELECT IdPlantel, plantel,
+               CASE
+                   WHEN LOWER(plantel) = LOWER(:qExacto) THEN 1
+                   WHEN LOWER(plantel) LIKE LOWER(:qInicio) THEN 2
+                   WHEN LOWER(plantel) LIKE LOWER(:qContiene) THEN 3
+                   ELSE 4
+               END as prioridad
+        FROM plantel
+        WHERE LOWER(plantel) LIKE LOWER(:qBusqueda)
+        ORDER BY prioridad ASC, plantel ASC
+        LIMIT :limit
+    ");
+
+    $qExacto = trim($q);
+    $qInicio = trim($q) . '%';
+    $qContiene = '%' . trim($q) . '%';
+    $qBusqueda = '%' . trim($q) . '%';
+
+    $stmt->bindParam(':qExacto', $qExacto);
+    $stmt->bindParam(':qInicio', $qInicio);
+    $stmt->bindParam(':qContiene', $qContiene);
+    $stmt->bindParam(':qBusqueda', $qBusqueda);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Remover campo de prioridad
+    foreach ($resultados as &$resultado) {
+        unset($resultado['prioridad']);
+    }
+
+    // SIEMPRE mostrar la opción de crear nuevo al final
+    if (!empty(trim($q))) {
+        $resultados[] = [
+            'IdPlantel' => 'nuevo',
+            'plantel' => ucwords(strtolower(trim($q))),
             'nuevo' => true
         ];
     }

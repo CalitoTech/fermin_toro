@@ -405,14 +405,14 @@ function procesarInscripcion($conexion) {
 
             // === Validación de campos obligatorios ===
             $camposFaltantes = [];
-            // Para decidir si cedula/telefono del estudiante son obligatorios, necesitamos conocer
-            // el nivel del curso seleccionado (si es 'Inicial' los campos no serán obligatorios para el estudiante)
-            $nivelEsInicial = false;
-            $idNivelCurso = null;
-            if (!empty($_POST['idNivelSeleccionado'])) {
-                $idNivelCurso = (int)$_POST['idNivelSeleccionado'];
-                if ($idNivelCurso === 1) {
-                    $nivelEsInicial = true;
+            // Para decidir si cedula/telefono del estudiante son obligatorios, verificamos el IdCurso
+            // Solo el primer curso (IdCurso == 1) es nuevo ingreso sin antecedentes, el resto requiere cédula
+            $esPrimerCurso = false;
+            $idCurso = null;
+            if (!empty($_POST['IdCurso'])) {
+                $idCurso = (int)$_POST['IdCurso'];
+                if ($idCurso === 1) {
+                    $esPrimerCurso = true;
                 }
             }
 
@@ -425,10 +425,11 @@ function procesarInscripcion($conexion) {
                 'estudianteCorreo' => 'Correo electrónico del estudiante'
             ];
 
-            // Agregar cédula y teléfono solo si NO es nivel inicial
-            if (!$nivelEsInicial) {
+            // Agregar cédula, teléfono y plantel solo si NO es el primer curso
+            if (!$esPrimerCurso) {
                 $camposEstudiante['estudianteCedula'] = 'Cédula del estudiante';
                 $camposEstudiante['estudianteTelefono'] = 'Teléfono del estudiante';
+                $camposEstudiante['estudiantePlantel'] = 'Plantel donde cursó el último año escolar';
             }
 
             foreach ($camposEstudiante as $campo => $nombre) {
@@ -659,8 +660,8 @@ function procesarInscripcion($conexion) {
 
                     $idEstudiante = $personaEstudiante->guardar();
 
-                    // Si es nivel inicial y no se proporcionó cédula, generar una automáticamente usando la cédula de la madre
-                    if ($nivelEsInicial && empty($_POST['estudianteCedula'])) {
+                    // Si es el primer curso y no se proporcionó cédula, generar una automáticamente usando la cédula de la madre
+                    if ($esPrimerCurso && empty($_POST['estudianteCedula'])) {
                         // Necesitamos la cédula de la madre y la fecha de nacimiento del estudiante
                         $cedulaMadre = $_POST['madreCedula'] ?? null;
                         $anioNacimiento = null;
@@ -745,6 +746,7 @@ function procesarInscripcion($conexion) {
                         $personaPadre->correo = $_POST['padreCorreo'] ?? '';
                         $personaPadre->direccion = $_POST['padreDireccion'] ?? '';
                         $personaPadre->IdSexo = 1; // Masculino
+                        $personaPadre->IdTipoTrabajador = isset($_POST['padreTipoTrabajador']) ? (int)$_POST['padreTipoTrabajador'] : null;
                         $personaPadre->IdUrbanismo = obtenerOCrearUrbanismo(
                             $conexion,
                             $_POST['padreUrbanismo'] ?? null,
@@ -813,6 +815,7 @@ function procesarInscripcion($conexion) {
                         $personaMadre->correo = $_POST['madreCorreo'] ?? '';
                         $personaMadre->direccion = $_POST['madreDireccion'] ?? '';
                         $personaMadre->IdSexo = 2; // Femenino
+                        $personaMadre->IdTipoTrabajador = isset($_POST['madreTipoTrabajador']) ? (int)$_POST['madreTipoTrabajador'] : null;
                         $personaMadre->IdUrbanismo = obtenerOCrearUrbanismo(
                             $conexion,
                             $_POST['madreUrbanismo'] ?? null,
@@ -915,6 +918,7 @@ function procesarInscripcion($conexion) {
                         $personaRep->correo = $_POST['representanteCorreo'] ?? '';
                         $personaRep->direccion = $_POST['representanteDireccion'] ?? '';
                         $personaRep->IdSexo = null; // puede venir del form si lo necesitas
+                        $personaRep->IdTipoTrabajador = isset($_POST['representanteTipoTrabajador']) ? (int)$_POST['representanteTipoTrabajador'] : null;
                         $personaRep->IdUrbanismo = obtenerOCrearUrbanismo(
                             $conexion,
                             $_POST['representanteUrbanismo'] ?? null,
@@ -1083,7 +1087,15 @@ function procesarInscripcion($conexion) {
                 $inscripcion->IdTipo_Inscripcion = $idTipo_Inscripcion;
                 $now = new DateTime('now', new DateTimeZone('America/Caracas')); // Ajusta la zona horaria
                 $inscripcion->fecha_inscripcion = $now->format('Y-m-d H:i:s');
-                $inscripcion->ultimo_plantel = $_POST['ultimoPlantel'] ?? '';
+
+                // Para el primer curso, asignar automáticamente "U.E.C Fermín Toro"
+                if ($esPrimerCurso) {
+                    $inscripcion->ultimo_plantel = 'U.E.C "Fermín Toro"';
+                } else {
+                    // Usar el nombre del plantel (estudiantePlantel_nombre) que contiene el texto
+                    $inscripcion->ultimo_plantel = $_POST['estudiantePlantel_nombre'] ?? '';
+                }
+
                 $inscripcion->nro_hermanos = $nroHermanos; // Usar el valor calculado
                 $inscripcion->responsable_inscripcion = $idRelacionRepresentante;
                 $inscripcion->IdFecha_Escolar = $anioEscolar['IdFecha_Escolar'];

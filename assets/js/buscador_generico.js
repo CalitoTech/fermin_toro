@@ -210,6 +210,9 @@ class BuscadorGenerico {
             case 'prefijo':
                 return `<strong>${item.codigo_prefijo}</strong>`;
 
+            case 'plantel':
+                return `<i class="fas fa-school mr-2"></i>${item.plantel}`;
+
             default:
                 return JSON.stringify(item);
         }
@@ -225,6 +228,9 @@ class BuscadorGenerico {
 
             case 'prefijo':
                 return `<i class="fas fa-plus-circle mr-2 text-success"></i><strong>Crear nuevo:</strong> ${item.codigo_prefijo}`;
+
+            case 'plantel':
+                return `<i class="fas fa-plus-circle mr-2 text-success"></i><strong>Crear nuevo:</strong> "${item.plantel}"`;
 
             default:
                 return `<strong>Nuevo:</strong> ${textoBuscado}`;
@@ -268,6 +274,14 @@ class BuscadorGenerico {
 
             // Actualizar atributo data-max-digitos del input para validación
             this.input.setAttribute('data-max-digitos', item.max_digitos);
+        } else if (this.tipo === 'plantel') {
+            this.input.value = item.plantel;
+            this.hiddenIdField.value = item.IdPlantel;
+
+            // Si es nuevo, guardar también el nombre
+            if (item.nuevo && this.hiddenNombreField) {
+                this.hiddenNombreField.value = item.plantel;
+            }
         }
 
         this.ocultarResultados();

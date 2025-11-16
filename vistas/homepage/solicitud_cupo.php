@@ -17,6 +17,7 @@
                 require_once __DIR__ . '/../../modelos/Urbanismo.php';
                 require_once __DIR__ . '/../../modelos/Nacionalidad.php';
                 require_once __DIR__ . '/../../modelos/Sexo.php';
+                require_once __DIR__ . '/../../modelos/TipoTrabajador.php';
                 require_once __DIR__ . '/../../config/conexion.php';
                 $database = new Database();
                 $conexionPDO = $database->getConnection();
@@ -27,6 +28,7 @@
                 $modeloUrbanismo = new Urbanismo($conexionPDO);
                 $modeloNacionalidad = new Nacionalidad($conexionPDO);
                 $modeloSexo = new Sexo($conexionPDO);
+                $modeloTipoTrabajador = new TipoTrabajador($conexionPDO);
                 $modeloFechaEscolar = new FechaEscolar($conexionPDO);
                 
                 // Obtener año escolar activo
@@ -64,7 +66,10 @@
 
                 // Obtener todos los parentescos
                 $parentescos = $modeloParentesco->obtenerTodos();
-                
+
+                // Obtener todos los tipos de trabajador
+                $tiposTrabajador = $modeloTipoTrabajador->obtenerTodos();
+
                 // Obtener año escolar activo
                 $anioEscolar = $modeloFechaEscolar->obtenerActivo();
                 ?>  
@@ -361,45 +366,26 @@
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
                                             <label for="estudianteApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos" 
+                                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
                                             pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
                                             minlength="3" maxlength="40"
                                             onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto2()" required>
+                                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
                                             <label for="estudianteNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres" 
+                                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
                                             pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
                                             minlength="3" maxlength="40"
                                             onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()" required>
+                                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
-                                                <option value="">Seleccione una nacionalidad</option>
-                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3" id="estudianteCedulaContainer">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
-                                            minlength="7" maxlength="8"
-                                            pattern="[0-9]+" onkeypress="return onlyNumber(event)" required>
-                                        </div>
-                                    </div>
                                     <div class="col-md-3">
                                         <div class="form-group required-field">
                                             <label for="estudianteSexo">Sexo</label>
@@ -417,20 +403,42 @@
                                             <input type="date" class="form-control" id="estudianteFechaNacimiento" name="estudianteFechaNacimiento" required>
                                         </div>
                                     </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group required-field">
+                                            <label for="estudianteNacionalidad">Nacionalidad</label>
+                                            <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
+                                                <option value="">Seleccione una nacionalidad</option>
+                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3" id="estudianteCedulaContainer">
+                                        <div class="form-group required-field">
+                                            <label for="estudianteCedula">Cédula</label>
+                                            <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
+                                            minlength="7" maxlength="8"
+                                            pattern="[0-9]+" onkeypress="return onlyNumber(event)" readonly required>
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> Primero ingrese la fecha de nacimiento
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
                                             <label for="estudianteLugarNacimiento">Lugar de Nacimiento</label>
                                             <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento"
                                             minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()" required>
+                                            oninput="formatearTexto1()" placeholder="Ej: Araure, Portuguesa" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6" id="estudianteTelefonoContainer">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteTelefono">Teléfono</label>
+                                    <div class="col-md-6" id="estudianteTelefonoContainer" style="display: none;">
+                                        <div class="form-group">
+                                            <label for="estudianteTelefono">Teléfono <small class="text-muted">(Opcional)</small></label>
                                             <div class="input-group">
                                                 <!-- Prefix selector -->
                                                 <div class="position-relative" style="max-width: 90px;">
@@ -449,18 +457,35 @@
                                                 <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono"
                                                        minlength="10" maxlength="10"
                                                        pattern="[0-9]+" onkeypress="return onlyNumber(event)"
-                                                       style="border-top-left-radius: 0; border-bottom-left-radius: 0;" required>
+                                                       placeholder="4121234567"
+                                                       style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
                                             </div>
+                                            <!-- <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> Campo disponible para estudiantes de 10 años o más
+                                            </small> -->
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="form-group required-field">
                                     <label for="estudianteCorreo">Correo electrónico</label>
-                                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" 
-                                    minlength="10" maxlength="50" required>
+                                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo"
+                                    minlength="10" maxlength="50" placeholder="Ej: estudiante@correo.com" required>
                                 </div>
-                                
+
+                                <div class="form-group required-field" id="estudiantePlantelContainer">
+                                    <label for="estudiantePlantel">Plantel donde cursó el último año escolar</label>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control buscador-input" id="estudiantePlantel_input" autocomplete="off" placeholder="Buscar o escribir nuevo plantel...">
+                                        <input type="hidden" id="estudiantePlantel" name="estudiantePlantel" required>
+                                        <input type="hidden" id="estudiantePlantel_nombre" name="estudiantePlantel_nombre">
+                                        <div id="estudiantePlantel_resultados" class="autocomplete-results d-none"></div>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> Busque o escriba el nombre del plantel educativo
+                                    </small>
+                                </div>
+
                                 <div class="form-group">
                                     <label>Discapacidades o condiciones especiales:</label>
                                     <div class="table-responsive">
@@ -492,7 +517,8 @@
                         $data_options = [
                             'nacionalidades' => $nacionalidades,
                             'urbanismos' => $urbanismos,
-                            'parentescos' => $parentescos
+                            'parentescos' => $parentescos,
+                            'tiposTrabajador' => $tiposTrabajador
                         ];
 
                         // Renderizar bloque de la Madre (con contacto de emergencia)
@@ -646,8 +672,18 @@
             "hideMethod": "fadeOut"
         };
 
-        // Inicializar buscador de prefijo para teléfono de estudiante
+        // Inicializar buscadores
         document.addEventListener("DOMContentLoaded", function() {
+            // Buscador de plantel
+            new BuscadorGenerico(
+                "estudiantePlantel_input",
+                "estudiantePlantel_resultados",
+                "plantel",
+                "estudiantePlantel",
+                "estudiantePlantel_nombre"
+            );
+
+            // Buscador de prefijo para teléfono de estudiante
             new BuscadorGenerico(
                 "estudianteTelefonoPrefijo_input",
                 "estudianteTelefonoPrefijo_resultados",
@@ -681,7 +717,30 @@
                 // Validar cuando se cambia el valor
                 fechaNacimientoInput.addEventListener('blur', function() {
                     const valorSeleccionado = this.value;
-                    if (!valorSeleccionado) return;
+                    if (!valorSeleccionado) {
+                        // Si borra la fecha, volver a bloquear cédula y ocultar teléfono
+                        const cedulaInput = document.getElementById('estudianteCedula');
+                        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                        const telefonoInput = document.getElementById('estudianteTelefono');
+                        const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+                        if (cedulaInput) {
+                            cedulaInput.setAttribute('readonly', true);
+                            cedulaInput.value = '';
+                            if (cedulaHelpText) {
+                                cedulaHelpText.style.display = 'block';
+                            }
+                        }
+
+                        if (telefonoContainer) {
+                            telefonoContainer.style.display = 'none';
+                            if (telefonoInput) {
+                                telefonoInput.value = '';
+                                telefonoInput.removeAttribute('required');
+                            }
+                        }
+                        return;
+                    }
 
                     const fechaSeleccionada = new Date(valorSeleccionado + 'T00:00:00');
                     const hoy = new Date();
@@ -707,8 +766,79 @@
                         });
                         this.value = '';
                         this.classList.add('is-invalid');
+
+                        // Bloquear cédula y ocultar teléfono si la edad no es válida
+                        const cedulaInput = document.getElementById('estudianteCedula');
+                        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                        const telefonoInput = document.getElementById('estudianteTelefono');
+
+                        if (cedulaInput) {
+                            cedulaInput.setAttribute('readonly', true);
+                            cedulaInput.value = '';
+                        }
+
+                        if (telefonoContainer) {
+                            telefonoContainer.style.display = 'none';
+                            if (telefonoInput) {
+                                telefonoInput.value = '';
+                                telefonoInput.removeAttribute('required');
+                            }
+                        }
                     } else {
                         this.classList.remove('is-invalid');
+
+                        // Habilitar campo de cédula
+                        const cedulaInput = document.getElementById('estudianteCedula');
+                        const cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                        const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+                        if (cedulaInput) {
+                            cedulaInput.removeAttribute('readonly');
+
+                            // Ocultar el mensaje de ayuda
+                            if (cedulaHelpText) {
+                                cedulaHelpText.style.display = 'none';
+                            }
+
+                            // Ajustar label y maxlength según la edad
+                            if (cedulaLabel) {
+                                if (edad < 10) {
+                                    // Menores de 10 años: Cédula escolar con maxlength 11
+                                    cedulaLabel.textContent = 'Cédula escolar';
+                                    cedulaInput.setAttribute('maxlength', '11');
+                                    cedulaInput.setAttribute('minlength', '7');
+                                } else {
+                                    // 10 años o más: Cédula normal con maxlength 8
+                                    cedulaLabel.textContent = 'Cédula';
+                                    cedulaInput.setAttribute('maxlength', '8');
+                                    cedulaInput.setAttribute('minlength', '7');
+                                }
+                            }
+                        }
+
+                        // Manejar visibilidad del campo teléfono según edad
+                        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                        const telefonoInput = document.getElementById('estudianteTelefono');
+
+                        if (telefonoContainer && telefonoInput) {
+                            if (edad < 10) {
+                                // Menores de 10 años: ocultar teléfono
+                                telefonoContainer.style.display = 'none';
+                                telefonoInput.value = '';
+                                telefonoInput.removeAttribute('required');
+
+                                // Limpiar también el prefijo
+                                const prefijoInput = document.getElementById('estudianteTelefonoPrefijo');
+                                const prefijoInputVisible = document.getElementById('estudianteTelefonoPrefijo_input');
+                                if (prefijoInput) prefijoInput.value = '';
+                                if (prefijoInputVisible) prefijoInputVisible.value = '+58';
+                            } else {
+                                // 10 años o más: mostrar teléfono como opcional
+                                telefonoContainer.style.display = 'block';
+                                // No es required, es opcional
+                                telefonoInput.removeAttribute('required');
+                            }
+                        }
                     }
                 });
             }

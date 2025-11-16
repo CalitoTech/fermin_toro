@@ -10,14 +10,14 @@ $campos_persona = [
         'type' => 'text',
         'label' => 'Apellidos',
         'col' => 6,
-        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto2()"',
+        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto2()" placeholder="Ej: García Pérez"',
         'required' => true
     ],
     'Nombres' => [
         'type' => 'text',
         'label' => 'Nombres',
         'col' => 6,
-        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1()"',
+        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1()" placeholder="Ej: María José"',
         'required' => true
     ],
     'Nacionalidad' => [
@@ -33,7 +33,7 @@ $campos_persona = [
         'type' => 'text',
         'label' => 'Cédula',
         'col' => 3,
-        'attrs' => 'minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)"',
+        'attrs' => 'minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)" placeholder="Ej: 12345678"',
         'required' => true
     ],
     'Parentesco' => [
@@ -45,8 +45,17 @@ $campos_persona = [
     'Ocupacion' => [
         'type' => 'text',
         'label' => 'Ocupación',
-        'col' => 12,
-        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1()"',
+        'col' => 6,
+        'attrs' => 'minlength="3" maxlength="40" onkeypress="return onlyText3(event)" oninput="formatearTexto1()" placeholder="Ej: Docente, Comerciante, Sin Empleo"',
+        'required' => true
+    ],
+    'TipoTrabajador' => [
+        'type' => 'radio_buttons',
+        'label' => 'Tipo de Trabajador',
+        'col' => 6,
+        'options' => 'tiposTrabajador',
+        'option_value' => 'IdTipoTrabajador',
+        'option_text' => 'tipo_trabajador',
         'required' => true
     ],
     'Urbanismo' => [
@@ -60,7 +69,7 @@ $campos_persona = [
         'type' => 'text',
         'label' => 'Dirección de Habitación',
         'col' => 6,
-        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1()"',
+        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1()" placeholder="Ej: Calle Principal, Casa Nº 45"',
         'required' => true
     ],
     'TelefonoHabitacion' => [
@@ -69,7 +78,7 @@ $campos_persona = [
         'col' => 4,
         'prefijo_tipo' => 'fijo', // filtra prefijos sin +
         'prefijo_default' => '0255',
-        'tel_attrs' => 'minlength="7" maxlength="7" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
+        'tel_attrs' => 'minlength="7" maxlength="7" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" placeholder="5521234"',
         'required' => true
     ],
     'Celular' => [
@@ -78,21 +87,21 @@ $campos_persona = [
         'col' => 4,
         'prefijo_tipo' => 'internacional', // filtra prefijos con +
         'prefijo_default' => '+58',
-        'tel_attrs' => 'minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
+        'tel_attrs' => 'minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" placeholder="4121234567"',
         'required' => true
     ],
     'Correo' => [
         'type' => 'email',
         'label' => 'Correo electrónico',
         'col' => 4,
-        'attrs' => 'minlength="10" maxlength="50"',
+        'attrs' => 'minlength="10" maxlength="50" placeholder="Ej: correo@ejemplo.com"',
         'required' => true
     ],
     'LugarTrabajo' => [
         'type' => 'text',
         'label' => 'Lugar de Trabajo',
         'col' => 6,
-        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1()"',
+        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1()" placeholder="Ej: Farmacia Central, No Aplica"',
         'required' => true
     ],
     'TelefonoTrabajo' => [
@@ -101,7 +110,7 @@ $campos_persona = [
         'col' => 6,
         'prefijo_tipo' => 'internacional', // filtra prefijos con +
         'prefijo_default' => '+58',
-        'tel_attrs' => 'minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)"',
+        'tel_attrs' => 'minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" placeholder="4121234567"',
         'required' => false
     ],
 ];
@@ -260,6 +269,23 @@ function renderizarCampoPersona($tipo, $campo, $config, $data_options, $parentes
                 .catch(err => console.error("Error al cargar prefijo por defecto:", err));
         });
         </script>';
+    } elseif ($config['type'] === 'radio_buttons') {
+        // Renderizar radio buttons (horizontal)
+        $options_data = $data_options[$config['options']] ?? [];
+        echo '<div class="row mt-2">';
+        foreach ($options_data as $option) {
+            $optionValue = $option[$config['option_value']];
+            $optionText = $option[$config['option_text']];
+            $radioId = $id . '_' . $optionValue;
+
+            echo '<div class="col-md-6">';
+            echo '<div class="custom-control custom-radio">';
+            echo '<input type="radio" id="' . $radioId . '" name="' . $name . '" class="custom-control-input" value="' . $optionValue . '" ' . $requiredAttr . '>';
+            echo '<label class="custom-control-label" for="' . $radioId . '">' . htmlspecialchars($optionText) . '</label>';
+            echo '</div>';
+            echo '</div>';
+        }
+        echo '</div>';
     } elseif ($config['type'] === 'readonly') {
         echo '<input type="text" class="form-control" id="' . $id . '" name="' . $name . '" value="' . htmlspecialchars($parentesco_value) . '" readonly>';
     } else {
@@ -360,7 +386,7 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
 
         // Phone number input
         echo '<input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
-                minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
+                minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" placeholder="4121234567" required
                 style="border-top-left-radius: 0; border-bottom-left-radius: 0;">';
 
         // Phone icon

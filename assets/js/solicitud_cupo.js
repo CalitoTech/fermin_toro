@@ -152,22 +152,40 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function() {
 function abrirFormulario(idCurso, idNivel) {
     $('#idCursoSeleccionado').val(idCurso);
 
-    // Mostrar/ocultar campos de cédula y teléfono para nivel Inicial (IdNivel == 1)
-    if (parseInt(idNivel) === 1) {
+    // Ocultar campos de cédula y teléfono SOLO para el primer curso (IdCurso == 1)
+    // Este es el único caso de nuevo ingreso sin antecedentes
+    if (parseInt(idCurso) === 1) {
         $('#estudianteCedulaContainer').hide();
         $('#estudianteTelefonoContainer').hide();
+        $('#estudiantePlantelContainer').hide();
 
         // Desactivar validación HTML y limpiar valores
-        $('#estudianteCedula').prop('required', false).val('');
+        $('#estudianteCedula').prop('required', false).val('').attr('readonly', true);
         $('#estudianteTelefono').prop('required', false).val('');
+
+        // Para el buscador de plantel, configurar el valor predeterminado
+        $('#estudiantePlantel').prop('required', false).val('1'); // IdPlantel = 1 para U.E.C "Fermín Toro"
+        $('#estudiantePlantel_nombre').val('U.E.C "Fermín Toro"');
+        $('#estudiantePlantel_input').val('U.E.C "Fermín Toro"');
 
         // Guardar el nivel para validaciones posteriores
         $('#idNivelSeleccionado').val(idNivel);
     } else {
+        // Para todos los demás cursos, mostrar cédula (readonly hasta ingresar fecha)
+        // El teléfono se mostrará/ocultará según la edad cuando se ingrese la fecha de nacimiento
         $('#estudianteCedulaContainer').show();
-        $('#estudianteTelefonoContainer').show();
-        $('#estudianteCedula').prop('required', true);
-        $('#estudianteTelefono').prop('required', true);
+        $('#estudianteCedula').prop('required', true).attr('readonly', true);
+
+        // Teléfono oculto por defecto, se mostrará cuando se ingrese fecha si edad >= 10
+        $('#estudianteTelefonoContainer').hide();
+        $('#estudianteTelefono').prop('required', false).val('');
+
+        // Mostrar campo de plantel anterior (obligatorio)
+        $('#estudiantePlantelContainer').show();
+        $('#estudiantePlantel').prop('required', true).val('');
+        $('#estudiantePlantel_nombre').val('');
+        $('#estudiantePlantel_input').val('');
+
         $('#idNivelSeleccionado').val(idNivel);
     }
 
@@ -232,23 +250,29 @@ function enviarFormulario() {
 
     // Validar sección del estudiante (siempre requerido) pero omitir cédula/telefono si sus contenedores están ocultos
     const camposEstudiante = [
-        {id: 'estudianteNombres', nombre: 'Nombres del estudiante', container: null},
-        {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante', container: null},
-        {id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer'},
-        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null},
-        {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null},
-        {id: 'estudianteTelefono', nombre: 'Teléfono del estudiante', container: '#estudianteTelefonoContainer'},
-        {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante', container: null}
+        {id: 'estudianteNombres', nombre: 'Nombres del estudiante', container: null, opcional: false},
+        {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante', container: null, opcional: false},
+        {id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer', opcional: false},
+        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null, opcional: false},
+        {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null, opcional: false},
+        {id: 'estudianteTelefono', nombre: 'Teléfono del estudiante', container: '#estudianteTelefonoContainer', opcional: true},
+        {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante', container: null, opcional: false},
+        {id: 'estudiantePlantel', nombre: 'Plantel donde cursó el último año escolar', container: '#estudiantePlantelContainer', opcional: false}
     ];
 
-    const idNivelSeleccionado = parseInt($('#idNivelSeleccionado').val() || 0);
+    const idCursoSeleccionado = parseInt($('#idCursoSeleccionado').val() || 0);
 
 
     // 🔧 Filtramos solo los que deben validarse
     const camposAValidar = camposEstudiante.filter(campo => {
-        // Omitir cédula y teléfono si es nivel inicial
-        if (idNivelSeleccionado === 1 && 
-            (campo.id === 'estudianteCedula' || campo.id === 'estudianteTelefono')) {
+        // Omitir cédula, teléfono y plantel solo si es el primer curso (nuevo ingreso sin antecedentes)
+        if (idCursoSeleccionado === 1 &&
+            (campo.id === 'estudianteCedula' || campo.id === 'estudianteTelefono' || campo.id === 'estudiantePlantel')) {
+            return false;
+        }
+
+        // Siempre omitir teléfono del estudiante (es opcional cuando es visible)
+        if (campo.id === 'estudianteTelefono') {
             return false;
         }
 
