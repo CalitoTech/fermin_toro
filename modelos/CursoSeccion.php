@@ -14,15 +14,14 @@ class CursoSeccion {
     }
 
     public function guardar() {
-        $query = "INSERT INTO curso_seccion (IdCurso, IdSeccion, IdAula, cantidad_estudiantes) 
-                 VALUES (:IdCurso, :IdSeccion, :IdAula, :cantidad_estudiantes)";
-        
+        $query = "INSERT INTO curso_seccion (IdCurso, IdSeccion, IdAula)
+                 VALUES (:IdCurso, :IdSeccion, :IdAula)";
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':IdCurso', $this->IdCurso);
         $stmt->bindParam(':IdSeccion', $this->IdSeccion);
         $stmt->bindParam(':IdAula', $this->IdAula, PDO::PARAM_INT);
-        $stmt->bindParam(':cantidad_estudiantes', $this->cantidad_estudiantes, PDO::PARAM_INT);
-        
+
         if ($stmt->execute()) {
             $this->IdCurso_Seccion = $this->conn->lastInsertId();
             return $this->IdCurso_Seccion;
@@ -31,20 +30,18 @@ class CursoSeccion {
     }
 
     public function actualizar() {
-        $query = "UPDATE curso_seccion SET 
+        $query = "UPDATE curso_seccion SET
                  IdCurso = :IdCurso,
                  IdSeccion = :IdSeccion,
-                 IdAula = :IdAula,
-                 cantidad_estudiantes = :cantidad_estudiantes
+                 IdAula = :IdAula
                  WHERE IdCurso_Seccion = :IdCurso_Seccion";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':IdCurso', $this->IdCurso);
         $stmt->bindParam(':IdSeccion', $this->IdSeccion);
         $stmt->bindParam(':IdAula', $this->IdAula, PDO::PARAM_INT);
-        $stmt->bindParam(':cantidad_estudiantes', $this->cantidad_estudiantes);
         $stmt->bindParam(':IdCurso_Seccion', $this->IdCurso_Seccion);
-        
+
         return $stmt->execute();
     }
 
@@ -83,16 +80,15 @@ class CursoSeccion {
         $stmt->execute();
         
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($row) {
             $this->IdCurso_Seccion = $row['IdCurso_Seccion'];
-            $this->cantidad_estudiantes = $row['cantidad_estudiantes'];
             $this->IdCurso = $row['IdCurso'];
             $this->IdSeccion = $row['IdSeccion'];
             $this->IdAula = $row['IdAula'];
             return $row;
         }
-        
+
         return false;
     }
 
@@ -172,11 +168,22 @@ class CursoSeccion {
 
         $query = "
             SELECT
-                cs.*,
+                cs.IdCurso_Seccion,
+                cs.IdCurso,
+                cs.IdSeccion,
+                cs.IdAula,
                 c.curso,
                 s.seccion,
                 COALESCE(a.aula, 'Sin Asignar') AS aula,
-                n.nivel
+                n.nivel,
+                (
+                    SELECT COUNT(DISTINCT i.IdEstudiante)
+                    FROM inscripcion i
+                    INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+                    WHERE i.IdCurso_Seccion = cs.IdCurso_Seccion
+                    AND fe.fecha_activa = TRUE
+                    AND i.IdStatus = 11
+                ) AS cantidad_estudiantes
             FROM curso_seccion cs
             JOIN curso c ON cs.IdCurso = c.IdCurso
             JOIN seccion s ON cs.IdSeccion = s.IdSeccion

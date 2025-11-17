@@ -150,6 +150,32 @@ class Inscripcion {
             nac_e.nacionalidad AS estudiante_nacionalidad,
             CONCAT(COALESCE(pref_e.codigo_prefijo, ''), tel_e.numero_telefono) AS estudiante_telefono,
             tipo_tel_e.tipo_telefono AS estudiante_tipo_telefono,
+            (
+                SELECT COUNT(DISTINCT r_hermanos.IdEstudiante) - 1
+                FROM representante r_hermanos
+                WHERE r_hermanos.IdPersona IN (
+                    SELECT rp_padres.IdPersona
+                    FROM representante rp_padres
+                    WHERE rp_padres.IdEstudiante = e.IdPersona
+                    AND rp_padres.IdParentesco IN (1, 2)
+                )
+                AND r_hermanos.IdParentesco IN (1, 2)
+            ) AS nro_hermanos,
+            (
+                SELECT GROUP_CONCAT(DISTINCT c_h.curso ORDER BY c_h.curso SEPARATOR ', ')
+                FROM representante r_hermanos
+                INNER JOIN inscripcion i_h ON r_hermanos.IdEstudiante = i_h.IdEstudiante
+                INNER JOIN curso_seccion cs_h ON i_h.IdCurso_Seccion = cs_h.IdCurso_Seccion
+                INNER JOIN curso c_h ON cs_h.IdCurso = c_h.IdCurso
+                WHERE r_hermanos.IdPersona IN (
+                    SELECT rp_padres.IdPersona
+                    FROM representante rp_padres
+                    WHERE rp_padres.IdEstudiante = e.IdPersona
+                    AND rp_padres.IdParentesco IN (1, 2)
+                )
+                AND r_hermanos.IdParentesco IN (1, 2)
+                AND r_hermanos.IdEstudiante != e.IdPersona
+            ) AS cursos_hermanos,
 
             -- Representante Legal
             rp.IdRepresentante,
@@ -331,7 +357,8 @@ class Inscripcion {
                 i.IdFecha_Escolar,
                 fe.fecha_escolar,
                 st.status,
-                i.IdStatus
+                i.IdStatus,
+                ti.tipo_inscripcion
             FROM inscripcion i
             INNER JOIN persona AS e ON i.IdEstudiante = e.IdPersona
             INNER JOIN representante rp ON i.responsable_inscripcion = rp.IdRepresentante
@@ -342,6 +369,7 @@ class Inscripcion {
             LEFT JOIN seccion s ON cs.IdSeccion = s.IdSeccion
             LEFT JOIN nivel n ON c.IdNivel = n.IdNivel
             INNER JOIN status st ON i.IdStatus = st.IdStatus
+            LEFT JOIN tipo_inscripcion ti ON i.IdTipo_Inscripcion = ti.IdTipo_Inscripcion
             $filtroNivel
             ORDER BY i.fecha_inscripcion ASC
         ";

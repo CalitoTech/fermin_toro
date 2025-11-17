@@ -373,8 +373,9 @@ $htmlEst = '<table border="1" cellpadding="3" cellspacing="0" width="100%" style
   <td width="100%"><b>Plantel donde cursó el último año:</b> '.v($inscripcion,'plantel_nombre').'</td>
 </tr>
 <tr>
-  <td width="100%"><b>No. de Hermanos:</b> '.v($inscripcion,'nro_hermanos').'</td>
-</tr>
+  <td width="40%"><b>No. de Hermanos:</b> '.v($inscripcion,'nro_hermanos').'</td>
+  <td width="60%"><b>Grados que Cursan:</b> '.(v($inscripcion,'cursos_hermanos') ?: 'Ninguno').'</td>
+  </tr>
 <tr>
   <td width="40%"><b>Fecha de Inscripción:</b> '.v($inscripcion,'fecha_inscripcion').'</td>
   <td width="60%"><b>Responsable de Inscripción:</b> '.v($inscripcion,'responsable_nombre').' '.v($inscripcion,'responsable_apellido').'</td>

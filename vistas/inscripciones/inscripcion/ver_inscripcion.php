@@ -99,6 +99,15 @@ function separarTelefonosPorTipo($numerosStr, $tiposStr) {
     return $telefonos;
 }
 
+// 🔹 Helper para calcular edad
+function calcularEdad($fechaNacimiento) {
+    if (empty($fechaNacimiento)) return null;
+    $fecha = new DateTime($fechaNacimiento);
+    $hoy = new DateTime();
+    $edad = $hoy->diff($fecha);
+    return $edad->y;
+}
+
 // Función para mostrar teléfonos con estilo
 function mostrarTelefonos($telefonos) {
     if (empty($telefonos)) return null;
@@ -426,8 +435,21 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <?= htmlspecialchars($inscripcion['estudiante_nacionalidad'] . '-' . $inscripcion['estudiante_cedula']) ?>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>Fecha de nacimiento:</strong> 
-                                        <?= date('d/m/Y', strtotime($inscripcion['estudiante_fecha_nacimiento'])) ?>
+                                        <strong>Fecha de nacimiento:</strong>
+                                        <?php
+                                            if (!empty($inscripcion['estudiante_fecha_nacimiento'])) {
+                                                $edad = calcularEdad($inscripcion['estudiante_fecha_nacimiento']);
+                                                echo date('d/m/Y', strtotime($inscripcion['estudiante_fecha_nacimiento']));
+                                                if ($edad !== null) {
+                                                    echo ' <div class="mb-2">
+                                                                <strong>Edad:</strong> 
+                                                                ' . htmlspecialchars($edad) . ' años
+                                                            </div>';
+                                                }
+                                            } else {
+                                                echo 'No registrada';
+                                            }
+                                        ?>
                                     </div>
                                     <div class="mb-2">
                                         <strong>Lugar de nacimiento:</strong> 
@@ -470,9 +492,15 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <?= htmlspecialchars($inscripcion['plantel_nombre'] ?? 'No especificado') ?>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>N° de hermanos:</strong> 
+                                        <strong>N° de hermanos:</strong>
                                         <?= $inscripcion['nro_hermanos'] ?>
                                     </div>
+                                    <?php if (!empty($inscripcion['cursos_hermanos'])): ?>
+                                    <div class="mb-2">
+                                        <strong>Cursos que cursan los hermanos:</strong>
+                                        <?= htmlspecialchars($inscripcion['cursos_hermanos']) ?>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -533,11 +561,15 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                 <div class="info-card">
                                     <h6 class="section-title">Información Laboral</h6>
                                     <div class="mb-2">
-                                        <strong>Ocupación:</strong> 
+                                        <strong>Tipo de trabajador:</strong>
+                                        <?= htmlspecialchars($inscripcion['madre_tipo_trabajador'] ?? 'No especificado') ?>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Ocupación:</strong>
                                         <?= htmlspecialchars($inscripcion['madre_ocupacion']) ?>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>Lugar de trabajo:</strong> 
+                                        <strong>Lugar de trabajo:</strong>
                                         <?= htmlspecialchars($inscripcion['madre_lugar_trabajo']) ?>
                                     </div>
                                     <?php if (!empty($telefonosMadre['laborales'])): ?>
@@ -590,11 +622,15 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                 <div class="info-card">
                                     <h6 class="section-title">Información Laboral</h6>
                                     <div class="mb-2">
-                                        <strong>Ocupación:</strong> 
+                                        <strong>Tipo de trabajador:</strong>
+                                        <?= htmlspecialchars($inscripcion['padre_tipo_trabajador'] ?? 'No especificado') ?>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Ocupación:</strong>
                                         <?= htmlspecialchars($inscripcion['padre_ocupacion']) ?>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>Lugar de trabajo:</strong> 
+                                        <strong>Lugar de trabajo:</strong>
                                         <?= htmlspecialchars($inscripcion['padre_lugar_trabajo']) ?>
                                     </div>
                                     <?php if (!empty($telefonosPadre['laborales'])): ?>
@@ -647,11 +683,15 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                 <div class="info-card">
                                     <h6 class="section-title">Información Laboral</h6>
                                     <div class="mb-2">
-                                        <strong>Ocupación:</strong> 
+                                        <strong>Tipo de trabajador:</strong>
+                                        <?= htmlspecialchars($inscripcion['responsable_tipo_trabajador'] ?? 'No especificado') ?>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Ocupación:</strong>
                                         <?= htmlspecialchars($inscripcion['responsable_ocupacion']) ?>
                                     </div>
                                     <div class="mb-2">
-                                        <strong>Lugar de trabajo:</strong> 
+                                        <strong>Lugar de trabajo:</strong>
                                         <?= htmlspecialchars($inscripcion['responsable_lugar_trabajo']) ?>
                                     </div>
                                     <?php if (!empty($telefonosResponsable['laborales'])): ?>

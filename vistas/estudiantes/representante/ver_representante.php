@@ -124,6 +124,9 @@ function mostrar($valor, $porDefecto = 'No registrado') {
                             <div class="info-item"><strong>Urbanismo:</strong>
                                 <span><?= mostrar($representante['urbanismo']) ?></span>
                             </div>
+                            <div class="info-item"><strong>Tipo de trabajador:</strong>
+                                <span><?= mostrar($representante['tipo_trabajador'] ?? 'No especificado', 'No especificado') ?></span>
+                            </div>
                             <div class="info-item"><strong>Ocupación:</strong>
                                 <span><?= mostrar($representante['ocupacion']) ?></span>
                             </div>

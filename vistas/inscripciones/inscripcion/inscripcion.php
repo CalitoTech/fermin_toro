@@ -70,29 +70,30 @@ if ($alert) {
     if ($alerta) Notificaciones::mostrar($alerta);
 }
 
-// === CONSULTA DE STATUS ===
-$sth = $conexion->prepare("SELECT IdStatus, status FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus");
-$sth->execute();
-$estados_inscripcion = $sth->fetchAll(PDO::FETCH_ASSOC);
-$defaultStatus = 8; // Pendiente de aprobación
-
 require_once __DIR__ . '/../../../modelos/Inscripcion.php';
+require_once __DIR__ . '/../../../modelos/TipoInscripcion.php';
 require_once __DIR__ . '/../../../modelos/Nivel.php';
+require_once __DIR__ . '/../../../modelos/Status.php';
 require_once __DIR__ . '/../../../modelos/Curso.php';
 require_once __DIR__ . '/../../../modelos/Seccion.php';
 require_once __DIR__ . '/../../../modelos/FechaEscolar.php';
 
 // Instancias de modelos
 $modeloNivel = new Nivel($conexion);
+$modeloStatus = new Status($conexion);
 $modeloCurso = new Curso($conexion);
 $modeloSeccion = new Seccion($conexion);
 $modeloFechaEscolar = new FechaEscolar($conexion);
 $modeloInscripcion = new Inscripcion($conexion);
+$modeloTipoInscripcion = new TipoInscripcion($conexion);
 
 // Obtener secciones y fechas escolares sin filtro
+$statuses = $modeloStatus->obtenerStatusInscripcion();
+$defaultStatus = 8; // Pendiente de aprobación
 $secciones = $modeloSeccion->obtenerTodos();
 $añoActivo = $modeloFechaEscolar->obtenerActivo();
 $añosEscolares = $modeloFechaEscolar->obtenerTodos();
+$tiposInscripcion = $modeloTipoInscripcion->obtenerTodos();
 
 // Año escolar activo o el más reciente
 $yearSelected = $añoActivo ? $añoActivo['IdFecha_Escolar'] : ($añosEscolares[0]['IdFecha_Escolar'] ?? '');
@@ -118,7 +119,7 @@ $inscripciones = $modeloInscripcion->obtenerTodas($idPerfil, $idPersona);
 
 // Contar inscripciones por status
 $statusCounts = [];
-foreach ($estados_inscripcion as $st) {
+foreach ($statuses as $st) {
     $count = 0;
     foreach ($inscripciones as $insc) {
         if ($insc['IdStatus'] == $st['IdStatus']) $count++;
@@ -130,7 +131,7 @@ foreach ($estados_inscripcion as $st) {
 <!-- Filtro de Status fuera del card -->
 <div class="container">
     <div class="status-bar-modern" id="status-bar">
-        <?php foreach ($estados_inscripcion as $st):
+        <?php foreach ($statuses as $st):
             $count = $statusCounts[$st['IdStatus']] ?? 0;
         ?>
         <div class="status-step-modern <?= ($st['IdStatus'] == $defaultStatus) ? 'active' : '' ?>" 
@@ -192,8 +193,16 @@ foreach ($estados_inscripcion as $st) {
                                     <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
                                 </div>
 
-                                <!-- Filtros Nivel, Curso, Sección -->
+                                <!-- Filtros Nivel, Curso, Sección, Tipo Inscripción -->
                                 <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <label for="filtroTipoInscripcion" class="fw-semibold mb-0">Tipo:</label>
+                                    <select id="filtroTipoInscripcion" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                        <?php foreach ($tiposInscripcion as $tipo): ?>
+                                            <option value="<?= $tipo['tipo_inscripcion']; ?>"><?= htmlspecialchars($tipo['tipo_inscripcion']); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+
                                     <label for="filtroNivel" class="fw-semibold mb-0">Nivel:</label>
                                     <select id="filtroNivel" class="form-select" style="width:auto;">
                                         <option value="">Todos</option>
@@ -337,6 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // === FILTROS COMBINADOS ===
+    const filtroTipoInscripcion = document.getElementById('filtroTipoInscripcion');
     const filtroNivel = document.getElementById('filtroNivel');
     const filtroCurso = document.getElementById('filtroCurso');
     const filtroSeccion = document.getElementById('filtroSeccion');
@@ -382,6 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // === FUNCIÓN GENERAL DE FILTROS ===
     function aplicarFiltros() {
+        const tipoInscripcionVal = filtroTipoInscripcion ? filtroTipoInscripcion.value.trim() : '';
         const nivelVal = filtroNivel ? filtroNivel.value.trim() : '';
         const cursoVal = filtroCurso ? filtroCurso.value.trim() : '';
         const seccionVal = filtroSeccion ? filtroSeccion.value.trim() : '';
@@ -389,6 +400,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const textoBuscar = filtroBuscar ? filtroBuscar.value.trim().toLowerCase() : '';
 
         const filtered = config.data.filter(item => {
+            let matchTipoInscripcion = true;
+            if (tipoInscripcionVal && tipoInscripcionVal.toLowerCase() !== 'todos') {
+                matchTipoInscripcion = (item.tipo_inscripcion && item.tipo_inscripcion.toLowerCase() === tipoInscripcionVal.toLowerCase());
+            }
+
             let matchNivel = true;
             if (nivelVal && nivelVal.toLowerCase() !== 'todos') {
                 matchNivel = (item.nivel && item.nivel.toLowerCase() === nivelVal.toLowerCase());
@@ -424,14 +440,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchStatus = parseInt(item.IdStatus) === parseInt(activeStatusId);
             }
 
-            return matchNivel && matchCurso && matchSeccion && matchAnio && matchBuscar && matchStatus;
+            return matchTipoInscripcion && matchNivel && matchCurso && matchSeccion && matchAnio && matchBuscar && matchStatus;
         });
 
         window.tablaInscripciones.updateData(filtered);
     }
 
     // === LISTENERS DE FILTROS ===
-    [filtroCurso, filtroSeccion, filtroAnio, filtroBuscar, filtroEntries].forEach(el => {
+    [filtroTipoInscripcion, filtroCurso, filtroSeccion, filtroAnio, filtroBuscar, filtroEntries].forEach(el => {
         if (!el) return;
         const ev = (el === filtroBuscar) ? 'input' : 'change';
         el.addEventListener(ev, aplicarFiltros);

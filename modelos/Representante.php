@@ -185,6 +185,7 @@ class Representante {
                 p.IdSexo,
                 p.IdNacionalidad,
                 p.IdUrbanismo,
+                p.IdTipoTrabajador,
                 p.IdEstadoAcceso,
                 p.IdEstadoInstitucional,
 
@@ -193,6 +194,7 @@ class Representante {
                 n.nacionalidad,
                 u.urbanismo,
                 pa.parentesco,
+                tt_trab.tipo_trabajador,
 
                 -- Estados descriptivos
                 ea.status AS estado_acceso,
@@ -211,6 +213,7 @@ class Representante {
             LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
             LEFT JOIN urbanismo u ON p.IdUrbanismo = u.IdUrbanismo
             LEFT JOIN parentesco pa ON r.IdParentesco = pa.IdParentesco
+            LEFT JOIN tipo_trabajador tt_trab ON p.IdTipoTrabajador = tt_trab.IdTipoTrabajador
             LEFT JOIN status ea ON ea.IdStatus = p.IdEstadoAcceso
             LEFT JOIN status ei ON ei.IdStatus = p.IdEstadoInstitucional
             LEFT JOIN telefono tel ON tel.IdPersona = p.IdPersona

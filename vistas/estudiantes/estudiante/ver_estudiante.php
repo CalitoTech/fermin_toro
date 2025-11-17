@@ -49,6 +49,42 @@ $seccionActual = $personaModel->obtenerSeccionActualEstudiante($idPersona);
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idPersona);
 $representantes = $representanteModel->obtenerPorEstudiante($idPersona);
 
+// Obtener información de hermanos
+$queryHermanos = "
+    SELECT
+        CASE
+            WHEN COUNT(DISTINCT r_hermanos.IdEstudiante) > 0
+            THEN COUNT(DISTINCT r_hermanos.IdEstudiante)
+            ELSE 0
+        END AS nro_hermanos,
+        GROUP_CONCAT(DISTINCT c_h.curso ORDER BY c_h.curso SEPARATOR ', ') AS cursos_hermanos
+    FROM representante r_hermanos
+    LEFT JOIN inscripcion i_h ON r_hermanos.IdEstudiante = i_h.IdEstudiante
+    LEFT JOIN curso_seccion cs_h ON i_h.IdCurso_Seccion = cs_h.IdCurso_Seccion
+    LEFT JOIN curso c_h ON cs_h.IdCurso = c_h.IdCurso
+    WHERE r_hermanos.IdPersona IN (
+        SELECT rp_padres.IdPersona
+        FROM representante rp_padres
+        WHERE rp_padres.IdEstudiante = :idPersona
+        AND rp_padres.IdParentesco IN (1, 2)
+    )
+    AND r_hermanos.IdParentesco IN (1, 2)
+    AND r_hermanos.IdEstudiante != :idPersona
+";
+$stmtHermanos = $conexion->prepare($queryHermanos);
+$stmtHermanos->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
+$stmtHermanos->execute();
+$hermanos = $stmtHermanos->fetch(PDO::FETCH_ASSOC);
+
+// Helper para calcular edad
+function calcularEdad($fechaNacimiento) {
+    if (empty($fechaNacimiento)) return null;
+    $fecha = new DateTime($fechaNacimiento);
+    $hoy = new DateTime();
+    $edad = $hoy->diff($fecha);
+    return $edad->y;
+}
+
 // === FUNCIÓN DE LIMPIEZA ===
 function mostrar($valor, $texto = 'No registrado') {
     return htmlspecialchars(!empty(trim($valor)) ? $valor : $texto);
@@ -106,19 +142,40 @@ function mostrar($valor, $texto = 'No registrado') {
                                 </div>
                                 <div class="info-item">
                                     <strong>Fecha de nacimiento:</strong>
-                                    <span><?= $estudiante['fecha_nacimiento'] ? date('d/m/Y', strtotime($estudiante['fecha_nacimiento'])) : 'No registrada' ?></span>
+                                    <span>
+                                        <?php
+                                            if (!empty($estudiante['fecha_nacimiento'])) {
+                                                echo date('d/m/Y', strtotime($estudiante['fecha_nacimiento']));
+                                            } else {
+                                                echo 'No registrada';
+                                            }
+                                        ?>
+                                    </span>
                                 </div>
                                 <div class="info-item">
-                                    <strong>Urbanismo:</strong>
-                                    <span><?= mostrar($estudiante['urbanismo']) ?></span>
+                                    <strong>Edad:</strong>
+                                    <span>
+                                        <?php
+                                            if (!empty($estudiante['fecha_nacimiento'])) {
+                                                $edad = calcularEdad($estudiante['fecha_nacimiento']);
+                                                echo $edad !== null ? $edad . ' años' : 'No calculada';
+                                            } else {
+                                                echo 'No disponible';
+                                            }
+                                        ?>
+                                    </span>
+                                </div>
+                                <div class="info-item">
+                                    <strong>Correo electrónico:</strong>
+                                    <span><?= mostrar($estudiante['correo']) ?></span>
                                 </div>
                                 <div class="info-item">
                                     <strong>Dirección:</strong>
                                     <span><?= mostrar($estudiante['direccion']) ?></span>
                                 </div>
                                 <div class="info-item">
-                                    <strong>Correo electrónico:</strong>
-                                    <span><?= mostrar($estudiante['correo']) ?></span>
+                                    <strong>Urbanismo:</strong>
+                                    <span><?= mostrar($estudiante['urbanismo']) ?></span>
                                 </div>
                                 <div class="info-item">
                                     <strong>Teléfonos:</strong>
@@ -157,6 +214,16 @@ function mostrar($valor, $texto = 'No registrado') {
                                         <?php endif; ?>
                                     </span>
                                 </div>
+                                <div class="info-item">
+                                    <strong>N° de hermanos:</strong>
+                                    <span><?= $hermanos['nro_hermanos'] ?? 0 ?></span>
+                                </div>
+                                <?php if (!empty($hermanos['cursos_hermanos'])): ?>
+                                <div class="info-item">
+                                    <strong>Cursos que cursan los hermanos:</strong>
+                                    <span><?= htmlspecialchars($hermanos['cursos_hermanos']) ?></span>
+                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
