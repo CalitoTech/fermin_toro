@@ -198,14 +198,14 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
                         <li><a href="../../registros/aula/aula.php">Aulas</a></li>
                         <li><a href="../../registros/curso_seccion/curso_seccion.php">Curso/Sección</a></li>
                         <li><a href="../../registros/requisito/requisito.php">Requisitos</a></li>
-                        <li><a href="../../registros/materia/materia.php">Materias</a></li>
+                        <!-- <li><a href="../../registros/materia/materia.php">Materias</a></li> -->
                         <!-- Enlaces visibles SOLO para Administrador, Director y Control de Estudios -->
                         <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
                             <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
                             <li><a href="../../registros/status/status.php">Status</a></li>
                             <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
-                            <li><a href="../../registros/bloque/bloque.php">Bloques</a></li>
-                            <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
+                            <!-- <li><a href="../../registros/bloque/bloque.php">Bloques</a></li> -->
+                            <!-- <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li> -->
                         <?php endif; ?>
                     </ul>
                 </li>

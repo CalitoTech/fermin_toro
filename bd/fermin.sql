@@ -261,8 +261,7 @@ INSERT INTO `parentesco` (`IdParentesco`, `parentesco`) VALUES
 (3, 'Tutor'),
 (4, 'Hermano'),
 (5, 'Abuelo'),
-(6, 'Tío'),
-(7, 'Otro');
+(6, 'Tío');
 
 CREATE TABLE persona (
     IdPersona int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -325,9 +324,7 @@ CREATE TABLE tipo_discapacidad (
 INSERT INTO `tipo_discapacidad` (IdTipo_Discapacidad, tipo_discapacidad) VALUES
 (1, 'Visual'),
 (2, 'Auditiva'),
-(3, 'Motora'),
-(4, 'Alergia'),
-(5, 'Enfermedad');
+(3, 'Motora');
 
 CREATE TABLE discapacidad (
     IdDiscapacidad int NOT NULL AUTO_INCREMENT PRIMARY KEY,

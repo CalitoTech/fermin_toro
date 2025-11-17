@@ -430,6 +430,10 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <?= date('d/m/Y', strtotime($inscripcion['estudiante_fecha_nacimiento'])) ?>
                                     </div>
                                     <div class="mb-2">
+                                        <strong>Lugar de nacimiento:</strong> 
+                                        <?= htmlspecialchars($inscripcion['estudiante_lugar_nacimiento']) ?>
+                                    </div>
+                                    <div class="mb-2">
                                         <strong>Sexo:</strong> 
                                         <?= htmlspecialchars($inscripcion['estudiante_sexo']) ?>
                                     </div>
@@ -463,7 +467,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                     <?php endif; ?>
                                     <div class="mb-2">
                                         <strong>Último plantel:</strong> 
-                                        <?= htmlspecialchars($inscripcion['ultimo_plantel'] ?? 'No especificado') ?>
+                                        <?= htmlspecialchars($inscripcion['plantel_nombre'] ?? 'No especificado') ?>
                                     </div>
                                     <div class="mb-2">
                                         <strong>N° de hermanos:</strong> 

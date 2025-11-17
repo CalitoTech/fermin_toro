@@ -143,6 +143,7 @@ class Inscripcion {
             e.fecha_nacimiento AS estudiante_fecha_nacimiento,
             e.correo AS estudiante_correo,
             e.direccion AS estudiante_direccion,
+            e.lugar_nacimiento AS estudiante_lugar_nacimiento,
             sexo_e.sexo AS estudiante_sexo,
             urb_e.urbanismo AS estudiante_urbanismo,
             urb_e.IdUrbanismo AS estudiante_id_urbanismo,
