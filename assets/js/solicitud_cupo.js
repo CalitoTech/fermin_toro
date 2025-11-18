@@ -244,9 +244,8 @@ function enviarFormulario() {
     // 1. Validación de prefijos de teléfono
     let camposFaltantes = [];
 
-    // Validar prefijos de teléfonos
+    // Validar prefijos de teléfonos (EXCLUIR ESTUDIANTE - nunca es obligatorio)
     const prefijosTelefono = [
-        {inputId: 'estudianteTelefonoPrefijo', hiddenId: 'estudianteTelefonoPrefijo', nombre: 'Prefijo del teléfono del estudiante', container: '#estudianteTelefonoContainer'},
         {inputId: 'padreTelefonoHabitacionPrefijo', hiddenId: 'padreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del padre'},
         {inputId: 'padreCelularPrefijo', hiddenId: 'padreCelularPrefijo', nombre: 'Prefijo del celular del padre'},
         {inputId: 'madreTelefonoHabitacionPrefijo', hiddenId: 'madreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación de la madre'},
@@ -255,11 +254,6 @@ function enviarFormulario() {
     ];
 
     prefijosTelefono.forEach(prefijo => {
-        // Si tiene container, verificar si está visible
-        if (prefijo.container && $(prefijo.container).is(':hidden')) {
-            return; // Saltar validación si el contenedor está oculto
-        }
-
         const hiddenValue = $(`#${prefijo.hiddenId}`).val();
         const inputValue = $(`#${prefijo.inputId}_input`).val();
 
