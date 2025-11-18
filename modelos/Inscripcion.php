@@ -9,7 +9,6 @@ class Inscripcion {
     public $IdEstudiante;
     public $fecha_inscripcion;
     public $ultimo_plantel;
-    public $nro_hermanos;
     public $responsable_inscripcion;
     public $IdFecha_Escolar;
     public $IdStatus;
@@ -22,10 +21,10 @@ class Inscripcion {
     public function guardar() {
         $query = "INSERT INTO inscripcion (
             IdTipo_Inscripcion, codigo_inscripcion, IdEstudiante, fecha_inscripcion, ultimo_plantel,
-            nro_hermanos, responsable_inscripcion, IdFecha_Escolar, IdStatus, IdCurso_Seccion
+            responsable_inscripcion, IdFecha_Escolar, IdStatus, IdCurso_Seccion
         ) VALUES (
             :IdTipo_Inscripcion, :codigo_inscripcion, :IdEstudiante, :fecha_inscripcion, :ultimo_plantel,
-            :nro_hermanos, :responsable_inscripcion, :IdFecha_Escolar, :IdStatus, :IdCurso_Seccion
+            :responsable_inscripcion, :IdFecha_Escolar, :IdStatus, :IdCurso_Seccion
         )";
 
         $stmt = $this->conn->prepare($query);
@@ -35,7 +34,6 @@ class Inscripcion {
         $this->codigo_inscripcion = htmlspecialchars(strip_tags($this->codigo_inscripcion));
         $this->IdEstudiante = htmlspecialchars(strip_tags($this->IdEstudiante));
         $this->ultimo_plantel = htmlspecialchars(strip_tags($this->ultimo_plantel));
-        $this->nro_hermanos = htmlspecialchars(strip_tags($this->nro_hermanos));
         $this->responsable_inscripcion = htmlspecialchars(strip_tags($this->responsable_inscripcion));
         $this->IdFecha_Escolar = htmlspecialchars(strip_tags($this->IdFecha_Escolar));
         $this->IdStatus = htmlspecialchars(strip_tags($this->IdStatus));
@@ -54,7 +52,6 @@ class Inscripcion {
             $stmt->bindParam(":ultimo_plantel", $this->ultimo_plantel, PDO::PARAM_INT);
         }
 
-        $stmt->bindParam(":nro_hermanos", $this->nro_hermanos, PDO::PARAM_INT);
         $stmt->bindParam(":responsable_inscripcion", $this->responsable_inscripcion, PDO::PARAM_INT);
         $stmt->bindParam(":IdFecha_Escolar", $this->IdFecha_Escolar, PDO::PARAM_INT);
         $stmt->bindParam(":IdStatus", $this->IdStatus, PDO::PARAM_INT);
@@ -123,7 +120,6 @@ class Inscripcion {
             i.fecha_inscripcion,
             i.ultimo_plantel,
             pl.plantel AS plantel_nombre,
-            i.nro_hermanos,
             i.modificado_por,
             i.ultima_modificacion,
             i.IdCurso_Seccion,

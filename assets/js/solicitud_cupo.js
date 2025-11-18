@@ -66,10 +66,12 @@ function mostrarRequisitos(idNivel) {
             if (!respuesta.ok) throw new Error('Error al obtener requisitos');
             return respuesta.json();
         })
-        .then(requisitos => {
-            if (requisitos.error) throw new Error(requisitos.error);
+        .then(data => {
+            if (data.error) throw new Error(data.error);
 
-            if (requisitos.length === 0) {
+            const requisitosPorTipo = data.por_tipo;
+
+            if (Object.keys(requisitosPorTipo).length === 0) {
                 $('#requisitosModalBody').html(`
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle mr-2"></i>
@@ -79,40 +81,66 @@ function mostrarRequisitos(idNivel) {
                 return;
             }
 
-            let html = `
-                <div class="table-responsive">
-                    <table class="tabla-requisitos table table-bordered">
-                        <thead>
+            let html = '<div class="table-responsive">';
+
+            // Procesar cada tipo de requisito
+            Object.keys(requisitosPorTipo).forEach(tipo => {
+                const requisitos = requisitosPorTipo[tipo];
+
+                // Separar visualmente los uniformes
+                const esUniforme = tipo === 'Uniforme';
+
+                html += `
+                    <h6 class="mt-3 mb-2" style="color: #c90000; ${esUniforme ? 'border-top: 2px solid #c90000; padding-top: 15px;' : ''}">
+                        <i class="fas ${esUniforme ? 'fa-tshirt' : 'fa-clipboard-list'} mr-2"></i>${tipo}
+                    </h6>
+                    <table class="tabla-requisitos table table-bordered table-sm">
+                        <thead class="table-light">
                             <tr>
                                 <th><i class="fas fa-list-ol mr-1"></i> Requisito</th>
-                                <th class="text-center"><i class="fas fa-check-circle mr-1"></i> Obligatorio</th>
+                                <th class="text-center" style="width: 120px;"><i class="fas fa-check-circle mr-1"></i> Obligatorio</th>
                             </tr>
                         </thead>
                         <tbody>`;
 
-            requisitos.forEach(r => {
-                const esObligatorio = r.obligatorio === 'Sí';
+                requisitos.forEach(r => {
+                    const esObligatorio = r.obligatorio === 'Sí';
+                    let textoRequisito = r.requisito;
+
+                    // Si tiene tipo de trabajador, mostrar en negrita
+                    if (r.tipo_trabajador) {
+                        textoRequisito = `<strong>${r.tipo_trabajador}:</strong> ${textoRequisito}`;
+                    }
+
+                    // Si tiene descripción adicional, agregarla
+                    if (r.descripcion_adicional) {
+                        textoRequisito += ` <em class="text-muted">(${r.descripcion_adicional})</em>`;
+                    }
+
+                    html += `
+                        <tr>
+                            <td>
+                                <i class="fas ${esObligatorio ? 'fa-exclamation-circle text-danger' : 'fa-info-circle text-info'} mr-2"></i>
+                                ${textoRequisito}
+                            </td>
+                            <td class="text-center">
+                                <span class="badge-requisito ${esObligatorio ? 'badge-obligatorio' : 'badge-opcional'}">
+                                    ${r.obligatorio}
+                                </span>
+                            </td>
+                        </tr>`;
+                });
+
                 html += `
-                    <tr>
-                        <td>
-                            <i class="fas ${esObligatorio ? 'fa-exclamation-circle text-danger' : 'fa-info-circle text-info'} mr-2"></i>
-                            ${r.requisito}
-                        </td>
-                        <td class="text-center">
-                            <span class="badge-requisito ${esObligatorio ? 'badge-obligatorio' : 'badge-opcional'}">
-                                ${r.obligatorio}
-                            </span>
-                        </td>
-                    </tr>`;
+                        </tbody>
+                    </table>`;
             });
 
             html += `
-                        </tbody>
-                    </table>
                 </div>
-                <div class="mt-3 text-muted small">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Todos los documentos deben ser presentados en original y copia.
+                <div class="mt-3 alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>Nota:</strong> Todos los documentos deben ser presentados en original y copia. Si el estudiante procede de una institución privada, debe consignar la solvencia administrativa.
                 </div>`;
 
             $('#requisitosModalBody').html(html);

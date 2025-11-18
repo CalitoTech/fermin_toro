@@ -26,30 +26,97 @@ CREATE TABLE nivel (
 INSERT INTO `nivel` (`IdNivel`, `nivel`) VALUES
 (1, 'Inicial'), (2, 'Primaria'), (3, 'Media General');
 
-CREATE TABLE requisito (
-    IdRequisito int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    requisito varchar(50) NOT NULL,
-    obligatorio BOOLEAN NOT NULL DEFAULT FALSE,
-    IdNivel int NOT NULL,
-    FOREIGN KEY (IdNivel) REFERENCES nivel(IdNivel)
+CREATE TABLE tipo_trabajador (
+    IdTipoTrabajador int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    tipo_trabajador varchar(50) NOT NULL
 );
 
-INSERT INTO `requisito` (`IdRequisito`, `requisito`, `obligatorio`, `IdNivel`) VALUES
-(1, 'Copia de la cédula de identidad del estudiante', TRUE, 1),
-(2, 'Copia de la partida de nacimiento del estudiante', TRUE, 1),
-(3, 'Copia del carnet de vacunación del estudiante', TRUE, 1),
-(4, 'Copia de la cédula de identidad del representante', TRUE, 1),
-(5, 'Copia del carnet de vacunación del representante', FALSE, 1),
-(6, 'Copia de la cédula de identidad del estudiante', TRUE, 2),
-(7, 'Copia de la partida de nacimiento del estudiante', TRUE, 2),
-(8, 'Copia del carnet de vacunación del estudiante', TRUE, 2),
-(9, 'Copia de la cédula de identidad del representante', TRUE, 2),
-(10, 'Copia del carnet de vacunación del representante', FALSE, 2),
-(11, 'Copia de la cédula de identidad del estudiante', TRUE, 3),
-(12, 'Copia de la partida de nacimiento del estudiante', TRUE, 3),
-(13, 'Copia del historial académico del estudiante', TRUE, 3),
-(14, 'Copia de la cédula de identidad del representante', TRUE, 3),
-(15, 'Copia del carnet de vacunación del representante', FALSE, 3);
+INSERT INTO `tipo_trabajador` (`IdTipoTrabajador`, `tipo_trabajador`) VALUES
+(1, 'Sin actividad laboral'),
+(2, 'Independiente'),
+(3, 'Dependiente'),
+(4, 'Empresario');
+
+CREATE TABLE tipo_requisito (
+    IdTipo_Requisito int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    tipo_requisito varchar(50) NOT NULL
+);
+
+INSERT INTO `tipo_requisito` (`IdTipo_Requisito`, `tipo_requisito`) VALUES
+(1, 'General'),
+(2, 'Uniforme');
+
+CREATE TABLE requisito (
+    IdRequisito int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    requisito varchar(255) NOT NULL,
+    obligatorio BOOLEAN NOT NULL DEFAULT FALSE,
+    IdNivel int NULL,
+    IdTipoTrabajador int NULL,
+    IdTipo_Requisito int NOT NULL,
+    solo_plantel_privado BOOLEAN NOT NULL DEFAULT FALSE,
+    descripcion_adicional TEXT NULL,
+    FOREIGN KEY (IdNivel) REFERENCES nivel(IdNivel),
+    FOREIGN KEY (IdTipoTrabajador) REFERENCES tipo_trabajador(IdTipoTrabajador),
+    FOREIGN KEY (IdTipo_Requisito) REFERENCES tipo_requisito(IdTipo_Requisito)
+);
+
+-- REQUISITOS GENERALES (aplican a todos los niveles)
+INSERT INTO `requisito` (`IdRequisito`, `requisito`, `obligatorio`, `IdNivel`, `IdTipoTrabajador`, `IdTipo_Requisito`, `solo_plantel_privado`, `descripcion_adicional`) VALUES
+(1, 'Foto tipo carnet del alumno', TRUE, NULL, NULL, 1, FALSE, '1 foto tipo carnet'),
+(2, 'Foto tipo carnet del representante', TRUE, NULL, NULL, 1, FALSE, '1 foto tipo carnet'),
+(3, 'Partida de nacimiento Original del alumno', TRUE, NULL, NULL, 1, FALSE, NULL),
+(4, 'Fotocopia de la cédula de identidad del alumno', TRUE, NULL, NULL, 1, FALSE, '1 fotocopia'),
+(5, 'Fotocopia de la cédula de identidad de ambos padres', TRUE, NULL, NULL, 1, FALSE, '1 fotocopia de cada uno'),
+(6, 'Registro de Información Fiscal (RIF) del representante', TRUE, NULL, NULL, 1, FALSE, NULL),
+(7, 'Carpeta oficio plastificada color marrón con gancho', TRUE, NULL, NULL, 1, FALSE, NULL),
+(8, 'Solvencia administrativa del plantel anterior', TRUE, NULL, NULL, 1, TRUE, 'Firmada y sellada por el colegio de procedencia'),
+
+-- REQUISITOS POR TIPO DE TRABAJADOR (aplican a todos los niveles)
+(9, 'Constancia de trabajo', TRUE, NULL, 3, 1, FALSE, 'Con logo de la empresa y vigencia no mayor a tres (3) meses firmada en original y con sello húmedo'),
+(10, 'Certificación de Ingresos', TRUE, NULL, 2, 1, FALSE, 'Original, firmada y sellada por Contador Público colegiado, vigencia no mayor a tres (3) meses'),
+(11, 'Copia del Registro Mercantil', TRUE, NULL, 4, 1, FALSE, 'Donde se verifique su posición como Propietario y/o Asociado de la empresa (Rif jurídico, legible y actualizado)'),
+
+-- REQUISITOS ESPECÍFICOS DE EDUCACIÓN INICIAL
+(12, 'Copia de tarjeta de vacunación', TRUE, 1, NULL, 1, FALSE, NULL),
+(13, 'Constancia de niño sano', TRUE, 1, NULL, 1, FALSE, 'Información de peso y talla del alumno'),
+(14, 'Tipaje del alumno', TRUE, 1, NULL, 1, FALSE, NULL),
+
+-- REQUISITOS ESPECÍFICOS DE EDUCACIÓN PRIMARIA
+(15, 'Copia de tarjeta de vacunación', TRUE, 2, NULL, 1, FALSE, NULL),
+(16, 'Constancia de niño sano', TRUE, 2, NULL, 1, FALSE, 'Información de peso y talla del alumno'),
+(17, 'Tipaje del alumno', TRUE, 2, NULL, 1, FALSE, NULL),
+(18, 'Constancia SIGE', TRUE, 2, NULL, 1, FALSE, NULL),
+(19, 'Constancia de Prosecución', TRUE, 2, NULL, 1, FALSE, 'Para estudiantes de 1ero a 5to grado'),
+(20, 'Certificación de Educación Primaria', TRUE, 2, NULL, 1, FALSE, 'Para estudiantes de 6to Grado'),
+(21, 'Informe Descriptivo Final', TRUE, 2, NULL, 1, FALSE, NULL),
+
+-- REQUISITOS ESPECÍFICOS DE EDUCACIÓN MEDIA GENERAL
+(22, 'Constancia SIGE', TRUE, 3, NULL, 1, FALSE, NULL),
+(23, 'Constancia de Servicio Comunitario', FALSE, 3, NULL, 1, FALSE, NULL),
+(24, 'Certificación de Educación Primaria', TRUE, 3, NULL, 1, FALSE, '6to Grado'),
+(25, 'Notas Certificadas Original', TRUE, 3, NULL, 1, FALSE, 'De 2do a 5to año'),
+
+-- REQUISITOS DE UNIFORME - CHEMISSE (varía por nivel/curso)
+(26, 'Franela tipo chemisse roja (con logo bordado)', TRUE, 1, NULL, 2, FALSE, 'Por dentro - Educación Inicial'),
+(27, 'Chemisse color blanco (con logo bordado)', TRUE, 2, NULL, 2, FALSE, 'Por dentro - Educación Primaria'),
+(28, 'Chemisse color azul claro (con logo bordado)', TRUE, 3, NULL, 2, FALSE, 'Por dentro - Para 1ero a 3er Año'),
+(29, 'Chemisse color beige (con logo bordado)', TRUE, 3, NULL, 2, FALSE, 'Por dentro - Para 4to y 5to Año'),
+
+-- REQUISITOS DE UNIFORME - PANTALONES (varía solo en Inicial)
+(30, 'Pantalones azul marino de gabardina o mono de algodón', TRUE, 1, NULL, 2, FALSE, 'No stretch - Educación Inicial'),
+(31, 'Pantalones azul marino de gabardina', TRUE, NULL, NULL, 2, FALSE, 'Corte clásico (recto, bota 15cm) o modelo escolar, sin adornos ni roturas'),
+
+-- REQUISITOS DE UNIFORME - COMUNES A TODOS
+(32, 'Medias blancas', TRUE, NULL, NULL, 2, FALSE, 'No tobilleras'),
+(33, 'Zapatos de color negro', TRUE, NULL, NULL, 2, FALSE, NULL),
+(34, 'Correa negra con hebilla sin adornos', TRUE, NULL, NULL, 2, FALSE, 'No aplica para Educación Inicial'),
+
+-- REQUISITOS DE UNIFORME DEPORTIVO (aplica a todos los niveles)
+(35, 'Mono azul rey', TRUE, NULL, NULL, 2, FALSE, 'Sin rayas ni marcas de ningún tipo - Para Educación Física'),
+(36, 'Medias blancas largas', TRUE, NULL, NULL, 2, FALSE, 'No tobilleras - Para Educación Física'),
+(37, 'Franela blanca con cuello V azul rey (con logo bordado)', TRUE, NULL, NULL, 2, FALSE, 'Por dentro - Para Educación Física'),
+(38, 'Zapatos deportivos blancos', TRUE, NULL, NULL, 2, FALSE, 'Livianos, sin rayas de colores, ni dibujos, ni marcas visibles, con trenzas blancas - Para Educación Física'),
+(39, 'Suéter azul marino tipo escolar', FALSE, NULL, NULL, 2, FALSE, 'Del mismo color del pantalón de gabardina, sin dibujos ni letras (opcional)');
 
 CREATE TABLE aula (
     IdAula int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -197,28 +264,18 @@ INSERT INTO `nacionalidad` (`IdNacionalidad`, `nacionalidad`, `nombre_largo`) VA
 (1, 'V', 'Venezolano'),
 (2, 'E', 'Extranjero');
 
-CREATE TABLE tipo_trabajador (
-    IdTipoTrabajador int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    tipo_trabajador varchar(50) NOT NULL
-);
-
-INSERT INTO `tipo_trabajador` (`IdTipoTrabajador`, `tipo_trabajador`) VALUES
-(1, 'Sin actividad laboral'),
-(2, 'Independiente'),
-(3, 'Dependiente'),
-(4, 'Empresario');
-
 CREATE TABLE plantel (
     IdPlantel int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    plantel varchar(100) NOT NULL
+    plantel varchar(100) NOT NULL,
+    es_privado BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-INSERT INTO `plantel` (`IdPlantel`, `plantel`) VALUES
-(1, 'U.E.C "Fermín Toro"'),
-(2, 'U.E. Simón Bolívar'),
-(3, 'U.E. José Antonio Páez'),
-(4, 'Colegio San Francisco de Asís'),
-(5, 'U.E. Andrés Bello');
+INSERT INTO `plantel` (`IdPlantel`, `plantel`, `es_privado`) VALUES
+(1, 'U.E.C "Fermín Toro"', TRUE),
+(2, 'U.E. Simón Bolívar', FALSE),
+(3, 'U.E. José Antonio Páez', FALSE),
+(4, 'Colegio San Francisco de Asís', TRUE),
+(5, 'U.E. Andrés Bello', FALSE);
 
 CREATE TABLE tipo_status (
     IdTipo_Status int NOT NULL AUTO_INCREMENT PRIMARY KEY,

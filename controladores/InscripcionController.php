@@ -1122,7 +1122,6 @@ function procesarInscripcion($conexion) {
                     $inscripcion->ultimo_plantel = !empty($_POST['estudiantePlantel']) ? $_POST['estudiantePlantel'] : null;
                 }
 
-                $inscripcion->nro_hermanos = $nroHermanos; // Usar el valor calculado
                 $inscripcion->responsable_inscripcion = $idRelacionRepresentante;
                 $inscripcion->IdFecha_Escolar = $anioEscolar['IdFecha_Escolar'];
                 $inscripcion->IdCurso_Seccion = $cursoSeccion['IdCurso_Seccion'];

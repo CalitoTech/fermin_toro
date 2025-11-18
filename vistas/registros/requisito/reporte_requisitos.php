@@ -9,12 +9,30 @@ $conexion = $database->getConnection();
 $nivelId = $_GET['nivel'] ?? null;
 if (!$nivelId) die('Nivel no seleccionado.');
 
-// Consulta de requisitos
-$query = "SELECT requisito.IdRequisito, requisito.requisito, nivel.nivel, requisito.obligatorio
-          FROM requisito
-          INNER JOIN nivel ON requisito.IdNivel = nivel.IdNivel
-          WHERE requisito.IdNivel = :nivelId
-          ORDER BY requisito.IdRequisito ASC";
+// Consulta de requisitos (incluyendo generales y específicos del nivel)
+$query = "SELECT
+            r.IdRequisito,
+            r.requisito,
+            r.obligatorio,
+            r.descripcion_adicional,
+            n.nivel,
+            tr.tipo_requisito,
+            tr.IdTipo_Requisito,
+            tt.tipo_trabajador
+          FROM requisito r
+          INNER JOIN tipo_requisito tr ON r.IdTipo_Requisito = tr.IdTipo_Requisito
+          LEFT JOIN nivel n ON r.IdNivel = n.IdNivel
+          LEFT JOIN tipo_trabajador tt ON r.IdTipoTrabajador = tt.IdTipoTrabajador
+          WHERE (r.IdNivel = :nivelId OR r.IdNivel IS NULL)
+          AND r.solo_plantel_privado = FALSE
+          ORDER BY
+            CASE
+              WHEN r.IdTipoTrabajador IS NOT NULL THEN 1
+              ELSE 0
+            END,
+            tr.IdTipo_Requisito,
+            r.obligatorio DESC,
+            r.requisito ASC";
 $stmt = $conexion->prepare($query);
 $stmt->bindParam(':nivelId', $nivelId, PDO::PARAM_INT);
 $stmt->execute();
@@ -22,11 +40,18 @@ $requisitos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if (!$requisitos) die('No hay requisitos para este nivel.');
 
+// Obtener nombre del nivel
+$queryNivel = "SELECT nivel FROM nivel WHERE IdNivel = :nivelId";
+$stmtNivel = $conexion->prepare($queryNivel);
+$stmtNivel->bindParam(':nivelId', $nivelId, PDO::PARAM_INT);
+$stmtNivel->execute();
+$nivelNombre = $stmtNivel->fetchColumn();
+
 // Crear PDF en orientación horizontal (Landscape)
 $pdf = new TCPDF('L', 'mm', 'A4', true, 'UTF-8', false);
 $pdf->SetCreator(PDF_CREATOR);
 $pdf->SetAuthor('UECFT Araure');
-$pdf->SetTitle('Requisitos y Uniforme - ' . $requisitos[0]['nivel']);
+$pdf->SetTitle('Requisitos y Uniforme - ' . $nivelNombre);
 $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, 15);
 $pdf->AddPage();
@@ -49,78 +74,101 @@ $pdf->SetTextColor(0, 0, 0);
 $pdf->SetFont('Helvetica', '', 10);
 
 // ===================== CONTENIDO DE REQUISITOS =====================
-$requisitosHTML = '
-<div style="line-height: 1.5; text-align: justify;">
-<p><strong>Educación ' . htmlspecialchars($requisitos[0]['nivel']) . ':</strong></p>
-<ul style="margin-left: 12px;">';
+// Separar requisitos normales (todos excepto uniforme en una sola lista)
+$requisitosNormales = [];
 foreach ($requisitos as $r) {
-    $oblig = ($r['obligatorio'] == 1) ? ' <strong>(OBLIGATORIO)</strong>' : '';
-    $requisitosHTML .= '<li>' . htmlspecialchars($r['requisito']) . $oblig . '</li>';
+    // Excluir requisitos de tipo Uniforme (IdTipo_Requisito = 2)
+    if ($r['IdTipo_Requisito'] != 2) {
+        $requisitosNormales[] = $r;
+    }
 }
 
-// ---- aquí se agregan los 3 ítems extra exactamente como en la imagen ----
-$requisitosHTML .= '
-<li>Trabajador Dependiente: Traer Constancia de trabajo con logo de la empresa y vigencia no mayor a tres (3) meses firmada en original y con sello húmedo.</li>
-<li>Trabajadores Independientes: Traer Certificación de Ingresos original, firmada y sellada por Contador Público colegiado, vigencia no mayor a tres (3) meses.</li>
-<li>Empresarios: Copia del Registro Mercantil donde se verifique su posición como Propietario y/o Asociado de la empresa (Rif Jurídico, legible y actualizado).</li>
-';
+$requisitosHTML = '
+<div style="line-height: 1.5; text-align: justify;">
+<p><strong>Educación ' . htmlspecialchars($nivelNombre) . ':</strong></p>';
 
-$requisitosHTML .= '</ul>
-<p style="margin-top:8px;"><strong>Nota:</strong> Si el estudiante procede de una institución privada, debe consignar la solvencia administrativa firmada y sellada por el colegio.</p>
+// Generar lista única (sin separar por tipo)
+$requisitosHTML .= '<ul style="margin-left: 12px;">';
+foreach ($requisitosNormales as $r) {
+    $oblig = ($r['obligatorio'] == 1) ? ' <strong>(OBLIGATORIO)</strong>' : '';
+    $texto = htmlspecialchars($r['requisito']);
+
+    // Si es requisito por tipo de trabajador, agregar la especificación
+    if ($r['tipo_trabajador']) {
+        $texto = 'Trabajador ' . htmlspecialchars($r['tipo_trabajador']) . ': ' . $texto;
+    }
+
+    // Si tiene descripción adicional, agregarla
+    if ($r['descripcion_adicional']) {
+        $texto .= ' <em>(' . htmlspecialchars($r['descripcion_adicional']) . ')</em>';
+    }
+
+    $requisitosHTML .= '<li>' . $texto . $oblig . '</li>';
+}
+$requisitosHTML .= '</ul>';
+
+$requisitosHTML .= '
+<p style="margin-top:8px;"><em>Nota:</em> Si el estudiante procede de una institución privada, debe consignar la solvencia administrativa firmada y sellada por el colegio.</p>
 </div>';
 
 // ===================== CONTENIDO DE UNIFORME =====================
-switch ($nivelId) {
-    case 1: // Inicial
-        $uniformeHTML = '
-        <div style="line-height: 1.5; text-align: justify;">
-        <p><strong>Uniforme Escolar - Educación Inicial:</strong></p>
-        <ul>
-            <li>Franela blanca con logo institucional (uso diario).</li>
-            <li>Mono azul marino sin rayas ni marcas.</li>
-            <li>Zapatos deportivos blancos o negros.</li>
-            <li>Medias blancas.</li>
-            <li>Suéter azul marino (opcional) con logo institucional.</li>
-        </ul>
-        </div>';
-        break;
-    case 2: // Primaria
-        $uniformeHTML = '
-        <div style="line-height: 1.5; text-align: justify;">
-        <p><strong>Uniforme Escolar - Educación Primaria:</strong></p>
-        <ul>
-            <li>Chemisse color beige, con logo del colegio bordado.</li>
-            <li>Pantalón azul marino tipo gabardina (recto, sin roturas).</li>
-            <li>Correa negra con hebilla sencilla.</li>
-            <li>Zapatos color negro.</li>
-            <li>Para Educación Física: mono azul sin rayas y franela blanca con logo del colegio.</li>
-        </ul>
-        </div>';
-        break;
-    case 3: // Media General
-    default:
-        $uniformeHTML = '
-        <div style="line-height: 1.5; text-align: justify;">
-        <p><strong>Uniforme Escolar (4to y 5to Año):</strong></p>
-        <ul>
-            <li>Chemisse color beige, por dentro, con el logo del colegio bordado.</li>
-            <li>Pantalones color azul marino de gabardina corte clásico (recto, sin adornos ni roturas).</li>
-            <li>Correa negra con hebilla sin adornos.</li>
-            <li>Zapatos color negro.</li>
-        </ul>
-        <p><em>Para Educación Física:</em></p>
-        <ul>
-            <li>Mono azul sin rayas ni marcas.</li>
-            <li>Medias blancas largas.</li>
-            <li>Franela blanca con cuello V y logo del colegio bordado.</li>
-            <li>Zapatos deportivos blancos o negros.</li>
-        </ul>
-        <p>En caso de usar suéter, debe ser tipo escolar, azul marino del mismo color del pantalón de gabardina.</p>
-        <p>El uniforme o traje escolar debe estar limpio, sin roturas y lo mejor presentado posible.</p>
-        <p style="font-size:9pt;"><em>En caso de presentarse cualquier situación que impida cumplir con el uniforme escolar, el o la representante está obligado a notificarlo por escrito a la Dirección del Colegio, tal como lo establecen los lineamientos emanados por el Ministerio del Poder Popular para la Educación.</em></p>
-        </div>';
-        break;
+// Obtener requisitos de uniforme desde la base de datos
+$requisitosUniforme = array_filter($requisitos, function($r) {
+    return $r['IdTipo_Requisito'] == 2; // Tipo Uniforme
+});
+
+// Separar uniformes normales de los de educación física
+$uniformeNormal = [];
+$uniformeEducacionFisica = [];
+
+foreach ($requisitosUniforme as $u) {
+    // Si la descripción contiene "educación física" o "deportivo", clasificar como uniforme de educación física
+    $esEducacionFisica = false;
+    if ($u['descripcion_adicional']) {
+        $descripcionLower = mb_strtolower($u['descripcion_adicional']);
+        if (strpos($descripcionLower, 'educación física') !== false ||
+            strpos($descripcionLower, 'educacion fisica') !== false ||
+            strpos($descripcionLower, 'deportivo') !== false) {
+            $esEducacionFisica = true;
+        }
+    }
+
+    if ($esEducacionFisica) {
+        $uniformeEducacionFisica[] = $u;
+    } else {
+        $uniformeNormal[] = $u;
+    }
 }
+
+$uniformeHTML = '
+<div style="line-height: 1.5; text-align: justify;">
+<p><strong>Uniforme Escolar:</strong></p>';
+
+// Uniforme normal
+if (!empty($uniformeNormal)) {
+    $uniformeHTML .= '<ul>';
+    foreach ($uniformeNormal as $u) {
+        $texto = htmlspecialchars($u['requisito']);
+        $uniformeHTML .= '<li>' . $texto . '</li>';
+    }
+    $uniformeHTML .= '</ul>';
+}
+
+// Uniforme de educación física
+if (!empty($uniformeEducacionFisica)) {
+    $uniformeHTML .= '<p style="margin-top:8px;">Es de uso obligatorio para Educación Física el siguiente uniforme:</p>';
+    $uniformeHTML .= '<ul>';
+    foreach ($uniformeEducacionFisica as $u) {
+        $texto = htmlspecialchars($u['requisito']);
+        $uniformeHTML .= '<li>' . $texto . '</li>';
+    }
+    $uniformeHTML .= '</ul>';
+}
+
+$uniformeHTML .= '
+<p style="margin-top:8px;">El uniforme o traje escolar debe estar limpio, sin roturas y lo mejor presentado posible.</p>
+<p style="font-size:9pt;"><em>En caso de presentarse cualquier situación que impida cumplir con el uniforme escolar, el o la representante está obligado a notificarlo por escrito a la Dirección del Colegio, tal como lo establecen los lineamientos emanados por el Ministerio del Poder Popular para la Educación.</em></p>
+</div>';
 
 // ===================== TABLA FINAL =====================
 $html = '
@@ -140,6 +188,6 @@ p { text-align: justify; line-height: 1.4; margin-bottom: 6px; }
 </table>';
 
 $pdf->writeHTML($html, true, false, true, false, '');
-$pdf->Output('Requisitos_Uniforme_' . $requisitos[0]['nivel'] . '.pdf', 'I');
+$pdf->Output('Requisitos_Uniforme_' . $nivelNombre . '.pdf', 'I');
 exit();
 ?>

@@ -96,6 +96,18 @@ $requisitos = $requisitoModel->obtenerRequisitos($idPersona);
 require_once __DIR__ . '/../../../modelos/Nivel.php';
 $nivelModel = new Nivel($conexion);
 $niveles = $nivelModel->obtenerTodos();
+
+// Cargar tipos de requisito para el filtro
+$tiposRequisito = [];
+try {
+    $query = "SELECT IdTipo_Requisito, tipo_requisito FROM tipo_requisito ORDER BY IdTipo_Requisito";
+    $stmt = $conexion->prepare($query);
+    $stmt->execute();
+    $tiposRequisito = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Error al cargar tipos de requisito: " . $e->getMessage());
+    $tiposRequisito = [];
+}
 ?>
 
 <!-- Sección Principal -->
@@ -134,6 +146,45 @@ $niveles = $nivelModel->obtenerTodos();
                                 </a>
                             </div>
 
+                            <!-- Filtros -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="filtroNivel" class="form-label">Filtrar por Nivel:</label>
+                                    <select id="filtroNivel" class="form-select">
+                                        <option value="">Todos</option>
+                                        <option value="General">General (aplica a todos)</option>
+                                        <?php foreach ($niveles as $n): ?>
+                                            <option value="<?= htmlspecialchars($n['nivel']) ?>"><?= htmlspecialchars($n['nivel']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filtroTipoRequisito" class="form-label">Filtrar por Tipo:</label>
+                                    <select id="filtroTipoRequisito" class="form-select">
+                                        <option value="">Todos</option>
+                                        <?php foreach ($tiposRequisito as $tr): ?>
+                                            <option value="<?= htmlspecialchars($tr['tipo_requisito']) ?>"><?= htmlspecialchars($tr['tipo_requisito']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filtroObligatorio" class="form-label">Filtrar por Obligatorio:</label>
+                                    <select id="filtroObligatorio" class="form-select">
+                                        <option value="">Todos</option>
+                                        <option value="Sí">Sí</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filtroPlantelPrivado" class="form-label">Solo Plantel Privado:</label>
+                                    <select id="filtroPlantelPrivado" class="form-select">
+                                        <option value="">Todos</option>
+                                        <option value="Sí">Sí</option>
+                                        <option value="No">No</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <!-- Búsqueda y Entradas por página en la misma línea -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <div class="flex-grow-1" style="max-width: 300px;">
@@ -155,24 +206,30 @@ $niveles = $nivelModel->obtenerTodos();
                                     <thead class="table-light">
                                         <tr>
                                             <th>ID</th>
+                                            <th>Tipo</th>
                                             <th>Nivel</th>
                                             <th>Requisito</th>
-                                            <th>¿Es Obligatorio?</th>
+                                            <th>Tipo Trabajador</th>
+                                            <th>¿Obligatorio?</th>
+                                            <th>¿Solo Privado?</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php foreach ($requisitos as $user): ?>
+                                        <?php foreach ($requisitos as $req): ?>
                                             <tr>
-                                                <td><?= htmlspecialchars($user['IdRequisito']) ?></td>
-                                                <td><?= htmlspecialchars($user['nivel']) ?></td>
-                                                <td><?= htmlspecialchars($user['requisito']) ?></td>
-                                                <td><?= $user['obligatorio'] == 1 ? 'Sí' : 'No' ?></td>
+                                                <td><?= htmlspecialchars($req['IdRequisito']) ?></td>
+                                                <td><?= htmlspecialchars($req['tipo_requisito']) ?></td>
+                                                <td><?= htmlspecialchars($req['nivel']) ?></td>
+                                                <td><?= htmlspecialchars($req['requisito']) ?></td>
+                                                <td><?= htmlspecialchars($req['tipo_trabajador'] ?? 'Todos') ?></td>
+                                                <td><?= $req['obligatorio'] == 1 ? 'Sí' : 'No' ?></td>
+                                                <td><?= $req['solo_plantel_privado'] == 1 ? 'Sí' : 'No' ?></td>
                                                 <td>
-                                                    <a href="editar_requisito.php?id=<?= $user['IdRequisito'] ?>" class="btn btn-sm btn-outline-primary me-1">
+                                                    <a href="editar_requisito.php?id=<?= $req['IdRequisito'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
                                                     </a>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $user['IdRequisito'] ?>)">
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDelete(<?= $req['IdRequisito'] ?>)">
                                                         <i class='bx bxs-trash'></i>
                                                     </button>
                                                 </td>
@@ -207,25 +264,30 @@ $niveles = $nivelModel->obtenerTodos();
 
     allData = allData.map(item => ({
         ...item,
-        // Convertir obligatorio a texto
-        obligatorio: item.obligatorio == 1 ? 'Sí' : 'No'
+        // Convertir campos a texto
+        obligatorio: item.obligatorio == 1 ? 'Sí' : 'No',
+        solo_plantel_privado_texto: item.solo_plantel_privado == 1 ? 'Sí' : 'No',
+        tipo_trabajador: item.tipo_trabajador || 'Todos'
     }));
 
     // Inicialización de TablaDinamica
     document.addEventListener('DOMContentLoaded', function() {
         const config = {
-            tablaId: 'tabla-requisitos',  // Coincide con tu HTML
-            tbodyId: 'table-body',      // Coincide con tu HTML
-            buscarId: 'buscar',         // Coincide con tu HTML
-            entriesId: 'entries',       // Coincide con tu HTML
-            paginationId: 'pagination', // Coincide con tu HTML
+            tablaId: 'tabla-requisitos',
+            tbodyId: 'table-body',
+            buscarId: 'buscar',
+            entriesId: 'entries',
+            paginationId: 'pagination',
             data: allData,
             idField: 'IdRequisito',
             columns: [
                 { label: 'ID', key: 'IdRequisito' },
+                { label: 'Tipo', key: 'tipo_requisito' },
                 { label: 'Nivel', key: 'nivel' },
                 { label: 'Requisito', key: 'requisito' },
-                { label: '¿Es Obligatorio?', key: 'obligatorio' }
+                { label: 'Tipo Trabajador', key: 'tipo_trabajador' },
+                { label: '¿Obligatorio?', key: 'obligatorio' },
+                { label: '¿Solo Privado?', key: 'solo_plantel_privado_texto' }
             ],
             acciones: [
                 {
@@ -241,15 +303,59 @@ $niveles = $nivelModel->obtenerTodos();
             ]
         };
 
-        // Preparar datos para la tabla
-        config.data = allData.map(item => ({
-            ...item,
-            nombreCompleto: `${item.nombre} ${item.apellido}`
-        }));
-
         // Crear instancia de TablaDinamica
         window.tablaRequisitos = new TablaDinamica(config);
+
+        // Agregar listeners a los filtros
+        document.getElementById('filtroNivel').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroTipoRequisito').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroObligatorio').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroPlantelPrivado').addEventListener('change', aplicarFiltros);
     });
+
+    // Función para aplicar filtros
+    function aplicarFiltros() {
+        const filtroNivel = document.getElementById('filtroNivel').value;
+        const filtroTipo = document.getElementById('filtroTipoRequisito').value;
+        const filtroObligatorio = document.getElementById('filtroObligatorio').value;
+        const filtroPlantelPrivado = document.getElementById('filtroPlantelPrivado').value;
+
+        let datosFiltrados = allData.filter(item => {
+            let cumpleNivel = true;
+            let cumpleTipo = true;
+            let cumpleObligatorio = true;
+            let cumplePlantelPrivado = true;
+
+            // Filtro por nivel
+            if (filtroNivel) {
+                if (filtroNivel === 'General') {
+                    cumpleNivel = item.nivel === 'Todos los niveles';
+                } else {
+                    cumpleNivel = item.nivel === filtroNivel;
+                }
+            }
+
+            // Filtro por tipo de requisito
+            if (filtroTipo) {
+                cumpleTipo = item.tipo_requisito === filtroTipo;
+            }
+
+            // Filtro por obligatorio
+            if (filtroObligatorio) {
+                cumpleObligatorio = item.obligatorio === filtroObligatorio;
+            }
+
+            // Filtro por plantel privado
+            if (filtroPlantelPrivado) {
+                cumplePlantelPrivado = item.solo_plantel_privado_texto === filtroPlantelPrivado;
+            }
+
+            return cumpleNivel && cumpleTipo && cumpleObligatorio && cumplePlantelPrivado;
+        });
+
+        // Actualizar la tabla con datos filtrados
+        window.tablaRequisitos.actualizarDatos(datosFiltrados);
+    }
 
     // === FUNCIONES ===
     function confirmDelete(id) {

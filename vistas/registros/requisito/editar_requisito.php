@@ -83,6 +83,30 @@ if (!$requisito) {
 // Cargar niveles con filtro por permisos
 $nivelModel = new Nivel($conexion);
 $niveles = $nivelModel->obtenerNiveles($idPersona);
+
+// Cargar tipos de requisito
+$tiposRequisito = [];
+try {
+    $query = "SELECT IdTipo_Requisito, tipo_requisito FROM tipo_requisito ORDER BY IdTipo_Requisito";
+    $stmt = $conexion->prepare($query);
+    $stmt->execute();
+    $tiposRequisito = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Error al cargar tipos de requisito: " . $e->getMessage());
+    $tiposRequisito = [];
+}
+
+// Cargar tipos de trabajador
+$tiposTrabajador = [];
+try {
+    $query = "SELECT IdTipoTrabajador, tipo_trabajador FROM tipo_trabajador ORDER BY tipo_trabajador";
+    $stmt = $conexion->prepare($query);
+    $stmt->execute();
+    $tiposTrabajador = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log("Error al cargar tipos de trabajador: " . $e->getMessage());
+    $tiposTrabajador = [];
+}
 ?>
 
 <!-- Sección Principal -->
@@ -99,22 +123,45 @@ $niveles = $nivelModel->obtenerNiveles($idPersona);
 
                             <form action="../../../controladores/RequisitoController.php?action=editar" method="POST" id="editar">
                                 <input type="hidden" name="id" value="<?= $idRequisito ?>">
-                                
+
                                 <div class="row">
                                     <!-- Columna Izquierda -->
                                     <div class="col-md-6">
-                                     <!-- Nivel -->
+                                        <!-- Tipo de Requisito -->
+                                        <div class="añadir__grupo" id="grupo__tipoRequisito">
+                                            <label for="tipoRequisito" class="form-label">Tipo de Requisito *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-category'></i></span>
+                                                <select
+                                                    class="form-control añadir__input"
+                                                    name="tipoRequisito"
+                                                    id="tipoRequisito"
+                                                    required>
+                                                    <option value="">Seleccione un tipo</option>
+                                                    <?php foreach ($tiposRequisito as $tipo): ?>
+                                                        <option value="<?= $tipo['IdTipo_Requisito'] ?>"
+                                                            <?= $tipo['IdTipo_Requisito'] == $requisito['IdTipo_Requisito'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($tipo['tipo_requisito']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
+                                            </div>
+                                            <p class="añadir__input-error">Debe seleccionar un tipo de requisito.</p>
+                                        </div>
+
+                                        <!-- Nivel -->
                                         <div class="añadir__grupo" id="grupo__nivel">
-                                            <label for="nivel" class="form-label">Nivel *</label>
+                                            <label for="nivel" class="form-label">Nivel</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="nivel" 
-                                                    id="nivel" 
-                                                    required>
-                                                   <?php foreach ($niveles as $nivel): ?>
-                                                        <option value="<?= $nivel['IdNivel'] ?>" 
+                                                <select
+                                                    class="form-control añadir__input"
+                                                    name="nivel"
+                                                    id="nivel">
+                                                    <option value="">General (aplica a todos)</option>
+                                                    <?php foreach ($niveles as $nivel): ?>
+                                                        <option value="<?= $nivel['IdNivel'] ?>"
                                                             <?= $nivel['IdNivel'] == $requisito['IdNivel'] ? 'selected' : '' ?>>
                                                             <?= htmlspecialchars($nivel['nivel']) ?>
                                                         </option>
@@ -122,35 +169,76 @@ $niveles = $nivelModel->obtenerNiveles($idPersona);
                                                 </select>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">Debe seleccionar un nivel.</p>
+                                            <p class="añadir__input-error">Seleccione el nivel o deje en blanco para que aplique a todos.</p>
+                                        </div>
+
+                                        <!-- Tipo de Trabajador -->
+                                        <div class="añadir__grupo" id="grupo__tipoTrabajador">
+                                            <label for="tipoTrabajador" class="form-label">Tipo de Trabajador</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-briefcase'></i></span>
+                                                <select
+                                                    class="form-control añadir__input"
+                                                    name="tipoTrabajador"
+                                                    id="tipoTrabajador">
+                                                    <option value="">Todos los tipos</option>
+                                                    <?php foreach ($tiposTrabajador as $tipo): ?>
+                                                        <option value="<?= $tipo['IdTipoTrabajador'] ?>"
+                                                            <?= $tipo['IdTipoTrabajador'] == $requisito['IdTipoTrabajador'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($tipo['tipo_trabajador']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
+                                            </div>
+                                            <p class="añadir__input-error">Seleccione si aplica solo a un tipo de trabajador.</p>
                                         </div>
 
                                         <!-- Requisito -->
                                         <div class="añadir__grupo" id="grupo__requisito">
                                             <label for="requisito" class="form-label">Requisito *</label>
                                             <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-user'></i></span>
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control añadir__input" 
-                                                    name="requisito" 
-                                                    id="texto" 
-                                                    required 
-                                                    maxlength="40"
+                                                <span class="input-group-text"><i class='bx bxs-file'></i></span>
+                                                <input
+                                                    type="text"
+                                                    class="form-control añadir__input"
+                                                    name="requisito"
+                                                    id="texto"
+                                                    required
+                                                    maxlength="255"
                                                     value="<?= htmlspecialchars($requisito['requisito']) ?>">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">El requisito debe tener entre 3 y 40 letras.</p>
+                                            <p class="añadir__input-error">El requisito es requerido (máximo 255 caracteres).</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Columna Derecha -->
+                                    <div class="col-md-6">
+                                        <!-- Descripción Adicional -->
+                                        <div class="añadir__grupo" id="grupo__descripcionAdicional">
+                                            <label for="descripcionAdicional" class="form-label">Descripción Adicional</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-detail'></i></span>
+                                                <textarea
+                                                    class="form-control añadir__input"
+                                                    name="descripcionAdicional"
+                                                    id="descripcionAdicional"
+                                                    rows="3"
+                                                    placeholder="Ej: Especificaciones, aclaraciones, etc."><?= htmlspecialchars($requisito['descripcion_adicional'] ?? '') ?></textarea>
+                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
+                                            </div>
+                                            <p class="añadir__input-error">Puede agregar información adicional sobre el requisito.</p>
                                         </div>
 
-                                         <!-- ¿Es Obligatorio? -->
+                                        <!-- ¿Es Obligatorio? -->
                                         <div class="añadir__grupo" id="grupo__obligatorio">
                                             <label class="toggle-label">
                                                 <span class="form-label">¿Es Obligatorio?</span>
                                                 <div class="toggle-container">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        name="obligatorio" 
+                                                    <input
+                                                        type="checkbox"
+                                                        name="obligatorio"
                                                         id="obligatorio"
                                                         class="toggle-input añadir__input"
                                                         value="1"
@@ -158,7 +246,25 @@ $niveles = $nivelModel->obtenerNiveles($idPersona);
                                                     <label for="obligatorio" class="toggle-slider"></label>
                                                 </div>
                                             </label>
-                                            <p class="añadir__input-error">Seleccione si el elemento es obligatorio.</p>
+                                            <p class="añadir__input-error">Indique si el requisito es obligatorio.</p>
+                                        </div>
+
+                                        <!-- Solo Plantel Privado -->
+                                        <div class="añadir__grupo" id="grupo__soloPlantelPrivado">
+                                            <label class="toggle-label">
+                                                <span class="form-label">¿Solo para Plantel Privado?</span>
+                                                <div class="toggle-container">
+                                                    <input
+                                                        type="checkbox"
+                                                        name="soloPlantelPrivado"
+                                                        id="soloPlantelPrivado"
+                                                        value="1"
+                                                        class="toggle-input añadir__input"
+                                                        <?= $requisito['solo_plantel_privado'] == 1 ? 'checked' : '' ?>>
+                                                    <label for="soloPlantelPrivado" class="toggle-slider"></label>
+                                                </div>
+                                            </label>
+                                            <p class="añadir__input-error">Marque si solo aplica cuando el plantel anterior es privado.</p>
                                         </div>
                                     </div>
                                 </div>

@@ -747,6 +747,9 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                                         <label for="req-<?= $requisito['IdRequisito'] ?>" class="requisito-label">
                                                             <div class="requisito-item <?= $requisito['obligatorio'] ? 'requisito-obligatorio' : 'requisito-opcional' ?>">
                                                                 <?= htmlspecialchars($requisito['requisito']) ?>
+                                                                <?php if (!empty($requisito['descripcion_adicional'])): ?>
+                                                                    <br><small class="text-muted"><em><?= htmlspecialchars($requisito['descripcion_adicional']) ?></em></small>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </label>
                                                     </td>

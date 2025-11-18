@@ -39,7 +39,7 @@ function obtenerRequisitosPorNivel() {
     }
 
     $nivelId = $_GET['nivelId'] ?? 0;
-    
+
     if ($nivelId <= 0) {
         http_response_code(400);
         echo json_encode(['error' => 'ID de nivel inválido']);
@@ -50,12 +50,13 @@ function obtenerRequisitosPorNivel() {
         $database = new Database();
         $conexion = $database->getConnection();
         $requisitoModel = new Requisito($conexion);
-        
+
+        // Obtener requisitos sin filtros adicionales por ahora
         $requisitos = $requisitoModel->obtenerPorNivel($nivelId);
-        
+
         header('Content-Type: application/json');
         echo json_encode($requisitos, JSON_UNESCAPED_UNICODE);
-        
+
     } catch (Exception $e) {
         http_response_code(500);
         echo json_encode(['error' => 'Error al obtener requisitos: ' . $e->getMessage()]);
@@ -71,15 +72,19 @@ function crearRequisito() {
 
     // Obtener datos
     $requisito = trim($_POST['requisito'] ?? '');
-    $nivel = trim($_POST['nivel'] ?? '');
+    $nivel = !empty($_POST['nivel']) ? (int)$_POST['nivel'] : null;
+    $tipoTrabajador = !empty($_POST['tipoTrabajador']) ? (int)$_POST['tipoTrabajador'] : null;
+    $tipoRequisito = !empty($_POST['tipoRequisito']) ? (int)$_POST['tipoRequisito'] : null;
+    $soloPlantelPrivado = isset($_POST['soloPlantelPrivado']) ? 1 : 0;
+    $descripcionAdicional = trim($_POST['descripcionAdicional'] ?? '');
     $obligatorio = isset($_POST['obligatorio']) ? 1 : 0;
 
     // Validar campos requeridos
     if (empty($requisito)) {
         manejarError('El campo requisito es requerido');
     }
-    if (empty($nivel)) {
-        manejarError('El campo nivel es requerido');
+    if (empty($tipoRequisito)) {
+        manejarError('El campo tipo de requisito es requerido');
     }
 
     try {
@@ -87,20 +92,13 @@ function crearRequisito() {
         $conexion = $database->getConnection();
         $requisitoModel = new Requisito($conexion);
 
-        // Verificar requisito duplicado
-        $query = "SELECT IdRequisito FROM requisito WHERE requisito = :requisito AND IdNivel = :nivel";
-        $stmt = $conexion->prepare($query);
-        $stmt->bindParam(':requisito', $requisito);
-        $stmt->bindParam(':nivel', $nivel);
-        $stmt->execute();
-
-        if ($stmt->rowCount() > 0) {
-            manejarError('El nombre de requisito ya existe para este nivel');
-        }
-
         // Configurar datos del requisito
         $requisitoModel->requisito = $requisito;
         $requisitoModel->IdNivel = $nivel;
+        $requisitoModel->IdTipoTrabajador = $tipoTrabajador;
+        $requisitoModel->IdTipo_Requisito = $tipoRequisito;
+        $requisitoModel->solo_plantel_privado = $soloPlantelPrivado;
+        $requisitoModel->descripcion_adicional = !empty($descripcionAdicional) ? $descripcionAdicional : null;
         $requisitoModel->obligatorio = $obligatorio;
 
         // Guardar requisito
@@ -132,14 +130,18 @@ function editarRequisito() {
 
     // Validar campos requeridos
     $requisito = trim($_POST['requisito'] ?? '');
-    $nivel = trim($_POST['nivel'] ?? '');
+    $nivel = !empty($_POST['nivel']) ? (int)$_POST['nivel'] : null;
+    $tipoTrabajador = !empty($_POST['tipoTrabajador']) ? (int)$_POST['tipoTrabajador'] : null;
+    $tipoRequisito = !empty($_POST['tipoRequisito']) ? (int)$_POST['tipoRequisito'] : null;
+    $soloPlantelPrivado = isset($_POST['soloPlantelPrivado']) ? 1 : 0;
+    $descripcionAdicional = trim($_POST['descripcionAdicional'] ?? '');
     $obligatorio = isset($_POST['obligatorio']) ? 1 : 0;
-    
+
     if (empty($requisito)) {
         manejarError("El campo requisito es requerido", "../vistas/registros/requisito/editar_requisito.php?id=$id");
     }
-    if (empty($nivel)) {
-        manejarError("El campo nivel es requerido", "../vistas/registros/requisito/editar_requisito.php?id=$id");
+    if (empty($tipoRequisito)) {
+        manejarError("El campo tipo de requisito es requerido", "../vistas/registros/requisito/editar_requisito.php?id=$id");
     }
 
     try {
@@ -152,22 +154,14 @@ function editarRequisito() {
             manejarError('Requisito no encontrado', '../vistas/registros/requisito/requisito.php');
         }
 
-        // Verificar duplicados (excluyendo al requisito actual)
-        $query = "SELECT IdRequisito FROM requisito WHERE requisito = :requisito AND IdNivel = :nivel AND IdRequisito != :id";
-        $stmt = $conexion->prepare($query);
-        $stmt->bindParam(':requisito', $requisito);
-        $stmt->bindParam(':nivel', $nivel);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-
-        if ($stmt->rowCount() > 0) {
-            manejarError('El requisito ya está en uso por otro registro', "../vistas/registros/requisito/editar_requisito.php?id=$id");
-        }
-
         // Configurar datos actualizados
         $requisitoModel->IdRequisito = $id;
         $requisitoModel->requisito = $requisito;
         $requisitoModel->IdNivel = $nivel;
+        $requisitoModel->IdTipoTrabajador = $tipoTrabajador;
+        $requisitoModel->IdTipo_Requisito = $tipoRequisito;
+        $requisitoModel->solo_plantel_privado = $soloPlantelPrivado;
+        $requisitoModel->descripcion_adicional = !empty($descripcionAdicional) ? $descripcionAdicional : null;
         $requisitoModel->obligatorio = $obligatorio;
 
         // Actualizar datos
