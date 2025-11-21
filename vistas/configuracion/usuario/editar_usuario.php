@@ -774,6 +774,126 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
             }
         });
     }
+
+    // Validación de teléfonos en tiempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para validar un campo de teléfono
+        function validarTelefono(telefonoInput) {
+            const numero = telefonoInput.value.trim();
+            const container = telefonoInput.closest('.telefono-item');
+
+            if (!container) return;
+
+            const prefijoInputId = telefonoInput.name.replace(/\[(\d+)\]\[numero\]/, '[$1][prefijo]');
+            const prefijoHiddenElement = document.querySelector(`input[name="${prefijoInputId}"]`);
+
+            // Buscar el input visible del prefijo (el del buscador)
+            const prefijoVisibleInput = container.querySelector('.prefijo-telefono');
+
+            // Limpiar validaciones previas
+            telefonoInput.classList.remove('is-invalid', 'is-valid');
+            let errorSpan = container.querySelector('.invalid-feedback');
+            if (errorSpan) {
+                errorSpan.remove();
+            }
+
+            if (numero.length === 0) {
+                return; // No validar si está vacío
+            }
+
+            // Validación 1: Solo números
+            if (!/^[0-9]+$/.test(numero)) {
+                telefonoInput.classList.add('is-invalid');
+                errorSpan = document.createElement('div');
+                errorSpan.className = 'invalid-feedback d-block';
+                errorSpan.textContent = 'El teléfono solo puede contener números';
+                telefonoInput.parentElement.appendChild(errorSpan);
+                return;
+            }
+
+            // Validación 2: No puede empezar con 0
+            if (numero.startsWith('0')) {
+                telefonoInput.classList.add('is-invalid');
+                errorSpan = document.createElement('div');
+                errorSpan.className = 'invalid-feedback d-block';
+                errorSpan.textContent = 'El teléfono no puede empezar con 0';
+                telefonoInput.parentElement.appendChild(errorSpan);
+                return;
+            }
+
+            // Validación 3: Validar longitud según max_digitos del prefijo
+            let maxDigitos = null;
+
+            if (prefijoVisibleInput) {
+                maxDigitos = prefijoVisibleInput.getAttribute('data-max-digitos');
+            }
+
+            if (maxDigitos) {
+                maxDigitos = parseInt(maxDigitos);
+
+                if (numero.length !== maxDigitos) {
+                    telefonoInput.classList.add('is-invalid');
+                    errorSpan = document.createElement('div');
+                    errorSpan.className = 'invalid-feedback d-block';
+                    errorSpan.textContent = `El teléfono debe tener exactamente ${maxDigitos} dígitos`;
+                    telefonoInput.parentElement.appendChild(errorSpan);
+                    return;
+                }
+            } else {
+                // Fallback: validar mínimo 7 dígitos si no hay prefijo
+                if (numero.length < 7) {
+                    telefonoInput.classList.add('is-invalid');
+                    errorSpan = document.createElement('div');
+                    errorSpan.className = 'invalid-feedback d-block';
+                    errorSpan.textContent = 'El teléfono debe tener al menos 7 dígitos';
+                    telefonoInput.parentElement.appendChild(errorSpan);
+                    return;
+                }
+            }
+
+            // Si todo está bien
+            telefonoInput.classList.add('is-valid');
+        }
+
+        // Agregar event listeners a todos los inputs de teléfono existentes
+        function agregarValidacionTelefonos() {
+            const telefonosInputs = document.querySelectorAll('input[name^="telefonos"][name$="[numero]"]');
+            telefonosInputs.forEach(input => {
+                // Validar en blur
+                input.addEventListener('blur', function() {
+                    validarTelefono(this);
+                });
+
+                // También validar cuando cambia el prefijo
+                const container = input.closest('.telefono-item');
+                if (container) {
+                    const prefijoInput = container.querySelector('.prefijo-telefono');
+                    if (prefijoInput) {
+                        prefijoInput.addEventListener('itemSeleccionado', function() {
+                            validarTelefono(input);
+                        });
+                    }
+                }
+            });
+        }
+
+        // Ejecutar al cargar
+        agregarValidacionTelefonos();
+
+        // Re-ejecutar cuando se agreguen nuevos teléfonos
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length > 0) {
+                    agregarValidacionTelefonos();
+                }
+            });
+        });
+
+        const telefonosContainer = document.getElementById('telefonos-container');
+        if (telefonosContainer) {
+            observer.observe(telefonosContainer, { childList: true });
+        }
+    });
 </script>
 </body>
 </html>

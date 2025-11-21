@@ -340,12 +340,39 @@ function crearUsuario() {
         manejarError('Debe seleccionar al menos un rol');
     }
     
-     // Validar teléfonos (versión simplificada)
+     // Validar teléfonos con prefijo
     foreach ($telefonos as $tel) {
         if (!empty($tel['numero'])) {
-            $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
-            if (strlen($digitos) < 10) {
-                manejarError('El número de teléfono debe contener al menos 10 dígitos');
+            $numero = trim($tel['numero']);
+            $idPrefijo = $tel['prefijo'] ?? null;
+
+            // Validar que solo contenga números
+            if (!preg_match('/^[0-9]+$/', $numero)) {
+                manejarError('El número de teléfono solo puede contener dígitos');
+            }
+
+            // Validar que no empiece con 0
+            if (substr($numero, 0, 1) === '0') {
+                manejarError('El número de teléfono no puede empezar con 0');
+            }
+
+            // Validar longitud según el prefijo
+            if ($idPrefijo) {
+                require_once __DIR__ . '/../modelos/Prefijo.php';
+                $prefijoModel = new Prefijo($conexion);
+                $prefijoData = $prefijoModel->obtenerPorId($idPrefijo);
+
+                if ($prefijoData && isset($prefijoData['max_digitos'])) {
+                    $maxDigitos = (int)$prefijoData['max_digitos'];
+                    if (strlen($numero) !== $maxDigitos) {
+                        manejarError("El número de teléfono debe tener exactamente {$maxDigitos} dígitos para el prefijo {$prefijoData['codigo_prefijo']}");
+                    }
+                }
+            } else {
+                // Si no hay prefijo, validar longitud mínima general
+                if (strlen($numero) < 10) {
+                    manejarError('El número de teléfono debe contener al menos 10 dígitos');
+                }
             }
         }
     }
@@ -521,20 +548,49 @@ function editarUsuario() {
     if (empty($roles)) {
         manejarError('Debe seleccionar al menos un rol', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
     }
-    
-     // Validar teléfonos (versión simplificada)
+
+    // Crear conexión para validaciones de teléfono
+    $database = new Database();
+    $conexion = $database->getConnection();
+
+     // Validar teléfonos con prefijo
     foreach ($telefonos as $tel) {
         if (!empty($tel['numero'])) {
-            $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
-            if (strlen($digitos) < 10) {
-                manejarError('El número de teléfono debe contener al menos 10 dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            $numero = trim($tel['numero']);
+            $idPrefijo = $tel['prefijo'] ?? null;
+
+            // Validar que solo contenga números
+            if (!preg_match('/^[0-9]+$/', $numero)) {
+                manejarError('El número de teléfono solo puede contener dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            }
+
+            // Validar que no empiece con 0
+            if (substr($numero, 0, 1) === '0') {
+                manejarError('El número de teléfono no puede empezar con 0', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            }
+
+            // Validar longitud según el prefijo
+            if ($idPrefijo) {
+                require_once __DIR__ . '/../modelos/Prefijo.php';
+                $prefijoModel = new Prefijo($conexion);
+                $prefijoData = $prefijoModel->obtenerPorId($idPrefijo);
+
+                if ($prefijoData && isset($prefijoData['max_digitos'])) {
+                    $maxDigitos = (int)$prefijoData['max_digitos'];
+                    if (strlen($numero) !== $maxDigitos) {
+                        manejarError("El número de teléfono debe tener exactamente {$maxDigitos} dígitos para el prefijo {$prefijoData['codigo_prefijo']}", "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+                    }
+                }
+            } else {
+                // Si no hay prefijo, validar longitud mínima general
+                if (strlen($numero) < 10) {
+                    manejarError('El número de teléfono debe contener al menos 10 dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+                }
             }
         }
     }
 
     try {
-        $database = new Database();
-        $conexion = $database->getConnection();
 
         // Verificar que el usuario existe
         $persona = new Persona($conexion);
