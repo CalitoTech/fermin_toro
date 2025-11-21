@@ -72,7 +72,7 @@ if ($alert) {
     if ($alerta) Notificaciones::mostrar($alerta);
 }
 
-// === CONSULTA DE EGRESOS ===
+// === CONSULTA DE EGRESOS CON TIPO DE PERSONA ===
 $query = "SELECT
             egreso.IdEgreso,
             egreso.fecha_egreso,
@@ -84,12 +84,16 @@ $query = "SELECT
             nacionalidad.nacionalidad,
             sexo.sexo,
             status.status,
-            egreso.IdStatus
+            egreso.IdStatus,
+            detalle_perfil.IdPerfil,
+            perfil.nombre_perfil
           FROM egreso
           INNER JOIN persona ON egreso.IdPersona = persona.IdPersona
           LEFT JOIN nacionalidad ON persona.IdNacionalidad = nacionalidad.IdNacionalidad
           LEFT JOIN sexo ON persona.IdSexo = sexo.IdSexo
           INNER JOIN status ON egreso.IdStatus = status.IdStatus
+          LEFT JOIN detalle_perfil ON persona.IdPersona = detalle_perfil.IdPersona
+          LEFT JOIN perfil ON detalle_perfil.IdPerfil = perfil.IdPerfil
           ORDER BY egreso.fecha_egreso DESC";
 $stmt = $conexion->prepare($query);
 $stmt->execute();
@@ -145,6 +149,17 @@ $statuses = $statusModel->obtenerStatusEgreso();
                                     <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
                                 </div>
 
+                                <!-- Filtro de Tipo -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="filtroTipo" class="fw-semibold mb-0">Tipo:</label>
+                                    <select id="filtroTipo" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                        <option value="Estudiante">Estudiantes</option>
+                                        <option value="Docente">Docentes</option>
+                                        <option value="Administrativo">Administrativos</option>
+                                    </select>
+                                </div>
+
                                 <!-- Filtro de Status -->
                                 <div class="d-flex align-items-center gap-2">
                                     <label for="filtroStatus" class="fw-semibold mb-0">Status:</label>
@@ -173,8 +188,9 @@ $statuses = $statusModel->obtenerStatusEgreso();
                                     <thead class="table-light">
                                         <tr>
                                             <th>ID</th>
-                                            <th>Estudiante</th>
+                                            <th>Nombre</th>
                                             <th>Cédula</th>
+                                            <th>Tipo</th>
                                             <th>Fecha Egreso</th>
                                             <th>Status</th>
                                             <th>Acciones</th>
@@ -214,58 +230,92 @@ document.addEventListener('DOMContentLoaded', function() {
         idField: 'IdEgreso',
         columns: [
             { label: 'ID', key: 'IdEgreso' },
-            { label: 'Estudiante', key: 'nombreCompleto' },
+            { label: 'Nombre', key: 'nombreCompleto' },
             { label: 'Cédula', key: 'cedulaCompleta' },
+            { label: 'Tipo', key: 'tipoBadge' },
             { label: 'Fecha Egreso', key: 'fecha_egreso' },
             { label: 'Status', key: 'status' }
         ],
         acciones: [
             { url: 'ver_egreso.php?id={id}', class: 'btn-outline-info', icon: '<i class="bx bxs-show"></i>' },
-            { url: 'editar_egreso.php?id={id}', class: 'btn-outline-primary', icon: '<i class="bx bxs-edit"></i>' },
-            { url: '#', class: 'btn-outline-danger', icon: '<i class="bx bxs-trash"></i>', onclick: 'eliminarEgreso({id})' }
+            { url: 'editar_egreso.php?id={id}', class: 'btn-outline-primary', icon: '<i class="bx bxs-edit"></i>' }
         ]
     };
 
     // === Añadimos campos auxiliares ===
-    config.data = allData.map(item => ({
-        ...item,
-        nombreCompleto: `${item.nombre} ${item.apellido}`,
-        cedulaCompleta: `${item.nacionalidad || ''}-${item.cedula || ''}`,
-        motivoCorto: item.motivo ? (item.motivo.length > 50 ? item.motivo.substring(0, 50) + '...' : item.motivo) : 'Sin especificar'
-    }));
+    config.data = allData.map(item => {
+        // Determinar tipo de persona basado en IdPerfil
+        let tipo = '';
+        let tipoBadgeClass = 'secondary';
+
+        if (item.IdPerfil == 3) {
+            // Si IdPerfil es 3, es Estudiante
+            tipo = 'Estudiante';
+            tipoBadgeClass = 'primary';
+        } else if (item.nombre_perfil) {
+            // Sino, mostrar el perfil que tiene
+            tipo = item.nombre_perfil;
+
+            // Asignar color según el perfil
+            if (item.nombre_perfil.includes('Docente')) {
+                tipoBadgeClass = 'success';
+            } else if (item.nombre_perfil.includes('Administrador') || item.nombre_perfil.includes('Director')) {
+                tipoBadgeClass = 'info';
+            }
+        }
+
+        return {
+            ...item,
+            nombreCompleto: `${item.nombre} ${item.apellido}`,
+            cedulaCompleta: `${item.nacionalidad || ''}-${item.cedula || ''}`,
+            motivoCorto: item.motivo ? (item.motivo.length > 50 ? item.motivo.substring(0, 50) + '...' : item.motivo) : 'Sin especificar',
+            tipo: tipo,
+            tipoBadge: `<span class="badge bg-${tipoBadgeClass}">${tipo}</span>`
+        };
+    });
 
     window.tablaEgresos = new TablaDinamica(config);
 
     // === FILTROS ===
+    const filtroTipo = document.getElementById('filtroTipo');
     const filtroStatus = document.getElementById('filtroStatus');
     const filtroBuscar = document.getElementById('buscar');
     const filtroEntries = document.getElementById('entries');
 
     // === FUNCIÓN GENERAL DE FILTROS ===
     function aplicarFiltros() {
+        const tipoVal = filtroTipo ? filtroTipo.value.trim() : '';
         const statusVal = filtroStatus ? filtroStatus.value.trim() : '';
         const textoBuscar = filtroBuscar ? filtroBuscar.value.trim().toLowerCase() : '';
 
         const filtered = config.data.filter(item => {
+            // Filtro por tipo
+            let matchTipo = true;
+            if (tipoVal) {
+                matchTipo = (item.tipo === tipoVal);
+            }
+
+            // Filtro por status
             let matchStatus = true;
             if (statusVal && statusVal.toLowerCase() !== 'todos') {
                 matchStatus = (item.status && item.status.toLowerCase() === statusVal.toLowerCase());
             }
 
+            // Filtro por búsqueda
             let matchBuscar = true;
             if (textoBuscar) {
                 const combo = `${item.IdEgreso} ${item.nombre} ${item.apellido} ${item.cedula} ${item.motivo || ''}`.toLowerCase();
                 matchBuscar = combo.includes(textoBuscar);
             }
 
-            return matchStatus && matchBuscar;
+            return matchTipo && matchStatus && matchBuscar;
         });
 
         window.tablaEgresos.updateData(filtered);
     }
 
     // === LISTENERS DE FILTROS ===
-    [filtroStatus, filtroBuscar, filtroEntries].forEach(el => {
+    [filtroTipo, filtroStatus, filtroBuscar, filtroEntries].forEach(el => {
         if (!el) return;
         const ev = (el === filtroBuscar) ? 'input' : 'change';
         el.addEventListener(ev, aplicarFiltros);

@@ -377,41 +377,6 @@ class Inscripcion {
     }
 
     /**
-     * Calcula el número de hermanos de un estudiante
-     * Cuenta los estudiantes del padre + los de la madre, sin duplicados y sin contar al propio estudiante
-     *
-     * @param int $idEstudiante ID del estudiante para calcular hermanos
-     * @return int Número de hermanos
-     */
-    public function calcularNumeroHermanos($idEstudiante) {
-        try {
-            $query = "SELECT COUNT(DISTINCT CASE
-                        WHEN r.IdEstudiante != :idEstudiante THEN r.IdEstudiante
-                        ELSE NULL
-                    END) as total_hermanos
-                    FROM representante r
-                    WHERE r.IdPersona IN (
-                        -- Obtener IDs del padre y la madre del estudiante
-                        SELECT r2.IdPersona
-                        FROM representante r2
-                        WHERE r2.IdEstudiante = :idEstudiante
-                        AND r2.IdParentesco IN (1, 2) -- 1 = Padre, 2 = Madre
-                    )";
-
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
-            $stmt->execute();
-
-            $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
-            return (int)($resultado['total_hermanos'] ?? 0);
-
-        } catch (Exception $e) {
-            error_log("Error al calcular hermanos: " . $e->getMessage());
-            return 0;
-        }
-    }
-
-    /**
      * Obtiene el último plantel del estudiante basado en su inscripción más reciente
      *
      * @param int $idEstudiante ID del estudiante
@@ -436,6 +401,117 @@ class Inscripcion {
 
         } catch (Exception $e) {
             error_log("Error al obtener último plantel: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene el curso y sección siguiente para un estudiante
+     * Basado en su inscripción más reciente
+     *
+     * @param int $idEstudiante ID del estudiante
+     * @return array|null Array con IdCurso, IdCursoSeccion, IdSeccion, o null si no hay curso siguiente (graduado)
+     */
+    public function obtenerCursoSiguiente($idEstudiante) {
+        try {
+            // 1. Obtener inscripción más reciente del estudiante
+            $sqlInscripcionReciente = "
+                SELECT i.*, cs.IdCurso, cs.IdSeccion, c.IdNivel
+                FROM inscripcion i
+                INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+                INNER JOIN curso c ON c.IdCurso = cs.IdCurso
+                WHERE i.IdEstudiante = :idEstudiante
+                AND i.IdStatus = 11
+                ORDER BY i.IdInscripcion DESC
+                LIMIT 1
+            ";
+            $stmt = $this->conn->prepare($sqlInscripcionReciente);
+            $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmt->execute();
+            $inscripcionReciente = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$inscripcionReciente) {
+                return null;
+            }
+
+            // 2. Buscar curso siguiente en el mismo nivel
+            $sqlCursoSiguiente = "
+                SELECT c.IdCurso, c.curso, c.IdNivel
+                FROM curso c
+                WHERE c.IdNivel = :idNivel
+                AND c.IdCurso > :idCursoActual
+                ORDER BY c.IdCurso ASC
+                LIMIT 1
+            ";
+            $stmt = $this->conn->prepare($sqlCursoSiguiente);
+            $stmt->bindParam(':idNivel', $inscripcionReciente['IdNivel'], PDO::PARAM_INT);
+            $stmt->bindParam(':idCursoActual', $inscripcionReciente['IdCurso'], PDO::PARAM_INT);
+            $stmt->execute();
+            $cursoSiguiente = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // 3. Si no hay curso siguiente en el mismo nivel, buscar en el siguiente nivel
+            if (!$cursoSiguiente) {
+                $sqlNivelSiguiente = "
+                    SELECT n.IdNivel
+                    FROM nivel n
+                    WHERE n.IdNivel > :idNivelActual
+                    ORDER BY n.IdNivel ASC
+                    LIMIT 1
+                ";
+                $stmt = $this->conn->prepare($sqlNivelSiguiente);
+                $stmt->bindParam(':idNivelActual', $inscripcionReciente['IdNivel'], PDO::PARAM_INT);
+                $stmt->execute();
+                $nivelSiguiente = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($nivelSiguiente) {
+                    $sqlPrimerCursoNivel = "
+                        SELECT c.IdCurso, c.curso, c.IdNivel
+                        FROM curso c
+                        WHERE c.IdNivel = :idNivel
+                        ORDER BY c.IdCurso ASC
+                        LIMIT 1
+                    ";
+                    $stmt = $this->conn->prepare($sqlPrimerCursoNivel);
+                    $stmt->bindParam(':idNivel', $nivelSiguiente['IdNivel'], PDO::PARAM_INT);
+                    $stmt->execute();
+                    $cursoSiguiente = $stmt->fetch(PDO::FETCH_ASSOC);
+                }
+            }
+
+            // Si no hay curso siguiente, el estudiante se graduó
+            if (!$cursoSiguiente) {
+                return null;
+            }
+
+            // 4. Buscar curso_seccion para el curso siguiente con la misma sección
+            $sqlCursoSeccion = "
+                SELECT IdCurso_Seccion
+                FROM curso_seccion
+                WHERE IdCurso = :idCurso
+                AND IdSeccion = :idSeccion
+                LIMIT 1
+            ";
+            $stmt = $this->conn->prepare($sqlCursoSeccion);
+            $stmt->bindParam(':idCurso', $cursoSiguiente['IdCurso'], PDO::PARAM_INT);
+            $stmt->bindParam(':idSeccion', $inscripcionReciente['IdSeccion'], PDO::PARAM_INT);
+            $stmt->execute();
+            $cursoSeccion = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$cursoSeccion) {
+                error_log("No existe curso_seccion para IdCurso={$cursoSiguiente['IdCurso']}, IdSeccion={$inscripcionReciente['IdSeccion']}");
+                return null;
+            }
+
+            return [
+                'IdCurso' => $cursoSiguiente['IdCurso'],
+                'IdCursoSeccion' => $cursoSeccion['IdCurso_Seccion'],
+                'IdSeccion' => $inscripcionReciente['IdSeccion'],
+                'curso' => $cursoSiguiente['curso'],
+                'IdNivel' => $cursoSiguiente['IdNivel']
+            ];
+
+        } catch (Exception $e) {
+            error_log("Error al obtener curso siguiente: " . $e->getMessage());
             return null;
         }
     }

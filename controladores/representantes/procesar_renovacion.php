@@ -94,9 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Crear instancia del modelo de inscripción
             $inscripcionModel = new Inscripcion($conexion);
 
-            // Calcular número de hermanos usando la función del modelo
-            $nroHermanos = $inscripcionModel->calcularNumeroHermanos($idEstudiante);
-
             // Obtener último plantel usando la función del modelo
             $ultimoPlantel = $inscripcionModel->obtenerUltimoPlantel($idEstudiante);
 
@@ -126,10 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $now = new DateTime('now', new DateTimeZone('America/Caracas'));
             $inscripcionModel->fecha_inscripcion = $now->format('Y-m-d H:i:s');
             $inscripcionModel->ultimo_plantel = $ultimoPlantel; // Puede ser null si no tiene inscripciones previas
-            $inscripcionModel->nro_hermanos = $nroHermanos;
             $inscripcionModel->responsable_inscripcion = $idRelacionRepresentante;
             $inscripcionModel->IdFecha_Escolar = $idFechaEscolar;
-            $inscripcionModel->IdStatus = $statusInscripcion['IdStatus'];
+            $inscripcionModel->IdStatus = 10;
             $inscripcionModel->IdCurso_Seccion = $idCursoSeccion;
 
             // Guardar inscripción

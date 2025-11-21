@@ -1089,9 +1089,6 @@ function procesarInscripcion($conexion) {
                 // Crear inscripción
                 $inscripcion = new Inscripcion($conexion);
 
-                // Calcular número de hermanos usando la función del modelo
-                $nroHermanos = $inscripcion->calcularNumeroHermanos($idEstudiante);
-
                 $inscripcion->IdEstudiante = $idEstudiante;
                 $inscripcion->IdTipo_Inscripcion = $idTipo_Inscripcion;
                 $now = new DateTime('now', new DateTimeZone('America/Caracas')); // Ajusta la zona horaria

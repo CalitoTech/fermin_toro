@@ -99,16 +99,16 @@ try {
                                 <input type="hidden" name="IdPersona" id="IdPersona">
 
                                 <div class="row">
-                                    <!-- Buscador de Estudiante -->
+                                    <!-- Buscador de Persona -->
                                     <div class="col-md-12 position-relative mb-4">
-                                        <label for="buscadorEstudiante" class="form-label">Buscar Estudiante *</label>
+                                        <label for="buscadorEstudiante" class="form-label">Buscar Persona *</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class='bx bxs-user'></i></span>
                                             <input type="text" class="form-control" id="buscadorEstudiante"
                                                 placeholder="Escriba nombre o cédula..." autocomplete="off" required>
                                         </div>
                                         <div id="resultadosBusqueda" class="autocomplete-results d-none"></div>
-                                        <small class="text-muted">Solo se muestran estudiantes sin egreso registrado</small>
+                                        <small class="text-muted">Solo se muestran personas sin egreso registrado</small>
                                     </div>
 
                                     <!-- Fecha de Egreso -->
@@ -129,16 +129,17 @@ try {
                                             <label for="IdStatus" class="form-label">Status *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-flag'></i></span>
-                                                <select class="form-control" name="IdStatus" id="IdStatus" required>
-                                                    <option value="">Seleccione un status</option>
+                                                <select class="form-control" name="IdStatus" id="IdStatus" required disabled>
+                                                    <option value="">Seleccione un estudiante primero</option>
                                                     <?php foreach ($status_list as $status): ?>
                                                         <option value="<?= $status['IdStatus'] ?>"
-                                                            <?= $status['status'] === 'Graduado' ? 'selected' : '' ?>>
+                                                            data-status="<?= htmlspecialchars($status['status']) ?>">
                                                             <?= htmlspecialchars($status['status']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
+                                            <small class="text-muted" id="statusHelp"></small>
                                         </div>
                                     </div>
 
@@ -190,13 +191,61 @@ document.addEventListener('DOMContentLoaded', function() {
         locale: "es"
     });
 
-    // Usar el buscador genérico para estudiantes
+    const statusSelect = document.getElementById('IdStatus');
+    const statusHelp = document.getElementById('statusHelp');
+
+    // Guardar todas las opciones originales al cargar
+    const todasLasOpciones = Array.from(document.querySelectorAll('#IdStatus option[data-status]'));
+
+    // Función para configurar el status según el tipo de persona
+    function configurarStatusSegunPerfil(idPerfil) {
+        const idPerfilNum = parseInt(idPerfil);
+
+        // Limpiar todas las opciones excepto la primera
+        const firstOption = statusSelect.options[0];
+        statusSelect.innerHTML = '';
+        statusSelect.add(firstOption);
+
+        if (idPerfilNum === 3) {
+            // Estudiante: mostrar solo "Graduado" (IdStatus = 7)
+            const graduadoOption = todasLasOpciones.find(opt => opt.getAttribute('data-status') === 'Graduado');
+            if (graduadoOption) {
+                statusSelect.add(graduadoOption.cloneNode(true));
+                statusSelect.value = graduadoOption.value;
+                statusHelp.textContent = 'Estudiantes: Status fijo en Graduado';
+            }
+        } else {
+            // Otros: mostrar solo "Jubilado" (IdStatus = 6)
+            const jubiladoOption = todasLasOpciones.find(opt => opt.getAttribute('data-status') === 'Jubilado');
+            if (jubiladoOption) {
+                statusSelect.add(jubiladoOption.cloneNode(true));
+                statusSelect.value = jubiladoOption.value;
+                statusHelp.textContent = 'Trabajadores: Status fijo en Jubilado';
+            }
+        }
+
+        // Mantener el select deshabilitado (readonly)
+        statusSelect.disabled = false; // Habilitar para que se envíe en el form
+        statusSelect.style.backgroundColor = '#e9ecef';
+        statusSelect.style.cursor = 'not-allowed';
+    }
+
+    // Usar el buscador genérico para personas
     const buscadorEstudiante = new BuscadorGenerico(
         'buscadorEstudiante',
         'resultadosBusqueda',
         'estudiante',
         'IdPersona'
     );
+
+    // Escuchar cuando se selecciona una persona
+    const inputBuscador = document.getElementById('buscadorEstudiante');
+    inputBuscador.addEventListener('itemSeleccionado', function(e) {
+        if (e.detail && e.detail.IdPerfil) {
+            // Usar el IdPerfil que viene del buscador
+            configurarStatusSegunPerfil(e.detail.IdPerfil);
+        }
+    });
 
     // Validación del formulario
     document.getElementById('formEgreso').addEventListener('submit', function(e) {
@@ -205,8 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             Swal.fire({
                 icon: 'warning',
-                title: 'Seleccione un estudiante',
-                text: 'Debe buscar y seleccionar un estudiante válido',
+                title: 'Seleccione una persona',
+                text: 'Debe buscar y seleccionar una persona válida',
                 confirmButtonColor: '#c90000'
             });
         }

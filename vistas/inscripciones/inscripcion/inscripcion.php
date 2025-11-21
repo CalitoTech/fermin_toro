@@ -338,13 +338,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // === Aplicar filtro inicial de status ===
-    const initialStep = document.querySelector('.status-step-modern.active');
-    if (initialStep) {
-        activeStatusId = initialStep.dataset.id;
-        filterByStatus(activeStatusId);
-    }
-
     // === FILTROS COMBINADOS ===
     const filtroTipoInscripcion = document.getElementById('filtroTipoInscripcion');
     const filtroNivel = document.getElementById('filtroNivel');
@@ -453,7 +446,13 @@ document.addEventListener('DOMContentLoaded', function() {
         el.addEventListener(ev, aplicarFiltros);
     });
 
-    // Ejecutar una vez al cargar
+    // === Aplicar filtro inicial de status ===
+    const initialStep = document.querySelector('.status-step-modern.active');
+    if (initialStep) {
+        activeStatusId = initialStep.dataset.id;
+    }
+
+    // Ejecutar filtros una vez al cargar (incluye el status inicial)
     aplicarFiltros();
 });
 

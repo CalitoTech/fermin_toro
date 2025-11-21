@@ -89,12 +89,38 @@ try {
     $estudiantes = [];
 }
 
+// === Obtener IdPerfil de la persona ===
+$idPerfil = null;
+try {
+    $queryPerfil = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona LIMIT 1";
+    $stmtPerfil = $conexion->prepare($queryPerfil);
+    $stmtPerfil->bindParam(':idPersona', $egreso['IdPersona'], PDO::PARAM_INT);
+    $stmtPerfil->execute();
+    $perfilData = $stmtPerfil->fetch(PDO::FETCH_ASSOC);
+    $idPerfil = $perfilData['IdPerfil'] ?? null;
+} catch (Exception $e) {
+    error_log("Error al obtener perfil: " . $e->getMessage());
+}
+
 // === Cargar Status de tipo Persona ===
 $status_list = [];
 try {
     require_once __DIR__ . '/../../../modelos/Status.php';
     $statusModel = new Status($conexion);
-    $status_list = $statusModel->obtenerStatusEgreso();
+    $allStatus = $statusModel->obtenerStatusEgreso();
+
+    // Filtrar status según el IdPerfil
+    if ($idPerfil == 3) {
+        // Estudiante: solo "Graduado" (IdStatus = 7)
+        $status_list = array_filter($allStatus, function($status) {
+            return $status['status'] === 'Graduado';
+        });
+    } else {
+        // Otros: solo "Jubilado" (IdStatus = 6)
+        $status_list = array_filter($allStatus, function($status) {
+            return $status['status'] === 'Jubilado';
+        });
+    }
 } catch (Exception $e) {
     error_log("Error al cargar status: " . $e->getMessage());
     $status_list = [];
@@ -202,7 +228,8 @@ try {
                                                     class="form-control"
                                                     name="IdStatus"
                                                     id="IdStatus"
-                                                    required>
+                                                    required
+                                                    style="background-color: #e9ecef; cursor: not-allowed;">
                                                     <?php foreach ($status_list as $status): ?>
                                                         <option value="<?= $status['IdStatus'] ?>"
                                                             <?= $status['IdStatus'] == $egreso['IdStatus'] ? 'selected' : '' ?>>
@@ -211,6 +238,9 @@ try {
                                                     <?php endforeach; ?>
                                                 </select>
                                             </div>
+                                            <small class="text-muted">
+                                                <?= $idPerfil == 3 ? 'Estudiantes: Status fijo en Graduado' : 'Trabajadores: Status fijo en Jubilado' ?>
+                                            </small>
                                         </div>
                                     </div>
 

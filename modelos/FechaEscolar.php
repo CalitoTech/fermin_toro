@@ -131,12 +131,49 @@ class FechaEscolar {
             // Iniciar transacción
             $this->conexion->beginTransaction();
 
-            // 1. Desactivar todos los años escolares
+            // 1. Obtener el año escolar activo actual (antes de desactivarlo)
+            $queryActual = "SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+            $stmtActual = $this->conexion->prepare($queryActual);
+            $stmtActual->execute();
+            $añoActual = $stmtActual->fetch(PDO::FETCH_ASSOC);
+
+            // Validación: No permitir activar un año escolar con ID menor al actual
+            if ($añoActual && $id <= $añoActual['IdFecha_Escolar']) {
+                $this->conexion->rollBack();
+                throw new Exception("No se puede activar un año escolar anterior o igual al actual. Solo puede activar años escolares futuros.");
+            }
+
+            $inscripcionesRechazadas = [];
+
+            // 2. Si hay un año activo, obtener IDs de inscripciones pendientes que se rechazarán
+            if ($añoActual) {
+                // Primero obtener los IDs de las inscripciones que se van a rechazar
+                $queryObtenerIds = "SELECT IdInscripcion
+                                   FROM inscripcion
+                                   WHERE IdFecha_Escolar = :idAnterior
+                                   AND IdStatus = 8";
+                $stmtObtenerIds = $this->conexion->prepare($queryObtenerIds);
+                $stmtObtenerIds->bindParam(':idAnterior', $añoActual['IdFecha_Escolar']);
+                $stmtObtenerIds->execute();
+                $inscripcionesRechazadas = $stmtObtenerIds->fetchAll(PDO::FETCH_COLUMN);
+
+                // Ahora rechazar las inscripciones pendientes
+                // IdStatus = 8 (Pendiente), cambiar a IdStatus = 12 (Rechazado)
+                $queryRechazar = "UPDATE inscripcion
+                                 SET IdStatus = 12
+                                 WHERE IdFecha_Escolar = :idAnterior
+                                 AND IdStatus = 8";
+                $stmtRechazar = $this->conexion->prepare($queryRechazar);
+                $stmtRechazar->bindParam(':idAnterior', $añoActual['IdFecha_Escolar']);
+                $stmtRechazar->execute();
+            }
+
+            // 3. Desactivar todos los años escolares
             $queryDesactivar = "UPDATE fecha_escolar SET fecha_activa = 0, inscripcion_activa = 0, renovacion_activa = 0";
             $stmtDesactivar = $this->conexion->prepare($queryDesactivar);
             $stmtDesactivar->execute();
 
-            // 2. Activar el año escolar específico
+            // 4. Activar el año escolar específico
             $queryActivar = "UPDATE fecha_escolar SET fecha_activa = 1, inscripcion_activa = 1, renovacion_activa = 1 WHERE IdFecha_Escolar = :id";
             $stmtActivar = $this->conexion->prepare($queryActivar);
             $stmtActivar->bindParam(':id', $id);
@@ -144,12 +181,95 @@ class FechaEscolar {
 
             // Confirmar transacción
             $this->conexion->commit();
+
+            // 5. Crear inscripciones automáticas en segundo plano (después del commit)
+            if ($añoActual) {
+                $this->crearInscripcionesAutomaticasAsincrono($añoActual['IdFecha_Escolar'], $id);
+            }
+
+            // 6. Enviar mensajes de WhatsApp en segundo plano (después del commit)
+            if (!empty($inscripcionesRechazadas)) {
+                $this->enviarMensajesWhatsAppAsincrono($inscripcionesRechazadas);
+            }
+
             return true;
 
         } catch (Exception $e) {
             // Revertir transacción en caso de error
             $this->conexion->rollBack();
             throw $e;
+        }
+    }
+
+    /**
+     * Crea inscripciones automáticas de forma asíncrona en segundo plano
+     * @param int $idAnoAnterior ID del año escolar anterior
+     * @param int $idAnoNuevo ID del año escolar nuevo
+     */
+    private function crearInscripcionesAutomaticasAsincrono($idAnoAnterior, $idAnoNuevo) {
+        try {
+            // Ruta al script PHP
+            $scriptPath = __DIR__ . '/../scripts/crear_inscripciones_automaticas.php';
+
+            // Ruta a PHP (ajustar según tu instalación de XAMPP)
+            $phpPath = 'C:\\xampp\\php\\php.exe';
+
+            // Comando para ejecutar en segundo plano
+            $comando = "start /B \"\" \"$phpPath\" \"$scriptPath\" \"$idAnoAnterior\" \"$idAnoNuevo\" > NUL 2>&1";
+
+            // Ejecutar comando sin esperar respuesta
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows
+                pclose(popen($comando, 'r'));
+            } else {
+                // Linux/Unix
+                $comando = "php \"$scriptPath\" \"$idAnoAnterior\" \"$idAnoNuevo\" > /dev/null 2>&1 &";
+                exec($comando);
+            }
+
+            error_log("✅ Script de inscripciones automáticas ejecutado en background (Año $idAnoAnterior → Año $idAnoNuevo)");
+
+        } catch (Exception $e) {
+            // No lanzar excepción, solo loguear el error
+            error_log("⚠️ Error al ejecutar script de inscripciones automáticas: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Envía mensajes de WhatsApp de forma asíncrona en segundo plano
+     * @param array $inscripcionesIds Array de IDs de inscripciones
+     */
+    private function enviarMensajesWhatsAppAsincrono($inscripcionesIds) {
+        try {
+            // Convertir array de IDs a string separado por comas
+            $idsString = implode(',', $inscripcionesIds);
+
+            // Ruta al script PHP
+            $scriptPath = __DIR__ . '/../scripts/enviar_mensajes_whatsapp.php';
+
+            // Ruta a PHP (ajustar según tu instalación de XAMPP)
+            $phpPath = 'C:\\xampp\\php\\php.exe';
+
+            // Comando para ejecutar en segundo plano
+            // En Windows: usar 'start /B' para background
+            $comando = "start /B \"\" \"$phpPath\" \"$scriptPath\" \"$idsString\" > NUL 2>&1";
+
+            // Ejecutar comando sin esperar respuesta
+            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                // Windows
+                pclose(popen($comando, 'r'));
+            } else {
+                // Linux/Unix
+                $comando = "php \"$scriptPath\" \"$idsString\" > /dev/null 2>&1 &";
+                exec($comando);
+            }
+
+            error_log("✅ Script de WhatsApp ejecutado en background para " . count($inscripcionesIds) . " inscripciones");
+
+        } catch (Exception $e) {
+            // No lanzar excepción, solo loguear el error
+            // El envío de mensajes no debe impedir la activación del año escolar
+            error_log("⚠️ Error al ejecutar script WhatsApp en background: " . $e->getMessage());
         }
     }
 

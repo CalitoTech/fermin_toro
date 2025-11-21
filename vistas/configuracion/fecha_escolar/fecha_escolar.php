@@ -129,7 +129,7 @@ if ($alert) {
                                             <th>Año Escolar</th>
                                             <th>Estado</th>
                                             <th>¿Aceptar Inscripciones?</th>
-                                            <th>¿Aceptar Renovaciones?</th>
+                                            <!-- <th>¿Aceptar Renovaciones?</th> -->
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -175,7 +175,7 @@ if ($alert) {
                                                         </div>
                                                     </label>
                                                 </td>
-                                                <td data-search="<?= $user['renovacion_activa'] == 1 ? 'Sí' : 'No' ?>" class="text-center">
+                                                <!-- <td data-search="<?= $user['renovacion_activa'] == 1 ? 'Sí' : 'No' ?>" class="text-center">
                                                     <label class="toggle-label">
                                                         <span class="toggle-text">
                                                             <?= $user['renovacion_activa'] == 1 ? 'Sí' : 'No' ?>
@@ -191,7 +191,7 @@ if ($alert) {
                                                             <span class="toggle-slider"></span>
                                                         </div>
                                                     </label>
-                                                </td>
+                                                </td> -->
                                                 <td>
                                                     <a href="editar_fecha_escolar.php?id=<?= $user['IdFecha_Escolar'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>

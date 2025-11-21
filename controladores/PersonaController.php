@@ -3,7 +3,7 @@
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
 // Acciones que NO requieren sesión
-$accionesPublicas = ['verificarCedula', 'verificarAccesoRepresentantes', 'verificarCedulaRepresentante'];
+$accionesPublicas = ['verificarCedula', 'verificarAccesoRepresentantes', 'verificarCedulaRepresentante', 'obtenerPerfil', 'verificarCedulaCompleto'];
 
 if (!in_array($action, $accionesPublicas)) {
     session_start();
@@ -40,6 +40,12 @@ switch ($action) {
         break;
     case 'verificarCedulaRepresentante':
         verificarCedulaRepresentante();
+        break;
+    case 'obtenerPerfil':
+        obtenerPerfil();
+        break;
+    case 'verificarCedulaCompleto':
+        verificarCedulaCompleto();
         break;
     default:
         header("Location: ../vistas/configuracion/usuario/usuario.php");
@@ -338,8 +344,8 @@ function crearUsuario() {
     foreach ($telefonos as $tel) {
         if (!empty($tel['numero'])) {
             $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
-            if (strlen($digitos) < 11) {
-                manejarError('El número de teléfono debe contener al menos 11 dígitos');
+            if (strlen($digitos) < 10) {
+                manejarError('El número de teléfono debe contener al menos 10 dígitos');
             }
         }
     }
@@ -520,8 +526,8 @@ function editarUsuario() {
     foreach ($telefonos as $tel) {
         if (!empty($tel['numero'])) {
             $digitos = preg_replace('/[^0-9]/', '', $tel['numero']);
-            if (strlen($digitos) < 11) {
-                manejarError('El número de teléfono debe contener al menos 11 dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            if (strlen($digitos) < 10) {
+                manejarError('El número de teléfono debe contener al menos 10 dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
             }
         }
     }
@@ -665,6 +671,165 @@ function eliminarUsuario() {
         header("Location: ../vistas/configuracion/usuario/usuario.php?error=error_interno");
         exit();
     }
+}
+
+/**
+ * Obtiene el IdPerfil de una persona
+ */
+function obtenerPerfil() {
+    header('Content-Type: application/json');
+
+    try {
+        $id = $_GET['id'] ?? '';
+
+        if (empty($id) || !is_numeric($id)) {
+            echo json_encode(['success' => false, 'error' => 'ID inválido']);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Obtener el IdPerfil de la persona
+        $sql = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :id LIMIT 1";
+        $stmt = $conexion->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'success' => true,
+                'IdPerfil' => $row['IdPerfil']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'No se encontró perfil para esta persona'
+            ]);
+        }
+        exit();
+
+    } catch (Exception $e) {
+        error_log("Error al obtener perfil: " . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'error' => 'Error al obtener el perfil'
+        ]);
+        exit();
+    }
+}
+
+/**
+ * Verifica si una cédula existe y retorna información completa de la persona
+ * Incluye validación para convertir estudiantes mayores de 18 en trabajadores
+ */
+function verificarCedulaCompleto() {
+    header('Content-Type: application/json');
+
+    try {
+        $cedula = $_GET['cedula'] ?? '';
+        $idNacionalidad = $_GET['idNacionalidad'] ?? '';
+
+        if (empty($cedula) || empty($idNacionalidad)) {
+            echo json_encode(['existe' => false]);
+            exit();
+        }
+
+        if (!is_numeric($idNacionalidad)) {
+            echo json_encode(['existe' => false, 'error' => 'ID de nacionalidad inválido']);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Buscar la persona con todos sus datos
+        $sql = "SELECT
+                    p.IdPersona,
+                    p.nombre,
+                    p.apellido,
+                    p.cedula,
+                    p.IdNacionalidad,
+                    p.fecha_nacimiento,
+                    p.IdSexo,
+                    p.correo,
+                    p.direccion,
+                    p.usuario,
+                    p.password,
+                    p.IdEstadoAcceso,
+                    n.nacionalidad,
+                    s.sexo,
+                    dp.IdPerfil,
+                    pr.nombre_perfil,
+                    TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad
+                FROM persona p
+                LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                LEFT JOIN sexo s ON p.IdSexo = s.IdSexo
+                LEFT JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
+                LEFT JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil
+                WHERE p.cedula = :cedula
+                AND p.IdNacionalidad = :idNacionalidad
+                LIMIT 1";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':idNacionalidad', $idNacionalidad, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Verificar si es estudiante y mayor de 18
+            $esEstudiante = ($persona['IdPerfil'] == 3);
+            $edad = (int)$persona['edad'];
+            $puedeConvertirse = $esEstudiante && $edad >= 18;
+
+            // Obtener teléfonos de la persona
+            $sqlTelefonos = "SELECT IdTelefono, numero_telefono, IdPrefijo FROM telefono WHERE IdPersona = :idPersona";
+            $stmtTel = $conexion->prepare($sqlTelefonos);
+            $stmtTel->bindParam(':idPersona', $persona['IdPersona'], PDO::PARAM_INT);
+            $stmtTel->execute();
+            $telefonos = $stmtTel->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'existe' => true,
+                'esEstudiante' => $esEstudiante,
+                'edad' => $edad,
+                'puedeConvertirse' => $puedeConvertirse,
+                'persona' => [
+                    'IdPersona' => $persona['IdPersona'],
+                    'nombre' => $persona['nombre'],
+                    'apellido' => $persona['apellido'],
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido'],
+                    'cedula' => $persona['cedula'],
+                    'nacionalidad' => $persona['nacionalidad'],
+                    'IdNacionalidad' => $persona['IdNacionalidad'],
+                    'fecha_nacimiento' => $persona['fecha_nacimiento'],
+                    'IdSexo' => $persona['IdSexo'],
+                    'sexo' => $persona['sexo'],
+                    'correo' => $persona['correo'],
+                    'direccion' => $persona['direccion'],
+                    'usuario' => $persona['usuario'],
+                    'tieneCredenciales' => !empty($persona['usuario']) && !empty($persona['password']),
+                    'IdEstadoAcceso' => $persona['IdEstadoAcceso'],
+                    'IdPerfil' => $persona['IdPerfil'],
+                    'nombre_perfil' => $persona['nombre_perfil'],
+                    'telefonos' => $telefonos
+                ]
+            ]);
+        } else {
+            echo json_encode(['existe' => false]);
+        }
+
+    } catch (Exception $e) {
+        error_log("Error en verificarCedulaCompleto: " . $e->getMessage());
+        echo json_encode([
+            'existe' => false,
+            'error' => 'Error al verificar la cédula'
+        ]);
+    }
+    exit();
 }
 
 /**

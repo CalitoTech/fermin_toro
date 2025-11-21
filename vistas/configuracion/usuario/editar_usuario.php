@@ -547,11 +547,11 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
         const chip = document.querySelector(`.chip i[onclick="removeChip(${id})"]`)?.parentElement;
         if (chip) {
             chip.remove();
-            
+
             // Actualizar el select oculto
             const option = document.querySelector(`#roles option[value="${id}"]`);
             if (option) option.selected = false;
-            
+
             // Validar
             const grupo = document.getElementById('grupo__roles');
             if (document.querySelectorAll('.chip').length === 0) {
@@ -563,6 +563,216 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                 grupo.querySelector('.añadir__input-error').classList.add('añadir__input-error-activo');
             }
         }
+    }
+
+    // === VALIDACIÓN EN TIEMPO REAL DE CÉDULA ===
+    let cedulaTimer;
+    const cedulaInput = document.getElementById('cedula');
+    const nacionalidadSelect = document.getElementById('nacionalidad');
+    const cedulaOriginal = '<?= htmlspecialchars($usuario['cedula']) ?>';
+    const nacionalidadOriginal = '<?= $usuario['IdNacionalidad'] ?>';
+    const idUsuarioActual = <?= $idUsuario ?>;
+
+    async function verificarCedulaCompleto() {
+        const cedula = cedulaInput.value.trim();
+        const nacionalidadLetra = nacionalidadSelect.value; // V o E
+        const idNacionalidad = nacionalidadLetra === 'V' ? 1 : 2;
+
+        // Si no ha cambiado la cédula ni la nacionalidad, no hacer nada
+        if (cedula === cedulaOriginal && idNacionalidad == nacionalidadOriginal) {
+            return;
+        }
+
+        if (cedula.length < 7) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`../../../controladores/PersonaController.php?action=verificarCedulaCompleto&cedula=${cedula}&idNacionalidad=${idNacionalidad}`);
+            const data = await response.json();
+
+            if (data.existe) {
+                // Verificar si la cédula pertenece a otra persona
+                if (data.persona.IdPersona != idUsuarioActual) {
+                    // Es de otra persona, mostrar error
+                    let mensaje = `La cédula ${nacionalidadLetra}-${cedula} ya está registrada para <strong>${data.persona.nombreCompleto}</strong>.`;
+
+                    Swal.fire({
+                        title: 'Cédula Duplicada',
+                        html: mensaje,
+                        icon: 'error',
+                        confirmButtonColor: '#c90000'
+                    });
+
+                    // Restaurar valores originales
+                    cedulaInput.value = cedulaOriginal;
+                    nacionalidadSelect.value = nacionalidadOriginal == 1 ? 'V' : 'E';
+                    cedulaInput.focus();
+                }
+            }
+        } catch (error) {
+            console.error('Error al verificar cédula:', error);
+        }
+    }
+
+    // === VALIDACIONES EN TIEMPO REAL ===
+
+    // Validación de cédula
+    cedulaInput.addEventListener('blur', function() {
+        const cedula = this.value.trim();
+        const grupo = document.getElementById('grupo__cedula');
+        const errorMsg = grupo.querySelector('.añadir__input-error');
+
+        // Validar longitud
+        if (cedula.length < 7 || cedula.length > 8) {
+            grupo.classList.remove('añadir__grupo-correcto');
+            grupo.classList.add('añadir__grupo-incorrecto');
+            errorMsg.textContent = 'La cédula debe tener entre 7 y 8 dígitos numéricos';
+            return;
+        }
+
+        // Si la validación básica pasa, verificar duplicados
+        clearTimeout(cedulaTimer);
+        cedulaTimer = setTimeout(verificarCedulaCompleto, 300);
+    });
+
+    // También validar cuando cambia la nacionalidad
+    nacionalidadSelect.addEventListener('change', function() {
+        if (cedulaInput.value.trim().length >= 7) {
+            clearTimeout(cedulaTimer);
+            cedulaTimer = setTimeout(verificarCedulaCompleto, 300);
+        }
+    });
+
+    // Validación de nombre
+    const nombreInput = document.getElementById('nombre');
+    if (nombreInput) {
+        nombreInput.addEventListener('blur', function() {
+            const nombre = this.value.trim();
+            const grupo = document.getElementById('grupo__nombre');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (nombre.length < 3 || nombre.length > 40) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El nombre debe tener entre 3 y 40 letras';
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/.test(nombre)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El nombre solo puede contener letras y espacios';
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de apellido
+    const apellidoInput = document.getElementById('apellido');
+    if (apellidoInput) {
+        apellidoInput.addEventListener('blur', function() {
+            const apellido = this.value.trim();
+            const grupo = document.getElementById('grupo__apellido');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (apellido.length < 3 || apellido.length > 40) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El apellido debe tener entre 3 y 40 letras';
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/.test(apellido)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El apellido solo puede contener letras y espacios';
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de correo
+    const correoInput = document.getElementById('correo');
+    if (correoInput) {
+        correoInput.addEventListener('blur', function() {
+            const correo = this.value.trim();
+            const grupo = document.getElementById('grupo__correo');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (correo.length > 0) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(correo)) {
+                    grupo.classList.remove('añadir__grupo-correcto');
+                    grupo.classList.add('añadir__grupo-incorrecto');
+                    errorMsg.textContent = 'El correo electrónico no tiene un formato válido';
+                } else {
+                    grupo.classList.remove('añadir__grupo-incorrecto');
+                    grupo.classList.add('añadir__grupo-correcto');
+                }
+            }
+        });
+    }
+
+    // Validación de usuario
+    const usuarioInput = document.getElementById('usuario');
+    if (usuarioInput) {
+        usuarioInput.addEventListener('blur', function() {
+            const usuario = this.value.trim();
+            const grupo = document.getElementById('grupo__usuario');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (usuario.length < 4 || usuario.length > 20) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El usuario debe tener entre 4 y 20 caracteres';
+            } else if (!/^[a-zA-Z0-9_-]+$/.test(usuario)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El usuario solo puede contener letras, números, guiones y guiones bajos';
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de contraseña (solo si se está cambiando)
+    const passwordInput = document.getElementById('password');
+    const password2Input = document.getElementById('password2');
+
+    if (passwordInput) {
+        passwordInput.addEventListener('blur', function() {
+            const password = this.value.trim();
+            const grupo = document.getElementById('grupo__password');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (password.length > 0 && (password.length < 4 || password.length > 20)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'La contraseña debe tener entre 4 y 20 caracteres';
+            } else if (password.length > 0) {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de confirmar contraseña
+    if (password2Input) {
+        password2Input.addEventListener('blur', function() {
+            const password = passwordInput.value.trim();
+            const password2 = this.value.trim();
+            const grupo = document.getElementById('grupo__password2');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (password.length > 0 && password !== password2) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'Las contraseñas no coinciden';
+            } else if (password2.length > 0 && password === password2) {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
     }
 </script>
 </body>

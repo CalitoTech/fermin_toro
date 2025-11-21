@@ -51,23 +51,31 @@ switch ($tipo) {
 }
 
 /**
- * Buscar estudiantes sin egreso
+ * Buscar personas (estudiantes, docentes, administrativos) sin egreso
+ * Excluye representantes (IdPerfil = 4) y contactos de emergencia (IdPerfil = 5)
  */
 function buscarEstudiantes($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, no mostrar nada para estudiantes
+    // Si la búsqueda está vacía, no mostrar nada
     if (empty(trim($q))) {
         echo json_encode([]);
         return;
     }
 
     $stmt = $conexion->prepare("
-        SELECT DISTINCT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+        SELECT DISTINCT
+            p.IdPersona,
+            p.nombre,
+            p.apellido,
+            p.cedula,
+            n.nacionalidad,
+            dp.IdPerfil,
+            pr.nombre_perfil
         FROM persona p
         INNER JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
         INNER JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil
         LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
-        WHERE pr.nombre_perfil = 'Estudiante'
-        AND p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
+        WHERE p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
+        AND dp.IdPerfil NOT IN (4, 5)
         AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
         ORDER BY p.apellido, p.nombre
         LIMIT :limit
