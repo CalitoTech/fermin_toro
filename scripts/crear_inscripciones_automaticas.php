@@ -51,11 +51,13 @@ try {
 
     foreach ($estudiantes as $est) {
         try {
-            // Obtener curso siguiente usando la función del modelo
-            $cursoSiguiente = $inscripcionModel->obtenerCursoSiguiente($est['IdEstudiante']);
+            // Obtener curso siguiente usando la función del modelo Persona
+            require_once __DIR__ . '/../modelos/Persona.php';
+            $personaModel = new Persona($conexion);
+            $cursoSiguienteData = $personaModel->obtenerCursoSiguiente($est['IdEstudiante']);
 
             // Si es null, el estudiante se graduó
-            if ($cursoSiguiente === null) {
+            if ($cursoSiguienteData === null) {
                 // 1. Actualizar status a Graduado (IdStatus = 7)
                 $updateGraduado = "UPDATE persona
                                   SET IdEstadoInstitucional = 7
@@ -114,7 +116,14 @@ try {
             $stmtIns->bindParam(':ultimoPlantel', $est['ultimo_plantel'], PDO::PARAM_INT);
             $stmtIns->bindParam(':responsable', $est['responsable_inscripcion'], PDO::PARAM_INT);
             $stmtIns->bindParam(':idAnoNuevo', $idAnoNuevo, PDO::PARAM_INT);
-            $stmtIns->bindParam(':idCursoSeccion', $cursoSiguiente['IdCursoSeccion'], PDO::PARAM_INT);
+
+            // Obtener el IdCurso_Seccion de la primera sección disponible
+            $idCursoSeccion = $cursoSiguienteData['secciones'][0]['IdCurso_Seccion'] ?? null;
+            if (!$idCursoSeccion) {
+                throw new Exception("No hay secciones disponibles para el curso siguiente");
+            }
+
+            $stmtIns->bindParam(':idCursoSeccion', $idCursoSeccion, PDO::PARAM_INT);
             $stmtIns->execute();
 
             $inscritos++;

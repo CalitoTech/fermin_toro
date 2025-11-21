@@ -21,7 +21,7 @@ if ($limit < 1 || $limit > 50) {
 }
 
 // Validar tipo de búsqueda
-$tiposPermitidos = ['estudiante', 'urbanismo', 'parentesco', 'prefijo', 'plantel'];
+$tiposPermitidos = ['estudiante', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso'];
 if (!in_array($tipo, $tiposPermitidos)) {
     echo json_encode(['error' => 'Tipo de búsqueda no válido']);
     exit;
@@ -47,6 +47,10 @@ switch ($tipo) {
 
     case 'plantel':
         buscarPlanteles($conexion, $q, $limit);
+        break;
+
+    case 'secciones_curso':
+        obtenerSeccionesPorCurso($conexion);
         break;
 }
 
@@ -387,6 +391,34 @@ function buscarPlanteles($conexion, $q, $limit = 10) {
     }
 
     echo json_encode($resultados);
+}
+
+/**
+ * Obtener secciones disponibles para un curso específico
+ */
+function obtenerSeccionesPorCurso($conexion) {
+    $idCurso = $_GET['idCurso'] ?? 0;
+
+    if (empty($idCurso) || !is_numeric($idCurso)) {
+        echo json_encode(['error' => 'ID de curso no válido']);
+        return;
+    }
+
+    $stmt = $conexion->prepare("
+        SELECT
+            cs.IdCurso_Seccion,
+            s.IdSeccion,
+            s.seccion
+        FROM curso_seccion cs
+        INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+        WHERE cs.IdCurso = :idCurso
+        ORDER BY s.seccion ASC
+    ");
+
+    $stmt->bindParam(':idCurso', $idCurso, PDO::PARAM_INT);
+    $stmt->execute();
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
 ?>

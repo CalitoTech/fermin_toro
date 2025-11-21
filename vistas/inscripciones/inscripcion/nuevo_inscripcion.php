@@ -28,6 +28,7 @@ require_once __DIR__ . '/../../../modelos/Status.php';
 require_once __DIR__ . '/../../../modelos/TipoInscripcion.php';
 require_once __DIR__ . '/../../../modelos/TipoTrabajador.php';
 require_once __DIR__ . '/../../../modelos/Plantel.php';
+require_once __DIR__ . '/../../../modelos/FechaEscolar.php';
 
 // Instancias de los modelos
 $modeloNacionalidad = new Nacionalidad($conexion);
@@ -41,6 +42,7 @@ $statusModel = new Status($conexion);
 $tipoInscripcionModel = new TipoInscripcion($conexion);
 $modeloTipoTrabajador = new TipoTrabajador($conexion);
 $modeloPlantel = new Plantel($conexion);
+$fechaEscolarModel = new FechaEscolar($conexion);
 
 // Obtener datos sin filtro
 $nacionalidades = $modeloNacionalidad->obtenerConNombresLargos();
@@ -52,6 +54,7 @@ $listaStatus = $statusModel->obtenerStatusInscripcion();
 $tiposInscripcion = $tipoInscripcionModel->obtenerTodos();
 $tiposTrabajador = $modeloTipoTrabajador->obtenerTodos();
 $planteles = $modeloPlantel->obtenerTodos();
+$añoEscolarActivo = $fechaEscolarModel->obtenerActivo();
 ?>
 
 <head>
@@ -70,8 +73,13 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
 
 
 
-<div class="container mt-4">
-    <form id="formInscripcion" data-origen="pagina">
+<div class="container mt-4" style="min-height: 80vh;">
+    <form id="formInscripcion" data-origen="pagina" method="POST">
+        <!-- Hidden fields para formulario de estudiante regular -->
+        <input type="hidden" name="IdEstudiante" id="IdEstudiante" value="">
+        <input type="hidden" name="IdFechaEscolar" id="IdFechaEscolar" value="<?= $añoEscolarActivo['IdFecha_Escolar'] ?? '' ?>">
+        <input type="hidden" name="IdCurso" id="IdCurso" value="">
+        <input type="hidden" name="idTipoInscripcion" id="idTipoInscripcion" value="1">
 
         <!-- 🔹 BLOQUE: DATOS DE INSCRIPCIÓN -->
         <div class="card mb-3">
@@ -98,48 +106,147 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                         </div>
                     </div>
 
-                    <!-- Nivel -->
-                    <div class="col-md-3">
-                        <div class="form-group required-field">
-                            <label for="nivel">Nivel</label>
-                            <select class="form-control" id="nivel" name="idNivelSeleccionado" required>
-                                <option value="">Seleccione un nivel</option>
-                                <?php foreach ($niveles as $nivel): ?>
-                                    <option value="<?= $nivel['IdNivel'] ?>">
-                                        <?= htmlspecialchars($nivel['nivel']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                    <!-- Contenedor para Nuevo Ingreso -->
+                    <div id="nuevoIngresoContainer" class="col-12" style="display: none;">
+                        <div class="row g-3">
+                            <!-- Nivel -->
+                            <div class="col-md-4">
+                                <div class="form-group required-field">
+                                    <label for="nivel">Nivel</label>
+                                    <select class="form-control" id="nivel" name="idNivelSeleccionado" required>
+                                        <option value="">Seleccione un nivel</option>
+                                        <?php foreach ($niveles as $nivel): ?>
+                                            <option value="<?= $nivel['IdNivel'] ?>">
+                                                <?= htmlspecialchars($nivel['nivel']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Curso -->
+                            <div class="col-md-4">
+                                <div class="form-group required-field">
+                                    <label for="curso">Curso</label>
+                                    <select class="form-control" id="curso" name="idCurso" required>
+                                        <option value="">Seleccione un curso</option>
+                                        <?php foreach ($cursos as $curso): ?>
+                                            <option value="<?= $curso['IdCurso'] ?>">
+                                                <?= htmlspecialchars($curso['curso']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Status -->
+                            <div class="col-md-4">
+                                <div class="form-group required-field">
+                                    <label for="IdStatus" class="form-label">Status</label>
+                                    <select class="form-select" id="IdStatus" name="idStatus" required>
+                                        <option value="">Seleccione un status</option>
+                                        <?php foreach ($listaStatus as $status): ?>
+                                            <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
+                                                <?= htmlspecialchars($status['status']) ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Curso -->
-                    <div class="col-md-3">
-                        <div class="form-group required-field">
-                            <label for="curso">Curso</label>
-                            <select class="form-control" id="curso" name="idCurso" required>
-                                <option value="">Seleccione un curso</option>
-                                <?php foreach ($cursos as $curso): ?>
-                                    <option value="<?= $curso['IdCurso'] ?>">
-                                        <?= htmlspecialchars($curso['curso']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
+                    <!-- Contenedor para Estudiante Regular (Prosecución) -->
+                    <div id="regularContainer" class="col-12" style="display: none;">
+                        <div class="row g-3">
+                            <!-- Buscador de Estudiante -->
+                            <div class="col-12">
+                                <div class="form-group required-field">
+                                    <label for="buscadorEstudiante">
+                                        <i class='bx bx-search'></i> Buscar Estudiante
+                                    </label>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control buscador-input" id="buscadorEstudiante"
+                                               autocomplete="off" placeholder="Escriba cédula, nombre o apellido del estudiante...">
+                                        <div id="resultadosBusqueda" class="autocomplete-results d-none"></div>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> Busque al estudiante que desea inscribir
+                                    </small>
+                                </div>
+                            </div>
 
-                    <!-- Status -->
-                    <div class="col-md-3">
-                        <div class="form-group required-field">
-                            <label for="IdStatus" class="form-label">Status</label>
-                            <select class="form-select" id="IdStatus" name="idStatus" required>
-                                <option value="">Seleccione un status</option>
-                                <?php foreach ($listaStatus as $status): ?>
-                                    <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
-                                        <?= htmlspecialchars($status['status']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
+                            <!-- Información del estudiante (se muestra después de seleccionar) -->
+                            <div id="infoEstudianteContainer" class="col-12" style="display: none;">
+                                <div class="alert alert-info">
+                                    <h6><i class='bx bx-user'></i> Estudiante Seleccionado</h6>
+                                    <p class="mb-1"><strong>Nombre:</strong> <span id="infoEstudianteNombre"></span></p>
+                                    <p class="mb-1"><strong>Curso Actual:</strong> <span id="infoCursoActual"></span></p>
+                                </div>
+
+                                <!-- Pregunta si repite curso -->
+                                <div class="form-group required-field mb-3">
+                                    <label>¿El estudiante repite el curso actual?</label>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" id="repiteNo" name="repiteCurso" class="custom-control-input" value="0" checked>
+                                                <label class="custom-control-label" for="repiteNo">
+                                                    No, pasa al siguiente curso
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="custom-control custom-radio">
+                                                <input type="radio" id="repiteSi" name="repiteCurso" class="custom-control-input" value="1">
+                                                <label class="custom-control-label" for="repiteSi">
+                                                    Sí, repite el curso actual
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Curso (readonly) -->
+                                <div class="form-group mb-3">
+                                    <label for="cursoRegular">
+                                        <i class='bx bxs-graduation'></i> Curso
+                                        <span class="badge badge-secondary">Solo lectura</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="cursoRegular" readonly
+                                           style="background-color: #e9ecef; cursor: not-allowed;">
+                                </div>
+
+                                <!-- Sección (editable) -->
+                                <div class="form-group required-field mb-3">
+                                    <label for="seccionRegular">
+                                        <i class='bx bx-group'></i> Sección
+                                        <span style="color: #dc3545;"></span>
+                                    </label>
+                                    <select name="IdCursoSeccion" id="seccionRegular" class="form-control" required>
+                                        <option value="">Seleccione una sección</option>
+                                    </select>
+                                    <small class="text-muted">Puede cambiar la sección si lo desea</small>
+                                </div>
+
+                                <!-- Status (solo Pendiente de pago e Inscrito) -->
+                                <div class="form-group required-field mb-3">
+                                    <label for="statusRegular">
+                                        <i class='bx bx-info-circle'></i> Status
+                                        <span style="color: #dc3545;"></span>
+                                    </label>
+                                    <select name="idStatus" id="statusRegular" class="form-control" required>
+                                        <option value="">Seleccione un status</option>
+                                        <?php foreach ($listaStatus as $status): ?>
+                                            <?php if ($status['IdStatus'] == 10 || $status['IdStatus'] == 11): ?>
+                                                <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
+                                                    <?= htmlspecialchars($status['status']) ?>
+                                                </option>
+                                            <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -691,11 +798,11 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
         <?php endforeach; ?>
 
         <!-- Botones para Volver y Guardar -->
-        <div class="d-flex justify-content-between mt-4 mb-5">
+        <div class="d-flex justify-content-between mt-4 mb-5" id="botonesFormulario">
             <a href="inscripcion.php" class="btn btn-outline-danger btn-lg">
                 <i class='bx bx-arrow-back'></i> Volver a Inscripciones
             </a>
-            <button type="submit" class="btn btn-danger btn-lg" id="btnEnviarFormulario">
+            <button type="submit" class="btn btn-danger btn-lg" id="btnEnviarFormulario" style="display: none;">
                 <i class='bx bxs-save'></i> Guardar Inscripción
             </button>
         </div>
@@ -1041,7 +1148,7 @@ document.addEventListener("DOMContentLoaded", function() {
         fechaNacimientoInput.setAttribute('max', formatoFecha(fechaMax));
 
         // Validar cuando se cambia el valor
-        fechaNacimientoInput.addEventListener('change', function() {
+        fechaNacimientoInput.addEventListener('blur', function() {
             const valorSeleccionado = this.value;
             if (!valorSeleccionado) return;
 
@@ -1073,6 +1180,293 @@ document.addEventListener("DOMContentLoaded", function() {
                 this.classList.remove('is-invalid');
             }
         });
+    }
+
+    // === MANEJO DINÁMICO DEL TIPO DE INSCRIPCIÓN ===
+    const tipoInscripcionSelect = document.getElementById('tipoInscripcion');
+    const nuevoIngresoContainer = document.getElementById('nuevoIngresoContainer');
+    const regularContainer = document.getElementById('regularContainer');
+
+    // Ocultar TODO el formulario inicialmente (excepto el primer card de "Datos de Inscripción")
+    document.querySelectorAll('.card.mb-4, .card.mb-3').forEach((card, index) => {
+        // El primer card es "Datos de Inscripción" (index 0), mantenerlo visible
+        // Todos los demás se ocultan (estudiante, madre, padre, representante, contacto emergencia)
+        if (index > 0) {
+            card.style.display = 'none';
+        }
+    });
+
+    tipoInscripcionSelect.addEventListener('change', function() {
+        const tipoSeleccionado = parseInt(this.value);
+        const form = document.getElementById('formInscripcion');
+        const btnGuardar = document.getElementById('btnEnviarFormulario');
+
+        // Actualizar hidden field
+        document.getElementById('idTipoInscripcion').value = tipoSeleccionado;
+
+        // Limpiar formularios
+        if (document.getElementById('buscadorEstudiante')) {
+            document.getElementById('buscadorEstudiante').value = '';
+        }
+        document.getElementById('IdEstudiante').value = '';
+        if (document.getElementById('infoEstudianteContainer')) {
+            document.getElementById('infoEstudianteContainer').style.display = 'none';
+        }
+
+        if (tipoSeleccionado === 1) {
+            // Nuevo Ingreso - Mostrar formulario completo tradicional
+            nuevoIngresoContainer.style.display = 'flex';
+            regularContainer.style.display = 'none';
+            btnGuardar.style.display = 'inline-block'; // Mostrar botón de guardar
+
+            // Cambiar action del formulario al endpoint tradicional
+            // form.action = '../../../controladores/InscripcionController.php?action=guardarInscripcion';
+            // form.method = 'POST';
+
+            // Mostrar formulario completo de estudiante y padres (todos los cards excepto el de inscripción que ya está visible)
+            document.querySelectorAll('.card.mb-4, .card.mb-3').forEach((card, index) => {
+                if (index > 0) card.style.display = 'block';
+            });
+
+            // Hacer required los campos del formulario tradicional
+            const nivelSelect = document.getElementById('nivel');
+            const cursoSelect = document.getElementById('curso');
+            const statusSelect = document.getElementById('IdStatus');
+            if (nivelSelect) nivelSelect.setAttribute('required', 'required');
+            if (cursoSelect) cursoSelect.setAttribute('required', 'required');
+            if (statusSelect) statusSelect.setAttribute('required', 'required');
+
+            // Remover required de campos de estudiante regular
+            const seccionRegular = document.getElementById('seccionRegular');
+            const statusRegular = document.getElementById('statusRegular');
+            if (seccionRegular) seccionRegular.removeAttribute('required');
+            if (statusRegular) statusRegular.removeAttribute('required');
+
+        } else if (tipoSeleccionado === 2) {
+            // Estudiante Regular (Prosecución) - Mostrar buscador simple
+            nuevoIngresoContainer.style.display = 'none';
+            regularContainer.style.display = 'flex';
+            btnGuardar.style.display = 'inline-block'; // Mostrar botón de guardar
+
+            // Cambiar action del formulario al endpoint de renovación
+            form.action = '../../../controladores/representantes/procesar_renovacion.php';
+            form.method = 'POST';
+
+            // Ocultar formulario completo
+            document.querySelectorAll('.card.mb-4').forEach((card, index) => {
+                if (index > 0) card.style.display = 'none';
+            });
+
+            // Remover required del formulario tradicional
+            const nivelSelect = document.getElementById('nivel');
+            const cursoSelect = document.getElementById('curso');
+            const statusSelect = document.getElementById('IdStatus');
+            if (nivelSelect) nivelSelect.removeAttribute('required');
+            if (cursoSelect) cursoSelect.removeAttribute('required');
+            if (statusSelect) statusSelect.removeAttribute('required');
+
+            // Hacer required los campos de estudiante regular
+            const seccionRegular = document.getElementById('seccionRegular');
+            const statusRegular = document.getElementById('statusRegular');
+            if (seccionRegular) seccionRegular.setAttribute('required', 'required');
+            if (statusRegular) statusRegular.setAttribute('required', 'required');
+
+        } else {
+            // Sin selección - Ocultar todo excepto el card de "Datos de Inscripción"
+            nuevoIngresoContainer.style.display = 'none';
+            regularContainer.style.display = 'none';
+            btnGuardar.style.display = 'none'; // Ocultar botón de guardar
+            form.action = '';
+
+            document.querySelectorAll('.card.mb-4, .card.mb-3').forEach((card, index) => {
+                if (index > 0) card.style.display = 'none';
+            });
+        }
+    });
+
+    // === INTERCEPTAR SUBMIT PARA TIPO REGULAR ===
+    // Este listener se ejecuta ANTES que el de solicitud_cupo.js
+    document.getElementById('btnEnviarFormulario').addEventListener('click', function(e) {
+        const tipoInscripcion = parseInt(document.getElementById('idTipoInscripcion').value || 1);
+
+        // Si es inscripción regular (tipo 2), validar y enviar directamente
+        if (tipoInscripcion === 2) {
+            e.preventDefault();
+            e.stopImmediatePropagation(); // Detener otros listeners
+
+            // Validaciones simples para tipo regular
+            const idEstudiante = document.getElementById('IdEstudiante').value;
+            const seccionRegular = document.getElementById('seccionRegular').value;
+            const statusRegular = document.getElementById('statusRegular').value;
+
+            if (!idEstudiante) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un estudiante',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            if (!seccionRegular) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar una sección',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            if (!statusRegular) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un status',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            // Si todas las validaciones pasan, enviar el formulario
+            document.getElementById('formInscripcion').submit();
+        }
+        // Si es tipo 1 (nuevo ingreso), dejar que solicitud_cupo.js maneje la validación
+    }, true); // useCapture = true para ejecutarse primero
+
+    // === BUSCADOR DE ESTUDIANTE PARA PROSECUCIÓN ===
+    if (document.getElementById('buscadorEstudiante')) {
+        const buscadorEstudiante = new BuscadorGenerico(
+            'buscadorEstudiante',
+            'resultadosBusqueda',
+            'estudiante',
+            'IdEstudiante'
+        );
+
+        const inputBuscador = document.getElementById('buscadorEstudiante');
+        inputBuscador.addEventListener('itemSeleccionado', async function(e) {
+            if (e.detail && e.detail.IdPersona) {
+                const idEstudiante = e.detail.IdPersona;
+
+                try {
+                    // Obtener información del curso siguiente
+                    const response = await fetch(`../../../controladores/PersonaController.php?action=obtenerCursoSiguiente&idEstudiante=${idEstudiante}`);
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        if (data.graduado) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Estudiante Graduado',
+                                text: data.mensaje || 'Este estudiante ya completó todos los cursos disponibles',
+                                confirmButtonColor: '#c90000'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.error || 'No se pudo obtener la información del estudiante',
+                                confirmButtonColor: '#c90000'
+                            });
+                        }
+                        return;
+                    }
+
+                    // Guardar datos en variables globales
+                    window.estudianteData = data;
+
+                    // Mostrar información del estudiante
+                    document.getElementById('infoEstudianteNombre').textContent =
+                        `${data.estudiante.apellido} ${data.estudiante.nombre} (${data.estudiante.nacionalidad}-${data.estudiante.cedula})`;
+                    document.getElementById('infoCursoActual').textContent =
+                        `${data.cursoActual.curso} - Sección ${data.cursoActual.seccion}`;
+
+                    // Mostrar el contenedor de información
+                    document.getElementById('infoEstudianteContainer').style.display = 'block';
+
+                    // Configurar curso por defecto (siguiente)
+                    actualizarCursoYSecciones(false);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al obtener la información del estudiante',
+                        confirmButtonColor: '#c90000'
+                    });
+                }
+            }
+        });
+
+        // Manejar cambio en radio de repite curso
+        const radioRepite = document.querySelectorAll('input[name="repiteCurso"]');
+        if (radioRepite.length > 0) {
+            radioRepite.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const repite = this.value === '1';
+                    actualizarCursoYSecciones(repite);
+                });
+            });
+        }
+
+        function actualizarCursoYSecciones(repite) {
+            if (!window.estudianteData) return;
+
+            const data = window.estudianteData;
+            const cursoRegularInput = document.getElementById('cursoRegular');
+            const seccionSelect = document.getElementById('seccionRegular');
+            const idCursoHidden = document.getElementById('IdCurso');
+
+            if (repite) {
+                // Mostrar curso actual
+                cursoRegularInput.value = data.cursoActual.curso;
+                idCursoHidden.value = data.cursoActual.IdCurso;
+
+                // Cargar secciones del curso actual
+                cargarSeccionesCurso(data.cursoActual.IdCurso, data.cursoActual.IdSeccion);
+            } else {
+                // Mostrar curso siguiente
+                cursoRegularInput.value = data.cursoSiguiente.curso;
+                idCursoHidden.value = data.cursoSiguiente.IdCurso;
+
+                // Cargar secciones del curso siguiente
+                const seccionesSiguiente = data.secciones || [];
+                seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+                seccionesSiguiente.forEach(seccion => {
+                    const option = document.createElement('option');
+                    option.value = seccion.IdCurso_Seccion;
+                    option.textContent = seccion.seccion;
+                    if (seccion.IdSeccion == data.seccionPorDefecto) {
+                        option.selected = true;
+                    }
+                    seccionSelect.appendChild(option);
+                });
+            }
+        }
+
+        async function cargarSeccionesCurso(idCurso, idSeccionActual) {
+            try {
+                const response = await fetch(`../../../controladores/BuscarGeneral.php?tipo=secciones_curso&idCurso=${idCurso}`);
+                const secciones = await response.json();
+
+                const seccionSelect = document.getElementById('seccionRegular');
+                seccionSelect.innerHTML = '<option value="">Seleccione una sección</option>';
+
+                secciones.forEach(seccion => {
+                    const option = document.createElement('option');
+                    option.value = seccion.IdCurso_Seccion;
+                    option.textContent = seccion.seccion;
+                    if (seccion.IdSeccion == idSeccionActual) {
+                        option.selected = true;
+                    }
+                    seccionSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error al cargar secciones:', error);
+            }
+        }
     }
 });
 </script>

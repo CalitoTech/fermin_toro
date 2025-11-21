@@ -66,89 +66,18 @@ if (!$estudiante) {
     exit();
 }
 
-// Obtener la inscripción más reciente del estudiante
-$sqlInscripcionReciente = "
-    SELECT i.*, cs.IdCurso, cs.IdSeccion, c.IdNivel
-    FROM inscripcion i
-    INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
-    INNER JOIN curso c ON c.IdCurso = cs.IdCurso
-    WHERE i.IdEstudiante = :idEstudiante
-    ORDER BY i.IdInscripcion DESC
-    LIMIT 1
-";
-$stmtInscripcion = $conexion->prepare($sqlInscripcionReciente);
-$stmtInscripcion->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
-$stmtInscripcion->execute();
-$inscripcionReciente = $stmtInscripcion->fetch(PDO::FETCH_ASSOC);
-
 // Obtener el año escolar activo
 $añoEscolarActivo = $fechaEscolarModel->obtenerActivo();
 
-// Obtener el curso siguiente
-$cursoSiguiente = null;
-if ($inscripcionReciente) {
-    $sqlCursoSiguiente = "
-        SELECT c.IdCurso, c.curso, c.IdNivel
-        FROM curso c
-        WHERE c.IdNivel = :idNivel
-        AND c.IdCurso > :idCursoActual
-        ORDER BY c.IdCurso ASC
-        LIMIT 1
-    ";
-    $stmtCursoSiguiente = $conexion->prepare($sqlCursoSiguiente);
-    $stmtCursoSiguiente->bindParam(':idNivel', $inscripcionReciente['IdNivel'], PDO::PARAM_INT);
-    $stmtCursoSiguiente->bindParam(':idCursoActual', $inscripcionReciente['IdCurso'], PDO::PARAM_INT);
-    $stmtCursoSiguiente->execute();
-    $cursoSiguiente = $stmtCursoSiguiente->fetch(PDO::FETCH_ASSOC);
-}
+// Obtener el curso siguiente usando la función del modelo
+$cursoSiguiente = $personaModel->obtenerCursoSiguiente($idEstudiante);
 
-// Si no hay curso siguiente en el mismo nivel, intentar obtener el primer curso del siguiente nivel
-if (!$cursoSiguiente && $inscripcionReciente) {
-    $sqlNivelSiguiente = "
-        SELECT n.IdNivel
-        FROM nivel n
-        WHERE n.IdNivel > :idNivelActual
-        ORDER BY n.IdNivel ASC
-        LIMIT 1
-    ";
-    $stmtNivelSiguiente = $conexion->prepare($sqlNivelSiguiente);
-    $stmtNivelSiguiente->bindParam(':idNivelActual', $inscripcionReciente['IdNivel'], PDO::PARAM_INT);
-    $stmtNivelSiguiente->execute();
-    $nivelSiguiente = $stmtNivelSiguiente->fetch(PDO::FETCH_ASSOC);
+// Obtener información del curso actual
+$cursoActual = $personaModel->obtenerCursoActual($idEstudiante);
 
-    if ($nivelSiguiente) {
-        $sqlPrimerCursoNivel = "
-            SELECT c.IdCurso, c.curso, c.IdNivel
-            FROM curso c
-            WHERE c.IdNivel = :idNivel
-            ORDER BY c.IdCurso ASC
-            LIMIT 1
-        ";
-        $stmtPrimerCurso = $conexion->prepare($sqlPrimerCursoNivel);
-        $stmtPrimerCurso->bindParam(':idNivel', $nivelSiguiente['IdNivel'], PDO::PARAM_INT);
-        $stmtPrimerCurso->execute();
-        $cursoSiguiente = $stmtPrimerCurso->fetch(PDO::FETCH_ASSOC);
-    }
-}
-
-// Obtener secciones disponibles para el curso siguiente
-$seccionesDisponibles = [];
-if ($cursoSiguiente) {
-    $sqlSecciones = "
-        SELECT DISTINCT s.IdSeccion, s.seccion, cs.IdCurso_Seccion
-        FROM seccion s
-        INNER JOIN curso_seccion cs ON cs.IdSeccion = s.IdSeccion
-        WHERE cs.IdCurso = :idCurso
-        ORDER BY s.seccion ASC
-    ";
-    $stmtSecciones = $conexion->prepare($sqlSecciones);
-    $stmtSecciones->bindParam(':idCurso', $cursoSiguiente['IdCurso'], PDO::PARAM_INT);
-    $stmtSecciones->execute();
-    $seccionesDisponibles = $stmtSecciones->fetchAll(PDO::FETCH_ASSOC);
-}
-
-// Sección por defecto (la misma de la inscripción reciente si existe)
-$seccionPorDefecto = $inscripcionReciente['IdSeccion'] ?? null;
+// Extraer secciones disponibles y sección por defecto
+$seccionesDisponibles = $cursoSiguiente['secciones'] ?? [];
+$seccionPorDefecto = $cursoSiguiente['seccionPorDefecto'] ?? null;
 ?>
 
 <?php include '../../layouts/menu.php'; ?>

@@ -47,6 +47,9 @@ switch ($action) {
     case 'verificarCedulaCompleto':
         verificarCedulaCompleto();
         break;
+    case 'obtenerCursoSiguiente':
+        obtenerCursoSiguienteEstudiante();
+        break;
     default:
         header("Location: ../vistas/configuracion/usuario/usuario.php");
         exit();
@@ -883,6 +886,83 @@ function verificarCedulaCompleto() {
         echo json_encode([
             'existe' => false,
             'error' => 'Error al verificar la cédula'
+        ]);
+    }
+    exit();
+}
+
+/**
+ * Obtiene el curso siguiente para un estudiante (usado en inscripciones)
+ */
+function obtenerCursoSiguienteEstudiante() {
+    header('Content-Type: application/json');
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        $idEstudiante = $_GET['idEstudiante'] ?? 0;
+
+        if (!$idEstudiante) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'ID de estudiante no proporcionado'
+            ]);
+            exit();
+        }
+
+        $personaModel = new Persona($conexion);
+
+        // Obtener datos básicos del estudiante
+        $estudiante = $personaModel->obtenerEstudiantePorId($idEstudiante);
+
+        if (!$estudiante) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Estudiante no encontrado'
+            ]);
+            exit();
+        }
+
+        // Obtener curso actual
+        $cursoActual = $personaModel->obtenerCursoActual($idEstudiante);
+
+        // Obtener curso siguiente
+        $cursoSiguienteData = $personaModel->obtenerCursoSiguiente($idEstudiante);
+
+        if ($cursoSiguienteData === null) {
+            echo json_encode([
+                'success' => false,
+                'graduado' => true,
+                'mensaje' => 'El estudiante ya completó todos los cursos disponibles'
+            ]);
+            exit();
+        }
+
+        echo json_encode([
+            'success' => true,
+            'estudiante' => [
+                'IdPersona' => $estudiante['IdPersona'],
+                'nombre' => $estudiante['nombre'],
+                'apellido' => $estudiante['apellido'],
+                'cedula' => $estudiante['cedula'],
+                'nacionalidad' => $estudiante['nacionalidad']
+            ],
+            'cursoActual' => $cursoActual,
+            'cursoSiguiente' => [
+                'IdCurso' => $cursoSiguienteData['IdCurso'],
+                'curso' => $cursoSiguienteData['curso'],
+                'IdNivel' => $cursoSiguienteData['IdNivel']
+            ],
+            'secciones' => $cursoSiguienteData['secciones'],
+            'seccionPorDefecto' => $cursoSiguienteData['seccionPorDefecto']
+        ]);
+
+    } catch (Exception $e) {
+        error_log("Error en obtenerCursoSiguienteEstudiante: " . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'error' => 'Error al obtener información del curso'
         ]);
     }
     exit();

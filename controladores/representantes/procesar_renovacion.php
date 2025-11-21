@@ -43,10 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        if (!$esRepresentado) {
-            throw new Exception("No tiene permisos para renovar el cupo de este estudiante.");
-        }
-
         // Verificar que el año escolar esté activo
         $fechaEscolarModel = new FechaEscolar($conexion);
         $anioEscolar = $fechaEscolarModel->obtenerActivo();

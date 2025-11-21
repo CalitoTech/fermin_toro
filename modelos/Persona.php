@@ -554,7 +554,7 @@ class Persona {
     public function obtenerDiscapacidadesEstudiante($idPersona) {
         try {
             $query = "
-                SELECT 
+                SELECT
                     td.tipo_discapacidad,
                     d.discapacidad,
                     d.IdTipo_Discapacidad
@@ -569,6 +569,147 @@ class Persona {
         } catch (PDOException $e) {
             error_log("Error en obtenerDiscapacidadesEstudiante: " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Obtiene el curso siguiente para un estudiante
+     * Retorna el curso siguiente (mismo nivel o siguiente nivel) con secciones disponibles
+     * Retorna null si el estudiante ya está en el último curso (graduado)
+     *
+     * @param int $idEstudiante ID del estudiante
+     * @return array|null Array con información del curso siguiente y secciones, o null si no hay curso siguiente
+     */
+    public function obtenerCursoSiguiente($idEstudiante) {
+        try {
+            // Obtener la inscripción más reciente del estudiante
+            $sqlInscripcionReciente = "
+                SELECT i.*, cs.IdCurso, cs.IdSeccion, c.IdNivel
+                FROM inscripcion i
+                INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+                INNER JOIN curso c ON c.IdCurso = cs.IdCurso
+                WHERE i.IdEstudiante = :idEstudiante
+                ORDER BY i.IdInscripcion DESC
+                LIMIT 1
+            ";
+            $stmtInscripcion = $this->conn->prepare($sqlInscripcionReciente);
+            $stmtInscripcion->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmtInscripcion->execute();
+            $inscripcionReciente = $stmtInscripcion->fetch(PDO::FETCH_ASSOC);
+
+            if (!$inscripcionReciente) {
+                return null; // No tiene inscripciones previas
+            }
+
+            // Intentar obtener el curso siguiente en el mismo nivel
+            $sqlCursoSiguiente = "
+                SELECT c.IdCurso, c.curso, c.IdNivel
+                FROM curso c
+                WHERE c.IdNivel = :idNivel
+                AND c.IdCurso > :idCursoActual
+                ORDER BY c.IdCurso ASC
+                LIMIT 1
+            ";
+            $stmtCursoSiguiente = $this->conn->prepare($sqlCursoSiguiente);
+            $stmtCursoSiguiente->bindParam(':idNivel', $inscripcionReciente['IdNivel'], PDO::PARAM_INT);
+            $stmtCursoSiguiente->bindParam(':idCursoActual', $inscripcionReciente['IdCurso'], PDO::PARAM_INT);
+            $stmtCursoSiguiente->execute();
+            $cursoSiguiente = $stmtCursoSiguiente->fetch(PDO::FETCH_ASSOC);
+
+            // Si no hay curso siguiente en el mismo nivel, buscar el primer curso del siguiente nivel
+            if (!$cursoSiguiente) {
+                $sqlNivelSiguiente = "
+                    SELECT n.IdNivel
+                    FROM nivel n
+                    WHERE n.IdNivel > :idNivelActual
+                    ORDER BY n.IdNivel ASC
+                    LIMIT 1
+                ";
+                $stmtNivelSiguiente = $this->conn->prepare($sqlNivelSiguiente);
+                $stmtNivelSiguiente->bindParam(':idNivelActual', $inscripcionReciente['IdNivel'], PDO::PARAM_INT);
+                $stmtNivelSiguiente->execute();
+                $nivelSiguiente = $stmtNivelSiguiente->fetch(PDO::FETCH_ASSOC);
+
+                if ($nivelSiguiente) {
+                    $sqlPrimerCursoNivel = "
+                        SELECT c.IdCurso, c.curso, c.IdNivel
+                        FROM curso c
+                        WHERE c.IdNivel = :idNivel
+                        ORDER BY c.IdCurso ASC
+                        LIMIT 1
+                    ";
+                    $stmtPrimerCurso = $this->conn->prepare($sqlPrimerCursoNivel);
+                    $stmtPrimerCurso->bindParam(':idNivel', $nivelSiguiente['IdNivel'], PDO::PARAM_INT);
+                    $stmtPrimerCurso->execute();
+                    $cursoSiguiente = $stmtPrimerCurso->fetch(PDO::FETCH_ASSOC);
+                }
+            }
+
+            // Si no hay curso siguiente, el estudiante se graduó
+            if (!$cursoSiguiente) {
+                return null;
+            }
+
+            // Obtener secciones disponibles para el curso siguiente
+            $sqlSecciones = "
+                SELECT DISTINCT s.IdSeccion, s.seccion, cs.IdCurso_Seccion
+                FROM seccion s
+                INNER JOIN curso_seccion cs ON cs.IdSeccion = s.IdSeccion
+                WHERE cs.IdCurso = :idCurso
+                ORDER BY s.seccion ASC
+            ";
+            $stmtSecciones = $this->conn->prepare($sqlSecciones);
+            $stmtSecciones->bindParam(':idCurso', $cursoSiguiente['IdCurso'], PDO::PARAM_INT);
+            $stmtSecciones->execute();
+            $seccionesDisponibles = $stmtSecciones->fetchAll(PDO::FETCH_ASSOC);
+
+            // Agregar información del curso actual y sección actual
+            $cursoSiguiente['cursoActual'] = [
+                'IdCurso' => $inscripcionReciente['IdCurso'],
+                'IdSeccion' => $inscripcionReciente['IdSeccion']
+            ];
+            $cursoSiguiente['secciones'] = $seccionesDisponibles;
+            $cursoSiguiente['seccionPorDefecto'] = $inscripcionReciente['IdSeccion'];
+
+            return $cursoSiguiente;
+
+        } catch (PDOException $e) {
+            error_log("Error en obtenerCursoSiguiente: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene el curso actual de un estudiante
+     *
+     * @param int $idEstudiante ID del estudiante
+     * @return array|null Array con información del curso actual, o null si no tiene inscripciones
+     */
+    public function obtenerCursoActual($idEstudiante) {
+        try {
+            $sqlCursoActual = "
+                SELECT
+                    c.IdCurso,
+                    c.curso,
+                    c.IdNivel,
+                    cs.IdCurso_Seccion,
+                    s.IdSeccion,
+                    s.seccion
+                FROM inscripcion i
+                INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+                INNER JOIN curso c ON c.IdCurso = cs.IdCurso
+                INNER JOIN seccion s ON s.IdSeccion = cs.IdSeccion
+                WHERE i.IdEstudiante = :idEstudiante
+                ORDER BY i.IdInscripcion DESC
+                LIMIT 1
+            ";
+            $stmt = $this->conn->prepare($sqlCursoActual);
+            $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en obtenerCursoActual: " . $e->getMessage());
+            return null;
         }
     }
 }
