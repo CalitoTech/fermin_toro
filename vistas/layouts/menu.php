@@ -278,8 +278,8 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
                     </li>
                 <?php endif; ?>
                 
-                <?php if (!$perfilesSinAcceso): ?>
-                    <!-- Mis Representados -->
+                <?php if (in_array(4, $todosLosPerfiles) || in_array(5, $todosLosPerfiles)): ?>
+                    <!-- Mis Representados (solo para Representante o Contacto de Emergencia) -->
                     <li>
                         <a href="../../representantes/representados/representado.php">
                             <i class='bx bx-user-voice'></i>
