@@ -277,14 +277,16 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
                         </a>
                     </li>
                 <?php endif; ?>
-
-                <!-- Mis Representados -->
-                <li>
-                    <a href="../../representantes/representados/representado.php">
-                        <i class='bx bx-user-voice'></i>
-                        <span class="link_name">Mis Representados</span>
-                    </a>
-                </li>
+                
+                <?php if (!$perfilesSinAcceso): ?>
+                    <!-- Mis Representados -->
+                    <li>
+                        <a href="../../representantes/representados/representado.php">
+                            <i class='bx bx-user-voice'></i>
+                            <span class="link_name">Mis Representados</span>
+                        </a>
+                    </li>
+                <?php endif; ?>
 
                 <?php if (!$tienePerfilInterno): ?>
                     <!-- Cambiar Contraseña (solo si no tiene perfil interno) -->
