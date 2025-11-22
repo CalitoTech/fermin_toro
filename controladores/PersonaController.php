@@ -3,7 +3,7 @@
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
 // Acciones que NO requieren sesión
-$accionesPublicas = ['verificarCedula', 'verificarAccesoRepresentantes', 'verificarCedulaRepresentante', 'obtenerPerfil', 'verificarCedulaCompleto'];
+$accionesPublicas = ['verificarCedula', 'verificarAccesoRepresentantes', 'verificarCedulaRepresentante', 'obtenerPerfil', 'verificarCedulaCompleto', 'verificarCorreo'];
 
 if (!in_array($action, $accionesPublicas)) {
     session_start();
@@ -49,6 +49,9 @@ switch ($action) {
         break;
     case 'obtenerCursoSiguiente':
         obtenerCursoSiguienteEstudiante();
+        break;
+    case 'verificarCorreo':
+        verificarCorreo();
         break;
     default:
         header("Location: ../vistas/configuracion/usuario/usuario.php");
@@ -963,6 +966,82 @@ function obtenerCursoSiguienteEstudiante() {
         echo json_encode([
             'success' => false,
             'error' => 'Error al obtener información del curso'
+        ]);
+    }
+    exit();
+}
+
+/**
+ * Verifica si un correo electrónico ya está registrado en el sistema
+ * @return void Retorna JSON con el resultado de la verificación
+ */
+function verificarCorreo() {
+    header('Content-Type: application/json');
+
+    try {
+        $correo = $_GET['correo'] ?? '';
+        $idPersonaExcluir = $_GET['idPersona'] ?? null; // Para excluir en ediciones
+
+        if (empty($correo)) {
+            echo json_encode(['existe' => false]);
+            exit();
+        }
+
+        // Validar formato de correo
+        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode([
+                'existe' => false,
+                'error' => 'Formato de correo inválido'
+            ]);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Buscar si el correo ya existe (excluyendo opcionalmente una persona)
+        if ($idPersonaExcluir && is_numeric($idPersonaExcluir)) {
+            $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+                    FROM persona p
+                    LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                    WHERE p.correo = :correo AND p.IdPersona != :idPersona
+                    LIMIT 1";
+            $stmt = $conexion->prepare($sql);
+            $stmt->bindParam(':correo', $correo);
+            $stmt->bindParam(':idPersona', $idPersonaExcluir, PDO::PARAM_INT);
+        } else {
+            $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+                    FROM persona p
+                    LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                    WHERE p.correo = :correo
+                    LIMIT 1";
+            $stmt = $conexion->prepare($sql);
+            $stmt->bindParam(':correo', $correo);
+        }
+
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'existe' => true,
+                'persona' => [
+                    'nombre' => $persona['nombre'],
+                    'apellido' => $persona['apellido'],
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido'],
+                    'cedula' => $persona['cedula'],
+                    'nacionalidad' => $persona['nacionalidad']
+                ]
+            ]);
+        } else {
+            echo json_encode(['existe' => false]);
+        }
+
+    } catch (Exception $e) {
+        error_log("Error en verificarCorreo: " . $e->getMessage());
+        echo json_encode([
+            'existe' => false,
+            'error' => 'Error al verificar el correo'
         ]);
     }
     exit();
