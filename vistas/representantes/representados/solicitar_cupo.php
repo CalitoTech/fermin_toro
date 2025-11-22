@@ -946,14 +946,29 @@ unset($_SESSION['alert'], $_SESSION['message']);
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="emergenciaNombre">Nombre Completo</label>
                             <input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre"
                                 placeholder="Nombre y Apellido" minlength="5" required>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="emergenciaCedula">Cédula</label>
+                            <div class="input-group">
+                                <select id="emergenciaNacionalidad" name="emergenciaNacionalidad" class="form-select"
+                                    style="max-width: 60px; border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; text-align: center; font-weight: bold; background: #f8f9fa; color: #c90000;">
+                                    <option value="1">V</option>
+                                    <option value="2">E</option>
+                                </select>
+                                <input type="text" class="form-control" id="emergenciaCedula" name="emergenciaCedula"
+                                    placeholder="12345678" minlength="7" maxlength="8" pattern="[0-9]+"
+                                    onkeypress="return onlyNumber(event)" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="emergenciaParentesco">Parentesco</label>
                             <div class="position-relative">
@@ -965,7 +980,7 @@ unset($_SESSION['alert'], $_SESSION['message']);
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="emergenciaCelular">Teléfono</label>
                             <div class="input-group">
@@ -1412,6 +1427,10 @@ document.addEventListener('DOMContentLoaded', function () {
             errores.push('Falta el nombre del contacto de emergencia');
             document.getElementById('emergenciaNombre').classList.add('is-invalid');
         }
+        if (!document.getElementById('emergenciaCedula').value) {
+            errores.push('Falta la cédula del contacto de emergencia');
+            document.getElementById('emergenciaCedula').classList.add('is-invalid');
+        }
         if (!document.getElementById('emergenciaCelular').value) {
             errores.push('Falta el teléfono del contacto de emergencia');
             document.getElementById('emergenciaCelular').classList.add('is-invalid');
@@ -1471,5 +1490,72 @@ document.addEventListener('DOMContentLoaded', function () {
             btnEnviar.innerHTML = '<i class="bx bxs-send"></i> Enviar Solicitud';
         });
     }
+
+    // === VALIDACIÓN DE CORREO DUPLICADO ===
+    async function verificarCorreoDuplicado(inputCorreo, idPersonaExcluir = null) {
+        const correo = inputCorreo.value.trim();
+
+        if (correo.length === 0) {
+            inputCorreo.classList.remove('is-invalid', 'is-valid');
+            return true;
+        }
+
+        // Validar formato primero
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+            inputCorreo.classList.remove('is-valid');
+            inputCorreo.classList.add('is-invalid');
+            return false;
+        }
+
+        try {
+            let url = `../../../controladores/PersonaController.php?action=verificarCorreo&correo=${encodeURIComponent(correo)}`;
+            if (idPersonaExcluir) {
+                url += `&idPersona=${idPersonaExcluir}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.existe) {
+                inputCorreo.classList.remove('is-valid');
+                inputCorreo.classList.add('is-invalid');
+
+                Swal.fire({
+                    title: 'Correo Duplicado',
+                    html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
+                           <strong>${data.persona.nombreCompleto}</strong><br>
+                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}`,
+                    icon: 'warning',
+                    confirmButtonColor: '#c90000'
+                });
+                return false;
+            } else {
+                inputCorreo.classList.remove('is-invalid');
+                inputCorreo.classList.add('is-valid');
+                return true;
+            }
+        } catch (error) {
+            console.error('Error al verificar correo:', error);
+            return true;
+        }
+    }
+
+    // Aplicar validación a todos los campos de correo
+    const camposCorreo = [
+        'estudianteCorreo',
+        'padreCorreo',
+        'madreCorreo',
+        'representanteCorreo'
+    ];
+
+    camposCorreo.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('blur', function() {
+                verificarCorreoDuplicado(this);
+            });
+        }
+    });
 });
 </script>
