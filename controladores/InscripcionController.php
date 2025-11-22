@@ -443,55 +443,83 @@ function procesarInscripcion($conexion) {
                 }
             }
             
-            // 2. Validación de campos del padre (siempre requeridos)
-            $camposPadre = [
-                'padreNombres' => 'Nombres del padre',
-                'padreApellidos' => 'Apellidos del padre',
-                'padreCedula' => 'Cédula del padre',
-                'padreNacionalidad' => 'Nacionalidad del padre',
-                'padreOcupacion' => 'Ocupación del padre',
-                'padreTipoTrabajador' => 'Tipo de trabajador del padre',
-                'padreUrbanismo' => 'Urbanismo/Sector del padre',
-                'padreDireccion' => 'Dirección del padre',
-                'padreTelefonoHabitacion' => 'Teléfono de habitación del padre',
-                'padreCelular' => 'Celular del padre',
-                'padreCorreo' => 'Correo electrónico del padre',
-                'padreLugarTrabajo' => 'Lugar de trabajo del padre'
-            ];
-            
-            foreach ($camposPadre as $campo => $nombre) {
-                if (empty($_POST[$campo])) {
-                    $camposFaltantes[] = $nombre;
+            // 2. Validación de campos del padre
+            // Verificar si el padre es el usuario logueado o si se seleccionó uno existente
+            $padreEsUsuario = !empty($_POST['padreEsUsuario']) && $_POST['padreEsUsuario'] === '1';
+            $padreSeleccion = $_POST['padreSeleccion'] ?? '';
+            $padreExistente = !empty($_POST['padreBuscar']) || (strpos($padreSeleccion, 'existente_') === 0);
+
+            // Solo validar campos del padre si NO es el usuario logueado Y NO es un padre existente
+            if (!$padreEsUsuario && !$padreExistente) {
+                $camposPadre = [
+                    'padreNombres' => 'Nombres del padre',
+                    'padreApellidos' => 'Apellidos del padre',
+                    'padreCedula' => 'Cédula del padre',
+                    'padreNacionalidad' => 'Nacionalidad del padre',
+                    'padreOcupacion' => 'Ocupación del padre',
+                    'padreTipoTrabajador' => 'Tipo de trabajador del padre',
+                    'padreUrbanismo' => 'Urbanismo/Sector del padre',
+                    'padreDireccion' => 'Dirección del padre',
+                    'padreTelefonoHabitacion' => 'Teléfono de habitación del padre',
+                    'padreCelular' => 'Celular del padre',
+                    'padreCorreo' => 'Correo electrónico del padre',
+                    'padreLugarTrabajo' => 'Lugar de trabajo del padre'
+                ];
+
+                foreach ($camposPadre as $campo => $nombre) {
+                    if (empty($_POST[$campo])) {
+                        $camposFaltantes[] = $nombre;
+                    }
                 }
             }
             
-            // 3. Validación de campos de la madre (siempre requeridos)
-            $camposMadre = [
-                'madreNombres' => 'Nombres de la madre',
-                'madreApellidos' => 'Apellidos de la madre',
-                'madreCedula' => 'Cédula de la madre',
-                'madreNacionalidad' => 'Nacionalidad de la madre',
-                'madreOcupacion' => 'Ocupación de la madre',
-                'madreTipoTrabajador' => 'Tipo de trabajador de la madre',
-                'madreUrbanismo' => 'Urbanismo/Sector de la madre',
-                'madreDireccion' => 'Dirección de la madre',
-                'madreTelefonoHabitacion' => 'Teléfono de habitación de la madre',
-                'madreCelular' => 'Celular de la madre',
-                'madreCorreo' => 'Correo electrónico de la madre',
-                'madreLugarTrabajo' => 'Lugar de trabajo de la madre',
+            // 3. Validación de campos de la madre
+            // Verificar si la madre es el usuario logueado o si se seleccionó una existente
+            $madreEsUsuario = !empty($_POST['madreEsUsuario']) && $_POST['madreEsUsuario'] === '1';
+            $madreSeleccion = $_POST['madreSeleccion'] ?? '';
+            $madreExistente = !empty($_POST['madreBuscar']) || (strpos($madreSeleccion, 'existente_') === 0);
+
+            // Solo validar campos de la madre si NO es el usuario logueado Y NO es una madre existente
+            if (!$madreEsUsuario && !$madreExistente) {
+                $camposMadre = [
+                    'madreNombres' => 'Nombres de la madre',
+                    'madreApellidos' => 'Apellidos de la madre',
+                    'madreCedula' => 'Cédula de la madre',
+                    'madreNacionalidad' => 'Nacionalidad de la madre',
+                    'madreOcupacion' => 'Ocupación de la madre',
+                    'madreTipoTrabajador' => 'Tipo de trabajador de la madre',
+                    'madreUrbanismo' => 'Urbanismo/Sector de la madre',
+                    'madreDireccion' => 'Dirección de la madre',
+                    'madreTelefonoHabitacion' => 'Teléfono de habitación de la madre',
+                    'madreCelular' => 'Celular de la madre',
+                    'madreCorreo' => 'Correo electrónico de la madre',
+                    'madreLugarTrabajo' => 'Lugar de trabajo de la madre'
+                ];
+
+                foreach ($camposMadre as $campo => $nombre) {
+                    if (empty($_POST[$campo])) {
+                        $camposFaltantes[] = $nombre;
+                    }
+                }
+            }
+
+            // Validación de contacto de emergencia (siempre requerido)
+            $camposEmergencia = [
                 'emergenciaNombre' => 'Nombre de contacto de emergencia',
                 'emergenciaParentesco' => 'Parentesco de contacto de emergencia',
                 'emergenciaCelular' => 'Teléfono de contacto de emergencia'
             ];
-            
-            foreach ($camposMadre as $campo => $nombre) {
+
+            foreach ($camposEmergencia as $campo => $nombre) {
                 if (empty($_POST[$campo])) {
                     $camposFaltantes[] = $nombre;
                 }
             }
             
-            // 4. Validación de representante legal (si es otro)
-            if (isset($_POST['tipoRepresentante']) && $_POST['tipoRepresentante'] === 'otro') {
+            // 4. Validación de representante legal (si es otro Y no es el usuario logueado)
+            $representanteEsUsuario = !empty($_POST['representanteEsUsuario']) && $_POST['representanteEsUsuario'] === '1';
+
+            if (!$representanteEsUsuario && isset($_POST['tipoRepresentante']) && $_POST['tipoRepresentante'] === 'otro') {
                 $camposRepresentante = [
                     'representanteNombres' => 'Nombres del representante legal',
                     'representanteApellidos' => 'Apellidos del representante legal',
@@ -507,7 +535,7 @@ function procesarInscripcion($conexion) {
                     'representanteCorreo' => 'Correo electrónico del representante legal',
                     'representanteLugarTrabajo' => 'Lugar de trabajo del representante legal'
                 ];
-                
+
                 foreach ($camposRepresentante as $campo => $nombre) {
                     if (empty($_POST[$campo])) {
                         $camposFaltantes[] = $nombre;
@@ -738,7 +766,51 @@ function procesarInscripcion($conexion) {
                 // ========================================================
                 // ======== PADRE =========================================
                 // ========================================================
-                if (!empty($_POST['padreNombres']) || !empty($_POST['padreApellidos'])) {
+                $idPadre = null;
+                $idRepresentantePadre = null;
+                $padreEsUsuarioLogueado = !empty($_POST['padreEsUsuario']) && $_POST['padreEsUsuario'] === '1';
+                $padreSeleccionado = $_POST['padreSeleccion'] ?? '';
+                $padreBuscarId = $_POST['padreBuscar'] ?? '';
+
+                // Determinar el ID del padre según la selección
+                if ($padreEsUsuarioLogueado && !empty($_POST['idRepresentanteLogueado'])) {
+                    // El usuario logueado es el padre
+                    $idPadre = (int)$_POST['idRepresentanteLogueado'];
+                } elseif (!empty($padreBuscarId) && is_numeric($padreBuscarId)) {
+                    // Se seleccionó un padre existente (de sugerencias o búsqueda)
+                    $idPadre = (int)$padreBuscarId;
+                } elseif (strpos($padreSeleccionado, 'existente_') === 0) {
+                    // Se seleccionó de las sugerencias (existente_XX)
+                    $idPadre = (int)str_replace('existente_', '', $padreSeleccionado);
+                }
+
+                // Si se encontró un padre existente, crear la relación con el estudiante
+                if ($idPadre) {
+                    // Verificar si ya existe la relación padre-estudiante
+                    $representantePadre = new Representante($conexion);
+                    $relacionExistente = $representantePadre->obtenerPorPersonaYEstudiante($idPadre, $idEstudiante);
+
+                    if (!$relacionExistente) {
+                        $representantePadre->IdPersona = $idPadre;
+                        $representantePadre->IdParentesco = 1; // Padre
+                        $representantePadre->IdEstudiante = $idEstudiante;
+                        $representantePadre->ocupacion = '';
+                        $representantePadre->lugar_trabajo = '';
+                        $idRepresentantePadre = $representantePadre->guardar();
+                    } else {
+                        $idRepresentantePadre = $relacionExistente['IdRepresentante'];
+                    }
+
+                    // Perfil de representante (IdPerfil = 4)
+                    if (!DetallePerfil::tienePerfil($conexion, $idPadre, 4)) {
+                        $detallePerfil = new DetallePerfil($conexion);
+                        $detallePerfil->IdPerfil = 4;
+                        $detallePerfil->IdPersona = $idPadre;
+                        $detallePerfil->guardar();
+                    }
+                }
+                // Si no se encontró un padre existente, crear uno nuevo
+                elseif (!empty($_POST['padreNombres']) || !empty($_POST['padreApellidos'])) {
                     $personaPadre = new Persona($conexion);
                     $personaPadreExistente = $personaPadre->obtenerPorCedula($_POST['padreNacionalidad'], $_POST['padreCedula']);
 
@@ -807,7 +879,51 @@ function procesarInscripcion($conexion) {
                 // ========================================================
                 // ======== MADRE =========================================
                 // ========================================================
-                if (!empty($_POST['madreNombres']) || !empty($_POST['madreApellidos'])) {
+                $idMadre = null;
+                $idRepresentanteMadre = null;
+                $madreEsUsuarioLogueado = !empty($_POST['madreEsUsuario']) && $_POST['madreEsUsuario'] === '1';
+                $madreSeleccionado = $_POST['madreSeleccion'] ?? '';
+                $madreBuscarId = $_POST['madreBuscar'] ?? '';
+
+                // Determinar el ID de la madre según la selección
+                if ($madreEsUsuarioLogueado && !empty($_POST['idRepresentanteLogueado'])) {
+                    // El usuario logueado es la madre
+                    $idMadre = (int)$_POST['idRepresentanteLogueado'];
+                } elseif (!empty($madreBuscarId) && is_numeric($madreBuscarId)) {
+                    // Se seleccionó una madre existente (de sugerencias o búsqueda)
+                    $idMadre = (int)$madreBuscarId;
+                } elseif (strpos($madreSeleccionado, 'existente_') === 0) {
+                    // Se seleccionó de las sugerencias (existente_XX)
+                    $idMadre = (int)str_replace('existente_', '', $madreSeleccionado);
+                }
+
+                // Si se encontró una madre existente, crear la relación con el estudiante
+                if ($idMadre) {
+                    // Verificar si ya existe la relación madre-estudiante
+                    $representanteMadre = new Representante($conexion);
+                    $relacionExistente = $representanteMadre->obtenerPorPersonaYEstudiante($idMadre, $idEstudiante);
+
+                    if (!$relacionExistente) {
+                        $representanteMadre->IdPersona = $idMadre;
+                        $representanteMadre->IdParentesco = 2; // Madre
+                        $representanteMadre->IdEstudiante = $idEstudiante;
+                        $representanteMadre->ocupacion = '';
+                        $representanteMadre->lugar_trabajo = '';
+                        $idRepresentanteMadre = $representanteMadre->guardar();
+                    } else {
+                        $idRepresentanteMadre = $relacionExistente['IdRepresentante'];
+                    }
+
+                    // Perfil de representante (IdPerfil = 4)
+                    if (!DetallePerfil::tienePerfil($conexion, $idMadre, 4)) {
+                        $detallePerfil = new DetallePerfil($conexion);
+                        $detallePerfil->IdPerfil = 4;
+                        $detallePerfil->IdPersona = $idMadre;
+                        $detallePerfil->guardar();
+                    }
+                }
+                // Si no se encontró una madre existente, crear una nueva
+                elseif (!empty($_POST['madreNombres']) || !empty($_POST['madreApellidos'])) {
                     $personaMadre = new Persona($conexion);
                     $personaMadreExistente = $personaMadre->obtenerPorCedula($_POST['madreNacionalidad'], $_POST['madreCedula']);
 
@@ -873,21 +989,54 @@ function procesarInscripcion($conexion) {
                     }
                 }
                 
-                $tipoRepresentante = $_POST['tipoRepresentante'];
+                $tipoRepresentante = $_POST['tipoRepresentante'] ?? '';
                 $idRelacionRepresentante = null;
 
-                if ($tipoRepresentante === 'padre') {
+                // Verificar si el usuario logueado es el representante legal
+                $representanteEsUsuario = !empty($_POST['representanteEsUsuario']) && $_POST['representanteEsUsuario'] === '1';
+
+                if ($representanteEsUsuario && !empty($_POST['idRepresentanteLogueado'])) {
+                    // El usuario logueado es el representante legal
+                    $idRepresentantePersona = (int)$_POST['idRepresentanteLogueado'];
+
+                    // Verificar si ya existe la relación representante-estudiante
+                    $representanteObj = new Representante($conexion);
+                    $relacionExistente = $representanteObj->obtenerPorPersonaYEstudiante($idRepresentantePersona, $idEstudiante);
+
+                    if (!$relacionExistente) {
+                        // Determinar parentesco según el rol (usar parentesco genérico "Representante Legal")
+                        $parentescoRep = obtenerOCrearParentesco($conexion, null, 'Representante Legal');
+
+                        $representanteObj->IdPersona = $idRepresentantePersona;
+                        $representanteObj->IdParentesco = $parentescoRep;
+                        $representanteObj->IdEstudiante = $idEstudiante;
+                        $representanteObj->ocupacion = '';
+                        $representanteObj->lugar_trabajo = '';
+                        $idRelacionRepresentante = $representanteObj->guardar();
+                    } else {
+                        $idRelacionRepresentante = $relacionExistente['IdRepresentante'];
+                    }
+
+                    // Asegurar que tiene perfil de representante
+                    if (!DetallePerfil::tienePerfil($conexion, $idRepresentantePersona, 4)) {
+                        $detallePerfil = new DetallePerfil($conexion);
+                        $detallePerfil->IdPerfil = 4;
+                        $detallePerfil->IdPersona = $idRepresentantePersona;
+                        $detallePerfil->guardar();
+                    }
+                }
+                elseif ($tipoRepresentante === 'padre') {
                     if (empty($idPadre)) {
                         throw new Exception("Debe proporcionar datos del padre cuando se selecciona como representante");
                     }
                     $idRelacionRepresentante = $idRepresentantePadre;
-                } 
+                }
                 elseif ($tipoRepresentante === 'madre') {
                     if (empty($idMadre)) {
                         throw new Exception("Debe proporcionar datos de la madre cuando se selecciona como representante");
                     }
                     $idRelacionRepresentante = $idRepresentanteMadre;
-                } 
+                }
                 elseif ($tipoRepresentante === 'otro') {
                     // Validar campos requeridos para representante legal
                     $camposRequeridos = [

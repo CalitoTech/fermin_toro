@@ -21,7 +21,7 @@ if ($limit < 1 || $limit > 50) {
 }
 
 // Validar tipo de búsqueda
-$tiposPermitidos = ['estudiante', 'estudiante_regular', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso'];
+$tiposPermitidos = ['estudiante', 'estudiante_regular', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso', 'persona_masculino', 'persona_femenino'];
 if (!in_array($tipo, $tiposPermitidos)) {
     echo json_encode(['error' => 'Tipo de búsqueda no válido']);
     exit;
@@ -55,6 +55,14 @@ switch ($tipo) {
 
     case 'secciones_curso':
         obtenerSeccionesPorCurso($conexion);
+        break;
+
+    case 'persona_masculino':
+        buscarPersonasPorSexo($conexion, $q, $limit, 1); // 1 = Masculino
+        break;
+
+    case 'persona_femenino':
+        buscarPersonasPorSexo($conexion, $q, $limit, 2); // 2 = Femenino
         break;
 }
 
@@ -479,6 +487,59 @@ function obtenerSeccionesPorCurso($conexion) {
     ");
 
     $stmt->bindParam(':idCurso', $idCurso, PDO::PARAM_INT);
+    $stmt->execute();
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
+
+/**
+ * Buscar personas por sexo (para buscar padre o madre)
+ * Busca en todas las personas del sistema filtradas por sexo
+ */
+function buscarPersonasPorSexo($conexion, $q, $limit = 10, $idSexo = null) {
+    // Si la búsqueda está vacía, no mostrar nada
+    if (empty(trim($q))) {
+        echo json_encode([]);
+        return;
+    }
+
+    $whereCondition = "";
+    $params = [];
+
+    // Filtrar por sexo si se especifica
+    if ($idSexo !== null) {
+        $whereCondition = " AND p.IdSexo = :idSexo";
+        $params[':idSexo'] = $idSexo;
+    }
+
+    $stmt = $conexion->prepare("
+        SELECT DISTINCT
+            p.IdPersona,
+            p.nombre,
+            p.apellido,
+            p.cedula,
+            p.correo,
+            n.nacionalidad,
+            p.IdNacionalidad,
+            p.IdSexo,
+            s.sexo as sexo_texto
+        FROM persona p
+        LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+        LEFT JOIN sexo s ON p.IdSexo = s.IdSexo
+        WHERE (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        " . $whereCondition . "
+        ORDER BY p.apellido, p.nombre
+        LIMIT :limit
+    ");
+
+    $search = "%$q%";
+    $stmt->bindParam(':q', $search);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+
+    foreach ($params as $key => $value) {
+        $stmt->bindValue($key, $value, PDO::PARAM_INT);
+    }
+
     $stmt->execute();
 
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));

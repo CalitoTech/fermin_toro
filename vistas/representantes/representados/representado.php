@@ -37,12 +37,14 @@ $representanteModel = new Representante($conexion);
 // Obtener estudiantes representados
 $estudiantes = $representanteModel->obtenerEstudiantesPorRepresentante($idPersona);
 
-// Obtener estado de renovacion_activa del año escolar activo
-$queryRenovacion = "SELECT renovacion_activa FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
-$stmtRenovacion = $conexion->prepare($queryRenovacion);
-$stmtRenovacion->execute();
-$añoEscolar = $stmtRenovacion->fetch(PDO::FETCH_ASSOC);
+// Obtener estado de renovacion_activa e inscripcion_activa del año escolar activo
+$queryAnoEscolar = "SELECT renovacion_activa, inscripcion_activa, fecha_escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+$stmtAnoEscolar = $conexion->prepare($queryAnoEscolar);
+$stmtAnoEscolar->execute();
+$añoEscolar = $stmtAnoEscolar->fetch(PDO::FETCH_ASSOC);
 $renovacionActiva = $añoEscolar ? (bool)$añoEscolar['renovacion_activa'] : false;
+$inscripcionActiva = $añoEscolar ? (bool)$añoEscolar['inscripcion_activa'] : false;
+$nombreAnoEscolar = $añoEscolar ? $añoEscolar['fecha_escolar'] : '';
 
 // Capturar mensajes de sesión
 $mensajeExito = $_SESSION['mensaje_exito'] ?? null;
@@ -236,6 +238,111 @@ function tieneCupoPendiente($idEstudiante, $conexion) {
             transform: scale(1.02);
         }
 
+        /* Card para solicitar nuevo cupo */
+        .new-student-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px dashed #c90000;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 380px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .new-student-card:hover {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+            border-color: #a00000;
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(201, 0, 0, 0.15);
+            text-decoration: none;
+        }
+
+        .new-student-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #c90000 0%, #8b0000 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 8px 16px rgba(201, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .new-student-card:hover .new-student-icon {
+            transform: scale(1.1);
+            box-shadow: 0 12px 24px rgba(201, 0, 0, 0.4);
+        }
+
+        .new-student-icon i {
+            font-size: 3rem;
+            color: white;
+        }
+
+        .new-student-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #c90000;
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .new-student-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            max-width: 200px;
+            line-height: 1.4;
+        }
+
+        .new-student-badge {
+            background: #c90000;
+            color: white;
+            padding: 0.35rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .new-student-card.disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            border-color: #999;
+        }
+
+        .new-student-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .new-student-card.disabled .new-student-icon {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            box-shadow: 0 8px 16px rgba(108, 117, 125, 0.3);
+        }
+
+        .new-student-card.disabled:hover .new-student-icon {
+            transform: none;
+        }
+
+        .new-student-card.disabled .new-student-title {
+            color: #6c757d;
+        }
+
+        .new-student-card.disabled .new-student-badge {
+            background: #6c757d;
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -325,8 +432,43 @@ function tieneCupoPendiente($idEstudiante, $conexion) {
             </div>
 
             <!-- Grid de Estudiantes -->
-            <?php if (count($estudiantes) > 0): ?>
+            <?php if (count($estudiantes) > 0 || $inscripcionActiva): ?>
                 <div class="row">
+                    <!-- Card para solicitar cupo de nuevo estudiante -->
+                    <?php if ($inscripcionActiva): ?>
+                        <div class="col-12 col-md-6 col-lg-4 mb-4">
+                            <a href="solicitar_cupo.php" class="new-student-card">
+                                <div class="new-student-icon">
+                                    <i class='bx bx-user-plus'></i>
+                                </div>
+                                <h3 class="new-student-title">Inscribir Nuevo Estudiante</h3>
+                                <p class="new-student-subtitle">
+                                    Solicita un cupo para un hijo, hija o representado que aún no está en el sistema
+                                </p>
+                                <span class="new-student-badge">
+                                    <i class='bx bx-calendar-check'></i>
+                                    <?= htmlspecialchars($nombreAnoEscolar) ?>
+                                </span>
+                            </a>
+                        </div>
+                    <?php else: ?>
+                        <div class="col-12 col-md-6 col-lg-4 mb-4">
+                            <div class="new-student-card disabled" title="Las inscripciones están cerradas actualmente">
+                                <div class="new-student-icon">
+                                    <i class='bx bx-lock-alt'></i>
+                                </div>
+                                <h3 class="new-student-title">Inscripciones Cerradas</h3>
+                                <p class="new-student-subtitle">
+                                    El período de inscripciones no está activo. Intenta más tarde.
+                                </p>
+                                <span class="new-student-badge">
+                                    <i class='bx bx-time'></i>
+                                    No disponible
+                                </span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <?php foreach ($estudiantes as $estudiante):
                         $edad = calcularEdad($estudiante['fecha_nacimiento']);
                         $iniciales = strtoupper(
@@ -436,19 +578,42 @@ function tieneCupoPendiente($idEstudiante, $conexion) {
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
-                <div class="card">
-                    <div class="card-body">
-                        <div class="empty-state">
-                            <div class="empty-state-icon">
-                                <i class='bx bx-user-x'></i>
-                            </div>
-                            <h3 class="empty-state-title">No tienes estudiantes registrados</h3>
-                            <p class="empty-state-text">
-                                Actualmente no tienes estudiantes bajo tu representación.<br>
-                                Contacta con la administración si necesitas asistencia.
-                            </p>
+                <!-- No hay estudiantes pero puede solicitar cupo -->
+                <div class="row">
+                    <?php if ($inscripcionActiva): ?>
+                        <div class="col-12 col-md-6 col-lg-4 mb-4 mx-auto">
+                            <a href="solicitar_cupo.php" class="new-student-card">
+                                <div class="new-student-icon">
+                                    <i class='bx bx-user-plus'></i>
+                                </div>
+                                <h3 class="new-student-title">Inscribir Nuevo Estudiante</h3>
+                                <p class="new-student-subtitle">
+                                    Solicita un cupo para un hijo, hija o representado
+                                </p>
+                                <span class="new-student-badge">
+                                    <i class='bx bx-calendar-check'></i>
+                                    <?= htmlspecialchars($nombreAnoEscolar) ?>
+                                </span>
+                            </a>
                         </div>
-                    </div>
+                    <?php else: ?>
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">
+                                            <i class='bx bx-user-x'></i>
+                                        </div>
+                                        <h3 class="empty-state-title">No tienes estudiantes registrados</h3>
+                                        <p class="empty-state-text">
+                                            Actualmente no tienes estudiantes bajo tu representación.<br>
+                                            Las inscripciones no están activas en este momento.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
 

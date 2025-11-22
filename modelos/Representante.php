@@ -124,6 +124,23 @@ class Representante {
         return $this->guardar();
     }
 
+    /**
+     * Obtiene la relación representante por IdPersona e IdEstudiante
+     */
+    public function obtenerPorPersonaYEstudiante($idPersona, $idEstudiante) {
+        $query = "SELECT IdRepresentante, IdParentesco, ocupacion, lugar_trabajo
+                  FROM representante
+                  WHERE IdPersona = :IdPersona AND IdEstudiante = :IdEstudiante
+                  LIMIT 1";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":IdPersona", $idPersona, PDO::PARAM_INT);
+        $stmt->bindParam(":IdEstudiante", $idEstudiante, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
      public function obtenerPorEstudiante($idEstudiante) {
         $query = "
             SELECT

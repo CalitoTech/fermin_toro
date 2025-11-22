@@ -23,8 +23,8 @@ class BuscadorGenerico {
             minLength: tipo === 'prefijo' ? 1 : 2, // Prefijos con 1 carácter mínimo
             delay: 300,
             placeholder: this.getPlaceholder(tipo),
-            allowCreate: tipo !== 'estudiante' && tipo !== 'estudiante_regular', // Solo permitir crear en urbanismo, parentesco y prefijo
-            showOnFocus: tipo !== 'estudiante' && tipo !== 'estudiante_regular', // Mostrar lista al hacer click (todos excepto estudiante)
+            allowCreate: !['estudiante', 'estudiante_regular', 'persona_masculino', 'persona_femenino'].includes(tipo), // Solo permitir crear en urbanismo, parentesco y prefijo
+            showOnFocus: !['estudiante', 'estudiante_regular', 'persona_masculino', 'persona_femenino'].includes(tipo), // Mostrar lista al hacer click (todos excepto estudiante y persona)
             ...options
         };
 
@@ -49,6 +49,10 @@ class BuscadorGenerico {
         else if (path.includes('/vistas/estudiantes/')) {
             return '../../../controladores/BuscarGeneral.php';
         }
+        // Si estamos en vistas/representantes/representados (solicitar_cupo.php)
+        else if (path.includes('/vistas/representantes/')) {
+            return '../../../controladores/BuscarGeneral.php';
+        }
         // Fallback por defecto
         else {
             return '../../../controladores/BuscarGeneral.php';
@@ -61,7 +65,9 @@ class BuscadorGenerico {
             'estudiante_regular': 'Buscar estudiante inscrito el año anterior...',
             'urbanismo': 'Buscar o escribir nuevo urbanismo...',
             'parentesco': 'Buscar o escribir nuevo parentesco...',
-            'prefijo': 'Buscar por código (+58) o país...'
+            'prefijo': 'Buscar por código (+58) o país...',
+            'persona_masculino': 'Buscar padre por nombre, apellido o cédula...',
+            'persona_femenino': 'Buscar madre por nombre, apellido o cédula...'
         };
         return placeholders[tipo] || 'Buscar...';
     }
@@ -215,6 +221,12 @@ class BuscadorGenerico {
             case 'plantel':
                 return `<i class="fas fa-school mr-2"></i>${item.plantel}`;
 
+            case 'persona_masculino':
+                return `<i class="fas fa-male mr-2"></i><strong>${item.apellido} ${item.nombre}</strong> - ${item.nacionalidad || 'V'}-${item.cedula}`;
+
+            case 'persona_femenino':
+                return `<i class="fas fa-female mr-2"></i><strong>${item.apellido} ${item.nombre}</strong> - ${item.nacionalidad || 'V'}-${item.cedula}`;
+
             default:
                 return JSON.stringify(item);
         }
@@ -288,6 +300,9 @@ class BuscadorGenerico {
             if (item.nuevo && this.hiddenNombreField) {
                 this.hiddenNombreField.value = item.plantel;
             }
+        } else if (this.tipo === 'persona_masculino' || this.tipo === 'persona_femenino') {
+            this.input.value = `${item.apellido} ${item.nombre} (${item.nacionalidad || 'V'}-${item.cedula})`;
+            this.hiddenIdField.value = item.IdPersona;
         }
 
         this.ocultarResultados();

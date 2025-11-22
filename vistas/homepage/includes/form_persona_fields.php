@@ -446,4 +446,44 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
     echo '</div>';
     echo '</div>';
 }
+
+/**
+ * Renderiza solo los campos de una persona (sin card wrapper)
+ * Usado en solicitar_cupo.php donde el card ya está definido en el HTML
+ *
+ * @param string $tipo Tipo de persona (madre, padre, representante)
+ * @param string $parentesco_value Valor del parentesco
+ * @param array $data_options Arreglos con opciones para selects
+ * @param bool $mostrar_parentesco Si debe mostrar el campo de parentesco
+ */
+function renderizarCamposPersona($tipo, $parentesco_value, $data_options, $mostrar_parentesco = true) {
+    global $campos_persona;
+
+    // Generar campos organizados por filas
+    $fila_actual = [];
+    $cols_actuales = 0;
+
+    foreach ($campos_persona as $nombre_campo => $config) {
+        // Omitir parentesco si no se debe mostrar
+        if ($nombre_campo === 'Parentesco' && !$mostrar_parentesco) {
+            continue;
+        }
+
+        $fila_actual[] = ['nombre' => $nombre_campo, 'config' => $config];
+        $cols_actuales += $config['col'];
+
+        // Si completamos 12 columnas o es el último campo, renderizamos la fila
+        if ($cols_actuales >= 12 || $nombre_campo === array_key_last($campos_persona)) {
+            echo '<div class="row">';
+            foreach ($fila_actual as $item) {
+                renderizarCampoPersona($tipo, $item['nombre'], $item['config'], $data_options, $parentesco_value);
+            }
+            echo '</div>';
+
+            // Resetear para la siguiente fila
+            $fila_actual = [];
+            $cols_actuales = 0;
+        }
+    }
+}
 ?>
