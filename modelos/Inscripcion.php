@@ -127,6 +127,7 @@ class Inscripcion {
             c.IdCurso,
             s.seccion,
             n.nivel,
+            fe.IdFecha_Escolar,
             fe.fecha_escolar,
             st.status AS status_inscripcion,
             st.IdStatus,

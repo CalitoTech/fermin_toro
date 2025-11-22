@@ -13,6 +13,7 @@ require_once __DIR__ . '/../../../modelos/Status.php';
 require_once __DIR__ . '/../../../modelos/Requisito.php';
 require_once __DIR__ . '/../../../modelos/Seccion.php';
 require_once __DIR__ . '/../../../modelos/Discapacidad.php';
+require_once __DIR__ . '/../../../modelos/FechaEscolar.php';
 
 // 🔹 Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
@@ -65,6 +66,11 @@ foreach ($todosStatus as $st) {
 // 🔹 Discapacidades
 $discapacidadModel = new Discapacidad($conexion);
 $discapacidades = $discapacidadModel->obtenerPorPersona($inscripcion['id_estudiante']);
+
+// 🔹 Verificar si la inscripción pertenece al año escolar activo
+$fechaEscolarModel = new FechaEscolar($conexion);
+$añoEscolarActivo = $fechaEscolarModel->obtenerActivo();
+$esAñoEscolarActivo = $añoEscolarActivo && ($inscripcion['IdFecha_Escolar'] == $añoEscolarActivo['IdFecha_Escolar']);
 
 // 🔹 Mensajes GET (opcional)
 if (isset($_GET['success'])) {
@@ -805,6 +811,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
     const ID_INSCRITO = <?= $idInscrito ?>;
     const SECCIONES_CON_CUPO = <?= isset($seccionesConCupo) ? count($seccionesConCupo) : 0 ?>;
     const ID_CURSO = <?= (int)$inscripcion['IdCurso'] ?>;
+    const ES_ANO_ESCOLAR_ACTIVO = <?= $esAñoEscolarActivo ? 'true' : 'false' ?>;
 </script>
 <script src="../../../assets/js/inscripcion.js"></script>
 
