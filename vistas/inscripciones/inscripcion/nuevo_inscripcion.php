@@ -1191,5 +1191,72 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }
+
+    // === VALIDACIÓN DE CORREO DUPLICADO ===
+    async function verificarCorreoDuplicado(inputCorreo, idPersonaExcluir = null) {
+        const correo = inputCorreo.value.trim();
+
+        if (correo.length === 0) {
+            inputCorreo.classList.remove('is-invalid', 'is-valid');
+            return true;
+        }
+
+        // Validar formato primero
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+            inputCorreo.classList.remove('is-valid');
+            inputCorreo.classList.add('is-invalid');
+            return false;
+        }
+
+        try {
+            let url = `../../../controladores/PersonaController.php?action=verificarCorreo&correo=${encodeURIComponent(correo)}`;
+            if (idPersonaExcluir) {
+                url += `&idPersona=${idPersonaExcluir}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.existe) {
+                inputCorreo.classList.remove('is-valid');
+                inputCorreo.classList.add('is-invalid');
+
+                Swal.fire({
+                    title: 'Correo Duplicado',
+                    html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
+                           <strong>${data.persona.nombreCompleto}</strong><br>
+                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}`,
+                    icon: 'warning',
+                    confirmButtonColor: '#c90000'
+                });
+                return false;
+            } else {
+                inputCorreo.classList.remove('is-invalid');
+                inputCorreo.classList.add('is-valid');
+                return true;
+            }
+        } catch (error) {
+            console.error('Error al verificar correo:', error);
+            return true;
+        }
+    }
+
+    // Aplicar validación a todos los campos de correo
+    const camposCorreo = [
+        'estudianteCorreo',
+        'madreCorreo',
+        'padreCorreo',
+        'representanteCorreo'
+    ];
+
+    camposCorreo.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            input.addEventListener('blur', function() {
+                verificarCorreoDuplicado(this);
+            });
+        }
+    });
 });
 </script>
