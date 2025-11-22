@@ -692,7 +692,9 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
 
     // Validación de correo con verificación de duplicados
     const correoInput = document.getElementById('correo');
+    const correoOriginal = '<?= htmlspecialchars($usuario['correo']) ?>';
     let correoTimer;
+    let correoTieneDuplicado = false;
 
     async function verificarCorreoDuplicado() {
         const correo = correoInput.value.trim();
@@ -701,6 +703,7 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
 
         if (correo.length === 0) {
             grupo.classList.remove('añadir__grupo-incorrecto', 'añadir__grupo-correcto');
+            correoTieneDuplicado = false;
             return;
         }
 
@@ -710,6 +713,7 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
             grupo.classList.remove('añadir__grupo-correcto');
             grupo.classList.add('añadir__grupo-incorrecto');
             errorMsg.textContent = 'El correo electrónico no tiene un formato válido';
+            correoTieneDuplicado = true;
             return;
         }
 
@@ -722,21 +726,29 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                 grupo.classList.remove('añadir__grupo-correcto');
                 grupo.classList.add('añadir__grupo-incorrecto');
                 errorMsg.textContent = `Este correo ya está registrado para ${data.persona.nombreCompleto} (${data.persona.nacionalidad}-${data.persona.cedula})`;
+                correoTieneDuplicado = true;
 
                 Swal.fire({
                     title: 'Correo Duplicado',
                     html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
                            <strong>${data.persona.nombreCompleto}</strong><br>
-                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}`,
+                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}<br><br>
+                           <small class="text-muted">Por favor ingrese un correo diferente.</small>`,
                     icon: 'warning',
                     confirmButtonColor: '#c90000'
                 });
+
+                // Limpiar el campo y restaurar el valor original
+                correoInput.value = correoOriginal;
+                correoInput.focus();
             } else {
                 grupo.classList.remove('añadir__grupo-incorrecto');
                 grupo.classList.add('añadir__grupo-correcto');
+                correoTieneDuplicado = false;
             }
         } catch (error) {
             console.error('Error al verificar correo:', error);
+            correoTieneDuplicado = false;
         }
     }
 
@@ -744,6 +756,24 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
         correoInput.addEventListener('blur', function() {
             clearTimeout(correoTimer);
             correoTimer = setTimeout(verificarCorreoDuplicado, 300);
+        });
+    }
+
+    // Interceptar envío del formulario para verificar correo duplicado
+    const formEditar = document.getElementById('editar');
+    if (formEditar) {
+        formEditar.addEventListener('submit', function(e) {
+            if (correoTieneDuplicado) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Correo inválido',
+                    html: 'El correo electrónico está duplicado o es inválido. Por favor corrija el campo antes de continuar.',
+                    confirmButtonColor: '#c90000'
+                });
+                correoInput.focus();
+                return false;
+            }
         });
     }
 

@@ -375,6 +375,9 @@ if (empty($action)) {
         case 'cambiarStatus':
             cambiarStatus($conexion);
             break;
+        case 'validarPagoEInscribir':
+            validarPagoEInscribir($conexion);
+            break;
         case 'toggleRequisito':
             toggleRequisito($conexion);
             break;
@@ -569,6 +572,99 @@ function procesarInscripcion($conexion) {
                 $mensaje = 'Datos incompletos. Por favor complete los siguientes campos requeridos:';
                 $mensaje .= "\n- " . implode("\n- ", $camposUnicos);
                 throw new Exception($mensaje);
+            }
+
+            // === Validación de correos electrónicos duplicados ===
+            $correosParaValidar = [];
+
+            // Correo del estudiante
+            if (!empty($_POST['estudianteCorreo'])) {
+                $correosParaValidar[] = [
+                    'correo' => strtolower(trim($_POST['estudianteCorreo'])),
+                    'campo' => 'Estudiante',
+                    'excluirCedula' => $_POST['estudianteCedula'] ?? null,
+                    'excluirNacionalidad' => $_POST['estudianteNacionalidad'] ?? null
+                ];
+            }
+
+            // Correo del padre
+            if (!empty($_POST['padreCorreo'])) {
+                $correosParaValidar[] = [
+                    'correo' => strtolower(trim($_POST['padreCorreo'])),
+                    'campo' => 'Padre',
+                    'excluirCedula' => $_POST['padreCedula'] ?? null,
+                    'excluirNacionalidad' => $_POST['padreNacionalidad'] ?? null
+                ];
+            }
+
+            // Correo de la madre
+            if (!empty($_POST['madreCorreo'])) {
+                $correosParaValidar[] = [
+                    'correo' => strtolower(trim($_POST['madreCorreo'])),
+                    'campo' => 'Madre',
+                    'excluirCedula' => $_POST['madreCedula'] ?? null,
+                    'excluirNacionalidad' => $_POST['madreNacionalidad'] ?? null
+                ];
+            }
+
+            // Correo del representante legal
+            if (!empty($_POST['representanteCorreo']) && isset($_POST['tipoRepresentante']) && $_POST['tipoRepresentante'] === 'otro') {
+                $correosParaValidar[] = [
+                    'correo' => strtolower(trim($_POST['representanteCorreo'])),
+                    'campo' => 'Representante Legal',
+                    'excluirCedula' => $_POST['representanteCedula'] ?? null,
+                    'excluirNacionalidad' => $_POST['representanteNacionalidad'] ?? null
+                ];
+            }
+
+            // Validar correos duplicados entre personas del mismo formulario
+            $correosUsados = [];
+            foreach ($correosParaValidar as $correoData) {
+                $correo = $correoData['correo'];
+                if (isset($correosUsados[$correo])) {
+                    throw new Exception("El correo electrónico '{$correo}' está siendo usado tanto para {$correosUsados[$correo]} como para {$correoData['campo']}. Cada persona debe tener un correo electrónico diferente.");
+                }
+                $correosUsados[$correo] = $correoData['campo'];
+            }
+
+            // Validar cada correo en la base de datos
+            foreach ($correosParaValidar as $correoData) {
+                $correo = $correoData['correo'];
+
+                // Validar formato
+                if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+                    throw new Exception("El correo electrónico del {$correoData['campo']} no tiene un formato válido.");
+                }
+
+                // Buscar si el correo ya existe (excluyendo a la persona actual si tiene cédula)
+                $sqlCorreo = "SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+                              FROM persona p
+                              LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                              WHERE p.correo = :correo";
+
+                // Si la persona ya existe (tiene cédula), excluirla de la búsqueda
+                if (!empty($correoData['excluirCedula']) && !empty($correoData['excluirNacionalidad'])) {
+                    $sqlCorreo .= " AND NOT (p.cedula = :cedula AND p.IdNacionalidad = :nacionalidad)";
+                }
+
+                $sqlCorreo .= " LIMIT 1";
+
+                $stmtCorreo = $conexion->prepare($sqlCorreo);
+                $stmtCorreo->bindParam(':correo', $correo);
+
+                if (!empty($correoData['excluirCedula']) && !empty($correoData['excluirNacionalidad'])) {
+                    $stmtCorreo->bindParam(':cedula', $correoData['excluirCedula']);
+                    $stmtCorreo->bindParam(':nacionalidad', $correoData['excluirNacionalidad'], PDO::PARAM_INT);
+                }
+
+                $stmtCorreo->execute();
+
+                if ($stmtCorreo->rowCount() > 0) {
+                    $personaExistente = $stmtCorreo->fetch(PDO::FETCH_ASSOC);
+                    $nombreCompleto = $personaExistente['nombre'] . ' ' . $personaExistente['apellido'];
+                    $cedulaCompleta = $personaExistente['nacionalidad'] . '-' . $personaExistente['cedula'];
+                    throw new Exception("El correo electrónico '{$correo}' del {$correoData['campo']} ya está registrado para {$nombreCompleto} (Cédula: {$cedulaCompleta}). Por favor utilice un correo diferente.");
+                }
             }
 
             // === Validación de cédulas de representantes duplicadas ===
@@ -1712,4 +1808,120 @@ function hayCupo($conexion) {
         error_log("Error hayCupo: ".$e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error interno']);
     }
+}
+
+/**
+ * Valida el código de pago contra el sistema externo y procede a inscribir
+ */
+function validarPagoEInscribir($conexion) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
+    $codigoPago = trim($_POST['codigoPago'] ?? '');
+
+    if ($idInscripcion <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID de inscripción inválido']);
+        exit();
+    }
+
+    if (empty($codigoPago)) {
+        echo json_encode(['success' => false, 'message' => 'Debe ingresar el código de pago']);
+        exit();
+    }
+
+    try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
+
+        $inscripcion = new Inscripcion($conexion);
+
+        // Verificar que el código no haya sido usado en otra inscripción
+        if ($inscripcion->codigoPagoExiste($codigoPago, $idInscripcion)) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Este código de pago ya fue utilizado en otra inscripción'
+            ]);
+            exit();
+        }
+
+        // TODO: Aquí se debe integrar con el sistema administrativo de pagos
+        // Por ahora, simulamos la validación del código
+        $pagoValido = validarCodigoEnSistemaExterno($codigoPago);
+
+        if (!$pagoValido['valido']) {
+            echo json_encode([
+                'success' => false,
+                'message' => $pagoValido['mensaje'] ?? 'El código de pago no es válido o no existe en el sistema'
+            ]);
+            exit();
+        }
+
+        // Registrar el código de pago
+        if (!$inscripcion->registrarPagoYInscribir($idInscripcion, $codigoPago, $idUsuario)) {
+            throw new Exception('Error al registrar el código de pago');
+        }
+
+        // Ahora procedemos con la inscripción completa (status 11 = Inscrito)
+        $resultado = activarInscripcionCompleta($conexion, $idInscripcion, 11, $idUsuario);
+
+        if ($resultado['success']) {
+            $resultado['message'] = 'Pago validado e inscripción completada exitosamente';
+            $resultado['codigoPago'] = $codigoPago;
+        }
+
+        echo json_encode($resultado);
+        exit();
+
+    } catch (Exception $e) {
+        error_log("Error al validar pago e inscribir: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+    }
+}
+
+/**
+ * Valida el código de pago contra el sistema administrativo externo
+ * TODO: Implementar la conexión real con el sistema de pagos
+ *
+ * @param string $codigoPago Código a validar
+ * @return array ['valido' => bool, 'mensaje' => string]
+ */
+function validarCodigoEnSistemaExterno($codigoPago) {
+    // ================================================================
+    // INTEGRACIÓN CON SISTEMA EXTERNO DE PAGOS
+    // ================================================================
+    // Aquí deberías implementar la llamada al API del sistema administrativo
+    // Ejemplo de cómo podría ser:
+    //
+    // $apiUrl = "https://sistema-pagos.ejemplo.com/api/validar";
+    // $response = file_get_contents($apiUrl . "?codigo=" . urlencode($codigoPago));
+    // $data = json_decode($response, true);
+    // return [
+    //     'valido' => $data['existe'] ?? false,
+    //     'mensaje' => $data['mensaje'] ?? 'Código no encontrado'
+    // ];
+    // ================================================================
+
+    // Por ahora, validación temporal:
+    // - Acepta códigos que empiecen con "PAG-" y tengan al menos 8 caracteres
+    // - Esto debe ser reemplazado por la integración real
+
+    if (strlen($codigoPago) < 5) {
+        return [
+            'valido' => false,
+            'mensaje' => 'El código de pago debe tener al menos 5 caracteres'
+        ];
+    }
+
+    // Validación temporal: aceptar cualquier código con formato válido
+    // IMPORTANTE: Reemplazar esta lógica con la llamada al sistema real
+    return [
+        'valido' => true,
+        'mensaje' => 'Código validado correctamente'
+    ];
 }

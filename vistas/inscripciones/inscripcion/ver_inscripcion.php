@@ -278,6 +278,41 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                         </div>
                     </div>
 
+                    <?php if (!empty($inscripcion['codigo_pago'])): ?>
+                    <!-- Información de Pago -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="alert alert-success mb-0">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                    <div class="d-flex align-items-center mb-2 mb-md-0">
+                                        <i class="fas fa-check-circle me-2 fa-lg"></i>
+                                        <div>
+                                            <strong>Pago Validado</strong>
+                                            <span class="ms-2 badge bg-light text-success border border-success">
+                                                <?= htmlspecialchars($inscripcion['codigo_pago']) ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center text-muted small flex-wrap">
+                                        <span class="me-3">
+                                            <i class="fas fa-calendar-check me-1"></i>
+                                            <?= !empty($inscripcion['fecha_validacion_pago'])
+                                                ? date('d/m/Y H:i', strtotime($inscripcion['fecha_validacion_pago']))
+                                                : 'N/A' ?>
+                                        </span>
+                                        <span>
+                                            <i class="fas fa-user-shield me-1"></i>
+                                            <?= !empty($inscripcion['validador_nombre'])
+                                                ? htmlspecialchars($inscripcion['validador_nombre'] . ' ' . $inscripcion['validador_apellido'])
+                                                : 'N/A' ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- Información General -->
                     <div class="row mb-4">
                         <!-- Datos de la Inscripción -->
@@ -805,6 +840,50 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
 </section>
 
 <?php include '../../layouts/footer.php'; ?>
+
+<!-- Modal de Validación de Pago -->
+<div class="modal fade" id="modalValidarPago" tabindex="-1" aria-labelledby="modalValidarPagoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalValidarPagoLabel">
+                    <i class="fas fa-credit-card me-2"></i>Validar Pago de Inscripción
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Para completar la inscripción, debe ingresar el código de pago emitido por el sistema administrativo.
+                </div>
+                <form id="form-validar-pago">
+                    <div class="mb-3">
+                        <label for="codigo-pago" class="form-label fw-bold">Código de Pago / Factura</label>
+                        <input type="text"
+                               class="form-control form-control-lg"
+                               id="codigo-pago"
+                               name="codigoPago"
+                               placeholder="Ej: PAG-2024-001234"
+                               required
+                               minlength="5"
+                               autocomplete="off">
+                        <div class="form-text">
+                            Ingrese el código exactamente como aparece en el comprobante de pago.
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-pago">
+                    <i class="fas fa-check me-1"></i>Validar y Completar Inscripción
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     const ID_INSCRIPCION = <?= $inscripcion['IdInscripcion'] ?>;

@@ -1448,6 +1448,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Verificar correos duplicados antes de continuar
+        if (!verificarCorreosAntesDeEnviar()) {
+            return;
+        }
+
         // Agregar IdCurso al formData
         formData.append('IdCurso', document.getElementById('idCursoSeleccionado').value);
         formData.append('origenSolicitud', 'representante');
@@ -1492,11 +1497,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // === VALIDACIÓN DE CORREO DUPLICADO ===
-    async function verificarCorreoDuplicado(inputCorreo, idPersonaExcluir = null) {
-        const correo = inputCorreo.value.trim();
+    // Variable para rastrear correos con errores
+    const correosConError = new Set();
+
+    async function verificarCorreoDuplicado(inputCorreo, nombrePersona, idPersonaExcluir = null) {
+        const correo = inputCorreo.value.trim().toLowerCase();
 
         if (correo.length === 0) {
             inputCorreo.classList.remove('is-invalid', 'is-valid');
+            correosConError.delete(inputCorreo.id);
             return true;
         }
 
@@ -1505,7 +1514,40 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!emailRegex.test(correo)) {
             inputCorreo.classList.remove('is-valid');
             inputCorreo.classList.add('is-invalid');
+            correosConError.add(inputCorreo.id);
             return false;
+        }
+
+        // Verificar duplicados dentro del mismo formulario
+        const camposCorreo = ['estudianteCorreo', 'padreCorreo', 'madreCorreo', 'representanteCorreo'];
+        const nombresPersonas = {
+            'estudianteCorreo': 'Estudiante',
+            'padreCorreo': 'Padre',
+            'madreCorreo': 'Madre',
+            'representanteCorreo': 'Representante Legal'
+        };
+
+        for (const campoId of camposCorreo) {
+            if (campoId === inputCorreo.id) continue;
+
+            const otroCampo = document.getElementById(campoId);
+            if (otroCampo && otroCampo.value.trim().toLowerCase() === correo) {
+                inputCorreo.classList.remove('is-valid');
+                inputCorreo.classList.add('is-invalid');
+                correosConError.add(inputCorreo.id);
+
+                Swal.fire({
+                    title: 'Correo Duplicado',
+                    html: `El correo <strong>${correo}</strong> ya está siendo usado para <strong>${nombresPersonas[campoId]}</strong> en este formulario.<br><br>
+                           <small class="text-muted">Cada persona debe tener un correo electrónico diferente.</small>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#c90000'
+                });
+
+                inputCorreo.value = '';
+                inputCorreo.focus();
+                return false;
+            }
         }
 
         try {
@@ -1520,40 +1562,64 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.existe) {
                 inputCorreo.classList.remove('is-valid');
                 inputCorreo.classList.add('is-invalid');
+                correosConError.add(inputCorreo.id);
 
                 Swal.fire({
                     title: 'Correo Duplicado',
                     html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
                            <strong>${data.persona.nombreCompleto}</strong><br>
-                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}`,
+                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}<br><br>
+                           <small class="text-muted">Por favor ingrese un correo diferente para ${nombrePersona}.</small>`,
                     icon: 'warning',
                     confirmButtonColor: '#c90000'
                 });
+
+                // Limpiar el campo
+                inputCorreo.value = '';
+                inputCorreo.focus();
                 return false;
             } else {
                 inputCorreo.classList.remove('is-invalid');
                 inputCorreo.classList.add('is-valid');
+                correosConError.delete(inputCorreo.id);
                 return true;
             }
         } catch (error) {
             console.error('Error al verificar correo:', error);
+            correosConError.delete(inputCorreo.id);
             return true;
         }
     }
 
+    // Función para verificar correos antes de enviar
+    function verificarCorreosAntesDeEnviar() {
+        if (correosConError.size > 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Correos inválidos',
+                html: 'Hay correos electrónicos duplicados o inválidos. Por favor corrija los campos marcados antes de continuar.',
+                confirmButtonColor: '#c90000'
+            });
+            const primerCampo = document.getElementById(Array.from(correosConError)[0]);
+            if (primerCampo) primerCampo.focus();
+            return false;
+        }
+        return true;
+    }
+
     // Aplicar validación a todos los campos de correo
-    const camposCorreo = [
-        'estudianteCorreo',
-        'padreCorreo',
-        'madreCorreo',
-        'representanteCorreo'
+    const camposCorreoConfig = [
+        { id: 'estudianteCorreo', nombre: 'Estudiante' },
+        { id: 'padreCorreo', nombre: 'Padre' },
+        { id: 'madreCorreo', nombre: 'Madre' },
+        { id: 'representanteCorreo', nombre: 'Representante Legal' }
     ];
 
-    camposCorreo.forEach(id => {
-        const input = document.getElementById(id);
+    camposCorreoConfig.forEach(campo => {
+        const input = document.getElementById(campo.id);
         if (input) {
             input.addEventListener('blur', function() {
-                verificarCorreoDuplicado(this);
+                verificarCorreoDuplicado(this, campo.nombre);
             });
         }
     });

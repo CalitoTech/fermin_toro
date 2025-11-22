@@ -94,31 +94,20 @@ function manejarStatusBar(idInscripcion, idInscrito) {
             }
 
             // ========================
-            // Aquí cambiamos el confirm
+            // Si es cambio a "Inscrito", mostrar modal de pago
+            // ========================
+            if (nuevoId === idInscrito) {
+                // Mostrar modal de validación de pago
+                const modalPago = new bootstrap.Modal(document.getElementById('modalValidarPago'));
+                modalPago.show();
+                return; // No continuar con el flujo normal
+            }
+
+            // ========================
+            // Para otros estados, flujo normal
             // ========================
             let titulo = '¿Cambiar estado?';
             let texto = `¿Deseas cambiar el estado a "${nuevoNombre}"?`;
-
-            if (nuevoId === idInscrito) {
-                try {
-                    const fd = new FormData();
-                    fd.append('action', 'hayCupo');
-                    fd.append('idCurso', ID_CURSO);
-
-                    const resp = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
-                        method: 'POST',
-                        body: fd
-                    }).then(r => r.json());
-
-                    if (resp?.success && resp.todasLlenas === true) {
-                        titulo = 'Capacidad completa';
-                        texto = `No hay secciones con cupo disponible, la capacidad está completa. 
-                        ¿Deseas inscribir de todos modos a otro estudiante?`;
-                    }
-                } catch (e) {
-                    console.warn('No se pudo verificar cupo:', e);
-                }
-            }
 
             Swal.fire({
                 title: titulo,
@@ -169,8 +158,7 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                                 }, 100);
                             }
 
-                            const cambiosMayores = nuevoNombre.toLowerCase().includes('rechazado') ||
-                                                   nuevoId === idInscrito;
+                            const cambiosMayores = nuevoNombre.toLowerCase().includes('rechazado');
 
                             if (cambiosMayores) {
                                 setTimeout(() => {
@@ -600,6 +588,146 @@ function cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTe
 }
 
 // ==============================
+// Gestión de validación de pago
+// ==============================
+function manejarValidacionPago(idInscripcion, idInscrito) {
+    const btnConfirmarPago = document.getElementById('btn-confirmar-pago');
+    const inputCodigoPago = document.getElementById('codigo-pago');
+    const modalElement = document.getElementById('modalValidarPago');
+
+    if (!btnConfirmarPago || !inputCodigoPago || !modalElement) return;
+
+    const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+
+    // Limpiar input al cerrar modal
+    modalElement.addEventListener('hidden.bs.modal', function () {
+        inputCodigoPago.value = '';
+        inputCodigoPago.classList.remove('is-invalid');
+    });
+
+    // Validar al presionar Enter en el input
+    inputCodigoPago.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            btnConfirmarPago.click();
+        }
+    });
+
+    // Confirmar pago
+    btnConfirmarPago.addEventListener('click', async function() {
+        const codigoPago = inputCodigoPago.value.trim();
+
+        // Validar que no esté vacío
+        if (!codigoPago) {
+            inputCodigoPago.classList.add('is-invalid');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campo requerido',
+                text: 'Debe ingresar el código de pago',
+                confirmButtonColor: '#c90000'
+            });
+            return;
+        }
+
+        // Validar longitud mínima
+        if (codigoPago.length < 5) {
+            inputCodigoPago.classList.add('is-invalid');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Código inválido',
+                text: 'El código de pago debe tener al menos 5 caracteres',
+                confirmButtonColor: '#c90000'
+            });
+            return;
+        }
+
+        inputCodigoPago.classList.remove('is-invalid');
+
+        // Cerrar modal y mostrar loading
+        modal.hide();
+
+        Swal.fire({
+            title: 'Validando pago...',
+            html: `
+                <div class="text-center">
+                    <p>Verificando código de pago en el sistema</p>
+                    <p class="text-muted small">Por favor espere...</p>
+                </div>
+            `,
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'validarPagoEInscribir');
+            formData.append('idInscripcion', idInscripcion);
+            formData.append('codigoPago', codigoPago);
+
+            const response = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                let mensaje = data.message || 'Inscripción completada exitosamente';
+
+                if (data.cambioAutomatico) {
+                    mensaje += '\nSe asignó automáticamente a la sección recomendada';
+                }
+
+                if (data.alertaCapacidad && data.alertaCapacidad.trim() !== '') {
+                    mensaje += '\n\n' + data.alertaCapacidad;
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Inscripción Completada',
+                    html: `
+                        <div class="text-center">
+                            <p>${mensaje}</p>
+                            <p class="text-muted small mt-2">Código de pago: <strong>${data.codigoPago || codigoPago}</strong></p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#28a745',
+                    confirmButtonText: 'Aceptar'
+                }).then(() => {
+                    // Recargar página para mostrar el nuevo estado
+                    window.location.reload();
+                });
+
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de validación',
+                    text: data.message || 'No se pudo validar el código de pago',
+                    confirmButtonColor: '#c90000'
+                }).then(() => {
+                    // Reabrir modal para reintentar
+                    inputCodigoPago.value = codigoPago;
+                    modal.show();
+                });
+            }
+
+        } catch (error) {
+            console.error('Error al validar pago:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'No se pudo conectar con el servidor. Por favor intente nuevamente.',
+                confirmButtonColor: '#c90000'
+            }).then(() => {
+                inputCodigoPago.value = codigoPago;
+                modal.show();
+            });
+        }
+    });
+}
+
+// ==============================
 // Inicialización global
 // ==============================
 document.addEventListener('DOMContentLoaded', function () {
@@ -607,6 +735,7 @@ document.addEventListener('DOMContentLoaded', function () {
         manejarStatusBar(ID_INSCRIPCION, ID_INSCRITO);
         manejarRequisitos(ID_INSCRIPCION);
         manejarCambioSeccion(ID_INSCRIPCION);
+        manejarValidacionPago(ID_INSCRIPCION, ID_INSCRITO);
     } else {
         console.error('Variables no definidas:', {
             ID_INSCRIPCION: typeof ID_INSCRIPCION,

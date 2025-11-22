@@ -424,6 +424,9 @@ CREATE TABLE inscripcion (
     IdCurso_Seccion int NOT NULL,
     ultima_modificacion datetime DEFAULT NULL,
     modificado_por int DEFAULT NULL,
+    codigo_pago varchar(50) DEFAULT NULL COMMENT 'Código de factura/pago del sistema administrativo',
+    fecha_validacion_pago datetime DEFAULT NULL COMMENT 'Fecha en que se validó el pago',
+    validado_por int DEFAULT NULL COMMENT 'IdPersona del usuario que validó el pago',
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
     FOREIGN KEY (IdTipo_Inscripcion) REFERENCES tipo_inscripcion(IdTipo_Inscripcion),
     FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
@@ -431,7 +434,9 @@ CREATE TABLE inscripcion (
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
     FOREIGN KEY (modificado_por) REFERENCES persona(IdPersona),
     FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante),
-    FOREIGN KEY (ultimo_plantel) REFERENCES plantel(IdPlantel)
+    FOREIGN KEY (ultimo_plantel) REFERENCES plantel(IdPlantel),
+    FOREIGN KEY (validado_por) REFERENCES persona(IdPersona),
+    INDEX idx_codigo_pago (codigo_pago)
 );
 
 CREATE TABLE inscripcion_requisito (
@@ -542,7 +547,7 @@ CREATE TABLE telefono (
 );
 
 INSERT INTO `telefono` (`IdTelefono`, `IdTipo_Telefono`, `numero_telefono`, `IdPersona`) VALUES
-(1, 2, '04263519830', 1);
+(1, 2, '4263519830', 1);
 
 CREATE TABLE materia (
     IdMateria int NOT NULL AUTO_INCREMENT PRIMARY KEY,

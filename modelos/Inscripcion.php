@@ -13,6 +13,10 @@ class Inscripcion {
     public $IdFecha_Escolar;
     public $IdStatus;
     public $IdCurso_Seccion;
+    // Campos para validación de pago
+    public $codigo_pago;
+    public $fecha_validacion_pago;
+    public $validado_por;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -101,8 +105,77 @@ class Inscripcion {
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":IdStatus", $nuevoStatus, PDO::PARAM_INT);
         $stmt->bindParam(":IdInscripcion", $idInscripcion, PDO::PARAM_INT);
-        
+
         return $stmt->execute();
+    }
+
+    /**
+     * Registra el código de pago y actualiza el status a Inscrito
+     *
+     * @param int $idInscripcion ID de la inscripción
+     * @param string $codigoPago Código de pago validado
+     * @param int $validadoPor ID de la persona que valida el pago
+     * @return bool
+     */
+    public function registrarPagoYInscribir($idInscripcion, $codigoPago, $validadoPor) {
+        $query = "UPDATE inscripcion
+                  SET codigo_pago = :codigo_pago,
+                      fecha_validacion_pago = NOW(),
+                      validado_por = :validado_por
+                  WHERE IdInscripcion = :IdInscripcion";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":codigo_pago", $codigoPago, PDO::PARAM_STR);
+        $stmt->bindParam(":validado_por", $validadoPor, PDO::PARAM_INT);
+        $stmt->bindParam(":IdInscripcion", $idInscripcion, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Verifica si el código de pago ya fue usado en otra inscripción
+     *
+     * @param string $codigoPago Código de pago a verificar
+     * @param int|null $excluirInscripcion ID de inscripción a excluir de la búsqueda
+     * @return bool True si el código ya existe
+     */
+    public function codigoPagoExiste($codigoPago, $excluirInscripcion = null) {
+        $query = "SELECT IdInscripcion FROM inscripcion
+                  WHERE codigo_pago = :codigo_pago";
+
+        if ($excluirInscripcion) {
+            $query .= " AND IdInscripcion != :excluir";
+        }
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":codigo_pago", $codigoPago, PDO::PARAM_STR);
+
+        if ($excluirInscripcion) {
+            $stmt->bindParam(":excluir", $excluirInscripcion, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Obtiene información del pago de una inscripción
+     *
+     * @param int $idInscripcion ID de la inscripción
+     * @return array|null Datos del pago o null
+     */
+    public function obtenerDatosPago($idInscripcion) {
+        $query = "SELECT i.codigo_pago, i.fecha_validacion_pago, i.validado_por,
+                         p.nombre AS validador_nombre, p.apellido AS validador_apellido
+                  FROM inscripcion i
+                  LEFT JOIN persona p ON i.validado_por = p.IdPersona
+                  WHERE i.IdInscripcion = :IdInscripcion";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":IdInscripcion", $idInscripcion, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     public function generarCodigoInscripcion() {
@@ -131,6 +204,13 @@ class Inscripcion {
             fe.fecha_escolar,
             st.status AS status_inscripcion,
             st.IdStatus,
+
+            -- Datos de validación de pago
+            i.codigo_pago,
+            i.fecha_validacion_pago,
+            i.validado_por,
+            validador.nombre AS validador_nombre,
+            validador.apellido AS validador_apellido,
 
             -- Estudiante
             e.IdPersona AS id_estudiante,
@@ -247,6 +327,7 @@ class Inscripcion {
         INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
         INNER JOIN status st ON i.IdStatus = st.IdStatus
         LEFT JOIN plantel pl ON i.ultimo_plantel = pl.IdPlantel
+        LEFT JOIN persona validador ON i.validado_por = validador.IdPersona
 
         -- Representante Legal
         INNER JOIN representante rp ON i.responsable_inscripcion = rp.IdRepresentante

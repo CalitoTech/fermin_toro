@@ -408,6 +408,23 @@ function crearUsuario() {
             manejarError('La cédula ya está registrada');
         }
 
+        // Verificar correo duplicado
+        if (!empty($correo)) {
+            $stmt = $conexion->prepare("SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+                                        FROM persona p
+                                        LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                                        WHERE p.correo = :correo LIMIT 1");
+            $stmt->bindParam(':correo', $correo);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                $personaExistente = $stmt->fetch(PDO::FETCH_ASSOC);
+                $nombreCompleto = $personaExistente['nombre'] . ' ' . $personaExistente['apellido'];
+                $cedulaCompleta = $personaExistente['nacionalidad'] . '-' . $personaExistente['cedula'];
+                manejarError("El correo electrónico '{$correo}' ya está registrado para {$nombreCompleto} (Cédula: {$cedulaCompleta})");
+            }
+        }
+
         // Configurar datos de la persona
         $persona->IdNacionalidad = $nacionalidad === 'V' ? 1 : 2;
         $persona->cedula = $cedula;
@@ -613,6 +630,24 @@ function editarUsuario() {
 
         if ($stmt->rowCount() > 0) {
             manejarError('El usuario o cédula ya están en uso por otro registro', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+        }
+
+        // Verificar correo duplicado (excluyendo al usuario actual)
+        if (!empty($correo)) {
+            $stmt = $conexion->prepare("SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+                                        FROM persona p
+                                        LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                                        WHERE p.correo = :correo AND p.IdPersona != :id LIMIT 1");
+            $stmt->bindParam(':correo', $correo);
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                $personaExistente = $stmt->fetch(PDO::FETCH_ASSOC);
+                $nombreCompleto = $personaExistente['nombre'] . ' ' . $personaExistente['apellido'];
+                $cedulaCompleta = $personaExistente['nacionalidad'] . '-' . $personaExistente['cedula'];
+                manejarError("El correo electrónico '{$correo}' ya está registrado para {$nombreCompleto} (Cédula: {$cedulaCompleta})", "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            }
         }
 
         // Configurar datos actualizados

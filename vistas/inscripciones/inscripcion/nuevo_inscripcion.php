@@ -1193,11 +1193,15 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // === VALIDACIÓN DE CORREO DUPLICADO ===
-    async function verificarCorreoDuplicado(inputCorreo, idPersonaExcluir = null) {
-        const correo = inputCorreo.value.trim();
+    // Variable para rastrear correos con errores
+    const correosConErrorLocal = new Set();
+
+    async function verificarCorreoDuplicadoLocal(inputCorreo, nombrePersona, idPersonaExcluir = null) {
+        const correo = inputCorreo.value.trim().toLowerCase();
 
         if (correo.length === 0) {
             inputCorreo.classList.remove('is-invalid', 'is-valid');
+            correosConErrorLocal.delete(inputCorreo.id);
             return true;
         }
 
@@ -1206,7 +1210,40 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!emailRegex.test(correo)) {
             inputCorreo.classList.remove('is-valid');
             inputCorreo.classList.add('is-invalid');
+            correosConErrorLocal.add(inputCorreo.id);
             return false;
+        }
+
+        // Verificar duplicados dentro del mismo formulario
+        const camposCorreo = ['estudianteCorreo', 'padreCorreo', 'madreCorreo', 'representanteCorreo'];
+        const nombresPersonas = {
+            'estudianteCorreo': 'Estudiante',
+            'padreCorreo': 'Padre',
+            'madreCorreo': 'Madre',
+            'representanteCorreo': 'Representante Legal'
+        };
+
+        for (const campoId of camposCorreo) {
+            if (campoId === inputCorreo.id) continue;
+
+            const otroCampo = document.getElementById(campoId);
+            if (otroCampo && otroCampo.value.trim().toLowerCase() === correo) {
+                inputCorreo.classList.remove('is-valid');
+                inputCorreo.classList.add('is-invalid');
+                correosConErrorLocal.add(inputCorreo.id);
+
+                Swal.fire({
+                    title: 'Correo Duplicado',
+                    html: `El correo <strong>${correo}</strong> ya está siendo usado para <strong>${nombresPersonas[campoId]}</strong> en este formulario.<br><br>
+                           <small class="text-muted">Cada persona debe tener un correo electrónico diferente.</small>`,
+                    icon: 'warning',
+                    confirmButtonColor: '#c90000'
+                });
+
+                inputCorreo.value = '';
+                inputCorreo.focus();
+                return false;
+            }
         }
 
         try {
@@ -1221,40 +1258,51 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.existe) {
                 inputCorreo.classList.remove('is-valid');
                 inputCorreo.classList.add('is-invalid');
+                correosConErrorLocal.add(inputCorreo.id);
 
                 Swal.fire({
                     title: 'Correo Duplicado',
                     html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
                            <strong>${data.persona.nombreCompleto}</strong><br>
-                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}`,
+                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}<br><br>
+                           <small class="text-muted">Por favor ingrese un correo diferente para ${nombrePersona}.</small>`,
                     icon: 'warning',
                     confirmButtonColor: '#c90000'
                 });
+
+                // Limpiar el campo
+                inputCorreo.value = '';
+                inputCorreo.focus();
                 return false;
             } else {
                 inputCorreo.classList.remove('is-invalid');
                 inputCorreo.classList.add('is-valid');
+                correosConErrorLocal.delete(inputCorreo.id);
                 return true;
             }
         } catch (error) {
             console.error('Error al verificar correo:', error);
+            correosConErrorLocal.delete(inputCorreo.id);
             return true;
         }
     }
 
+    // Sincronizar con la variable global de solicitud_cupo.js
+    window.correosConError = correosConErrorLocal;
+
     // Aplicar validación a todos los campos de correo
-    const camposCorreo = [
-        'estudianteCorreo',
-        'madreCorreo',
-        'padreCorreo',
-        'representanteCorreo'
+    const camposCorreoConfig = [
+        { id: 'estudianteCorreo', nombre: 'Estudiante' },
+        { id: 'madreCorreo', nombre: 'Madre' },
+        { id: 'padreCorreo', nombre: 'Padre' },
+        { id: 'representanteCorreo', nombre: 'Representante Legal' }
     ];
 
-    camposCorreo.forEach(id => {
-        const input = document.getElementById(id);
+    camposCorreoConfig.forEach(campo => {
+        const input = document.getElementById(campo.id);
         if (input) {
             input.addEventListener('blur', function() {
-                verificarCorreoDuplicado(this);
+                verificarCorreoDuplicadoLocal(this, campo.nombre);
             });
         }
     });

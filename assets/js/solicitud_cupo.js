@@ -504,6 +504,11 @@ function enviarFormulario() {
         return false;
     }
 
+    // Verificar correos duplicados antes de continuar
+    if (!verificarCorreosAntesDeEnviar()) {
+        return false;
+    }
+
     // 9. Validar si algún representante tiene acceso al sistema
     const cedulasRepresentantes = [];
 
@@ -1275,4 +1280,163 @@ $(document).ready(function() {
 
         imprimirInscripcion(anioEscolar, nacionalidad, nacionalidadTexto, cedula);
     });
+
+    // Inicializar validación de correos duplicados
+    instalarValidacionCorreosDuplicados();
 });
+
+// =====================================================
+// VALIDACIÓN DE CORREOS DUPLICADOS
+// =====================================================
+
+// Variable global para rastrear correos con errores (bloquear envío)
+window.correosConError = new Set();
+
+/**
+ * Instala los handlers de validación de correos duplicados en todos los campos de correo
+ */
+function instalarValidacionCorreosDuplicados() {
+    const camposCorreo = [
+        { id: 'estudianteCorreo', nombre: 'Estudiante' },
+        { id: 'padreCorreo', nombre: 'Padre' },
+        { id: 'madreCorreo', nombre: 'Madre' },
+        { id: 'representanteCorreo', nombre: 'Representante Legal' }
+    ];
+
+    camposCorreo.forEach(campo => {
+        const input = document.getElementById(campo.id);
+        if (input) {
+            input.addEventListener('blur', function() {
+                validarCorreoDuplicado(this, campo.nombre);
+            });
+        }
+    });
+}
+
+/**
+ * Valida si un correo ya existe en la base de datos o está duplicado en el formulario
+ * @param {HTMLInputElement} inputCorreo - El campo de correo a validar
+ * @param {string} nombrePersona - Nombre descriptivo de la persona (para mensajes)
+ * @param {int|null} idPersonaExcluir - ID de persona a excluir de la búsqueda (para edición)
+ */
+async function validarCorreoDuplicado(inputCorreo, nombrePersona, idPersonaExcluir = null) {
+    const correo = inputCorreo.value.trim().toLowerCase();
+
+    // Si está vacío, limpiar estado y remover de errores
+    if (correo.length === 0) {
+        inputCorreo.classList.remove('is-invalid', 'is-valid');
+        window.correosConError.delete(inputCorreo.id);
+        return true;
+    }
+
+    // Validar formato de correo primero
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(correo)) {
+        inputCorreo.classList.remove('is-valid');
+        inputCorreo.classList.add('is-invalid');
+        window.correosConError.add(inputCorreo.id);
+        return false;
+    }
+
+    // Verificar duplicados dentro del mismo formulario
+    const camposCorreo = ['estudianteCorreo', 'padreCorreo', 'madreCorreo', 'representanteCorreo'];
+    const nombresPersonas = {
+        'estudianteCorreo': 'Estudiante',
+        'padreCorreo': 'Padre',
+        'madreCorreo': 'Madre',
+        'representanteCorreo': 'Representante Legal'
+    };
+
+    for (const campoId of camposCorreo) {
+        if (campoId === inputCorreo.id) continue; // Saltar el campo actual
+
+        const otroCampo = document.getElementById(campoId);
+        if (otroCampo && otroCampo.value.trim().toLowerCase() === correo) {
+            // Correo duplicado en otro campo del formulario
+            inputCorreo.classList.remove('is-valid');
+            inputCorreo.classList.add('is-invalid');
+            window.correosConError.add(inputCorreo.id);
+
+            Swal.fire({
+                title: 'Correo Duplicado',
+                html: `El correo <strong>${correo}</strong> ya está siendo usado para <strong>${nombresPersonas[campoId]}</strong> en este formulario.<br><br>
+                       <small class="text-muted">Cada persona debe tener un correo electrónico diferente.</small>`,
+                icon: 'warning',
+                confirmButtonColor: '#c90000'
+            });
+
+            // Limpiar el campo
+            inputCorreo.value = '';
+            inputCorreo.focus();
+            return false;
+        }
+    }
+
+    // Verificar duplicados en el servidor (base de datos)
+    try {
+        let url = '../../controladores/PersonaController.php?action=verificarCorreo&correo=' + encodeURIComponent(correo);
+        if (idPersonaExcluir) {
+            url += '&idPersona=' + idPersonaExcluir;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.existe) {
+            // Correo duplicado - mostrar alerta y limpiar campo
+            inputCorreo.classList.remove('is-valid');
+            inputCorreo.classList.add('is-invalid');
+            window.correosConError.add(inputCorreo.id);
+
+            Swal.fire({
+                title: 'Correo Duplicado',
+                html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
+                       <strong>${data.persona.nombreCompleto}</strong><br>
+                       Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}<br><br>
+                       <small class="text-muted">Por favor ingrese un correo diferente para ${nombrePersona}.</small>`,
+                icon: 'warning',
+                confirmButtonColor: '#c90000'
+            });
+
+            // Limpiar el campo
+            inputCorreo.value = '';
+            inputCorreo.focus();
+            return false;
+        } else {
+            // Correo válido
+            inputCorreo.classList.remove('is-invalid');
+            inputCorreo.classList.add('is-valid');
+            window.correosConError.delete(inputCorreo.id);
+            return true;
+        }
+    } catch (error) {
+        console.error('Error al verificar correo:', error);
+        // En caso de error de red, permitir continuar pero loguear
+        window.correosConError.delete(inputCorreo.id);
+        return true;
+    }
+}
+
+/**
+ * Verifica si hay correos con errores pendientes antes de enviar
+ * @returns {boolean} true si no hay errores, false si hay correos inválidos
+ */
+function verificarCorreosAntesDeEnviar() {
+    if (window.correosConError && window.correosConError.size > 0) {
+        const camposConError = Array.from(window.correosConError);
+        Swal.fire({
+            icon: 'error',
+            title: 'Correos inválidos',
+            html: 'Hay correos electrónicos duplicados o inválidos. Por favor corrija los campos marcados antes de continuar.',
+            confirmButtonColor: '#c90000'
+        });
+
+        // Enfocar el primer campo con error
+        const primerCampo = document.getElementById(camposConError[0]);
+        if (primerCampo) {
+            primerCampo.focus();
+        }
+        return false;
+    }
+    return true;
+}
