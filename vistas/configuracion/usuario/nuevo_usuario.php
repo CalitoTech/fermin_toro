@@ -749,25 +749,66 @@ try {
         });
     }
 
-    // Validación de correo
+    // Validación de correo con verificación de duplicados
     const correoInput = document.getElementById('correo');
+    let correoTimer;
+
+    async function verificarCorreoDuplicado() {
+        const correo = correoInput.value.trim();
+        const grupo = document.getElementById('grupo__correo');
+        const errorMsg = grupo.querySelector('.añadir__input-error');
+
+        if (correo.length === 0) {
+            grupo.classList.remove('añadir__grupo-incorrecto', 'añadir__grupo-correcto');
+            return;
+        }
+
+        // Validar formato primero
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+            grupo.classList.remove('añadir__grupo-correcto');
+            grupo.classList.add('añadir__grupo-incorrecto');
+            errorMsg.textContent = 'El correo electrónico no tiene un formato válido';
+            return;
+        }
+
+        try {
+            // Obtener IdPersona si estamos en modo edición
+            const idPersona = document.getElementById('IdPersona')?.value || '';
+            let url = `../../../controladores/PersonaController.php?action=verificarCorreo&correo=${encodeURIComponent(correo)}`;
+            if (idPersona) {
+                url += `&idPersona=${idPersona}`;
+            }
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.existe) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = `Este correo ya está registrado para ${data.persona.nombreCompleto} (${data.persona.nacionalidad}-${data.persona.cedula})`;
+
+                Swal.fire({
+                    title: 'Correo Duplicado',
+                    html: `El correo <strong>${correo}</strong> ya está registrado para:<br><br>
+                           <strong>${data.persona.nombreCompleto}</strong><br>
+                           Cédula: ${data.persona.nacionalidad}-${data.persona.cedula}`,
+                    icon: 'warning',
+                    confirmButtonColor: '#c90000'
+                });
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        } catch (error) {
+            console.error('Error al verificar correo:', error);
+        }
+    }
+
     if (correoInput) {
         correoInput.addEventListener('blur', function() {
-            const correo = this.value.trim();
-            const grupo = document.getElementById('grupo__correo');
-            const errorMsg = grupo.querySelector('.añadir__input-error');
-
-            if (correo.length > 0) {
-                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(correo)) {
-                    grupo.classList.remove('añadir__grupo-correcto');
-                    grupo.classList.add('añadir__grupo-incorrecto');
-                    errorMsg.textContent = 'El correo electrónico no tiene un formato válido';
-                } else {
-                    grupo.classList.remove('añadir__grupo-incorrecto');
-                    grupo.classList.add('añadir__grupo-correcto');
-                }
-            }
+            clearTimeout(correoTimer);
+            correoTimer = setTimeout(verificarCorreoDuplicado, 300);
         });
     }
 
