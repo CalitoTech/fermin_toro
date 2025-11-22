@@ -24,6 +24,23 @@ function manejarStatusBar(idInscripcion, idInscrito) {
 
             const actualId = parseInt(stepActivo.dataset.id);
 
+            // Prevenir cambio de estado si no es el año escolar activo
+            if (typeof ES_ANO_ESCOLAR_ACTIVO !== 'undefined' && !ES_ANO_ESCOLAR_ACTIVO) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Año escolar inactivo',
+                    html: `
+                        <div class="text-center">
+                            <p>Esta inscripción pertenece a un año escolar diferente al activo.</p>
+                            <p>No se pueden realizar cambios de estado en inscripciones de años escolares anteriores.</p>
+                        </div>
+                    `,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
             // Prevenir clic en el estado actual
             if (nuevoId === actualId) {
                 Swal.fire({
