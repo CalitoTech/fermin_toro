@@ -244,7 +244,7 @@ function enviarFormulario() {
     // 1. Validación de prefijos de teléfono
     let camposFaltantes = [];
 
-    // Validar prefijos de teléfonos (EXCLUIR ESTUDIANTE - nunca es obligatorio)
+    // Validar prefijos de teléfonos (EXCLUIR ESTUDIANTE - siempre es opcional)
     const prefijosTelefono = [
         {inputId: 'padreTelefonoHabitacionPrefijo', hiddenId: 'padreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del padre'},
         {inputId: 'padreCelularPrefijo', hiddenId: 'padreCelularPrefijo', nombre: 'Prefijo del celular del padre'},
@@ -277,7 +277,6 @@ function enviarFormulario() {
         {id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer', opcional: false},
         {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null, opcional: false},
         {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null, opcional: false},
-        {id: 'estudianteTelefono', nombre: 'Teléfono del estudiante', container: '#estudianteTelefonoContainer', opcional: true},
         {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante', container: null, opcional: false},
         {id: 'estudiantePlantel', nombre: 'Plantel donde cursó el último año escolar', container: '#estudiantePlantelContainer', opcional: false}
     ];
@@ -287,14 +286,9 @@ function enviarFormulario() {
 
     // 🔧 Filtramos solo los que deben validarse
     const camposAValidar = camposEstudiante.filter(campo => {
-        // Omitir cédula, teléfono y plantel solo si es el primer curso (nuevo ingreso sin antecedentes)
+        // Omitir cédula y plantel solo si es el primer curso (nuevo ingreso sin antecedentes)
         if (idCursoSeleccionado === 1 &&
-            (campo.id === 'estudianteCedula' || campo.id === 'estudianteTelefono' || campo.id === 'estudiantePlantel')) {
-            return false;
-        }
-
-        // Siempre omitir teléfono del estudiante (es opcional cuando es visible)
-        if (campo.id === 'estudianteTelefono') {
+            (campo.id === 'estudianteCedula' || campo.id === 'estudiantePlantel')) {
             return false;
         }
 

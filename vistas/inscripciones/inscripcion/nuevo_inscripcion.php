@@ -69,9 +69,18 @@ $añoEscolarActivo = $fechaEscolarModel->obtenerActivo();
 // Obtener datos con filtro por permisos
 $niveles = $modeloNivel->obtenerNiveles($idPersona);
 $cursos = $modeloCurso->obtenerCursos($idPersona);
+
+// Incluir funciones auxiliares para renderizar formularios (igual que solicitud_cupo.php)
+require_once __DIR__ . '/../../homepage/includes/form_persona_fields.php';
+
+// Preparar opciones para los selects
+$data_options = [
+    'nacionalidades' => $nacionalidades,
+    'urbanismos' => $urbanismos,
+    'parentescos' => $parentescos,
+    'tiposTrabajador' => $tiposTrabajador
+];
 ?>
-
-
 
 <div class="container mt-4" style="min-height: 80vh;">
     <form id="formInscripcion" data-origen="pagina" method="POST">
@@ -81,8 +90,10 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
         <input type="hidden" name="IdCurso" id="IdCurso" value="">
         <input type="hidden" name="idTipoInscripcion" id="idTipoInscripcion" value="1">
         <input type="hidden" name="origen" id="origen" value="administrativo">
+        <input type="hidden" id="idCursoSeleccionado" name="idCurso">
+        <input type="hidden" id="idNivelSeleccionado" name="idNivelSeleccionado">
 
-        <!-- 🔹 BLOQUE: DATOS DE INSCRIPCIÓN -->
+        <!-- BLOQUE: DATOS DE INSCRIPCIÓN -->
         <div class="card mb-3">
             <div class="card-header" style="background-color: #c90000; color: white;">
                 <h5 class="mb-0">
@@ -254,15 +265,14 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
             </div>
         </div>
 
-
-        
-        <!-- ===================== DATOS DEL ESTUDIANTE ===================== -->
-        <div class="card mb-4">
+        <!-- ===================== DATOS DEL ESTUDIANTE (Igual que solicitud_cupo.php) ===================== -->
+        <div class="card mb-4" id="seccionDatosEstudiante" style="display: none;">
             <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosEstudiante">
                 <h5><i class="fas fa-child mr-2"></i>Datos del Estudiante</h5>
             </div>
 
             <div class="card-body collapse show" id="datosEstudiante">
+                <!-- Leyenda de campos obligatorios -->
                 <div class="form-legend">
                     <i class="fas fa-asterisk"></i> Campos obligatorios
                 </div>
@@ -272,21 +282,42 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                         <div class="form-group required-field">
                             <label for="estudianteApellidos">Apellidos</label>
                             <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
-                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40"
-                                   onkeypress="return onlyText(event)" oninput="formatearTexto2()" placeholder="Ej: Pérez González" required>
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                            minlength="3" maxlength="40"
+                            onkeypress="return onlyText(event)"
+                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group required-field">
                             <label for="estudianteNombres">Nombres</label>
                             <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
-                                   pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40"
-                                   onkeypress="return onlyText(event)" oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                            minlength="3" maxlength="40"
+                            onkeypress="return onlyText(event)"
+                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
                         </div>
                     </div>
                 </div>
 
                 <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="estudianteSexo">Sexo</label>
+                            <select class="form-control" id="estudianteSexo" name="estudianteSexo" required>
+                                <option value="">Seleccione un sexo</option>
+                                <?php foreach ($sexos as $sexo): ?>
+                                    <option value="<?= $sexo['IdSexo'] ?>"><?= $sexo['sexo'] ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group required-field">
+                            <label for="estudianteFechaNacimiento">Fecha Nacimiento</label>
+                            <input type="date" class="form-control" id="estudianteFechaNacimiento" name="estudianteFechaNacimiento" required>
+                        </div>
+                    </div>
                     <div class="col-md-3">
                         <div class="form-group required-field">
                             <label for="estudianteNacionalidad">Nacionalidad</label>
@@ -302,24 +333,11 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                         <div class="form-group required-field">
                             <label for="estudianteCedula">Cédula</label>
                             <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
-                                   minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)" placeholder="Ej: 12345678" required>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group required-field">
-                            <label for="estudianteSexo">Sexo</label>
-                            <select class="form-control" id="estudianteSexo" name="estudianteSexo" required>
-                                <option value="">Seleccione un sexo</option>
-                                <?php foreach ($sexos as $sexo): ?>
-                                    <option value="<?= $sexo['IdSexo'] ?>"><?= $sexo['sexo'] ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group required-field">
-                            <label for="estudianteFechaNacimiento">Fecha de Nacimiento</label>
-                            <input type="date" class="form-control" id="estudianteFechaNacimiento" name="estudianteFechaNacimiento" required>
+                            minlength="7" maxlength="8"
+                            pattern="[0-9]+" onkeypress="return onlyNumber(event)" readonly required>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle"></i> Primero ingrese la fecha de nacimiento
+                            </small>
                         </div>
                     </div>
                 </div>
@@ -329,89 +347,45 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                         <div class="form-group required-field">
                             <label for="estudianteLugarNacimiento">Lugar de Nacimiento</label>
                             <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento"
-                                   minlength="3" maxlength="40" oninput="formatearTexto1()" placeholder="Ej: Araure, Portuguesa" required>
+                            minlength="3" maxlength="40"
+                            oninput="formatearTexto1()" placeholder="Ej: Araure, Portuguesa" required>
                         </div>
                     </div>
-                    <div class="col-md-6" id="estudianteTelefonoContainer">
-                        <div class="form-group required-field">
-                            <label for="estudianteTelefono">Teléfono</label>
+                    <div class="col-md-6" id="estudianteTelefonoContainer" style="display: none;">
+                        <div class="form-group">
+                            <label for="estudianteTelefono">Teléfono <small class="text-muted">(Opcional)</small></label>
                             <div class="input-group">
                                 <!-- Prefix selector -->
-                                <div class="position-relative" style="max-width: 100px;">
+                                <div class="position-relative" style="max-width: 90px;">
                                     <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
                                            id="estudianteTelefonoPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
                                            onkeypress="return /[0-9+]/.test(event.key)"
                                            oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
-                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
-                                    <input type="hidden" id="estudianteTelefonoPrefijo" name="estudianteTelefonoPrefijo" required>
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;"
+                                           value="+58">
+                                    <input type="hidden" id="estudianteTelefonoPrefijo" name="estudianteTelefonoPrefijo">
                                     <input type="hidden" id="estudianteTelefonoPrefijo_nombre" name="estudianteTelefonoPrefijo_nombre">
                                     <div id="estudianteTelefonoPrefijo_resultados" class="autocomplete-results d-none"></div>
                                 </div>
 
                                 <!-- Phone number input -->
                                 <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono"
-                                       minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" placeholder="4121234567" required
+                                       minlength="10" maxlength="10"
+                                       pattern="[0-9]+" onkeypress="return onlyNumber(event)"
+                                       placeholder="4121234567"
                                        style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
-
-                                <!-- Phone icon -->
-                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
                             </div>
-
-                            <script>
-                            document.addEventListener("DOMContentLoaded", function() {
-                                const buscador = new BuscadorGenerico(
-                                    "estudianteTelefonoPrefijo_input",
-                                    "estudianteTelefonoPrefijo_resultados",
-                                    "prefijo",
-                                    "estudianteTelefonoPrefijo",
-                                    "estudianteTelefonoPrefijo_nombre"
-                                );
-
-                                // Establecer valor por defecto
-                                const inputPrefijo = document.getElementById("estudianteTelefonoPrefijo_input");
-                                inputPrefijo.value = "+58";
-
-                                // Formatear prefijo: evitar que se borre el +
-                                inputPrefijo.addEventListener("input", function(e) {
-                                    let valor = this.value;
-                                    if (!valor.startsWith("+")) {
-                                        this.value = "+" + valor.replace(/\+/g, "");
-                                    }
-                                    if (valor.indexOf("+") > 0) {
-                                        this.value = "+" + valor.replace(/\+/g, "");
-                                    }
-                                });
-                                inputPrefijo.addEventListener("keydown", function(e) {
-                                    if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
-                                        e.preventDefault();
-                                    }
-                                });
-
-                                // Buscar el ID del prefijo por defecto
-                                const baseUrl = buscador.baseUrl;
-                                fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data && data.length > 0) {
-                                            const prefijoEncontrado = data.find(p => p.codigo_prefijo === "+58");
-                                            if (prefijoEncontrado) {
-                                                document.getElementById("estudianteTelefonoPrefijo").value = prefijoEncontrado.IdPrefijo;
-                                            }
-                                        }
-                                    })
-                                    .catch(err => console.error("Error al cargar prefijo por defecto:", err));
-                            });
-                            </script>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-group required-field">
-                    <label for="estudianteCorreo">Correo Electrónico</label>
-                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" minlength="10" maxlength="50" placeholder="Ej: estudiante@correo.com" required>
+                    <label for="estudianteCorreo">Correo electrónico</label>
+                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo"
+                    minlength="10" maxlength="50" placeholder="Ej: estudiante@correo.com" required>
                 </div>
 
-                <div class="form-group required-field">
+                <div class="form-group required-field" id="estudiantePlantelContainer">
                     <label for="estudiantePlantel">Plantel donde cursó el último año escolar</label>
                     <div class="position-relative">
                         <input type="text" class="form-control buscador-input" id="estudiantePlantel_input" autocomplete="off" placeholder="Buscar o escribir nuevo plantel...">
@@ -422,17 +396,6 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                     <small class="form-text text-muted">
                         <i class="fas fa-info-circle"></i> Busque o escriba el nombre del plantel educativo
                     </small>
-                    <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        new BuscadorGenerico(
-                            "estudiantePlantel_input",
-                            "estudiantePlantel_resultados",
-                            "plantel",
-                            "estudiantePlantel",
-                            "estudiantePlantel_nombre"
-                        );
-                    });
-                    </script>
                 </div>
 
                 <div class="form-group">
@@ -446,7 +409,9 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="discapacidadesBody"></tbody>
+                            <tbody id="discapacidadesBody">
+                                <!-- Fila inicial se genera automáticamente -->
+                            </tbody>
                         </table>
                     </div>
                     <button type="button" id="btn-agregar-discapacidad" class="btn btn-sm btn-primary mt-2">
@@ -456,347 +421,129 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
             </div>
         </div>
 
-        <!-- ===================== DATOS DE PADRES Y REPRESENTANTE ===================== -->
-        <?php
-        $campos_persona = [
-            'Apellidos' => 'text',
-            'Nombres' => 'text',
-            'Cedula' => 'text',
-            'Nacionalidad' => 'select',
-            'Ocupacion' => 'text',
-            'Urbanismo' => 'select',
-            'Direccion' => 'text',
-            'TelefonoHabitacion' => 'text',
-            'Celular' => 'text',
-            'Correo' => 'email',
-            'LugarTrabajo' => 'text'
-        ];
+        <!-- ===================== DATOS DE LA MADRE (usando helper igual que solicitud_cupo.php) ===================== -->
+        <div id="seccionMadreContainer" style="display: none;">
+            <?php
+            // Renderizar bloque de la Madre (con contacto de emergencia) - con 'show' para que esté desplegado
+            renderizarBloquePersona('madre', 'Datos de la Madre', 'fa-female', 'datosMadre', 'Madre', $data_options, 'show', true);
+            ?>
+        </div>
 
-        $labels_amistosos = [
-            'Apellidos' => 'Apellidos',
-            'Nombres' => 'Nombres',
-            'Cedula' => 'Cédula',
-            'Nacionalidad' => 'Nacionalidad',
-            'Ocupacion' => 'Ocupación',
-            'Urbanismo' => 'Urbanismo / Sector',
-            'Direccion' => 'Dirección',
-            'TelefonoHabitacion' => 'Teléfono de Habitación',
-            'Celular' => 'Celular',
-            'Correo' => 'Correo Electrónico',
-            'LugarTrabajo' => 'Lugar de Trabajo'
-        ];
+        <!-- ===================== DATOS DEL PADRE (usando helper igual que solicitud_cupo.php) ===================== -->
+        <div id="seccionPadreContainer" style="display: none;">
+            <?php
+            // Renderizar bloque del Padre - con 'show' para que esté desplegado
+            renderizarBloquePersona('padre', 'Datos del Padre', 'fa-male', 'datosPadre', 'Padre', $data_options, 'show', false);
+            ?>
+        </div>
 
-        $tipos = [
-            'madre' => 'Datos de la Madre',
-            'padre' => 'Datos del Padre',
-            'representante' => 'Datos del Representante Legal'
-        ];
-        ?>
+        <!-- Información de representante automático -->
+        <div id="repAutoInfo" class="representante-auto" style="display: none;">
+            <i class="fas fa-info-circle mr-2"></i>
+            Se usará <span id="repSeleccionado">la madre</span> como representante legal
+        </div>
 
-        <?php foreach ($tipos as $tipo => $titulo): ?>
-            <div class="card mb-4 <?= $tipo === 'representante' ? 'd-none' : '' ?>" id="seccion<?= ucfirst($tipo) ?>">
-                <div class="card-header form-title" style="background-color: #c90000; color: white;">
-                    <h5><i class="fas fa-user mr-2"></i><?= $titulo ?></h5>
-                </div>
-
-                <div class="card-body">
+        <!-- Bloque de selección de representante legal -->
+        <div class="card mb-4" id="seccionRepresentanteSelector" style="display: none;">
+            <div class="card-header" style="background-color: #c90000; color: white;">
+                <h5><i class="fas fa-user-tie mr-2"></i>Representante Legal</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>El representante legal es:</label>
                     <div class="row">
-                        <?php foreach ($campos_persona as $campo => $tipo_input): ?>
-                            <div class="col-md-4 mb-3">
-                                <label for="<?= $tipo . $campo ?>" class="form-label"><?= $labels_amistosos[$campo] ?></label>
-                                <?php if ($campo === 'Nacionalidad'): ?>
-                                    <select class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
-                                        <option value="">Seleccione...</option>
-                                        <?php foreach ($nacionalidades as $nacionalidad): ?>
-                                            <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                <?php elseif ($campo === 'Urbanismo'): ?>
-                                    <?php
-                                    $inputId = $tipo . $campo . '_input';
-                                    $hiddenId = $tipo . $campo;
-                                    $hiddenNombre = $tipo . $campo . '_nombre';
-                                    $resultadosId = $tipo . $campo . '_resultados';
-                                    ?>
-                                    <div class="position-relative">
-                                        <input type="text" class="form-control buscador-input" id="<?= $inputId ?>" autocomplete="off" placeholder="Buscar o escribir nuevo urbanismo...">
-                                        <input type="hidden" id="<?= $hiddenId ?>" name="<?= $hiddenId ?>" required>
-                                        <input type="hidden" id="<?= $hiddenNombre ?>" name="<?= $hiddenNombre ?>">
-                                        <div id="<?= $resultadosId ?>" class="autocomplete-results d-none"></div>
-                                    </div>
-                                    <script>
-                                    document.addEventListener("DOMContentLoaded", function() {
-                                        new BuscadorGenerico("<?= $inputId ?>", "<?= $resultadosId ?>", "urbanismo", "<?= $hiddenId ?>", "<?= $hiddenNombre ?>");
-                                    });
-                                    </script>
-                                <?php elseif ($campo === 'TelefonoHabitacion' || $campo === 'Celular'): ?>
-                                    <?php
-                                    $prefijoInputId = $tipo . $campo . 'Prefijo_input';
-                                    $prefijoHiddenId = $tipo . $campo . 'Prefijo';
-                                    $prefijoHiddenNombre = $tipo . $campo . 'Prefijo_nombre';
-                                    $prefijoResultadosId = $tipo . $campo . 'Prefijo_resultados';
-                                    $telefonoId = $tipo . $campo;
-
-                                    // Configuración según tipo de teléfono
-                                    $prefijoTipo = ($campo === 'TelefonoHabitacion') ? 'fijo' : 'internacional';
-                                    $prefijoDefault = ($campo === 'TelefonoHabitacion') ? '0255' : '+58';
-                                    $minLength = ($campo === 'TelefonoHabitacion') ? '7' : '10';
-                                    $maxLength = ($campo === 'TelefonoHabitacion') ? '7' : '10';
-                                    ?>
-                                    <div class="input-group">
-                                        <!-- Prefix selector -->
-                                        <div class="position-relative" style="max-width: 100px;">
-                                            <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
-                                                   id="<?= $prefijoInputId ?>" maxlength="4" data-prefijo-tipo="<?= $prefijoTipo ?>"
-                                                   onkeypress="return /[0-9+]/.test(event.key)"
-                                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
-                                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
-                                            <input type="hidden" id="<?= $prefijoHiddenId ?>" name="<?= $prefijoHiddenId ?>" required>
-                                            <input type="hidden" id="<?= $prefijoHiddenNombre ?>" name="<?= $prefijoHiddenNombre ?>">
-                                            <div id="<?= $prefijoResultadosId ?>" class="autocomplete-results d-none"></div>
-                                        </div>
-
-                                        <!-- Phone number input -->
-                                        <input type="tel" class="form-control" id="<?= $telefonoId ?>" name="<?= $telefonoId ?>"
-                                               minlength="<?= $minLength ?>" maxlength="<?= $maxLength ?>" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
-                                               style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
-
-                                        <!-- Phone icon -->
-                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                    </div>
-
-                                    <script>
-                                    document.addEventListener("DOMContentLoaded", function() {
-                                        const buscador = new BuscadorGenerico(
-                                            "<?= $prefijoInputId ?>",
-                                            "<?= $prefijoResultadosId ?>",
-                                            "prefijo",
-                                            "<?= $prefijoHiddenId ?>",
-                                            "<?= $prefijoHiddenNombre ?>"
-                                        );
-
-                                        // Establecer valor por defecto
-                                        const inputPrefijo = document.getElementById("<?= $prefijoInputId ?>");
-                                        inputPrefijo.value = "<?= $prefijoDefault ?>";
-
-                                        // Formatear prefijo para internacionales: evitar que se borre el +
-                                        <?php if ($prefijoTipo === 'internacional'): ?>
-                                        inputPrefijo.addEventListener("input", function(e) {
-                                            let valor = this.value;
-                                            if (!valor.startsWith("+")) {
-                                                this.value = "+" + valor.replace(/\+/g, "");
-                                            }
-                                            if (valor.indexOf("+") > 0) {
-                                                this.value = "+" + valor.replace(/\+/g, "");
-                                            }
-                                        });
-                                        inputPrefijo.addEventListener("keydown", function(e) {
-                                            if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
-                                                e.preventDefault();
-                                            }
-                                        });
-                                        <?php endif; ?>
-
-                                        // Buscar el ID del prefijo por defecto
-                                        const baseUrl = buscador.baseUrl;
-                                        const prefijoEncoded = encodeURIComponent("<?= $prefijoDefault ?>");
-                                        fetch(`${baseUrl}?tipo=prefijo&q=${prefijoEncoded}&filtro=<?= $prefijoTipo ?>`)
-                                            .then(res => res.json())
-                                            .then(data => {
-                                                if (data && data.length > 0) {
-                                                    const prefijoEncontrado = data.find(p => p.codigo_prefijo === "<?= $prefijoDefault ?>");
-                                                    if (prefijoEncontrado) {
-                                                        document.getElementById("<?= $prefijoHiddenId ?>").value = prefijoEncontrado.IdPrefijo;
-                                                    }
-                                                }
-                                            })
-                                            .catch(err => console.error("Error al cargar prefijo por defecto:", err));
-                                    });
-                                    </script>
-                                <?php else: ?>
-                                    <input type="<?= $tipo_input ?>" class="form-control" id="<?= $tipo . $campo ?>" name="<?= $tipo . $campo ?>" required>
-                                <?php endif; ?>
+                        <div class="col-md-4">
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="repMadre" name="tipoRepresentante" class="custom-control-input" value="madre" checked>
+                                <label class="custom-control-label" for="repMadre">
+                                    <i class="fas fa-female mr-1"></i> La Madre
+                                </label>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
-
-                    <!-- Campo Tipo de Trabajador -->
-                    <div class="form-group required-field mt-3">
-                        <label>Tipo de Trabajador</label>
-                        <div class="row">
-                            <?php foreach ($tiposTrabajador as $tipoTrab): ?>
-                                <div class="col-md-6">
-                                    <div class="custom-control custom-radio">
-                                        <input type="radio" id="<?= $tipo ?>TipoTrabajador_<?= $tipoTrab['IdTipoTrabajador'] ?>"
-                                               name="<?= $tipo ?>TipoTrabajador"
-                                               class="custom-control-input"
-                                               value="<?= $tipoTrab['IdTipoTrabajador'] ?>" required>
-                                        <label class="custom-control-label" for="<?= $tipo ?>TipoTrabajador_<?= $tipoTrab['IdTipoTrabajador'] ?>">
-                                            <?= htmlspecialchars($tipoTrab['tipo_trabajador']) ?>
-                                        </label>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="repPadre" name="tipoRepresentante" class="custom-control-input" value="padre">
+                                <label class="custom-control-label" for="repPadre">
+                                    <i class="fas fa-male mr-1"></i> El Padre
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" id="repOtro" name="tipoRepresentante" class="custom-control-input" value="otro">
+                                <label class="custom-control-label" for="repOtro">
+                                    <i class="fas fa-user-tie mr-1"></i> Otro
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <?php if ($tipo === 'madre'): ?>
-                <!-- ======================================= -->
-                <!-- CONTACTO DE EMERGENCIA -->
-                <!-- ======================================= -->
-                <div class="card mb-4">
-                    <div class="card-header" style="background-color: #c90000; color: white;">
-                        <h5><i class="fas fa-phone-alt mr-2"></i>Contacto de Emergencia</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-group required-field">
-                                    <label for="emergenciaNombre">En caso de emergencia, llamar a:</label>
-                                    <input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre"
-                                        pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                        minlength="3" maxlength="40"
-                                        onkeypress="return onlyText(event)"
-                                        oninput="formatearTexto1()" required>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group required-field">
-                                    <label for="emergenciaParentesco">Parentesco</label>
-                                    <div class="position-relative">
-                                        <input type="text" class="form-control buscador-input" id="emergenciaParentesco_input" autocomplete="off" placeholder="Buscar o escribir nuevo parentesco...">
-                                        <input type="hidden" id="emergenciaParentesco" name="emergenciaParentesco" required>
-                                        <input type="hidden" id="emergenciaParentesco_nombre" name="emergenciaParentesco_nombre">
-                                        <div id="emergenciaParentesco_resultados" class="autocomplete-results d-none"></div>
-                                    </div>
-                                    <script>
-                                    document.addEventListener("DOMContentLoaded", function() {
-                                        new BuscadorGenerico("emergenciaParentesco_input", "emergenciaParentesco_resultados", "parentesco", "emergenciaParentesco", "emergenciaParentesco_nombre");
-                                    });
-                                    </script>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-group required-field">
-                                    <label for="emergenciaCelular">Celular</label>
-                                    <div class="input-group">
-                                        <!-- Prefix selector -->
-                                        <div class="position-relative" style="max-width: 100px;">
-                                            <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
-                                                   id="emergenciaCelularPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
-                                                   onkeypress="return /[0-9+]/.test(event.key)"
-                                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
-                                                   style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
-                                            <input type="hidden" id="emergenciaCelularPrefijo" name="emergenciaCelularPrefijo" required>
-                                            <input type="hidden" id="emergenciaCelularPrefijo_nombre" name="emergenciaCelularPrefijo_nombre">
-                                            <div id="emergenciaCelularPrefijo_resultados" class="autocomplete-results d-none"></div>
-                                        </div>
+        <!-- ===================== DATOS DEL REPRESENTANTE LEGAL (se muestra si selecciona "otro") ===================== -->
+        <div id="seccionRepresentante" style="display: none;">
+            <?php
+            // Renderizar bloque del Representante Legal (con Parentesco como buscador)
+            echo '<div class="card mb-4">';
+            echo '<div class="card-header" style="background-color: #c90000; color: white;">';
+            echo '<h5><i class="fas fa-user-tie mr-2"></i>Datos del Representante Legal</h5>';
+            echo '</div>';
+            echo '<div class="card-body">';
 
-                                        <!-- Phone number input -->
-                                        <input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular"
-                                               minlength="10" maxlength="10" pattern="[0-9]+" onkeypress="return onlyNumber2(event)" required
-                                               style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+            // Renderizar campos organizados por filas
+            $fila_actual = [];
+            $cols_actuales = 0;
 
-                                        <!-- Phone icon -->
-                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                    </div>
+            foreach ($campos_persona as $nombre_campo => $config) {
+                $fila_actual[] = ['nombre' => $nombre_campo, 'config' => $config];
+                $cols_actuales += $config['col'];
 
-                                    <script>
-                                    document.addEventListener("DOMContentLoaded", function() {
-                                        const buscador = new BuscadorGenerico(
-                                            "emergenciaCelularPrefijo_input",
-                                            "emergenciaCelularPrefijo_resultados",
-                                            "prefijo",
-                                            "emergenciaCelularPrefijo",
-                                            "emergenciaCelularPrefijo_nombre"
-                                        );
+                // Si completamos 12 columnas o es el último campo, renderizamos la fila
+                if ($cols_actuales >= 12 || $nombre_campo === array_key_last($campos_persona)) {
+                    echo '<div class="row">';
+                    foreach ($fila_actual as $item) {
+                        // Para el representante, el Parentesco debe ser un buscador
+                        if ($item['nombre'] === 'Parentesco') {
+                            $id = 'representanteParentesco';
+                            $name = 'representanteParentesco';
+                            $inputId = $id . '_input';
+                            $hiddenId = $id;
+                            $hiddenNombre = $id . '_nombre';
+                            $resultadosId = $id . '_resultados';
 
-                                        // Establecer valor por defecto
-                                        const inputPrefijo = document.getElementById("emergenciaCelularPrefijo_input");
-                                        inputPrefijo.value = "+58";
+                            echo '<div class="col-md-6">';
+                            echo '<div class="form-group required-field">';
+                            echo '<label for="' . $id . '">Parentesco</label>';
+                            echo '<div class="position-relative">';
+                            echo '<input type="text" class="form-control buscador-input" id="' . $inputId . '" autocomplete="off" placeholder="Buscar o escribir nuevo parentesco...">';
+                            echo '<input type="hidden" id="' . $hiddenId . '" name="' . $name . '" required>';
+                            echo '<input type="hidden" id="' . $hiddenNombre . '" name="' . $name . '_nombre">';
+                            echo '<div id="' . $resultadosId . '" class="autocomplete-results d-none"></div>';
+                            echo '</div>';
+                            echo '<script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                new BuscadorGenerico("' . $inputId . '", "' . $resultadosId . '", "parentesco", "' . $hiddenId . '", "' . $hiddenNombre . '");
+                            });
+                            </script>';
+                            echo '</div>';
+                            echo '</div>';
+                        } else {
+                            renderizarCampoPersona('representante', $item['nombre'], $item['config'], $data_options, '');
+                        }
+                    }
+                    echo '</div>';
 
-                                        // Formatear prefijo: evitar que se borre el +
-                                        inputPrefijo.addEventListener("input", function(e) {
-                                            let valor = this.value;
-                                            if (!valor.startsWith("+")) {
-                                                this.value = "+" + valor.replace(/\+/g, "");
-                                            }
-                                            if (valor.indexOf("+") > 0) {
-                                                this.value = "+" + valor.replace(/\+/g, "");
-                                            }
-                                        });
-                                        inputPrefijo.addEventListener("keydown", function(e) {
-                                            if (this.value === "+" && (e.key === "Backspace" || e.key === "Delete")) {
-                                                e.preventDefault();
-                                            }
-                                        });
+                    // Resetear para la siguiente fila
+                    $fila_actual = [];
+                    $cols_actuales = 0;
+                }
+            }
 
-                                        // Buscar el ID del prefijo por defecto
-                                        const baseUrl = buscador.baseUrl;
-                                        fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
-                                            .then(res => res.json())
-                                            .then(data => {
-                                                if (data && data.length > 0) {
-                                                    const prefijoEncontrado = data.find(p => p.codigo_prefijo === "+58");
-                                                    if (prefijoEncontrado) {
-                                                        document.getElementById("emergenciaCelularPrefijo").value = prefijoEncontrado.IdPrefijo;
-                                                    }
-                                                }
-                                            })
-                                            .catch(err => console.error("Error al cargar prefijo por defecto:", err));
-                                    });
-                                    </script>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endif; ?>
-
-
-            <!-- Radio para seleccionar el representante legal (después del bloque del padre) -->
-            <?php if ($tipo === 'padre'): ?>
-                
-                <div class="card mb-4">
-                        <div class="card-header" style="background-color: #c90000; color: white;">
-                            <h5><i class="fas fa-user-tie mr-2"></i>Representante Legal</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label>El representante legal es:</label>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="repMadre" name="tipoRepresentante" class="custom-control-input" value="madre" checked>
-                                            <label class="custom-control-label" for="repMadre">
-                                                <i class="fas fa-female mr-1"></i> La Madre
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="repPadre" name="tipoRepresentante" class="custom-control-input" value="padre">
-                                            <label class="custom-control-label" for="repPadre">
-                                                <i class="fas fa-male mr-1"></i> El Padre
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="repOtro" name="tipoRepresentante" class="custom-control-input" value="otro">
-                                            <label class="custom-control-label" for="repOtro">
-                                                <i class="fas fa-user-tie mr-1"></i> Otro
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-            <?php endif; ?>
-        <?php endforeach; ?>
+            echo '</div>';
+            echo '</div>';
+            ?>
+        </div>
 
         <!-- Botones para Volver y Guardar -->
         <div class="d-flex justify-content-between mt-4 mb-5" id="botonesFormulario">
@@ -832,17 +579,40 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // === Inicializar buscadores ===
+
+    // Buscador de plantel
+    new BuscadorGenerico(
+        "estudiantePlantel_input",
+        "estudiantePlantel_resultados",
+        "plantel",
+        "estudiantePlantel",
+        "estudiantePlantel_nombre"
+    );
+
+    // Buscador de prefijo para teléfono de estudiante
+    new BuscadorGenerico(
+        "estudianteTelefonoPrefijo_input",
+        "estudianteTelefonoPrefijo_resultados",
+        "prefijo",
+        "estudianteTelefonoPrefijo",
+        "estudianteTelefonoPrefijo_nombre"
+    );
+
+    // === Manejo de visibilidad de sección representante ===
     const radios = document.querySelectorAll('input[name="tipoRepresentante"]');
     const seccionRepresentante = document.getElementById('seccionRepresentante');
     const camposRepresentante = seccionRepresentante ? seccionRepresentante.querySelectorAll('input, select, textarea') : [];
+    const repInfo = document.getElementById('repAutoInfo');
 
-    function actualizarVisibilidad() {
+    function actualizarVisibilidadRepresentante() {
         const seleccionado = document.querySelector('input[name="tipoRepresentante"]:checked');
         const valor = seleccionado ? seleccionado.value : 'madre';
 
         if (valor === 'otro') {
             // Mostrar sección de representante
-            seccionRepresentante.classList.remove('d-none');
+            seccionRepresentante.style.display = 'block';
+            if (repInfo) repInfo.style.display = 'none';
 
             // Marcar campos como requeridos
             camposRepresentante.forEach(campo => {
@@ -850,7 +620,11 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         } else {
             // Ocultar sección
-            seccionRepresentante.classList.add('d-none');
+            seccionRepresentante.style.display = 'none';
+            if (repInfo) {
+                repInfo.style.display = 'block';
+                document.getElementById('repSeleccionado').textContent = valor === 'padre' ? 'el padre' : 'la madre';
+            }
 
             // Quitar required y limpiar valores
             camposRepresentante.forEach(campo => {
@@ -866,24 +640,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Escuchar cambios
     radios.forEach(radio => {
-        radio.addEventListener('change', actualizarVisibilidad);
+        radio.addEventListener('change', actualizarVisibilidadRepresentante);
     });
 
-    // Aplicar estado inicial
-    actualizarVisibilidad();
-});
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
+    // === Manejo de filtro de cursos por nivel ===
     const selectNivel = document.getElementById("nivel");
     const selectCurso = document.getElementById("curso");
-    const selectSeccion = document.getElementById("seccion");
 
-    // Traemos todos los cursos desde PHP (vienen cargados al inicio del archivo)
+    // Traemos todos los cursos desde PHP
     const cursosOriginales = <?= json_encode($cursos) ?>;
     const niveles = <?= json_encode($niveles) ?>;
 
-    // === CUANDO CAMBIA EL NIVEL ===
     selectNivel.addEventListener("change", function() {
         const nivelSeleccionado = this.value.trim();
         selectCurso.innerHTML = '<option value="">Seleccione un curso</option>';
@@ -913,246 +680,86 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         }
 
-        // Limpiar secciones al cambiar nivel
-        selectSeccion.selectedIndex = 0;
+        // Actualizar campo oculto de nivel
+        document.getElementById('idNivelSeleccionado').value = nivelSeleccionado;
+
     });
 
-    // === OPCIONAL: limpiar curso y sección al enviar formulario ===
-    const form = document.querySelector("form");
-    if (form) {
-        form.addEventListener("submit", function(event) {
-            let errores = [];
+    // === Función para ocultar/mostrar cédula, teléfono y plantel según el curso ===
+    function actualizarCamposSegunCurso(idCurso) {
+        const cedulaContainer = document.getElementById('estudianteCedulaContainer');
+        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+        const cedulaInput = document.getElementById('estudianteCedula');
+        const telefonoInput = document.getElementById('estudianteTelefono');
+        const plantelContainer = document.getElementById('estudiantePlantelContainer');
+        const plantelInput = document.getElementById('estudiantePlantel');
+        const plantelInputVisible = document.getElementById('estudiantePlantel_input');
+        const plantelNombre = document.getElementById('estudiantePlantel_nombre');
 
-            // Validar nivel, curso y sección
-            if (!selectNivel.value || !selectCurso.value || !selectSeccion.value) {
-                errores.push('Debes seleccionar el nivel, curso y sección');
-            }
-
-            // Validar fecha de nacimiento (6-18 años)
-            const fechaNacimiento = document.getElementById('estudianteFechaNacimiento').value;
-            if (fechaNacimiento) {
-                const hoy = new Date();
-                const fechaNac = new Date(fechaNacimiento);
-                let edad = hoy.getFullYear() - fechaNac.getFullYear();
-                const mes = hoy.getMonth() - fechaNac.getMonth();
-
-                if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
-                    edad--;
-                }
-
-                if (edad < 6 || edad > 18) {
-                    errores.push('La edad del estudiante debe estar entre 6 y 18 años');
-                    document.getElementById('estudianteFechaNacimiento').classList.add('is-invalid');
+        if (parseInt(idCurso) === 1) {
+            // Primer curso (Primer Nivel): Ocultar cédula, teléfono y plantel
+            if (cedulaContainer) {
+                cedulaContainer.style.display = 'none';
+                if (cedulaInput) {
+                    cedulaInput.removeAttribute('required');
+                    cedulaInput.value = '';
                 }
             }
-
-            // Validar prefijos de teléfono
-            const validarPrefijo = (prefijoId, telefonoId, nombre) => {
-                const telefono = document.getElementById(telefonoId);
-                const prefijo = document.getElementById(prefijoId);
-
-                if (telefono && telefono.value && prefijo && !prefijo.value) {
-                    errores.push(`${nombre} es obligatorio cuando se ingresa un número de teléfono`);
-                    const prefijoInput = document.getElementById(prefijoId + '_input');
-                    if (prefijoInput) {
-                        prefijoInput.classList.add('is-invalid');
-                    }
+            if (telefonoContainer) {
+                telefonoContainer.style.display = 'none';
+                if (telefonoInput) {
+                    telefonoInput.removeAttribute('required');
+                    telefonoInput.value = '';
                 }
-            };
-
-            // Validar prefijo del teléfono del estudiante
-            const nivelSeleccionado = parseInt(selectNivel.value);
-            if (nivelSeleccionado !== 1) {
-                validarPrefijo('estudianteTelefonoPrefijo', 'estudianteTelefono', 'El prefijo del teléfono del estudiante');
             }
-
-            // Validar prefijos de padre, madre y emergencia
-            validarPrefijo('padreTelefonoHabitacionPrefijo', 'padreTelefonoHabitacion', 'El prefijo del teléfono de habitación del padre');
-            validarPrefijo('padreCelularPrefijo', 'padreCelular', 'El prefijo del celular del padre');
-            validarPrefijo('madreTelefonoHabitacionPrefijo', 'madreTelefonoHabitacion', 'El prefijo del teléfono de habitación de la madre');
-            validarPrefijo('madreCelularPrefijo', 'madreCelular', 'El prefijo del celular de la madre');
-            validarPrefijo('emergenciaCelularPrefijo', 'emergenciaCelular', 'El prefijo del teléfono de emergencia');
-
-            // Validar prefijos del representante si es "otro"
-            const tipoRepSeleccionado = document.querySelector('input[name="tipoRepresentante"]:checked');
-            if (tipoRepSeleccionado && tipoRepSeleccionado.value === 'otro') {
-                validarPrefijo('representanteTelefonoHabitacionPrefijo', 'representanteTelefonoHabitacion', 'El prefijo del teléfono de habitación del representante');
-                validarPrefijo('representanteCelularPrefijo', 'representanteCelular', 'El prefijo del celular del representante');
-            }
-
-            // Validar cédulas duplicadas
-            const cedulas = {};
-            const cedulasParaValidar = [
-                { id: 'estudianteCedula', nacionalidadId: 'estudianteNacionalidad', nombre: 'Estudiante' },
-                { id: 'padreCedula', nacionalidadId: 'padreNacionalidad', nombre: 'Padre' },
-                { id: 'madreCedula', nacionalidadId: 'madreNacionalidad', nombre: 'Madre' }
-            ];
-
-            if (tipoRepSeleccionado && tipoRepSeleccionado.value === 'otro') {
-                cedulasParaValidar.push({
-                    id: 'representanteCedula',
-                    nacionalidadId: 'representanteNacionalidad',
-                    nombre: 'Representante Legal'
-                });
-            }
-
-            cedulasParaValidar.forEach(persona => {
-                const cedula = document.getElementById(persona.id)?.value;
-                const nacionalidad = document.getElementById(persona.nacionalidadId)?.value;
-
-                if (cedula && nacionalidad) {
-                    const cedulaCompleta = nacionalidad + '-' + cedula;
-
-                    if (cedulas[cedulaCompleta]) {
-                        errores.push(`La cédula ${cedulaCompleta} está duplicada (${cedulas[cedulaCompleta]} y ${persona.nombre})`);
-                        document.getElementById(persona.id).classList.add('is-invalid');
-                    } else {
-                        cedulas[cedulaCompleta] = persona.nombre;
-                    }
+            if (plantelContainer) {
+                plantelContainer.style.display = 'none';
+                if (plantelInput) {
+                    plantelInput.removeAttribute('required');
+                    plantelInput.value = '1'; // IdPlantel = 1 para U.E.C "Fermín Toro"
                 }
-            });
-
-            // Mostrar errores si existen
-            if (errores.length > 0) {
-                event.preventDefault();
-                Swal.fire({
-                    title: "Datos incompletos",
-                    html: '<ul style="text-align: left;">' + errores.map(e => '<li>' + e + '</li>').join('') + '</ul>',
-                    icon: "warning",
-                    confirmButtonColor: "#c90000"
-                });
-                return;
+                if (plantelNombre) plantelNombre.value = 'U.E.C "Fermín Toro"';
+                if (plantelInputVisible) plantelInputVisible.value = 'U.E.C "Fermín Toro"';
             }
-
-            // Validar acceso de representantes
-            const cedulasRepresentantes = [];
-
-            if (document.getElementById('padreCedula').value && document.getElementById('padreNacionalidad').value) {
-                cedulasRepresentantes.push({
-                    cedula: document.getElementById('padreCedula').value,
-                    nacionalidad: document.getElementById('padreNacionalidad').value,
-                    nombre: 'Padre'
-                });
+        } else if (idCurso) {
+            // Otros cursos: Mostrar cédula (readonly hasta fecha) y plantel
+            if (cedulaContainer) {
+                cedulaContainer.style.display = '';
+                if (cedulaInput) {
+                    cedulaInput.setAttribute('required', 'required');
+                    cedulaInput.setAttribute('readonly', true);
+                    // Restaurar mensaje de ayuda
+                    const cedulaHelpText = cedulaInput.nextElementSibling;
+                    if (cedulaHelpText) cedulaHelpText.style.display = 'block';
+                }
             }
-
-            if (document.getElementById('madreCedula').value && document.getElementById('madreNacionalidad').value) {
-                cedulasRepresentantes.push({
-                    cedula: document.getElementById('madreCedula').value,
-                    nacionalidad: document.getElementById('madreNacionalidad').value,
-                    nombre: 'Madre'
-                });
+            // Teléfono se maneja por la edad en el blur de fecha de nacimiento
+            if (plantelContainer) {
+                plantelContainer.style.display = '';
+                if (plantelInput) {
+                    plantelInput.setAttribute('required', 'required');
+                    plantelInput.value = '';
+                }
+                if (plantelNombre) plantelNombre.value = '';
+                if (plantelInputVisible) plantelInputVisible.value = '';
             }
-
-            if (tipoRepSeleccionado && tipoRepSeleccionado.value === 'otro' &&
-                document.getElementById('representanteCedula').value &&
-                document.getElementById('representanteNacionalidad').value) {
-                cedulasRepresentantes.push({
-                    cedula: document.getElementById('representanteCedula').value,
-                    nacionalidad: document.getElementById('representanteNacionalidad').value,
-                    nombre: 'Representante Legal'
-                });
-            }
-
-            // Si hay representantes para validar
-            if (cedulasRepresentantes.length > 0) {
-                event.preventDefault();
-
-                fetch('../../controladores/PersonaController.php?action=verificarAccesoRepresentantes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(cedulasRepresentantes)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.representantesConAcceso.length > 0) {
-                        const nombres = data.representantesConAcceso.map(r => r.nombre).join(', ');
-                        const plural = data.representantesConAcceso.length > 1;
-
-                        Swal.fire({
-                            icon: 'info',
-                            title: 'Acceso al sistema detectado',
-                            html: `
-                                <div style="text-align: left;">
-                                    <p><strong>${plural ? 'Los representantes' : 'El representante'} ${nombres} ${plural ? 'tienen' : 'tiene'} acceso al sistema.</strong></p>
-                                    <p>Por favor, ${plural ? 'que inicien' : 'que inicie'} sesión en ${plural ? 'sus cuentas' : 'su cuenta'} y realicen la solicitud de inscripción desde allí.</p>
-                                    <p class="text-muted small mt-3">
-                                        <i class="fas fa-info-circle"></i>
-                                        ${plural ? 'Ellos pueden' : 'Puede'} acceder al sistema desde la página de inicio y gestionar la inscripción directamente.
-                                    </p>
-                                </div>
-                            `,
-                            confirmButtonColor: '#c90000',
-                            confirmButtonText: 'Entendido',
-                            showCloseButton: true
-                        });
-                    } else {
-                        // Si no hay representantes con acceso, enviar el formulario
-                        event.target.submit();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al verificar acceso:', error);
-                    // Si hay error, permitir envío
-                    event.target.submit();
-                });
-            }
-        });
-    }
-});
-</script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const selectNivel = document.getElementById("nivel");
-    const cedulaContainer = document.getElementById("estudianteCedulaContainer");
-    const telefonoContainer = document.getElementById("estudianteTelefonoContainer");
-
-    // Función para mostrar u ocultar los campos según el nivel
-    function actualizarCamposEstudiante() {
-        const nivelSeleccionado = parseInt(selectNivel.value);
-
-        if (nivelSeleccionado === 1) {
-            // Ocultar solo cédula y teléfono
-            cedulaContainer.style.display = "none";
-            telefonoContainer.style.display = "none";
-
-            // Quitar "required" para evitar errores de validación
-            document.getElementById("estudianteCedula").removeAttribute("required");
-            document.getElementById("estudianteTelefono").removeAttribute("required");
-
-            // Limpiar valores si se desea
-            document.getElementById("estudianteCedula").value = "";
-            document.getElementById("estudianteTelefono").value = "";
-        } else {
-            // Mostrar cédula y teléfono
-            cedulaContainer.style.display = "";
-            telefonoContainer.style.display = "";
-
-            // Restaurar "required"
-            document.getElementById("estudianteCedula").setAttribute("required", "required");
-            document.getElementById("estudianteTelefono").setAttribute("required", "required");
         }
     }
 
-    // Escuchar cambios en el select de nivel
-    selectNivel.addEventListener("change", actualizarCamposEstudiante);
+    // Escuchar cambios en el select de curso
+    selectCurso.addEventListener("change", function() {
+        const cursoSeleccionado = this.value;
+        document.getElementById('idCursoSeleccionado').value = cursoSeleccionado;
+        actualizarCamposSegunCurso(cursoSeleccionado);
+    });
 
-    // Aplicar estado inicial al cargar la página
-    actualizarCamposEstudiante();
-
-    // Configurar restricciones de fecha de nacimiento (6-18 años)
+    // === Configurar restricciones de fecha de nacimiento (6-18 años) ===
     const fechaNacimientoInput = document.getElementById('estudianteFechaNacimiento');
     if (fechaNacimientoInput) {
         const hoy = new Date();
-
-        // Fecha máxima: hace 6 años
         const fechaMax = new Date(hoy.getFullYear() - 6, hoy.getMonth(), hoy.getDate());
-
-        // Fecha mínima: hace 18 años
         const fechaMin = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
 
-        // Formatear fechas a YYYY-MM-DD
         const formatoFecha = (fecha) => {
             const year = fecha.getFullYear();
             const month = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -1166,7 +773,30 @@ document.addEventListener("DOMContentLoaded", function() {
         // Validar cuando se cambia el valor
         fechaNacimientoInput.addEventListener('blur', function() {
             const valorSeleccionado = this.value;
-            if (!valorSeleccionado) return;
+            if (!valorSeleccionado) {
+                // Si borra la fecha, volver a bloquear cédula y ocultar teléfono
+                const cedulaInput = document.getElementById('estudianteCedula');
+                const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                const telefonoInput = document.getElementById('estudianteTelefono');
+                const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+                if (cedulaInput) {
+                    cedulaInput.setAttribute('readonly', true);
+                    cedulaInput.value = '';
+                    if (cedulaHelpText) {
+                        cedulaHelpText.style.display = 'block';
+                    }
+                }
+
+                if (telefonoContainer) {
+                    telefonoContainer.style.display = 'none';
+                    if (telefonoInput) {
+                        telefonoInput.value = '';
+                        telefonoInput.removeAttribute('required');
+                    }
+                }
+                return;
+            }
 
             const fechaSeleccionada = new Date(valorSeleccionado + 'T00:00:00');
             const hoy = new Date();
@@ -1192,8 +822,84 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
                 this.value = '';
                 this.classList.add('is-invalid');
+
+                // Bloquear cédula y ocultar teléfono si la edad no es válida
+                const cedulaInput = document.getElementById('estudianteCedula');
+                const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                const telefonoInput = document.getElementById('estudianteTelefono');
+
+                if (cedulaInput) {
+                    cedulaInput.setAttribute('readonly', true);
+                    cedulaInput.value = '';
+                }
+
+                if (telefonoContainer) {
+                    telefonoContainer.style.display = 'none';
+                    if (telefonoInput) {
+                        telefonoInput.value = '';
+                        telefonoInput.removeAttribute('required');
+                    }
+                }
             } else {
                 this.classList.remove('is-invalid');
+
+                // Verificar si es primer curso (IdCurso === 1, que es "Primer Nivel")
+                const cursoActual = parseInt(document.getElementById('curso')?.value || 0);
+                const esPrimerCurso = cursoActual === 1;
+
+                // Habilitar campo de cédula SOLO si NO es primer curso
+                const cedulaContainer = document.getElementById('estudianteCedulaContainer');
+                const cedulaInput = document.getElementById('estudianteCedula');
+                const cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+                if (!esPrimerCurso && cedulaInput && cedulaContainer) {
+                    cedulaContainer.style.display = '';
+                    cedulaInput.removeAttribute('readonly');
+
+                    // Ocultar el mensaje de ayuda
+                    if (cedulaHelpText) {
+                        cedulaHelpText.style.display = 'none';
+                    }
+
+                    // Ajustar label y maxlength según la edad
+                    if (cedulaLabel) {
+                        if (edad < 10) {
+                            // Menores de 10 años: Cédula escolar con maxlength 11
+                            cedulaLabel.textContent = 'Cédula escolar';
+                            cedulaInput.setAttribute('maxlength', '11');
+                            cedulaInput.setAttribute('minlength', '7');
+                        } else {
+                            // 10 años o más: Cédula normal con maxlength 8
+                            cedulaLabel.textContent = 'Cédula';
+                            cedulaInput.setAttribute('maxlength', '8');
+                            cedulaInput.setAttribute('minlength', '7');
+                        }
+                    }
+                }
+
+                // Manejar visibilidad del campo teléfono según edad SOLO si NO es primer curso
+                const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                const telefonoInput = document.getElementById('estudianteTelefono');
+
+                if (!esPrimerCurso && telefonoContainer && telefonoInput) {
+                    if (edad < 10) {
+                        // Menores de 10 años: ocultar teléfono
+                        telefonoContainer.style.display = 'none';
+                        telefonoInput.value = '';
+                        telefonoInput.removeAttribute('required');
+
+                        // Limpiar también el prefijo
+                        const prefijoInput = document.getElementById('estudianteTelefonoPrefijo');
+                        const prefijoInputVisible = document.getElementById('estudianteTelefonoPrefijo_input');
+                        if (prefijoInput) prefijoInput.value = '';
+                        if (prefijoInputVisible) prefijoInputVisible.value = '+58';
+                    } else {
+                        // 10 años o más: mostrar teléfono como opcional
+                        telefonoContainer.style.display = 'block';
+                        telefonoInput.removeAttribute('required');
+                    }
+                }
             }
         });
     }
@@ -1203,14 +909,11 @@ document.addEventListener("DOMContentLoaded", function() {
     const nuevoIngresoContainer = document.getElementById('nuevoIngresoContainer');
     const regularContainer = document.getElementById('regularContainer');
 
-    // Ocultar TODO el formulario inicialmente (excepto el primer card de "Datos de Inscripción")
-    document.querySelectorAll('.card.mb-4, .card.mb-3').forEach((card, index) => {
-        // El primer card es "Datos de Inscripción" (index 0), mantenerlo visible
-        // Todos los demás se ocultan (estudiante, madre, padre, representante, contacto emergencia)
-        if (index > 0) {
-            card.style.display = 'none';
-        }
-    });
+    // Contenedores del formulario completo
+    const seccionDatosEstudiante = document.getElementById('seccionDatosEstudiante');
+    const seccionMadreContainer = document.getElementById('seccionMadreContainer');
+    const seccionPadreContainer = document.getElementById('seccionPadreContainer');
+    const seccionRepresentanteSelector = document.getElementById('seccionRepresentanteSelector');
 
     tipoInscripcionSelect.addEventListener('change', function() {
         const tipoSeleccionado = parseInt(this.value);
@@ -1233,16 +936,14 @@ document.addEventListener("DOMContentLoaded", function() {
             // Nuevo Ingreso - Mostrar formulario completo tradicional
             nuevoIngresoContainer.style.display = 'flex';
             regularContainer.style.display = 'none';
-            btnGuardar.style.display = 'inline-block'; // Mostrar botón de guardar
+            btnGuardar.style.display = 'inline-block';
 
-            // Cambiar action del formulario al endpoint tradicional
-            // form.action = '../../../controladores/InscripcionController.php?action=guardarInscripcion';
-            // form.method = 'POST';
-
-            // Mostrar formulario completo de estudiante y padres (todos los cards excepto el de inscripción que ya está visible)
-            document.querySelectorAll('.card.mb-4, .card.mb-3').forEach((card, index) => {
-                if (index > 0) card.style.display = 'block';
-            });
+            // Mostrar formulario completo
+            seccionDatosEstudiante.style.display = 'block';
+            seccionMadreContainer.style.display = 'block';
+            seccionPadreContainer.style.display = 'block';
+            seccionRepresentanteSelector.style.display = 'block';
+            if (repInfo) repInfo.style.display = 'block';
 
             // Hacer required los campos del formulario tradicional
             const nivelSelect = document.getElementById('nivel');
@@ -1258,20 +959,26 @@ document.addEventListener("DOMContentLoaded", function() {
             if (seccionRegular) seccionRegular.removeAttribute('required');
             if (statusRegular) statusRegular.removeAttribute('required');
 
+            // Aplicar estado inicial del representante
+            actualizarVisibilidadRepresentante();
+
         } else if (tipoSeleccionado === 2) {
             // Estudiante Regular (Prosecución) - Mostrar buscador simple
             nuevoIngresoContainer.style.display = 'none';
             regularContainer.style.display = 'flex';
-            btnGuardar.style.display = 'inline-block'; // Mostrar botón de guardar
+            btnGuardar.style.display = 'inline-block';
 
             // Cambiar action del formulario al endpoint de renovación
             form.action = '../../../controladores/representantes/procesar_renovacion.php';
             form.method = 'POST';
 
             // Ocultar formulario completo
-            document.querySelectorAll('.card.mb-4').forEach((card, index) => {
-                if (index > 0) card.style.display = 'none';
-            });
+            seccionDatosEstudiante.style.display = 'none';
+            seccionMadreContainer.style.display = 'none';
+            seccionPadreContainer.style.display = 'none';
+            seccionRepresentanteSelector.style.display = 'none';
+            seccionRepresentante.style.display = 'none';
+            if (repInfo) repInfo.style.display = 'none';
 
             // Remover required del formulario tradicional
             const nivelSelect = document.getElementById('nivel');
@@ -1288,27 +995,29 @@ document.addEventListener("DOMContentLoaded", function() {
             if (statusRegular) statusRegular.setAttribute('required', 'required');
 
         } else {
-            // Sin selección - Ocultar todo excepto el card de "Datos de Inscripción"
+            // Sin selección - Ocultar todo
             nuevoIngresoContainer.style.display = 'none';
             regularContainer.style.display = 'none';
-            btnGuardar.style.display = 'none'; // Ocultar botón de guardar
+            btnGuardar.style.display = 'none';
             form.action = '';
 
-            document.querySelectorAll('.card.mb-4, .card.mb-3').forEach((card, index) => {
-                if (index > 0) card.style.display = 'none';
-            });
+            seccionDatosEstudiante.style.display = 'none';
+            seccionMadreContainer.style.display = 'none';
+            seccionPadreContainer.style.display = 'none';
+            seccionRepresentanteSelector.style.display = 'none';
+            seccionRepresentante.style.display = 'none';
+            if (repInfo) repInfo.style.display = 'none';
         }
     });
 
     // === INTERCEPTAR SUBMIT PARA TIPO REGULAR ===
-    // Este listener se ejecuta ANTES que el de solicitud_cupo.js
     document.getElementById('btnEnviarFormulario').addEventListener('click', function(e) {
         const tipoInscripcion = parseInt(document.getElementById('idTipoInscripcion').value || 1);
 
         // Si es inscripción regular (tipo 2), validar y enviar directamente
         if (tipoInscripcion === 2) {
             e.preventDefault();
-            e.stopImmediatePropagation(); // Detener otros listeners
+            e.stopImmediatePropagation();
 
             // Validaciones simples para tipo regular
             const idEstudiante = document.getElementById('IdEstudiante').value;
@@ -1349,10 +1058,9 @@ document.addEventListener("DOMContentLoaded", function() {
             document.getElementById('formInscripcion').submit();
         }
         // Si es tipo 1 (nuevo ingreso), dejar que solicitud_cupo.js maneje la validación
-    }, true); // useCapture = true para ejecutarse primero
+    }, true);
 
     // === BUSCADOR DE ESTUDIANTE PARA PROSECUCIÓN ===
-    // Usa tipo 'estudiante_regular' que solo muestra estudiantes con inscripción "Inscrito" del año anterior
     if (document.getElementById('buscadorEstudiante')) {
         const buscadorEstudiante = new BuscadorGenerico(
             'buscadorEstudiante',
@@ -1363,12 +1071,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const inputBuscador = document.getElementById('buscadorEstudiante');
         inputBuscador.addEventListener('itemSeleccionado', async function(e) {
-            // Usar IdEstudiante si está disponible, sino usar IdPersona
             const idEstudiante = e.detail?.IdEstudiante || e.detail?.IdPersona;
             if (idEstudiante) {
-
                 try {
-                    // Obtener información del curso siguiente
                     const response = await fetch(`../../../controladores/PersonaController.php?action=obtenerCursoSiguiente&idEstudiante=${idEstudiante}`);
                     const data = await response.json();
 

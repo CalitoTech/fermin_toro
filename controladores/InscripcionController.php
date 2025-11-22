@@ -431,10 +431,9 @@ function procesarInscripcion($conexion) {
                 'estudianteCorreo' => 'Correo electrónico del estudiante'
             ];
 
-            // Agregar cédula, teléfono y plantel solo si NO es el primer curso
+            // Agregar cédula y plantel solo si NO es el primer curso (teléfono es siempre opcional)
             if (!$esPrimerCurso) {
                 $camposEstudiante['estudianteCedula'] = 'Cédula del estudiante';
-                $camposEstudiante['estudianteTelefono'] = 'Teléfono del estudiante';
                 $camposEstudiante['estudiantePlantel'] = 'Plantel donde cursó el último año escolar';
             }
 
