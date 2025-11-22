@@ -506,6 +506,8 @@ function procesarInscripcion($conexion) {
             // Validación de contacto de emergencia (siempre requerido)
             $camposEmergencia = [
                 'emergenciaNombre' => 'Nombre de contacto de emergencia',
+                'emergenciaNacionalidad' => 'Nacionalidad de contacto de emergencia',
+                'emergenciaCedula' => 'Cédula de contacto de emergencia',
                 'emergenciaParentesco' => 'Parentesco de contacto de emergencia',
                 'emergenciaCelular' => 'Teléfono de contacto de emergencia'
             ];
@@ -1150,12 +1152,18 @@ function procesarInscripcion($conexion) {
                             $_POST['emergenciaCelularPrefijo'] ?? null,
                             $_POST['emergenciaCelularPrefijo_nombre'] ?? ''
                         );
-                        
+
+                        // Cédula y nacionalidad del contacto de emergencia
+                        $emergencia->cedula_contacto = trim($_POST['emergenciaCedula'] ?? '');
+                        $emergencia->IdNacionalidad_contacto = !empty($_POST['emergenciaNacionalidad'])
+                            ? (int)$_POST['emergenciaNacionalidad']
+                            : null;
+
                         // Validación adicional para el nombre de emergencia
                         if (str_word_count($emergencia->nombre_contacto) < 2) {
                             throw new Exception("Debe ingresar nombre y apellido para el contacto de emergencia");
                         }
-                        
+
                         if (empty($emergencia->telefono_contacto)) {
                             throw new Exception("Debe ingresar un teléfono para el contacto de emergencia");
                         }

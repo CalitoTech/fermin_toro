@@ -15,6 +15,9 @@ class Representante {
     public $lugar_trabajo;
     public $IdEstadoAcceso;
     public $IdEstadoInstitucional;
+    // Campos adicionales para contacto de emergencia
+    public $cedula_contacto;
+    public $IdNacionalidad_contacto;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -82,6 +85,16 @@ class Representante {
             throw new Exception("Debe ingresar un número de teléfono para el contacto de emergencia");
         }
 
+        // Validar cédula
+        if (empty(trim($this->cedula_contacto))) {
+            throw new Exception("Debe ingresar la cédula del contacto de emergencia");
+        }
+
+        // Validar nacionalidad
+        if (empty($this->IdNacionalidad_contacto)) {
+            throw new Exception("Debe seleccionar la nacionalidad del contacto de emergencia");
+        }
+
         // Separar nombre y apellido
         $partes = explode(' ', $nombreCompleto, 2);
         $nombre = $partes[0];
@@ -92,20 +105,29 @@ class Representante {
             throw new Exception("Debe ingresar un apellido válido para el contacto de emergencia");
         }
 
-        // Crear persona para el contacto de emergencia
+        // Verificar si ya existe una persona con esta cédula y nacionalidad
         $persona = new Persona($this->conn);
-        $persona->nombre = $nombre;
-        $persona->apellido = $apellido;
-        $persona->IdSexo = NULL;
-        $persona->IdUrbanismo = NULL;
-        $persona->IdNacionalidad = NULL;
-        $persona->IdEstadoAcceso = 2;
-        $persona->IdEstadoInstitucional = 2;
-        
-        $idPersona = $persona->guardar();
-        
-        if (!$idPersona) {
-            throw new Exception("Error al guardar los datos del contacto de emergencia");
+        $personaExistente = $persona->obtenerPorCedula($this->IdNacionalidad_contacto, $this->cedula_contacto);
+
+        if ($personaExistente) {
+            // Si ya existe, usar esa persona
+            $idPersona = $personaExistente['IdPersona'];
+        } else {
+            // Crear nueva persona para el contacto de emergencia
+            $persona->nombre = $nombre;
+            $persona->apellido = $apellido;
+            $persona->cedula = $this->cedula_contacto;
+            $persona->IdNacionalidad = $this->IdNacionalidad_contacto;
+            $persona->IdSexo = NULL;
+            $persona->IdUrbanismo = NULL;
+            $persona->IdEstadoAcceso = 2;
+            $persona->IdEstadoInstitucional = 2;
+
+            $idPersona = $persona->guardar();
+
+            if (!$idPersona) {
+                throw new Exception("Error al guardar los datos del contacto de emergencia");
+            }
         }
 
         // Guardar teléfono
@@ -118,7 +140,7 @@ class Representante {
         if (!$telefono->guardar()) {
             throw new Exception("Error al guardar el teléfono del contacto de emergencia");
         }
-        
+
         // Crear relación como representante
         $this->IdPersona = $idPersona;
         return $this->guardar();

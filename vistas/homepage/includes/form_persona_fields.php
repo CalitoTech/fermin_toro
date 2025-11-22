@@ -350,6 +350,21 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
         echo '</div>';
         echo '</div>';
 
+        // Nacionalidad y Cédula del contacto de emergencia
+        echo '<div class="col-md-4">';
+        echo '<div class="form-group required-field">';
+        echo '<label for="emergenciaCedula">Cédula</label>';
+        echo '<div class="input-group">';
+        echo '<select class="form-select form-select-sm" name="emergenciaNacionalidad" id="emergenciaNacionalidad" style="max-width: 60px; border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; text-align: center; font-weight: bold; background: #f8f9fa; color: #c90000; font-size: 0.9rem;" required>';
+        foreach ($data_options['nacionalidades'] as $nacionalidad) {
+            echo '<option value="' . $nacionalidad['IdNacionalidad'] . '">' . $nacionalidad['nacionalidad'] . '</option>';
+        }
+        echo '</select>';
+        echo '<input type="text" class="form-control" id="emergenciaCedula" name="emergenciaCedula" minlength="7" maxlength="8" pattern="[0-9]+" onkeypress="return onlyNumber(event)" placeholder="Ej: 12345678" required style="border-top-left-radius: 0; border-bottom-left-radius: 0;">';
+        echo '</div>';
+        echo '</div>';
+        echo '</div>';
+
         echo '<div class="col-md-4">';
         echo '<div class="form-group required-field">';
         echo '<label for="emergenciaParentesco">Parentesco</label>';
@@ -366,7 +381,10 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
         </script>';
         echo '</div>';
         echo '</div>';
+        echo '</div>';
 
+        // Segunda fila: Celular
+        echo '<div class="row">';
         echo '<div class="col-md-4">';
         echo '<div class="form-group required-field">';
         echo '<label for="emergenciaCelular">Celular</label>';

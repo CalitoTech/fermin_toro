@@ -842,6 +842,31 @@
                     }
                 });
             }
+
+            // Validación de correo electrónico en tiempo real
+            const correoInput = document.getElementById('estudianteCorreo');
+            if (correoInput) {
+                correoInput.addEventListener('blur', function() {
+                    const email = this.value.trim();
+                    if (!email) return;
+
+                    // Expresión regular para validar correo electrónico
+                    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+                    if (!emailRegex.test(email)) {
+                        this.classList.add('is-invalid');
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Correo no válido',
+                            html: 'Por favor ingrese un correo electrónico válido.<br><small class="text-muted">Ejemplo: estudiante@correo.com</small>',
+                            confirmButtonColor: '#c90000',
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+            }
         });
     </script>
 </body>

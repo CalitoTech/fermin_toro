@@ -347,6 +347,8 @@ function enviarFormulario() {
         {id: 'madreCorreo', nombre: 'Correo electrónico de la madre'},
         {id: 'madreLugarTrabajo', nombre: 'Lugar de trabajo de la madre'},
         {id: 'emergenciaNombre', nombre: 'Nombre de contacto de emergencia'},
+        {id: 'emergenciaNacionalidad', nombre: 'Nacionalidad de contacto de emergencia'},
+        {id: 'emergenciaCedula', nombre: 'Cédula de contacto de emergencia'},
         {id: 'emergenciaParentesco', nombre: 'Parentesco de contacto de emergencia'},
         {id: 'emergenciaCelular', nombre: 'Teléfono de contacto de emergencia'}
     ];
@@ -996,7 +998,8 @@ function instalarValidacionCedulasDuplicadas() {
         { cedula: 'estudianteCedula', nacionalidad: 'estudianteNacionalidad', nombre: 'Estudiante', esRepresentante: false },
         { cedula: 'padreCedula', nacionalidad: 'padreNacionalidad', nombre: 'Padre', esRepresentante: true },
         { cedula: 'madreCedula', nacionalidad: 'madreNacionalidad', nombre: 'Madre', esRepresentante: true },
-        { cedula: 'representanteCedula', nacionalidad: 'representanteNacionalidad', nombre: 'Representante Legal', esRepresentante: true }
+        { cedula: 'representanteCedula', nacionalidad: 'representanteNacionalidad', nombre: 'Representante Legal', esRepresentante: true },
+        { cedula: 'emergenciaCedula', nacionalidad: 'emergenciaNacionalidad', nombre: 'Contacto de Emergencia', esRepresentante: true }
     ];
 
     campos.forEach(campo => {
@@ -1076,6 +1079,15 @@ function validarCedulaDuplicadaEnFormulario(cedulaId, nacionalidadId, nombrePers
             completa: $('#representanteNacionalidad').val() + '-' + $('#representanteCedula').val(),
             nombre: 'Representante Legal',
             id: 'representanteCedula'
+        });
+    }
+
+    // Contacto de Emergencia
+    if ($('#emergenciaCedula').val() && $('#emergenciaNacionalidad').val()) {
+        cedulasEnFormulario.push({
+            completa: $('#emergenciaNacionalidad').val() + '-' + $('#emergenciaCedula').val(),
+            nombre: 'Contacto de Emergencia',
+            id: 'emergenciaCedula'
         });
     }
 
