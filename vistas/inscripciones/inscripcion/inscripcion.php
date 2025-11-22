@@ -316,25 +316,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const statusSteps = document.querySelectorAll('.status-step-modern');
     let activeStatusId = null;
 
-    function filterByStatus(idStatus) {
-        if (!idStatus) return window.tablaInscripciones.updateData(config.data);
-        const filtered = config.data.filter(item => parseInt(item.IdStatus) === parseInt(idStatus));
-        window.tablaInscripciones.updateData(filtered);
-    }
-
     statusSteps.forEach(step => {
         step.addEventListener('click', function() {
             const id = this.dataset.id;
             if (activeStatusId === id) {
                 statusSteps.forEach(s => s.classList.remove('active'));
                 activeStatusId = null;
-                filterByStatus(null);
             } else {
                 statusSteps.forEach(s => s.classList.remove('active'));
                 this.classList.add('active');
                 activeStatusId = id;
-                filterByStatus(id);
             }
+            // Usar aplicarFiltros para combinar todos los filtros incluyendo status
+            aplicarFiltros();
         });
     });
 
@@ -392,7 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const anioVal = filtroAnio ? filtroAnio.value.trim() : '';
         const textoBuscar = filtroBuscar ? filtroBuscar.value.trim().toLowerCase() : '';
 
-        const filtered = config.data.filter(item => {
+        // Función auxiliar para aplicar filtros sin status
+        const aplicarFiltrosSinStatus = (item) => {
             let matchTipoInscripcion = true;
             if (tipoInscripcionVal && tipoInscripcionVal.toLowerCase() !== 'todos') {
                 matchTipoInscripcion = (item.tipo_inscripcion && item.tipo_inscripcion.toLowerCase() === tipoInscripcionVal.toLowerCase());
@@ -428,15 +423,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 matchBuscar = combo.includes(textoBuscar);
             }
 
-            let matchStatus = true;
-            if (activeStatusId) {
-                matchStatus = parseInt(item.IdStatus) === parseInt(activeStatusId);
-            }
+            return matchTipoInscripcion && matchNivel && matchCurso && matchSeccion && matchAnio && matchBuscar;
+        };
 
-            return matchTipoInscripcion && matchNivel && matchCurso && matchSeccion && matchAnio && matchBuscar && matchStatus;
+        // Filtrar datos sin considerar status para actualizar conteos
+        const filteredSinStatus = config.data.filter(aplicarFiltrosSinStatus);
+
+        // Actualizar conteos de badges de status
+        actualizarConteosBadges(filteredSinStatus);
+
+        // Aplicar filtro completo incluyendo status
+        const filtered = filteredSinStatus.filter(item => {
+            if (activeStatusId) {
+                return parseInt(item.IdStatus) === parseInt(activeStatusId);
+            }
+            return true;
         });
 
         window.tablaInscripciones.updateData(filtered);
+    }
+
+    // === FUNCIÓN PARA ACTUALIZAR CONTEOS DE BADGES ===
+    function actualizarConteosBadges(datosFiltrados) {
+        const statusIds = <?= json_encode(array_column($statuses, 'IdStatus')) ?>;
+
+        // Contar por cada status
+        const conteos = {};
+        statusIds.forEach(id => conteos[id] = 0);
+
+        datosFiltrados.forEach(item => {
+            const statusId = parseInt(item.IdStatus);
+            if (conteos.hasOwnProperty(statusId)) {
+                conteos[statusId]++;
+            }
+        });
+
+        // Actualizar los badges en el DOM
+        statusSteps.forEach(step => {
+            const id = parseInt(step.dataset.id);
+            const badge = step.querySelector('.status-badge');
+            if (badge && conteos.hasOwnProperty(id)) {
+                badge.textContent = conteos[id];
+            }
+        });
     }
 
     // === LISTENERS DE FILTROS ===

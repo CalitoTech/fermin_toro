@@ -21,7 +21,7 @@ if ($limit < 1 || $limit > 50) {
 }
 
 // Validar tipo de búsqueda
-$tiposPermitidos = ['estudiante', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso'];
+$tiposPermitidos = ['estudiante', 'estudiante_regular', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso'];
 if (!in_array($tipo, $tiposPermitidos)) {
     echo json_encode(['error' => 'Tipo de búsqueda no válido']);
     exit;
@@ -31,6 +31,10 @@ if (!in_array($tipo, $tiposPermitidos)) {
 switch ($tipo) {
     case 'estudiante':
         buscarEstudiantes($conexion, $q, $limit);
+        break;
+
+    case 'estudiante_regular':
+        buscarEstudiantesRegulares($conexion, $q, $limit);
         break;
 
     case 'urbanismo':
@@ -85,6 +89,65 @@ function buscarEstudiantes($conexion, $q, $limit = 10) {
         LIMIT :limit
     ");
     $search = "%$q%";
+    $stmt->bindParam(':q', $search);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
+
+/**
+ * Buscar estudiantes regulares para prosecución
+ * Solo muestra estudiantes (IdPerfil = 3) con inscripción "Inscrito" (IdStatus = 11) del año escolar anterior
+ * que no tengan inscripción en el año escolar activo
+ */
+function buscarEstudiantesRegulares($conexion, $q, $limit = 10) {
+    // Si la búsqueda está vacía, no mostrar nada
+    if (empty(trim($q))) {
+        echo json_encode([]);
+        return;
+    }
+
+    // Obtener el año escolar activo
+    $stmtAnio = $conexion->prepare("SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1");
+    $stmtAnio->execute();
+    $anioActivo = $stmtAnio->fetch(PDO::FETCH_ASSOC);
+
+    if (!$anioActivo) {
+        echo json_encode([]);
+        return;
+    }
+
+    $idAnioActivo = $anioActivo['IdFecha_Escolar'];
+    // El año anterior es el ID anterior (asumiendo que son consecutivos)
+    $idAnioAnterior = $idAnioActivo - 1;
+
+    // IdEstudiante en inscripcion es FK a persona(IdPersona)
+    // Filtramos por IdPerfil = 3 (estudiantes) en detalle_perfil
+    $stmt = $conexion->prepare("
+        SELECT DISTINCT
+            p.IdPersona,
+            p.IdPersona AS IdEstudiante,
+            p.nombre,
+            p.apellido,
+            p.cedula,
+            n.nacionalidad
+        FROM persona p
+        INNER JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
+        INNER JOIN inscripcion i ON p.IdPersona = i.IdEstudiante
+        LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+        WHERE dp.IdPerfil = 3
+        AND i.IdFecha_Escolar = :idAnioAnterior
+        AND i.IdStatus = 11
+        AND p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
+        AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        ORDER BY p.apellido, p.nombre
+        LIMIT :limit
+    ");
+
+    $search = "%$q%";
+    $stmt->bindParam(':idAnioAnterior', $idAnioAnterior, PDO::PARAM_INT);
+    $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT);
     $stmt->bindParam(':q', $search);
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();

@@ -80,6 +80,7 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
         <input type="hidden" name="IdFechaEscolar" id="IdFechaEscolar" value="<?= $añoEscolarActivo['IdFecha_Escolar'] ?? '' ?>">
         <input type="hidden" name="IdCurso" id="IdCurso" value="">
         <input type="hidden" name="idTipoInscripcion" id="idTipoInscripcion" value="1">
+        <input type="hidden" name="origen" id="origen" value="administrativo">
 
         <!-- 🔹 BLOQUE: DATOS DE INSCRIPCIÓN -->
         <div class="card mb-3">
@@ -810,6 +811,21 @@ $cursos = $modeloCurso->obtenerCursos($idPersona);
 </div>
 
 <?php include '../../layouts/footer.php'; ?>
+
+<?php if ($alert): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    Swal.fire({
+        icon: '<?= $alert === 'success' ? 'success' : 'error' ?>',
+        title: '<?= $alert === 'success' ? '¡Éxito!' : 'Error' ?>',
+        text: '<?= addslashes($message) ?>',
+        confirmButtonColor: '<?= $alert === 'success' ? '#28a745' : '#c90000' ?>',
+        confirmButtonText: 'Entendido'
+    });
+});
+</script>
+<?php endif; ?>
+
 <script src="../../../assets/js/solicitud_cupo.js"></script>
 <script src="../../../assets/js/validacion.js"></script>
 <script src="../../../assets/js/buscador_generico.js"></script>
@@ -1336,18 +1352,20 @@ document.addEventListener("DOMContentLoaded", function() {
     }, true); // useCapture = true para ejecutarse primero
 
     // === BUSCADOR DE ESTUDIANTE PARA PROSECUCIÓN ===
+    // Usa tipo 'estudiante_regular' que solo muestra estudiantes con inscripción "Inscrito" del año anterior
     if (document.getElementById('buscadorEstudiante')) {
         const buscadorEstudiante = new BuscadorGenerico(
             'buscadorEstudiante',
             'resultadosBusqueda',
-            'estudiante',
+            'estudiante_regular',
             'IdEstudiante'
         );
 
         const inputBuscador = document.getElementById('buscadorEstudiante');
         inputBuscador.addEventListener('itemSeleccionado', async function(e) {
-            if (e.detail && e.detail.IdPersona) {
-                const idEstudiante = e.detail.IdPersona;
+            // Usar IdEstudiante si está disponible, sino usar IdPersona
+            const idEstudiante = e.detail?.IdEstudiante || e.detail?.IdPersona;
+            if (idEstudiante) {
 
                 try {
                     // Obtener información del curso siguiente

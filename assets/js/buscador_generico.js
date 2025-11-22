@@ -23,8 +23,8 @@ class BuscadorGenerico {
             minLength: tipo === 'prefijo' ? 1 : 2, // Prefijos con 1 carácter mínimo
             delay: 300,
             placeholder: this.getPlaceholder(tipo),
-            allowCreate: tipo !== 'estudiante', // Solo permitir crear en urbanismo, parentesco y prefijo
-            showOnFocus: tipo !== 'estudiante', // Mostrar lista al hacer click (todos excepto estudiante)
+            allowCreate: tipo !== 'estudiante' && tipo !== 'estudiante_regular', // Solo permitir crear en urbanismo, parentesco y prefijo
+            showOnFocus: tipo !== 'estudiante' && tipo !== 'estudiante_regular', // Mostrar lista al hacer click (todos excepto estudiante)
             ...options
         };
 
@@ -58,6 +58,7 @@ class BuscadorGenerico {
     getPlaceholder(tipo) {
         const placeholders = {
             'estudiante': 'Buscar por nombre, apellido o cédula...',
+            'estudiante_regular': 'Buscar estudiante inscrito el año anterior...',
             'urbanismo': 'Buscar o escribir nuevo urbanismo...',
             'parentesco': 'Buscar o escribir nuevo parentesco...',
             'prefijo': 'Buscar por código (+58) o país...'
@@ -199,6 +200,7 @@ class BuscadorGenerico {
     renderItem(item) {
         switch (this.tipo) {
             case 'estudiante':
+            case 'estudiante_regular':
                 return `<strong>${item.apellido} ${item.nombre}</strong> - ${item.nacionalidad}-${item.cedula}`;
 
             case 'urbanismo':
@@ -242,6 +244,10 @@ class BuscadorGenerico {
         if (this.tipo === 'estudiante') {
             this.input.value = `${item.apellido} ${item.nombre} (${item.nacionalidad}-${item.cedula})`;
             this.hiddenIdField.value = item.IdPersona;
+        } else if (this.tipo === 'estudiante_regular') {
+            this.input.value = `${item.apellido} ${item.nombre} (${item.nacionalidad}-${item.cedula})`;
+            // Usar IdEstudiante que es igual a IdPersona para estudiantes
+            this.hiddenIdField.value = item.IdEstudiante || item.IdPersona;
         } else if (this.tipo === 'urbanismo') {
             this.input.value = item.urbanismo;
             this.hiddenIdField.value = item.IdUrbanismo;

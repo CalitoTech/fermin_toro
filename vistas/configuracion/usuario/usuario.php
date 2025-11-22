@@ -68,21 +68,22 @@ if ($alert) {
 }
 
 // ========================
-// 👥 Consulta de usuarios con perfil
+// 👥 Consulta de usuarios con perfil (sin duplicados)
 // ========================
 $query = "
-    SELECT 
+    SELECT
         p.IdPersona,
         p.nombre,
         p.apellido,
         p.usuario,
         p.correo,
-        pf.IdPerfil,
-        pf.nombre_perfil
+        MIN(pf.IdPerfil) AS IdPerfil,
+        GROUP_CONCAT(DISTINCT pf.nombre_perfil ORDER BY pf.IdPerfil SEPARATOR ', ') AS nombre_perfil
     FROM persona AS p
     INNER JOIN detalle_perfil AS dp ON dp.IdPersona = p.IdPersona
     INNER JOIN perfil AS pf ON pf.IdPerfil = dp.IdPerfil
     WHERE p.usuario IS NOT NULL AND p.password IS NOT NULL
+    GROUP BY p.IdPersona, p.nombre, p.apellido, p.usuario, p.correo
     ORDER BY p.nombre, p.apellido
 ";
 $stmt = $conexion->prepare($query);

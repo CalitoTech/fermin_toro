@@ -24,22 +24,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $idFechaEscolar = isset($_POST['IdFechaEscolar']) ? (int)$_POST['IdFechaEscolar'] : 0;
         $idCurso = isset($_POST['IdCurso']) ? (int)$_POST['IdCurso'] : 0;
         $idCursoSeccion = isset($_POST['IdCursoSeccion']) ? (int)$_POST['IdCursoSeccion'] : 0;
-        $idPersonaRepresentante = $_SESSION['idPersona'];
+        $idStatus = isset($_POST['idStatus']) ? (int)$_POST['idStatus'] : 10; // Status por defecto: Pendiente de pago
+        $origen = isset($_POST['origen']) ? $_POST['origen'] : 'representante';
+        $idPersonaUsuario = $_SESSION['idPersona'];
 
         // Validaciones básicas
         if ($idEstudiante <= 0 || $idFechaEscolar <= 0 || $idCurso <= 0 || $idCursoSeccion <= 0) {
             throw new Exception("Datos incompletos. Por favor complete todos los campos requeridos.");
         }
 
-        // Verificar que el representante actual tenga relación con el estudiante
-        $representanteModel = new Representante($conexion);
-        $estudiantesRepresentados = $representanteModel->obtenerEstudiantesPorRepresentante($idPersonaRepresentante);
+        // Determinar si es representante o administrativo
+        $esAdministrativo = ($origen === 'administrativo');
 
-        $esRepresentado = false;
-        foreach ($estudiantesRepresentados as $est) {
-            if ($est['IdEstudiante'] == $idEstudiante) {
-                $esRepresentado = true;
-                break;
+        // Si es representante, verificar que tenga relación con el estudiante
+        if (!$esAdministrativo) {
+            $representanteModel = new Representante($conexion);
+            $estudiantesRepresentados = $representanteModel->obtenerEstudiantesPorRepresentante($idPersonaUsuario);
+
+            $esRepresentado = false;
+            foreach ($estudiantesRepresentados as $est) {
+                if ($est['IdEstudiante'] == $idEstudiante) {
+                    $esRepresentado = true;
+                    break;
+                }
+            }
+
+            if (!$esRepresentado) {
+                throw new Exception("No tiene permisos para renovar el cupo de este estudiante.");
             }
         }
 
@@ -64,24 +75,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception("El estudiante ya tiene una inscripción registrada para este año escolar.");
         }
 
-        // Obtener el IdRepresentante (relación representante-estudiante) del usuario actual
-        $sqlRepresentante = "SELECT IdRepresentante
-                            FROM representante
-                            WHERE IdPersona = :idPersona
-                            AND IdEstudiante = :idEstudiante
-                            AND IdParentesco IN (1, 2, 3)
-                            LIMIT 1";
-        $stmtRep = $conexion->prepare($sqlRepresentante);
-        $stmtRep->bindParam(':idPersona', $idPersonaRepresentante, PDO::PARAM_INT);
-        $stmtRep->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
-        $stmtRep->execute();
-        $representante = $stmtRep->fetch(PDO::FETCH_ASSOC);
+        // Obtener el responsable de inscripción según el origen
+        $idRelacionRepresentante = null;
 
-        if (!$representante) {
-            throw new Exception("No se encontró la relación de representación para este estudiante.");
+        if ($esAdministrativo) {
+            // Si es administrativo, obtener el responsable de la última inscripción del estudiante
+            $sqlUltimoResponsable = "SELECT responsable_inscripcion
+                                     FROM inscripcion
+                                     WHERE IdEstudiante = :idEstudiante
+                                     ORDER BY fecha_inscripcion DESC
+                                     LIMIT 1";
+            $stmtUltimo = $conexion->prepare($sqlUltimoResponsable);
+            $stmtUltimo->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmtUltimo->execute();
+            $ultimaInscripcion = $stmtUltimo->fetch(PDO::FETCH_ASSOC);
+
+            if ($ultimaInscripcion && $ultimaInscripcion['responsable_inscripcion']) {
+                $idRelacionRepresentante = $ultimaInscripcion['responsable_inscripcion'];
+            } else {
+                // Si no tiene inscripción previa, buscar cualquier representante del estudiante
+                $sqlCualquierRep = "SELECT IdRepresentante
+                                    FROM representante
+                                    WHERE IdEstudiante = :idEstudiante
+                                    AND IdParentesco IN (1, 2, 3)
+                                    ORDER BY IdParentesco ASC
+                                    LIMIT 1";
+                $stmtRep = $conexion->prepare($sqlCualquierRep);
+                $stmtRep->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+                $stmtRep->execute();
+                $repEncontrado = $stmtRep->fetch(PDO::FETCH_ASSOC);
+
+                if ($repEncontrado) {
+                    $idRelacionRepresentante = $repEncontrado['IdRepresentante'];
+                } else {
+                    throw new Exception("No se encontró un representante válido para este estudiante.");
+                }
+            }
+        } else {
+            // Si es representante, obtener su relación con el estudiante
+            $sqlRepresentante = "SELECT IdRepresentante
+                                FROM representante
+                                WHERE IdPersona = :idPersona
+                                AND IdEstudiante = :idEstudiante
+                                AND IdParentesco IN (1, 2, 3)
+                                LIMIT 1";
+            $stmtRep = $conexion->prepare($sqlRepresentante);
+            $stmtRep->bindParam(':idPersona', $idPersonaUsuario, PDO::PARAM_INT);
+            $stmtRep->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+            $stmtRep->execute();
+            $representante = $stmtRep->fetch(PDO::FETCH_ASSOC);
+
+            if (!$representante) {
+                throw new Exception("No se encontró la relación de representación para este estudiante.");
+            }
+
+            $idRelacionRepresentante = $representante['IdRepresentante'];
         }
-
-        $idRelacionRepresentante = $representante['IdRepresentante'];
 
         // Iniciar transacción
         $conexion->beginTransaction();
@@ -102,16 +151,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $correlativo = $stmtContador->fetchColumn() + 1;
             $codigoInscripcion = "$anioActual-$correlativo";
 
-            // Obtener el estado por defecto para inscripciones (IdTipo_Status = 2)
-            $sqlStatus = "SELECT IdStatus FROM status WHERE IdTipo_Status = 2 ORDER BY IdStatus LIMIT 1";
-            $stmtStatus = $conexion->prepare($sqlStatus);
-            $stmtStatus->execute();
-            $statusInscripcion = $stmtStatus->fetch(PDO::FETCH_ASSOC);
-
-            if (!$statusInscripcion) {
-                throw new Exception("No se encontró un estado válido para la inscripción.");
-            }
-
             // Preparar datos de inscripción
             $inscripcionModel->IdTipo_Inscripcion = 2; // Estudiante Regular
             $inscripcionModel->codigo_inscripcion = $codigoInscripcion;
@@ -121,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $inscripcionModel->ultimo_plantel = $ultimoPlantel; // Puede ser null si no tiene inscripciones previas
             $inscripcionModel->responsable_inscripcion = $idRelacionRepresentante;
             $inscripcionModel->IdFecha_Escolar = $idFechaEscolar;
-            $inscripcionModel->IdStatus = 10;
+            $inscripcionModel->IdStatus = $idStatus; // Usar el status del formulario
             $inscripcionModel->IdCurso_Seccion = $idCursoSeccion;
 
             // Guardar inscripción
@@ -134,9 +173,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Confirmar transacción
             $conexion->commit();
 
-            // Redirigir con mensaje de éxito
-            $_SESSION['mensaje_exito'] = "Renovación de cupo solicitada exitosamente. Código de seguimiento: $codigoInscripcion";
-            header("Location: ../../vistas/representantes/representados/representado.php");
+            // Redirigir con mensaje de éxito según el origen
+            if ($esAdministrativo) {
+                $_SESSION['alert'] = 'success';
+                $_SESSION['message'] = "Inscripción registrada exitosamente. Código: $codigoInscripcion";
+                header("Location: ../../vistas/inscripciones/inscripcion/inscripcion.php");
+            } else {
+                $_SESSION['mensaje_exito'] = "Renovación de cupo solicitada exitosamente. Código de seguimiento: $codigoInscripcion";
+                header("Location: ../../vistas/representantes/representados/representado.php");
+            }
             exit();
 
         } catch (Exception $e) {
@@ -149,16 +194,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $_SESSION['mensaje_error'] = $e->getMessage();
 
-        // Si hay un ID de estudiante, redirigir a la página de renovación
-        if (isset($idEstudiante) && $idEstudiante > 0) {
-            header("Location: ../../vistas/representantes/representados/renovar_cupo.php?id=$idEstudiante");
+        // Redirigir según el origen
+        if (isset($origen) && $origen === 'administrativo') {
+            $_SESSION['alert'] = 'error';
+            $_SESSION['message'] = $e->getMessage();
+            header("Location: ../../vistas/inscripciones/inscripcion/nuevo_inscripcion.php");
         } else {
-            header("Location: ../../vistas/representantes/representados/representado.php");
+            // Si hay un ID de estudiante, redirigir a la página de renovación
+            if (isset($idEstudiante) && $idEstudiante > 0) {
+                header("Location: ../../vistas/representantes/representados/renovar_cupo.php?id=$idEstudiante");
+            } else {
+                header("Location: ../../vistas/representantes/representados/representado.php");
+            }
         }
         exit();
     }
 } else {
-    // Si no es POST, redirigir
-    header("Location: ../../vistas/representantes/representados/representado.php");
+    // Si no es POST, redirigir según referer o a login
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    if (strpos($referer, 'inscripciones') !== false) {
+        header("Location: ../../vistas/inscripciones/inscripcion/inscripcion.php");
+    } else {
+        header("Location: ../../vistas/representantes/representados/representado.php");
+    }
     exit();
 }
