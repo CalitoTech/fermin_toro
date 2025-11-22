@@ -34,15 +34,17 @@ require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
 // Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
+$message = $_SESSION['message'] ?? '';
 unset($_SESSION['alert']);
+unset($_SESSION['message']);
 
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El usuario se actualizó correctamente.");
+            $alerta = Notificaciones::exito($message ?: 'Operación realizada correctamente.');
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Error al actualizar el usuario.");
+            $alerta = Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.');
             break;
         default:
             $alerta = null;
@@ -58,7 +60,7 @@ require_once __DIR__ . '/../../../config/conexion.php';
 require_once __DIR__ . '/../../../modelos/Persona.php';
 require_once __DIR__ . '/../../../modelos/Perfil.php';
 require_once __DIR__ . '/../../../modelos/DetallePerfil.php';
-require_once __DIR__ . '/../../../modelos/Condicion.php';
+require_once __DIR__ . '/../../../modelos/Status.php';
 require_once __DIR__ . '/../../../modelos/TipoTelefono.php';
 require_once __DIR__ . '/../../../modelos/Telefono.php';
 
@@ -67,11 +69,6 @@ $conexion = $database->getConnection();
 
 $personaModel = new Persona($conexion);
 $usuario = $personaModel->obtenerPorId($idUsuario); // Cargar datos
-
-// Para guardar cambios:
-if ($personaModel->actualizar()) {
-    // Actualización exitosa
-}
 
 // Para cambiar contraseña (si se proporcionó):
 if (!empty($_POST['password'])) {
@@ -89,8 +86,9 @@ $roles = $perfilModel->obtenerTodos();
 $detallePerfilModel = new DetallePerfil($conexion);
 $rolesUsuario = $detallePerfilModel->obtenerPorPersona($idUsuario);
 
-$condicionModel = new Condicion($conexion);
-$condiciones = $condicionModel->obtenerTodos();
+$statusModel = new Status($conexion);
+$statusesAcceso = $statusModel->obtenerStatusAcceso();
+$statusesInstitucional = $statusModel->obtenerStatusInstitucional();
 
 $tipoTelefonoModel = new TipoTelefono($conexion);
 $tiposTelefono = $tipoTelefonoModel->obtenerTodos();
@@ -288,28 +286,50 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                             <p class="añadir__input-error">Las contraseñas deben coincidir.</p>
                                         </div>
 
-                                        <!-- Condición -->
-                                        <div class="añadir__grupo" id="grupo__condicion">
-                                            <label for="condicion" class="form-label">Condición *</label>
+                                        <!-- Status de Acceso -->
+                                        <div class="añadir__grupo" id="grupo__status_acceso">
+                                            <label for="status_acceso" class="form-label">Status de Acceso *</label>
                                             <div class="input-group">
                                                 <span class="input-group-text"><i class='bx bxs-star'></i></span>
                                                 <select 
                                                     class="form-control añadir__input" 
-                                                    name="condicion" 
-                                                    id="condicion" 
+                                                    name="status_acceso" 
+                                                    id="status_acceso" 
                                                     required>
-                                                    <?php foreach ($condiciones as $cond): ?>
-                                                        <option value="<?= $cond['IdCondicion'] ?>" 
-                                                            <?= $cond['IdCondicion'] == $usuario['IdCondicion'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($cond['condicion']) ?>
+                                                    <?php foreach ($statusesAcceso as $status): ?>
+                                                        <option value="<?= $status['IdStatus'] ?>" 
+                                                            <?= $status['IdStatus'] == $usuario['IdEstadoAcceso'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($status['status']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Status Institucional -->
+                                        <div class="añadir__grupo" id="grupo__status_institucional">
+                                            <label for="status_institucional" class="form-label">Status Institucional *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
+                                                <select 
+                                                    class="form-control añadir__input" 
+                                                    name="status_institucional" 
+                                                    id="status_institucional" 
+                                                    required>
+                                                    <?php foreach ($statusesInstitucional as $status): ?>
+                                                        <option value="<?= $status['IdStatus'] ?>" 
+                                                            <?= $status['IdStatus'] == $usuario['IdEstadoInstitucional'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($status['status']) ?>
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">Debe seleccionar una condición.</p>
+                                            <p class="añadir__input-error">Debe seleccionar un status institucional.</p>
                                         </div>
+
                                     </div>
+                                </div>
 
                                     <!-- Roles -->
                                     <div class="añadir__grupo" id="grupo__roles">
@@ -362,22 +382,39 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                                         <select class="form-select añadir__input tipo-telefono" name="telefonos[<?= $index ?>][tipo]"
                                                                 style="max-width: 150px; border-top-right-radius: 0; border-bottom-right-radius: 0;">
                                                             <?php foreach ($tiposTelefono as $tipo): ?>
-                                                                <option value="<?= $tipo['IdTipo_Telefono'] ?>" 
-                                                                    <?= $tipo['IdTipo_Telefono'] == $tel['IdTipo_Telefono'] ? 'selected' : '' ?>>
+                                                                <option value="<?= $tipo['IdTipo_Telefono'] ?>"
+                                                                    <?= $tipo['IdTipo_Telefono'] == $tel['IdTipo_Telefono'] ? 'selected' : '' ?>
+                                                                    data-tipo="<?= $tipo['tipo_telefono'] ?>">
                                                                     <?= htmlspecialchars($tipo['tipo_telefono']) ?>
                                                                 </option>
                                                             <?php endforeach; ?>
                                                         </select>
-                                                        
+
+                                                        <!-- Prefix selector -->
+                                                        <div class="position-relative" style="max-width: 90px;">
+                                                            <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono prefijo-input"
+                                                                   data-index="<?= $index ?>" maxlength="4" data-prefijo-tipo="internacional"
+                                                                   value="<?= htmlspecialchars($tel['codigo_prefijo'] ?? '+58') ?>"
+                                                                   onkeypress="return /[0-9+]/.test(event.key)"
+                                                                   oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                                   style="border-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
+                                                            <input type="hidden" class="prefijo-hidden" name="telefonos[<?= $index ?>][prefijo]" value="<?= $tel['IdPrefijo'] ?? '' ?>">
+                                                            <input type="hidden" class="prefijo-nombre-hidden" name="telefonos[<?= $index ?>][prefijo_nombre]">
+                                                            <div class="prefijo-resultados autocomplete-results d-none"></div>
+                                                        </div>
+
                                                         <!-- Número de teléfono -->
-                                                        <input type="text" 
-                                                            class="form-control añadir__input numero-telefono" 
+                                                        <input type="text"
+                                                            class="form-control añadir__input numero-telefono"
                                                             name="telefonos[<?= $index ?>][numero]"
                                                             value="<?= htmlspecialchars($tel['numero_telefono']) ?>"
-                                                            placeholder="Ej: 04141234567"
-                                                            maxlength="15"
-                                                            style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
-                                                        
+                                                            placeholder="Ej: 4141234567"
+                                                            minlength="10"
+                                                            maxlength="10"
+                                                            pattern="^[0-9]+"
+                                                            onkeypress="return onlyNumber(event)"
+                                                            style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0;">
+
                                                         <!-- Botones -->
                                                         <button type="button" class="btn btn-outline-danger btn-eliminar-telefono" <?= $index == 0 ? 'style="display: none;"' : '' ?>>
                                                             <i class='bx bx-trash'></i>
@@ -396,17 +433,35 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                                     <select class="form-select añadir__input tipo-telefono" name="telefonos[0][tipo]"
                                                             style="max-width: 150px; border-top-right-radius: 0; border-bottom-right-radius: 0;">
                                                         <?php foreach ($tiposTelefono as $tipo): ?>
-                                                            <option value="<?= $tipo['IdTipo_Telefono'] ?>" <?= $tipo['IdTipo_Telefono'] == 2 ? 'selected' : '' ?>>
+                                                            <option value="<?= $tipo['IdTipo_Telefono'] ?>"
+                                                                <?= $tipo['IdTipo_Telefono'] == 2 ? 'selected' : '' ?>
+                                                                data-tipo="<?= $tipo['tipo_telefono'] ?>">
                                                                 <?= htmlspecialchars($tipo['tipo_telefono']) ?>
                                                             </option>
                                                         <?php endforeach; ?>
                                                     </select>
-                                                    <input type="text" 
-                                                        class="form-control añadir__input numero-telefono" 
+
+                                                    <!-- Prefix selector -->
+                                                    <div class="position-relative" style="max-width: 90px;">
+                                                        <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono prefijo-input"
+                                                               data-index="0" maxlength="4" data-prefijo-tipo="internacional"
+                                                               onkeypress="return /[0-9+]/.test(event.key)"
+                                                               oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                               style="border-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
+                                                        <input type="hidden" class="prefijo-hidden" name="telefonos[0][prefijo]">
+                                                        <input type="hidden" class="prefijo-nombre-hidden" name="telefonos[0][prefijo_nombre]">
+                                                        <div class="prefijo-resultados autocomplete-results d-none"></div>
+                                                    </div>
+
+                                                    <input type="text"
+                                                        class="form-control añadir__input numero-telefono"
                                                         name="telefonos[0][numero]"
-                                                        placeholder="Ej: 04141234567"
-                                                        maxlength="15"
-                                                        style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                                        placeholder="Ej: 4141234567"
+                                                        minlength="10"
+                                                        maxlength="10"
+                                                        pattern="^[0-9]+"
+                                                        onkeypress="return onlyNumber(event)"
+                                                        style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0;">
                                                     <button type="button" class="btn btn-outline-danger btn-eliminar-telefono" style="display: none;">
                                                         <i class='bx bx-trash'></i>
                                                     </button>
@@ -421,7 +476,10 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                 </div>
 
                                 <!-- Botón -->
-                                <div class="d-grid gap-2 mt-4">
+                                <div class="d-flex justify-content-between mt-4">
+                                    <a href="usuario.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Usuarios
+                                    </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
                                         <i class='bx bxs-save'></i> Actualizar Usuario
                                     </button>
@@ -440,6 +498,7 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
 <script src="../../../assets/js/validacion.js"></script>
 <script src="../../../assets/js/formulario.js"></script>
 <script src="../../../assets/js/usuario_chips.js"></script>
+<script src="../../../assets/js/buscador_generico.js"></script>
 <script src="../../../assets/js/telefonos.js"></script>
 
 <script>
@@ -488,11 +547,11 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
         const chip = document.querySelector(`.chip i[onclick="removeChip(${id})"]`)?.parentElement;
         if (chip) {
             chip.remove();
-            
+
             // Actualizar el select oculto
             const option = document.querySelector(`#roles option[value="${id}"]`);
             if (option) option.selected = false;
-            
+
             // Validar
             const grupo = document.getElementById('grupo__roles');
             if (document.querySelectorAll('.chip').length === 0) {
@@ -505,6 +564,336 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
             }
         }
     }
+
+    // === VALIDACIÓN EN TIEMPO REAL DE CÉDULA ===
+    let cedulaTimer;
+    const cedulaInput = document.getElementById('cedula');
+    const nacionalidadSelect = document.getElementById('nacionalidad');
+    const cedulaOriginal = '<?= htmlspecialchars($usuario['cedula']) ?>';
+    const nacionalidadOriginal = '<?= $usuario['IdNacionalidad'] ?>';
+    const idUsuarioActual = <?= $idUsuario ?>;
+
+    async function verificarCedulaCompleto() {
+        const cedula = cedulaInput.value.trim();
+        const nacionalidadLetra = nacionalidadSelect.value; // V o E
+        const idNacionalidad = nacionalidadLetra === 'V' ? 1 : 2;
+
+        // Si no ha cambiado la cédula ni la nacionalidad, no hacer nada
+        if (cedula === cedulaOriginal && idNacionalidad == nacionalidadOriginal) {
+            return;
+        }
+
+        if (cedula.length < 7) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`../../../controladores/PersonaController.php?action=verificarCedulaCompleto&cedula=${cedula}&idNacionalidad=${idNacionalidad}`);
+            const data = await response.json();
+
+            if (data.existe) {
+                // Verificar si la cédula pertenece a otra persona
+                if (data.persona.IdPersona != idUsuarioActual) {
+                    // Es de otra persona, mostrar error
+                    let mensaje = `La cédula ${nacionalidadLetra}-${cedula} ya está registrada para <strong>${data.persona.nombreCompleto}</strong>.`;
+
+                    Swal.fire({
+                        title: 'Cédula Duplicada',
+                        html: mensaje,
+                        icon: 'error',
+                        confirmButtonColor: '#c90000'
+                    });
+
+                    // Restaurar valores originales
+                    cedulaInput.value = cedulaOriginal;
+                    nacionalidadSelect.value = nacionalidadOriginal == 1 ? 'V' : 'E';
+                    cedulaInput.focus();
+                }
+            }
+        } catch (error) {
+            console.error('Error al verificar cédula:', error);
+        }
+    }
+
+    // === VALIDACIONES EN TIEMPO REAL ===
+
+    // Validación de cédula
+    cedulaInput.addEventListener('blur', function() {
+        const cedula = this.value.trim();
+        const grupo = document.getElementById('grupo__cedula');
+        const errorMsg = grupo.querySelector('.añadir__input-error');
+
+        // Validar longitud
+        if (cedula.length < 7 || cedula.length > 8) {
+            grupo.classList.remove('añadir__grupo-correcto');
+            grupo.classList.add('añadir__grupo-incorrecto');
+            errorMsg.textContent = 'La cédula debe tener entre 7 y 8 dígitos numéricos';
+            return;
+        }
+
+        // Si la validación básica pasa, verificar duplicados
+        clearTimeout(cedulaTimer);
+        cedulaTimer = setTimeout(verificarCedulaCompleto, 300);
+    });
+
+    // También validar cuando cambia la nacionalidad
+    nacionalidadSelect.addEventListener('change', function() {
+        if (cedulaInput.value.trim().length >= 7) {
+            clearTimeout(cedulaTimer);
+            cedulaTimer = setTimeout(verificarCedulaCompleto, 300);
+        }
+    });
+
+    // Validación de nombre
+    const nombreInput = document.getElementById('nombre');
+    if (nombreInput) {
+        nombreInput.addEventListener('blur', function() {
+            const nombre = this.value.trim();
+            const grupo = document.getElementById('grupo__nombre');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (nombre.length < 3 || nombre.length > 40) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El nombre debe tener entre 3 y 40 letras';
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/.test(nombre)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El nombre solo puede contener letras y espacios';
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de apellido
+    const apellidoInput = document.getElementById('apellido');
+    if (apellidoInput) {
+        apellidoInput.addEventListener('blur', function() {
+            const apellido = this.value.trim();
+            const grupo = document.getElementById('grupo__apellido');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (apellido.length < 3 || apellido.length > 40) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El apellido debe tener entre 3 y 40 letras';
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$/.test(apellido)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El apellido solo puede contener letras y espacios';
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de correo
+    const correoInput = document.getElementById('correo');
+    if (correoInput) {
+        correoInput.addEventListener('blur', function() {
+            const correo = this.value.trim();
+            const grupo = document.getElementById('grupo__correo');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (correo.length > 0) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(correo)) {
+                    grupo.classList.remove('añadir__grupo-correcto');
+                    grupo.classList.add('añadir__grupo-incorrecto');
+                    errorMsg.textContent = 'El correo electrónico no tiene un formato válido';
+                } else {
+                    grupo.classList.remove('añadir__grupo-incorrecto');
+                    grupo.classList.add('añadir__grupo-correcto');
+                }
+            }
+        });
+    }
+
+    // Validación de usuario
+    const usuarioInput = document.getElementById('usuario');
+    if (usuarioInput) {
+        usuarioInput.addEventListener('blur', function() {
+            const usuario = this.value.trim();
+            const grupo = document.getElementById('grupo__usuario');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (usuario.length < 4 || usuario.length > 20) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El usuario debe tener entre 4 y 20 caracteres';
+            } else if (!/^[a-zA-Z0-9_-]+$/.test(usuario)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'El usuario solo puede contener letras, números, guiones y guiones bajos';
+            } else {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de contraseña (solo si se está cambiando)
+    const passwordInput = document.getElementById('password');
+    const password2Input = document.getElementById('password2');
+
+    if (passwordInput) {
+        passwordInput.addEventListener('blur', function() {
+            const password = this.value.trim();
+            const grupo = document.getElementById('grupo__password');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (password.length > 0 && (password.length < 4 || password.length > 20)) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'La contraseña debe tener entre 4 y 20 caracteres';
+            } else if (password.length > 0) {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de confirmar contraseña
+    if (password2Input) {
+        password2Input.addEventListener('blur', function() {
+            const password = passwordInput.value.trim();
+            const password2 = this.value.trim();
+            const grupo = document.getElementById('grupo__password2');
+            const errorMsg = grupo.querySelector('.añadir__input-error');
+
+            if (password.length > 0 && password !== password2) {
+                grupo.classList.remove('añadir__grupo-correcto');
+                grupo.classList.add('añadir__grupo-incorrecto');
+                errorMsg.textContent = 'Las contraseñas no coinciden';
+            } else if (password2.length > 0 && password === password2) {
+                grupo.classList.remove('añadir__grupo-incorrecto');
+                grupo.classList.add('añadir__grupo-correcto');
+            }
+        });
+    }
+
+    // Validación de teléfonos en tiempo real
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para validar un campo de teléfono
+        function validarTelefono(telefonoInput) {
+            const numero = telefonoInput.value.trim();
+            const container = telefonoInput.closest('.telefono-item');
+
+            if (!container) return;
+
+            const prefijoInputId = telefonoInput.name.replace(/\[(\d+)\]\[numero\]/, '[$1][prefijo]');
+            const prefijoHiddenElement = document.querySelector(`input[name="${prefijoInputId}"]`);
+
+            // Buscar el input visible del prefijo (el del buscador)
+            const prefijoVisibleInput = container.querySelector('.prefijo-telefono');
+
+            // Limpiar validaciones previas
+            telefonoInput.classList.remove('is-invalid', 'is-valid');
+            let errorSpan = container.querySelector('.invalid-feedback');
+            if (errorSpan) {
+                errorSpan.remove();
+            }
+
+            if (numero.length === 0) {
+                return; // No validar si está vacío
+            }
+
+            // Validación 1: Solo números
+            if (!/^[0-9]+$/.test(numero)) {
+                telefonoInput.classList.add('is-invalid');
+                errorSpan = document.createElement('div');
+                errorSpan.className = 'invalid-feedback d-block';
+                errorSpan.textContent = 'El teléfono solo puede contener números';
+                telefonoInput.parentElement.appendChild(errorSpan);
+                return;
+            }
+
+            // Validación 2: No puede empezar con 0
+            if (numero.startsWith('0')) {
+                telefonoInput.classList.add('is-invalid');
+                errorSpan = document.createElement('div');
+                errorSpan.className = 'invalid-feedback d-block';
+                errorSpan.textContent = 'El teléfono no puede empezar con 0';
+                telefonoInput.parentElement.appendChild(errorSpan);
+                return;
+            }
+
+            // Validación 3: Validar longitud según max_digitos del prefijo
+            let maxDigitos = null;
+
+            if (prefijoVisibleInput) {
+                maxDigitos = prefijoVisibleInput.getAttribute('data-max-digitos');
+            }
+
+            if (maxDigitos) {
+                maxDigitos = parseInt(maxDigitos);
+
+                if (numero.length !== maxDigitos) {
+                    telefonoInput.classList.add('is-invalid');
+                    errorSpan = document.createElement('div');
+                    errorSpan.className = 'invalid-feedback d-block';
+                    errorSpan.textContent = `El teléfono debe tener exactamente ${maxDigitos} dígitos`;
+                    telefonoInput.parentElement.appendChild(errorSpan);
+                    return;
+                }
+            } else {
+                // Fallback: validar mínimo 7 dígitos si no hay prefijo
+                if (numero.length < 7) {
+                    telefonoInput.classList.add('is-invalid');
+                    errorSpan = document.createElement('div');
+                    errorSpan.className = 'invalid-feedback d-block';
+                    errorSpan.textContent = 'El teléfono debe tener al menos 7 dígitos';
+                    telefonoInput.parentElement.appendChild(errorSpan);
+                    return;
+                }
+            }
+
+            // Si todo está bien
+            telefonoInput.classList.add('is-valid');
+        }
+
+        // Agregar event listeners a todos los inputs de teléfono existentes
+        function agregarValidacionTelefonos() {
+            const telefonosInputs = document.querySelectorAll('input[name^="telefonos"][name$="[numero]"]');
+            telefonosInputs.forEach(input => {
+                // Validar en blur
+                input.addEventListener('blur', function() {
+                    validarTelefono(this);
+                });
+
+                // También validar cuando cambia el prefijo
+                const container = input.closest('.telefono-item');
+                if (container) {
+                    const prefijoInput = container.querySelector('.prefijo-telefono');
+                    if (prefijoInput) {
+                        prefijoInput.addEventListener('itemSeleccionado', function() {
+                            validarTelefono(input);
+                        });
+                    }
+                }
+            });
+        }
+
+        // Ejecutar al cargar
+        agregarValidacionTelefonos();
+
+        // Re-ejecutar cuando se agreguen nuevos teléfonos
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.addedNodes.length > 0) {
+                    agregarValidacionTelefonos();
+                }
+            });
+        });
+
+        const telefonosContainer = document.getElementById('telefonos-container');
+        if (telefonosContainer) {
+            observer.observe(telefonosContainer, { childList: true });
+        }
+    });
 </script>
 </body>
 </html>

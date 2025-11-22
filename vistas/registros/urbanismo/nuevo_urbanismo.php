@@ -27,15 +27,17 @@ require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
 // Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
+$message = $_SESSION['message'] ?? '';
 unset($_SESSION['alert']);
+unset($_SESSION['message']);
 
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El urbanismo se creó correctamente.");
+            $alerta = Notificaciones::exito($message ?: 'Operación realizada correctamente.');
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Este urbanismo ya existe, verifique por favor.");
+            $alerta = Notificaciones::advertencia($message ?: 'Ocurrió un error. Por favor verifique.');
             break;
         default:
             $alerta = null;
@@ -46,9 +48,6 @@ if ($alert) {
     }
 }
 
-// === Cargar Roles desde el Modelo Perfil ===
-$roles = [];
-
 try {
     // Asegurarnos de que conexion.php define la clase Database
     require_once __DIR__ . '/../../../config/conexion.php';
@@ -56,39 +55,10 @@ try {
     $database = new Database();
     $conexion = $database->getConnection();
 
-    require_once __DIR__ . '/../../../modelos/Perfil.php';
-    $perfil = new Perfil($conexion);
-    $roles = $perfil->obtenerTodos();
-
 } catch (Exception $e) {
-    error_log("Error al cargar roles en nuevo_urbanismo.php: " . $e->getMessage());
-    // Opcional: mostrar mensaje de advertencia
-    $roles = []; // Dejar vacío si hay error
+    error_log("Error al conectar a la base de datos: " . $e->getMessage());
 }
 
-// === Cargar Condiciones desde la base de datos ===
-$condiciones = [];
-
-try {
-    require_once __DIR__ . '/../../../modelos/Condicion.php'; // Asumo que tienes un modelo Condicion
-    $condicionModel = new Condicion($conexion);
-    $condiciones = $condicionModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar condiciones en nuevo_urbanismo.php: " . $e->getMessage());
-    $condiciones = [];
-}
-
-// Después de cargar los roles, añade esto:
-require_once __DIR__ . '/../../../modelos/TipoTelefono.php';
-
-// Luego carga los tipos de teléfono
-try {
-    $tipoTelefonoModel = new TipoTelefono($conexion);
-    $tiposTelefono = $tipoTelefonoModel->obtenerTodos();
-} catch (Exception $e) {
-    error_log("Error al cargar tipos de teléfono: " . $e->getMessage());
-    $tiposTelefono = [];
-}
 ?>
 
 <head>
@@ -124,18 +94,21 @@ try {
                                                     type="text" 
                                                     class="form-control añadir__input" 
                                                     name="urbanismo" 
-                                                    id="urbanismo" 
+                                                    id="texto" 
                                                     required 
                                                     maxlength="40"
-                                                    onkeypress="return onlyText(event)">
+                                                    oninput="formatearTexto()">
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
                                             <p class="añadir__input-error">El urbanismo debe tener entre 3 y 40 letras.</p>
                                         </div>
                                     </div>
 
-                                <!-- Botón -->
-                                <div class="d-grid gap-2 mt-4">
+                                <!-- Botones para Volver y Guardar -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <a href="urbanismo.php" class="btn btn-outline-danger btn-lg">
+                                        <i class='bx bx-arrow-back'></i> Volver a Urbanismos
+                                    </a>
                                     <button type="submit" class="btn btn-danger btn-lg">
                                         <i class='bx bxs-save'></i> Guardar Urbanismo
                                     </button>

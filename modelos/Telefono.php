@@ -7,6 +7,7 @@ class Telefono {
     public $numero_telefono;
     public $IdTipo_Telefono;
     public $IdPersona;
+    public $IdPrefijo;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -23,25 +24,69 @@ class Telefono {
         $this->numero_telefono = htmlspecialchars(strip_tags($this->numero_telefono));
         $this->IdTipo_Telefono = (int)$this->IdTipo_Telefono;
         $this->IdPersona = (int)$this->IdPersona;
-
-        $query = "INSERT INTO telefono (numero_telefono, IdTipo_Telefono, IdPersona) 
-                  VALUES (:numero_telefono, :IdTipo_Telefono, :IdPersona)";
-
-        $stmt = $this->conn->prepare($query);
-
-        $stmt->bindParam(":numero_telefono", $this->numero_telefono);
-        $stmt->bindParam(":IdTipo_Telefono", $this->IdTipo_Telefono, PDO::PARAM_INT);
-        $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
-
         try {
-            return $stmt->execute() ? $this->conn->lastInsertId() : false;
+            // 1) Verificar si el número ya existe en la tabla
+            $checkSql = "SELECT t.IdTelefono, t.IdPersona, t.IdTipo_Telefono, t.numero_telefono,
+                                p.nombre, p.apellido, p.cedula, n.nacionalidad,
+                                tt.tipo_telefono, pref.codigo_prefijo
+                         FROM telefono t
+                         INNER JOIN persona p ON t.IdPersona = p.IdPersona
+                         LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                         LEFT JOIN tipo_telefono tt ON t.IdTipo_Telefono = tt.IdTipo_Telefono
+                         LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
+                         WHERE t.numero_telefono = :numero LIMIT 1";
+            $checkStmt = $this->conn->prepare($checkSql);
+            $checkStmt->bindParam(':numero', $this->numero_telefono);
+            $checkStmt->execute();
+            $found = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($found) {
+                // Si ya existe para la misma persona, no insertar (silencioso)
+                if ((int)$found['IdPersona'] === (int)$this->IdPersona) {
+                    return (int)$found['IdTelefono'];
+                }
+
+                // Si ya existe para otra persona: error detallado
+                $nombreCompleto = trim($found['nombre'] . ' ' . $found['apellido']);
+                $cedulaCompleta = ($found['nacionalidad'] ?? 'V') . '-' . $found['cedula'];
+                $tipoTelefono = $found['tipo_telefono'] ?? 'Teléfono';
+                $numeroCompleto = ($found['codigo_prefijo'] ?? '') . ($found['numero_telefono'] ?? $this->numero_telefono);
+
+                throw new Exception(
+                    "El número de {$tipoTelefono} ({$numeroCompleto}) ya está registrado para {$nombreCompleto} (Cédula: {$cedulaCompleta}). " .
+                    "Por favor, verifique el número ingresado o contacte al personal administrativo si cree que esto es un error."
+                );
+            }
+
+            // 2) Insertar nuevo teléfono
+            $query = "INSERT INTO telefono (numero_telefono, IdTipo_Telefono, IdPersona, IdPrefijo)
+                      VALUES (:numero_telefono, :IdTipo_Telefono, :IdPersona, :IdPrefijo)";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(":numero_telefono", $this->numero_telefono);
+            $stmt->bindParam(":IdTipo_Telefono", $this->IdTipo_Telefono, PDO::PARAM_INT);
+            $stmt->bindParam(":IdPersona", $this->IdPersona, PDO::PARAM_INT);
+
+            // IdPrefijo puede ser NULL para teléfonos sin prefijo
+            if (!empty($this->IdPrefijo) && $this->IdPrefijo !== 'null') {
+                $stmt->bindParam(":IdPrefijo", $this->IdPrefijo, PDO::PARAM_INT);
+            } else {
+                $stmt->bindValue(":IdPrefijo", null, PDO::PARAM_NULL);
+            }
+
+            if ($stmt->execute()) {
+                return $this->conn->lastInsertId();
+            }
+
+            return false;
         } catch (Exception $e) {
             error_log("Error al guardar teléfono: " . $e->getMessage());
-            return false;
+            // Re-lanzamos la excepción para que el controlador pueda hacer rollback cuando corresponda
+            throw $e;
         }
     }
 
-    public static function guardarTelefonosPersona($db, $idPersona, $telefonos) {
+    public static function guardarTelefonosPersona($db, $idPersona, $telefonos, $prefijos = []) {
         $tipos = [
             'TelefonoHabitacion' => 1,
             'Celular' => 2,
@@ -56,9 +101,20 @@ class Telefono {
                 $modeloTelefono->IdTipo_Telefono = $idTipo;
                 $modeloTelefono->IdPersona = $idPersona;
 
-                if (!$modeloTelefono->guardar()) {
-                    error_log("Error al guardar teléfono: Tipo=$tipo, Número=" . $telefonos[$tipo] . ", IdPersona=$idPersona");
-                    return false; // ← Retorna false si uno falla
+                // Asignar prefijo si existe (principalmente para Celular)
+                $prefijoKey = $tipo === 'Celular' ? 'Celular' : $tipo;
+                if (isset($prefijos[$prefijoKey]) && !empty($prefijos[$prefijoKey])) {
+                    $modeloTelefono->IdPrefijo = $prefijos[$prefijoKey];
+                } else {
+                    $modeloTelefono->IdPrefijo = null;
+                }
+
+                try {
+                    $modeloTelefono->guardar();
+                } catch (Exception $e) {
+                    // Si hubo conflicto (teléfono en otra persona), propagar excepción para rollback
+                    error_log("Error al guardar teléfono (persona $idPersona): " . $e->getMessage());
+                    throw $e;
                 }
             }
             // Si está vacío, simplemente lo omite (no es un error)
@@ -68,9 +124,10 @@ class Telefono {
     }
 
     public function obtenerPorPersona($idPersona) {
-        $query = "SELECT t.*, tt.tipo_telefono 
+        $query = "SELECT t.*, tt.tipo_telefono, p.codigo_prefijo, p.pais
                 FROM telefono t
                 JOIN tipo_telefono tt ON t.IdTipo_Telefono = tt.IdTipo_Telefono
+                LEFT JOIN prefijo p ON t.IdPrefijo = p.IdPrefijo
                 WHERE t.IdPersona = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $idPersona, PDO::PARAM_INT);
@@ -91,13 +148,15 @@ class Telefono {
             }
             
             // Insertar nuevos teléfonos
-            $stmt = $this->conn->prepare("INSERT INTO telefono (IdPersona, IdTipo_Telefono, numero_telefono) VALUES (?, ?, ?)");
+            $stmt = $this->conn->prepare("INSERT INTO telefono (IdPersona, IdTipo_Telefono, numero_telefono, IdPrefijo) VALUES (?, ?, ?, ?)");
             foreach ($telefonos as $tel) {
                 if (!empty(trim($tel['numero']))) {
+                    $idPrefijo = isset($tel['prefijo']) && !empty($tel['prefijo']) ? (int)$tel['prefijo'] : null;
                     if (!$stmt->execute([
                         $idPersona,
                         (int)$tel['tipo'],
-                        trim($tel['numero'])
+                        trim($tel['numero']),
+                        $idPrefijo
                     ])) {
                         throw new Exception("Error al guardar teléfono: " . $tel['numero']);
                     }

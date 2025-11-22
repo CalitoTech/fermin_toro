@@ -1,13 +1,20 @@
 <?php
-session_start();
+// Verificación de sesión SOLO para acciones que lo requieran
+$action = $_GET['action'] ?? ($_POST['action'] ?? '');
 
-// Verificación de sesión
-if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
-    header("Location: ../vistas/login/login.php");
-    exit();
+// Acciones que NO requieren sesión
+$accionesPublicas = ['verificarCedula', 'verificarAccesoRepresentantes', 'verificarCedulaRepresentante', 'obtenerPerfil', 'verificarCedulaCompleto'];
+
+if (!in_array($action, $accionesPublicas)) {
+    session_start();
+    if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
+        header("Location: ../vistas/login/login.php");
+        exit();
+    }
 }
 
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../controladores/Validaciones.php';
 require_once __DIR__ . '/../modelos/Persona.php';
 require_once __DIR__ . '/../modelos/DetallePerfil.php';
 require_once __DIR__ . '/../modelos/Telefono.php';
@@ -25,9 +32,241 @@ switch ($action) {
     case 'eliminar':
         eliminarUsuario();
         break;
+    case 'verificarCedula':
+        verificarCedula();
+        break;
+    case 'verificarAccesoRepresentantes':
+        verificarAccesoRepresentantes();
+        break;
+    case 'verificarCedulaRepresentante':
+        verificarCedulaRepresentante();
+        break;
+    case 'obtenerPerfil':
+        obtenerPerfil();
+        break;
+    case 'verificarCedulaCompleto':
+        verificarCedulaCompleto();
+        break;
+    case 'obtenerCursoSiguiente':
+        obtenerCursoSiguienteEstudiante();
+        break;
     default:
         header("Location: ../vistas/configuracion/usuario/usuario.php");
         exit();
+}
+
+function verificarCedula() {
+    header('Content-Type: application/json');
+    
+    try {
+        // Verificar método
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            throw new Exception('Método no permitido');
+        }
+
+        // Obtener parámetros
+        $cedula = $_GET['cedula'] ?? '';
+        $idNacionalidad = $_GET['idNacionalidad'] ?? '';
+        
+        if (empty($cedula) || empty($idNacionalidad)) {
+            throw new Exception('La cédula y el ID de nacionalidad son requeridos');
+        }
+
+        // Validar que idNacionalidad sea numérico
+        if (!is_numeric($idNacionalidad)) {
+            throw new Exception('El ID de nacionalidad debe ser numérico');
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Buscar directamente la persona con el IdNacionalidad proporcionado
+        $sql = "SELECT p.*, i.IdInscripcion, s.status AS estado
+            FROM persona p
+            LEFT JOIN inscripcion i ON i.IdEstudiante = p.IdPersona
+            LEFT JOIN status s ON i.IdStatus = s.IdStatus
+            WHERE p.cedula = :cedula AND p.IdNacionalidad = :idNacionalidad";
+        $stmt = $conexion->prepare($sql);
+        
+        if (!$stmt) {
+            $errorInfo = $conexion->errorInfo();
+            throw new Exception('Error al preparar consulta: ' . json_encode($errorInfo));
+        }
+
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':idNacionalidad', $idNacionalidad, PDO::PARAM_INT);
+        
+        if (!$stmt->execute()) {
+            $errorInfo = $stmt->errorInfo();
+            throw new Exception('Error al ejecutar consulta: ' . json_encode($errorInfo));
+        }
+
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'inscrito' => true,
+                'estado'   => $row['estado'] // inscrito, pendiente, aprobado, etc.
+            ]);
+        } else {
+            echo json_encode(['inscrito' => false]);
+        }
+        
+    } catch (Exception $e) {
+    echo json_encode([
+        "error" => "Excepción en verificarCedula: " . $e->getMessage(),
+        "existe" => false
+    ]);
+}
+    exit();
+}
+
+function verificarAccesoRepresentantes() {
+    header('Content-Type: application/json');
+
+    try {
+        // Verificar método
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Método no permitido');
+        }
+
+        // Obtener las cédulas del POST
+        $cedulas = json_decode(file_get_contents('php://input'), true);
+
+        if (!is_array($cedulas) || empty($cedulas)) {
+            echo json_encode(['success' => true, 'representantesConAcceso' => []]);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        $representantesConAcceso = [];
+
+        foreach ($cedulas as $item) {
+            $cedula = $item['cedula'] ?? '';
+            $nacionalidad = $item['nacionalidad'] ?? '';
+            $nombre = $item['nombre'] ?? '';
+
+            if (empty($cedula) || empty($nacionalidad)) {
+                continue;
+            }
+
+            // Consultar si la persona existe y tiene IdEstadoAcceso = 1
+            $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.IdEstadoAcceso
+                    FROM persona p
+                    WHERE p.cedula = :cedula
+                    AND p.IdNacionalidad = :nacionalidad
+                    AND p.IdEstadoAcceso = 1";
+
+            $stmt = $conexion->prepare($sql);
+            $stmt->bindParam(':cedula', $cedula);
+            $stmt->bindParam(':nacionalidad', $nacionalidad, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+                $representantesConAcceso[] = [
+                    'cedula' => $cedula,
+                    'nacionalidad' => $nacionalidad,
+                    'nombre' => $nombre,
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido']
+                ];
+            }
+        }
+
+        echo json_encode([
+            'success' => true,
+            'representantesConAcceso' => $representantesConAcceso
+        ]);
+
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+    exit();
+}
+
+/**
+ * Verifica si una cédula de representante ya existe en el sistema
+ * Retorna si existe, si tiene usuario y contraseña, y datos básicos de la persona
+ */
+function verificarCedulaRepresentante() {
+    header('Content-Type: application/json');
+
+    try {
+        // Verificar método
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            throw new Exception('Método no permitido');
+        }
+
+        // Obtener los datos del POST
+        $data = json_decode(file_get_contents('php://input'), true);
+        $cedula = $data['cedula'] ?? '';
+        $nacionalidad = $data['nacionalidad'] ?? '';
+
+        if (empty($cedula) || empty($nacionalidad)) {
+            echo json_encode([
+                'existe' => false,
+                'tieneAcceso' => false
+            ]);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Consultar si la persona existe y verificar si tiene usuario y contraseña
+        $sql = "SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, p.IdNacionalidad,
+                       n.nacionalidad,
+                       p.usuario, p.password,
+                       CASE
+                           WHEN p.usuario IS NOT NULL AND p.usuario != ''
+                                AND p.password IS NOT NULL AND p.password != ''
+                           THEN 1
+                           ELSE 0
+                       END AS tiene_credenciales
+                FROM persona p
+                INNER JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                WHERE p.cedula = :cedula
+                AND p.IdNacionalidad = :nacionalidad";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':nacionalidad', $nacionalidad, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'existe' => true,
+                'tieneAcceso' => (bool)$persona['tiene_credenciales'],
+                'persona' => [
+                    'nombre' => $persona['nombre'],
+                    'apellido' => $persona['apellido'],
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido'],
+                    'nacionalidad' => $persona['nacionalidad'],
+                    'cedula' => $persona['cedula']
+                ]
+            ]);
+        } else {
+            echo json_encode([
+                'existe' => false,
+                'tieneAcceso' => false
+            ]);
+        }
+
+    } catch (Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'existe' => false,
+            'tieneAcceso' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+    exit();
 }
 
 function crearUsuario() {
@@ -37,19 +276,108 @@ function crearUsuario() {
         exit();
     }
 
-    // Obtener datos
+    // Obtener y limpiar datos
+    $nacionalidad = $_POST['nacionalidad'] ?? '';
     $cedula = trim($_POST['cedula'] ?? '');
+    $nombre = trim($_POST['nombre'] ?? '');
+    $apellido = trim($_POST['apellido'] ?? '');
+    $correo = trim($_POST['correo'] ?? '');
     $usuario = trim($_POST['usuario'] ?? '');
-    $condicion = $_POST['condicion'] ?? 1;
+    $password = trim($_POST['password'] ?? '');
+    $password2 = trim($_POST['password2'] ?? '');
+    $status_acceso = $_POST['status_acceso'] ?? 1;
+    $status_institucional = $_POST['status_institucional'] ?? 1;
     $roles = $_POST['roles'] ?? [];
     $telefonos = $_POST['telefonos'] ?? [];
 
-    // Validar campos requeridos
-    if (empty($cedula) || empty($usuario) || empty($roles)) {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Campos requeridos faltantes';
-        header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-        exit();
+    // === Validaciones ===
+    
+    // 1. Validar campos requeridos
+    $camposRequeridos = [
+        'nacionalidad' => $nacionalidad,
+        'cedula' => $cedula,
+        'nombre' => $nombre,
+        'apellido' => $apellido,
+        'usuario' => $usuario,
+        'password' => $password,
+        'password2' => $password2,
+        'roles' => $roles
+    ];
+    
+    foreach ($camposRequeridos as $campo => $valor) {
+        if (empty($valor)) {
+            manejarError("El campo $campo es requerido");
+        }
+    }
+
+    // 2. Validar formatos con la clase Validaciones
+    if (!Validaciones::validarCampo($nombre, 'nombre')) {
+        manejarError('El nombre debe contener solo letras y espacios (3-40 caracteres)');
+    }
+    
+    if (!Validaciones::validarCampo($apellido, 'nombre')) {
+        manejarError('El apellido debe contener solo letras y espacios (3-40 caracteres)');
+    }
+    
+    if (!Validaciones::validarCampo($cedula, 'cedula')) {
+        manejarError('La cédula debe tener 7 u 8 dígitos numéricos');
+    }
+    
+    if (!empty($correo) && !Validaciones::validarCampo($correo, 'correo')) {
+        manejarError('El correo electrónico no tiene un formato válido');
+    }
+    
+    if (!Validaciones::validarCampo($usuario, 'usuario')) {
+        manejarError('El usuario debe tener entre 4 y 20 caracteres (letras, números, guiones y guiones bajos)');
+    }
+    
+    if (!Validaciones::validarCampo($password, 'password')) {
+        manejarError('La contraseña debe tener entre 4 y 20 caracteres');
+    }
+    
+    if ($password !== $password2) {
+        manejarError('Las contraseñas no coinciden');
+    }
+    
+    if (empty($roles)) {
+        manejarError('Debe seleccionar al menos un rol');
+    }
+    
+     // Validar teléfonos con prefijo
+    foreach ($telefonos as $tel) {
+        if (!empty($tel['numero'])) {
+            $numero = trim($tel['numero']);
+            $idPrefijo = $tel['prefijo'] ?? null;
+
+            // Validar que solo contenga números
+            if (!preg_match('/^[0-9]+$/', $numero)) {
+                manejarError('El número de teléfono solo puede contener dígitos');
+            }
+
+            // Validar que no empiece con 0
+            if (substr($numero, 0, 1) === '0') {
+                manejarError('El número de teléfono no puede empezar con 0');
+            }
+
+            // Validar longitud según el prefijo
+            if ($idPrefijo) {
+                require_once __DIR__ . '/../modelos/Prefijo.php';
+                $prefijoModel = new Prefijo($conexion);
+                $prefijoData = $prefijoModel->obtenerPorId($idPrefijo);
+
+                if ($prefijoData && isset($prefijoData['max_digitos'])) {
+                    $maxDigitos = (int)$prefijoData['max_digitos'];
+                    if (strlen($numero) !== $maxDigitos) {
+                        manejarError("El número de teléfono debe tener exactamente {$maxDigitos} dígitos para el prefijo {$prefijoData['codigo_prefijo']}");
+                    }
+                }
+            } else {
+                // Si no hay prefijo, validar longitud mínima general
+                if (strlen($numero) < 10) {
+                    manejarError('El número de teléfono debe contener al menos 10 dígitos');
+                }
+            }
+        }
     }
 
     try {
@@ -65,10 +393,7 @@ function crearUsuario() {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'El nombre de usuario ya existe';
-            header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-            exit();
+            manejarError('El nombre de usuario ya existe');
         }
 
         // Verificar cédula duplicada
@@ -77,33 +402,37 @@ function crearUsuario() {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'La cédula ya está registrada';
-            header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-            exit();
+            manejarError('La cédula ya está registrada');
         }
 
         // Configurar datos de la persona
-        $persona->IdNacionalidad = $_POST['nacionalidad'] === 'V' ? 1 : 2;
+        $persona->IdNacionalidad = $nacionalidad === 'V' ? 1 : 2;
         $persona->cedula = $cedula;
-        $persona->nombre = trim($_POST['nombre'] ?? '');
-        $persona->apellido = trim($_POST['apellido'] ?? '');
-        $persona->correo = !empty($_POST['correo']) ? trim($_POST['correo']) : null;
-        $persona->usuario = $usuario;
-        $persona->password = $_POST['password'] ?? '';
-        $persona->IdCondicion = $condicion;
+        $persona->nombre = $nombre;
+        $persona->apellido = $apellido;
+        $persona->correo = !empty($correo) ? $correo : null;
+        $persona->direccion = null;
+        $persona->IdSexo = null;
+        $persona->IdUrbanismo = null;
+        $persona->IdEstadoAcceso = $status_acceso;
+        $persona->IdEstadoInstitucional = $status_institucional;
 
         // Iniciar transacción
         $conexion->beginTransaction();
 
         try {
-            // Guardar persona
+            // 1. Guardar datos básicos de la persona
             $idPersona = $persona->guardar();
             if (!$idPersona) {
                 throw new Exception("Error al guardar la persona");
             }
 
-            // Guardar roles
+            // 2. Crear credenciales de usuario
+            if (!$persona->crearCredenciales($idPersona, $usuario, $password)) {
+                throw new Exception("Error al crear credenciales de usuario");
+            }
+
+            // 3. Guardar roles
             $detallePerfil = new DetallePerfil($conexion);
             foreach ($roles as $idPerfil) {
                 $detallePerfil->IdPersona = $idPersona;
@@ -113,7 +442,7 @@ function crearUsuario() {
                 }
             }
 
-            // Guardar teléfonos
+            // 4. Guardar teléfonos
             if (!empty($telefonos)) {
                 $telefonoModel = new Telefono($conexion);
                 foreach ($telefonos as $tel) {
@@ -133,74 +462,146 @@ function crearUsuario() {
             $conexion->commit();
 
             $_SESSION['alert'] = 'success';
-            $_SESSION['success_message'] = 'Usuario creado exitosamente';
+            $_SESSION['message'] = 'Usuario creado exitosamente';
             header("Location: ../vistas/configuracion/usuario/usuario.php");
             exit();
 
         } catch (Exception $e) {
             $conexion->rollBack();
             error_log("Error al crear usuario: " . $e->getMessage());
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'Error al crear el usuario';
-            header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-            exit();
+            manejarError('Error al crear el usuario: ' . $e->getMessage());
         }
 
     } catch (Exception $e) {
         error_log("Error general al crear usuario: " . $e->getMessage());
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Error interno del servidor';
-        header("Location: ../vistas/configuracion/usuario/nuevo_usuario.php");
-        exit();
+        manejarError('Error interno del servidor');
     }
 }
 
 function editarUsuario() {
     // Solo POST para edición
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Método no permitido';
-        header("Location: ../vistas/configuracion/usuario/usuario.php");
-        exit();
+        manejarError('Método no permitido', '../vistas/configuracion/usuario/usuario.php');
     }
 
     // Obtener ID
     $id = (int)($_POST['id'] ?? 0);
     if ($id <= 0) {
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'ID de usuario inválido';
-        header("Location: ../vistas/configuracion/usuario/usuario.php");
-        exit();
+        manejarError('ID de usuario inválido', '../vistas/configuracion/usuario/usuario.php');
     }
 
-    // Validar campos requeridos
-    $required = ['nombre', 'apellido', 'cedula', 'usuario', 'condicion', 'roles'];
-    foreach ($required as $field) {
-        if (empty($_POST[$field])) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = "El campo $field es requerido";
-            header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-            exit();
+    // Obtener y limpiar datos
+    $nacionalidad = $_POST['nacionalidad'] ?? '';
+    $cedula = trim($_POST['cedula'] ?? '');
+    $nombre = trim($_POST['nombre'] ?? '');
+    $apellido = trim($_POST['apellido'] ?? '');
+    $correo = trim($_POST['correo'] ?? '');
+    $usuario = trim($_POST['usuario'] ?? '');
+    $status_acceso = $_POST['status_acceso'] ?? 1;
+    $status_institucional = $_POST['status_institucional'] ?? 1;
+    $roles = $_POST['roles'] ?? [];
+    $telefonos = $_POST['telefonos'] ?? [];
+    $password = $_POST['password'] ?? '';
+
+    // === Validaciones ===
+    
+    // 1. Validar campos requeridos
+    $camposRequeridos = [
+        'nacionalidad' => $nacionalidad,
+        'cedula' => $cedula,
+        'nombre' => $nombre,
+        'apellido' => $apellido,
+        'usuario' => $usuario,
+        'status_acceso' => $status_acceso,
+        'status_institucional' => $status_institucional,
+        'roles' => $roles
+    ];
+    
+    foreach ($camposRequeridos as $campo => $valor) {
+        if (empty($valor)) {
+            manejarError("El campo $campo es requerido", "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+        }
+    }
+
+    // 2. Validar formatos con la clase Validaciones
+    if (!Validaciones::validarCampo($nombre, 'nombre')) {
+        manejarError('El nombre debe contener solo letras y espacios (3-40 caracteres)', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!Validaciones::validarCampo($apellido, 'nombre')) {
+        manejarError('El apellido debe contener solo letras y espacios (3-40 caracteres)', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!Validaciones::validarCampo($cedula, 'cedula')) {
+        manejarError('La cédula debe tener 7 u 8 dígitos numéricos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!empty($correo) && !Validaciones::validarCampo($correo, 'correo')) {
+        manejarError('El correo electrónico no tiene un formato válido', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!Validaciones::validarCampo($usuario, 'usuario')) {
+        manejarError('El usuario debe tener entre 4 y 20 caracteres (letras, números, guiones y guiones bajos)', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (!empty($password) && !Validaciones::validarCampo($password, 'password')) {
+        manejarError('La contraseña debe tener entre 4 y 20 caracteres', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+    
+    if (empty($roles)) {
+        manejarError('Debe seleccionar al menos un rol', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+    }
+
+    // Crear conexión para validaciones de teléfono
+    $database = new Database();
+    $conexion = $database->getConnection();
+
+     // Validar teléfonos con prefijo
+    foreach ($telefonos as $tel) {
+        if (!empty($tel['numero'])) {
+            $numero = trim($tel['numero']);
+            $idPrefijo = $tel['prefijo'] ?? null;
+
+            // Validar que solo contenga números
+            if (!preg_match('/^[0-9]+$/', $numero)) {
+                manejarError('El número de teléfono solo puede contener dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            }
+
+            // Validar que no empiece con 0
+            if (substr($numero, 0, 1) === '0') {
+                manejarError('El número de teléfono no puede empezar con 0', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+            }
+
+            // Validar longitud según el prefijo
+            if ($idPrefijo) {
+                require_once __DIR__ . '/../modelos/Prefijo.php';
+                $prefijoModel = new Prefijo($conexion);
+                $prefijoData = $prefijoModel->obtenerPorId($idPrefijo);
+
+                if ($prefijoData && isset($prefijoData['max_digitos'])) {
+                    $maxDigitos = (int)$prefijoData['max_digitos'];
+                    if (strlen($numero) !== $maxDigitos) {
+                        manejarError("El número de teléfono debe tener exactamente {$maxDigitos} dígitos para el prefijo {$prefijoData['codigo_prefijo']}", "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+                    }
+                }
+            } else {
+                // Si no hay prefijo, validar longitud mínima general
+                if (strlen($numero) < 10) {
+                    manejarError('El número de teléfono debe contener al menos 10 dígitos', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
+                }
+            }
         }
     }
 
     try {
-        $database = new Database();
-        $conexion = $database->getConnection();
 
         // Verificar que el usuario existe
         $persona = new Persona($conexion);
         if (!$persona->obtenerPorId($id)) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'Usuario no encontrado';
-            header("Location: ../vistas/configuracion/usuario/usuario.php");
-            exit();
+            manejarError('Usuario no encontrado', '../vistas/configuracion/usuario/usuario.php');
         }
 
         // Verificar duplicados (excluyendo al usuario actual)
-        $usuario = trim($_POST['usuario']);
-        $cedula = trim($_POST['cedula']);
-
         $stmt = $conexion->prepare("SELECT IdPersona FROM persona WHERE (usuario = :usuario OR cedula = :cedula) AND IdPersona != :id");
         $stmt->bindParam(':usuario', $usuario);
         $stmt->bindParam(':cedula', $cedula);
@@ -208,25 +609,20 @@ function editarUsuario() {
         $stmt->execute();
 
         if ($stmt->rowCount() > 0) {
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = 'El usuario o cédula ya están en uso por otro registro';
-            header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-            exit();
+            manejarError('El usuario o cédula ya están en uso por otro registro', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
         }
 
         // Configurar datos actualizados
-        $persona->IdNacionalidad = $_POST['nacionalidad'] === 'V' ? 1 : 2;
+        $persona->IdNacionalidad = $nacionalidad === 'V' ? 1 : 2;
         $persona->cedula = $cedula;
-        $persona->nombre = trim($_POST['nombre']);
-        $persona->apellido = trim($_POST['apellido']);
-        $persona->correo = !empty($_POST['correo']) ? trim($_POST['correo']) : null;
+        $persona->nombre = $nombre;
+        $persona->apellido = $apellido;
+        $persona->correo = !empty($correo) ? $correo : null;
         $persona->usuario = $usuario;
-        $persona->IdCondicion = (int)$_POST['condicion'];
-        $roles = $_POST['roles'];
-        $telefonos = $_POST['telefonos'] ?? [];
-        $password = $_POST['password'] ?? '';
+        $persona->IdEstadoAcceso = (int)$status_acceso;
+        $persona->IdEstadoInstitucional = (int)$status_institucional;
 
-        // Iniciar transacción PRINCIPAL (solo esta)
+        // Iniciar transacción
         $conexion->beginTransaction();
 
         try {
@@ -242,41 +638,35 @@ function editarUsuario() {
                 }
             }
 
-            // 3. Actualizar roles (MODIFICADO - sin transacción interna)
+            // 3. Actualizar roles
             $detallePerfil = new DetallePerfil($conexion);
-            if (!$detallePerfil->actualizarRoles($id, $roles, false)) { // Pasamos false para no usar transacción
+            if (!$detallePerfil->actualizarRoles($id, $roles, false)) {
                 throw new Exception("Error al actualizar roles");
             }
 
-            // 4. Actualizar teléfonos (MODIFICADO - sin transacción interna)
+            // 4. Actualizar teléfonos
             $telefonoModel = new Telefono($conexion);
-            if (!$telefonoModel->actualizarTelefonos($id, $telefonos, false)) { // Pasamos false para no usar transacción
+            if (!$telefonoModel->actualizarTelefonos($id, $telefonos, false)) {
                 throw new Exception("Error al actualizar teléfonos");
             }
 
-            // Confirmar transacción PRINCIPAL
+            // Confirmar transacción
             $conexion->commit();
 
             $_SESSION['alert'] = 'success';
-            $_SESSION['success_message'] = 'Usuario actualizado correctamente';
+            $_SESSION['message'] = 'Usuario actualizado correctamente';
             header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
             exit();
 
         } catch (Exception $e) {
             $conexion->rollBack();
             error_log("Error en transacción de actualización: " . $e->getMessage());
-            $_SESSION['alert'] = 'error';
-            $_SESSION['error_message'] = $e->getMessage();
-            header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-            exit();
+            manejarError($e->getMessage(), "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
         }
 
     } catch (Exception $e) {
         error_log("Error general en edición: " . $e->getMessage());
-        $_SESSION['alert'] = 'error';
-        $_SESSION['error_message'] = 'Error interno del servidor';
-        header("Location: ../vistas/configuracion/usuario/editar_usuario.php?id=$id");
-        exit();
+        manejarError('Error interno del servidor', "../vistas/configuracion/usuario/editar_usuario.php?id=$id");
     }
 }
 
@@ -340,4 +730,252 @@ function eliminarUsuario() {
         header("Location: ../vistas/configuracion/usuario/usuario.php?error=error_interno");
         exit();
     }
+}
+
+/**
+ * Obtiene el IdPerfil de una persona
+ */
+function obtenerPerfil() {
+    header('Content-Type: application/json');
+
+    try {
+        $id = $_GET['id'] ?? '';
+
+        if (empty($id) || !is_numeric($id)) {
+            echo json_encode(['success' => false, 'error' => 'ID inválido']);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Obtener el IdPerfil de la persona
+        $sql = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :id LIMIT 1";
+        $stmt = $conexion->prepare($sql);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'success' => true,
+                'IdPerfil' => $row['IdPerfil']
+            ]);
+        } else {
+            echo json_encode([
+                'success' => false,
+                'error' => 'No se encontró perfil para esta persona'
+            ]);
+        }
+        exit();
+
+    } catch (Exception $e) {
+        error_log("Error al obtener perfil: " . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'error' => 'Error al obtener el perfil'
+        ]);
+        exit();
+    }
+}
+
+/**
+ * Verifica si una cédula existe y retorna información completa de la persona
+ * Incluye validación para convertir estudiantes mayores de 18 en trabajadores
+ */
+function verificarCedulaCompleto() {
+    header('Content-Type: application/json');
+
+    try {
+        $cedula = $_GET['cedula'] ?? '';
+        $idNacionalidad = $_GET['idNacionalidad'] ?? '';
+
+        if (empty($cedula) || empty($idNacionalidad)) {
+            echo json_encode(['existe' => false]);
+            exit();
+        }
+
+        if (!is_numeric($idNacionalidad)) {
+            echo json_encode(['existe' => false, 'error' => 'ID de nacionalidad inválido']);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Buscar la persona con todos sus datos
+        $sql = "SELECT
+                    p.IdPersona,
+                    p.nombre,
+                    p.apellido,
+                    p.cedula,
+                    p.IdNacionalidad,
+                    p.fecha_nacimiento,
+                    p.IdSexo,
+                    p.correo,
+                    p.direccion,
+                    p.usuario,
+                    p.password,
+                    p.IdEstadoAcceso,
+                    n.nacionalidad,
+                    s.sexo,
+                    dp.IdPerfil,
+                    pr.nombre_perfil,
+                    TIMESTAMPDIFF(YEAR, p.fecha_nacimiento, CURDATE()) AS edad
+                FROM persona p
+                LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+                LEFT JOIN sexo s ON p.IdSexo = s.IdSexo
+                LEFT JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
+                LEFT JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil
+                WHERE p.cedula = :cedula
+                AND p.IdNacionalidad = :idNacionalidad
+                LIMIT 1";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bindParam(':cedula', $cedula);
+        $stmt->bindParam(':idNacionalidad', $idNacionalidad, PDO::PARAM_INT);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // Verificar si es estudiante y mayor de 18
+            $esEstudiante = ($persona['IdPerfil'] == 3);
+            $edad = (int)$persona['edad'];
+            $puedeConvertirse = $esEstudiante && $edad >= 18;
+
+            // Obtener teléfonos de la persona
+            $sqlTelefonos = "SELECT IdTelefono, numero_telefono, IdPrefijo FROM telefono WHERE IdPersona = :idPersona";
+            $stmtTel = $conexion->prepare($sqlTelefonos);
+            $stmtTel->bindParam(':idPersona', $persona['IdPersona'], PDO::PARAM_INT);
+            $stmtTel->execute();
+            $telefonos = $stmtTel->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'existe' => true,
+                'esEstudiante' => $esEstudiante,
+                'edad' => $edad,
+                'puedeConvertirse' => $puedeConvertirse,
+                'persona' => [
+                    'IdPersona' => $persona['IdPersona'],
+                    'nombre' => $persona['nombre'],
+                    'apellido' => $persona['apellido'],
+                    'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido'],
+                    'cedula' => $persona['cedula'],
+                    'nacionalidad' => $persona['nacionalidad'],
+                    'IdNacionalidad' => $persona['IdNacionalidad'],
+                    'fecha_nacimiento' => $persona['fecha_nacimiento'],
+                    'IdSexo' => $persona['IdSexo'],
+                    'sexo' => $persona['sexo'],
+                    'correo' => $persona['correo'],
+                    'direccion' => $persona['direccion'],
+                    'usuario' => $persona['usuario'],
+                    'tieneCredenciales' => !empty($persona['usuario']) && !empty($persona['password']),
+                    'IdEstadoAcceso' => $persona['IdEstadoAcceso'],
+                    'IdPerfil' => $persona['IdPerfil'],
+                    'nombre_perfil' => $persona['nombre_perfil'],
+                    'telefonos' => $telefonos
+                ]
+            ]);
+        } else {
+            echo json_encode(['existe' => false]);
+        }
+
+    } catch (Exception $e) {
+        error_log("Error en verificarCedulaCompleto: " . $e->getMessage());
+        echo json_encode([
+            'existe' => false,
+            'error' => 'Error al verificar la cédula'
+        ]);
+    }
+    exit();
+}
+
+/**
+ * Obtiene el curso siguiente para un estudiante (usado en inscripciones)
+ */
+function obtenerCursoSiguienteEstudiante() {
+    header('Content-Type: application/json');
+
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        $idEstudiante = $_GET['idEstudiante'] ?? 0;
+
+        if (!$idEstudiante) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'ID de estudiante no proporcionado'
+            ]);
+            exit();
+        }
+
+        $personaModel = new Persona($conexion);
+
+        // Obtener datos básicos del estudiante
+        $estudiante = $personaModel->obtenerEstudiantePorId($idEstudiante);
+
+        if (!$estudiante) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Estudiante no encontrado'
+            ]);
+            exit();
+        }
+
+        // Obtener curso actual
+        $cursoActual = $personaModel->obtenerCursoActual($idEstudiante);
+
+        // Obtener curso siguiente
+        $cursoSiguienteData = $personaModel->obtenerCursoSiguiente($idEstudiante);
+
+        if ($cursoSiguienteData === null) {
+            echo json_encode([
+                'success' => false,
+                'graduado' => true,
+                'mensaje' => 'El estudiante ya completó todos los cursos disponibles'
+            ]);
+            exit();
+        }
+
+        echo json_encode([
+            'success' => true,
+            'estudiante' => [
+                'IdPersona' => $estudiante['IdPersona'],
+                'nombre' => $estudiante['nombre'],
+                'apellido' => $estudiante['apellido'],
+                'cedula' => $estudiante['cedula'],
+                'nacionalidad' => $estudiante['nacionalidad']
+            ],
+            'cursoActual' => $cursoActual,
+            'cursoSiguiente' => [
+                'IdCurso' => $cursoSiguienteData['IdCurso'],
+                'curso' => $cursoSiguienteData['curso'],
+                'IdNivel' => $cursoSiguienteData['IdNivel']
+            ],
+            'secciones' => $cursoSiguienteData['secciones'],
+            'seccionPorDefecto' => $cursoSiguienteData['seccionPorDefecto']
+        ]);
+
+    } catch (Exception $e) {
+        error_log("Error en obtenerCursoSiguienteEstudiante: " . $e->getMessage());
+        echo json_encode([
+            'success' => false,
+            'error' => 'Error al obtener información del curso'
+        ]);
+    }
+    exit();
+}
+
+/**
+ * Maneja los errores de forma consistente
+ * @param string $mensaje Mensaje de error a mostrar
+ * @param string $urlRedireccion URL a la que redirigir (opcional)
+ */
+function manejarError(string $mensaje, string $urlRedireccion = '../vistas/configuracion/usuario/nuevo_usuario.php') {
+    $_SESSION['alert'] = 'error';
+    $_SESSION['message'] = $mensaje;
+    header("Location: $urlRedireccion");
+    exit();
 }

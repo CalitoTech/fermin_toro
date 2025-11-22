@@ -1,105 +1,5 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <!-- basic -->
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!-- mobile metas -->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1">
-    <!-- site metas -->
-    <title>UECFT Araure - Solicitud de Cupo</title>
-    <meta name="keywords" content="">
-    <meta name="description" content="">
-    <meta name="author" content="">
-    <!-- bootstrap css -->
-    <link rel="stylesheet" href="css/bootstrap.min.css">
-    <!-- style css -->
-    <link rel="stylesheet" href="css/style.css">
-    <!-- Responsive-->
-    <link rel="stylesheet" href="css/responsive.css">
-    <!-- fevicon -->
-    <link rel="icon" href="images/fermin.png"/>
-    <!-- Scrollbar Custom CSS -->
-    <link rel="stylesheet" href="css/jquery.mCustomScrollbar.min.css">
-    <!-- Tweaks for older IEs-->
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- SweetAlert2 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <!-- Toastr CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-    <link rel="stylesheet" href="../../assets/css/solicitud_cupo.css">
-</head>
-<body class="main-layout">
-    <!-- loader  -->
-    <div class="loader_bg">
-        <div class="loader"><img src="images/loading.gif" alt="#" /></div>
-    </div>
-    <!-- end loader -->
-    <!-- header -->
-    <header>
-        <!-- header inner -->
-        <div class="header">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-xl-3 col-lg-3 col-md-3 col-sm-3 col logo_section">
-                        <div class="full">
-                            <div class="center-desk">
-                                <div class="logo">
-                                    <a href="index.html"><img src="images/fermin.jpg" alt="#" /></a>
-                                </div>
-                                <div class="logo2">
-                                    <a href="index.html">UECFT Araure</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xl-9 col-lg-9 col-md-9 col-sm-9">
-                        <div class="header_information">
-                            <nav class="navigation navbar navbar-expand-md navbar-dark ">
-                                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false" aria-label="Toggle navigation">
-                                <span class="navbar-toggler-icon"></span>
-                                </button>
-                                <div class="collapse navbar-collapse" id="navbarsExample04">
-                                    <ul class="navbar-nav mr-auto">
-                                        <li class="nav-item">
-                                            <a class="nav-link" href="about.html">¿Quiénes Somos?</a>
-                                        </li> 
-                                        <li class="nav-item dropdown">
-                                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownNiveles" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Niveles E.</a>
-                                            <div class="dropdown-menu" aria-labelledby="navbarDropdownNiveles">
-                                                <a class="dropdown-item" href="#">Preescolar</a>
-                                                <a class="dropdown-item" href="#">Primaria</a>
-                                                <a class="dropdown-item" href="#">Media General</a>
-                                            </div>
-                                        </li> 
-                                        <li class="nav-item dropdown">
-                                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMultimedia" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Multimedia</a>
-                                            <div class="dropdown-menu" aria-labelledby="navbarDropdownMultimedia">
-                                                <a class="dropdown-item" href="nuestravoz.html">Nuestra Voz</a>
-                                            </div>
-                                        </li>
-                                        <li class="nav-item">
-                                            <a class="nav-link" href="solicitud_cupo.php">Solicitud de Cupo</a>
-                                        </li>
-                                        <!-- Botón de Iniciar Sesión como elemento del menú en móviles -->
-                                        <li class="nav-item d-block d-md-none">
-                                            <a class="nav-link btn-login" href="../login/login.php">Iniciar Sesión</a>
-                                        </li>
-                                    </ul>
-                                    <!-- Botón de Iniciar Sesión fuera del menú en desktop -->
-                                    <div class="sign_btn d-none d-md-block"><a href="../login/login.php">Iniciar Sesión</a></div>
-                                </div>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-    <!-- end header inner -->
-    <!-- end header -->
+
+    <?php include 'layouts/header.php'; ?>
     
     <!-- Sección de Cursos Disponibles -->
     <div class="section-container" style="padding-top: 30px;"> <!-- Añadido padding-top -->
@@ -109,38 +9,77 @@
                 <!-- Espacio adicional en móviles -->
                 <div class="d-block d-md-none" style="height: 60px;"></div>
                 
-                <h2 style="color: #c90000; margin-bottom: 1rem;">Solicitud de Cupo</h2>
-                
                 <?php
                 require_once __DIR__ . '/../../modelos/Nivel.php';
                 require_once __DIR__ . '/../../modelos/Curso.php';
                 require_once __DIR__ . '/../../modelos/FechaEscolar.php';
                 require_once __DIR__ . '/../../modelos/Parentesco.php';
                 require_once __DIR__ . '/../../modelos/Urbanismo.php';
+                require_once __DIR__ . '/../../modelos/Nacionalidad.php';
+                require_once __DIR__ . '/../../modelos/Sexo.php';
+                require_once __DIR__ . '/../../modelos/TipoTrabajador.php';
                 require_once __DIR__ . '/../../config/conexion.php';
                 $database = new Database();
                 $conexionPDO = $database->getConnection();
 
                 $modeloNivel = new Nivel($conexionPDO);
                 $modeloCurso = new Curso($conexionPDO);
-                $modeloFechaEscolar = new FechaEscolar($conexionPDO);
                 $modeloParentesco = new Parentesco($conexionPDO);
                 $modeloUrbanismo = new Urbanismo($conexionPDO);
+                $modeloNacionalidad = new Nacionalidad($conexionPDO);
+                $modeloSexo = new Sexo($conexionPDO);
+                $modeloTipoTrabajador = new TipoTrabajador($conexionPDO);
+                $modeloFechaEscolar = new FechaEscolar($conexionPDO);
                 
+                // Obtener año escolar activo
+                $añoActivo = $modeloFechaEscolar->obtenerActivo();
+
+                $inscripcionesAbiertas = $añoActivo && $añoActivo['inscripcion_activa'];
+            
+                ?>
+                <?php if ($inscripcionesAbiertas): ?>
+                <?php
+                // Variable para preseleccionar el año
+                $yearSelected = '';
+                
+                // Obtener todos los años escolares
+                $añosEscolares = $modeloFechaEscolar->obtenerTodos();
+
+                // Si hay un año activo, usarlo como predeterminado
+                if ($añoActivo) {
+                    $yearSelected = $añoActivo['IdFecha_Escolar'];
+                } else {
+                    // Si no hay año activo, usar el más reciente
+                    if (!empty($añosEscolares)) {
+                        $yearSelected = $añosEscolares[0]['IdFecha_Escolar'];
+                    }
+                }
+
+                // Obtener todos los sexos
+                $sexos = $modeloSexo->obtenerTodos();
+
+                // Obtener todos las nacionalidades con nombres largos
+                $nacionalidades = $modeloNacionalidad->obtenerConNombresLargos();
+
                 // Obtener todos los urbanismos
                 $urbanismos = $modeloUrbanismo->obtenerTodos();
 
                 // Obtener todos los parentescos
                 $parentescos = $modeloParentesco->obtenerTodos();
-                
+
+                // Obtener todos los tipos de trabajador
+                $tiposTrabajador = $modeloTipoTrabajador->obtenerTodos();
+
                 // Obtener año escolar activo
                 $anioEscolar = $modeloFechaEscolar->obtenerActivo();
+                ?>  
                 
-                if ($anioEscolar) {
+                    <h2 style="color: #c90000; margin-bottom: 1rem;">Solicitud de Cupo</h2>
+                    <?php if ($anioEscolar) {
                     echo '<p class="text-muted mb-3"><i class="fas fa-calendar-alt mr-2"></i>Inscripción para el año escolar: <strong>' . $anioEscolar['fecha_escolar'] . '</strong></p>';
-                }
-                ?>
-                    <p style="margin-bottom: 2rem;">Seleccione el curso al que desea inscribir a su representado:</p>
+                    }
+                    ?>
+                    <p style="margin-bottom: 2rem;">Seleccione el curso al que desea solicitar cupo para su representado:</p>
                     
                     <?php
                     
@@ -148,7 +87,7 @@
                     $niveles = $modeloNivel->obtenerTodos();
                     
                     foreach ($niveles as $nivel) {
-                        echo '<h3 class="nivel-title">Nivel ' . $nivel['nivel'] . '</h3>';
+                        echo '<h3 class="nivel-title">' . $nivel['nivel'] . '</h3>';
                         
                         // Obtener cursos para este nivel
                         $cursos = $modeloCurso->obtenerPorNivel($nivel['IdNivel']);
@@ -167,9 +106,11 @@
                                 echo '<tr>';
                                 echo '<td>' . $curso['curso'] . '</td>';
                                 echo '<td>';
-                                echo '<button class="btn-registro" onclick="abrirFormulario(' . $curso['IdCurso'] . ')">Inscribir</button>';
+                                echo '<button class="btn-registro" onclick="mostrarInformacionModal(' . $curso['IdCurso'] . ', ' . $nivel['IdNivel'] . ')">Solicitar Cupo</button>';
                                 echo ' ';
                                 echo '<button class="btn-requisitos" onclick="mostrarRequisitos(' . $nivel['IdNivel'] . ')">Ver Requisitos</button>';
+                                echo ' ';
+                                echo '<button class="btn-descargar-planilla" onclick="abrirModalImprimir(' . $curso['IdCurso'] . ')"><i class="fas fa-file-alt"></i>Descargar Planilla</button>';
                                 echo '</td>';
                                 echo '</tr>';
                             }
@@ -181,10 +122,31 @@
                         }
                     }
                     ?>
-                </div>
+    <?php else: ?>
+        <!-- Mensaje cuando las inscripciones están cerradas -->
+        <div class="text-center py-5 my-4" style="background-color: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 800px; margin: 2rem auto; padding: 2rem;">
+            <i class="fas fa-lock" style="font-size: 3rem; color: #c90000; margin-bottom: 1rem;"></i>
+            <h4 style="color: #c90000; margin-bottom: 1rem;">Periodo de Inscripción Finalizado</h4>
+            <p style="color: #555; font-size: 1.1rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                El periodo de inscripción para el año escolar ha concluido. 
+                <strong>No se aceptan nuevas solicitudes de cupo en este momento.</strong>
+            </p>
+            <p style="color: #666; font-size: 0.95rem; margin-top: 1.5rem;">
+                Para más información, comuníquese con la oficina de administración al 
+                <strong>+58 414-5641168</strong>.
+            </p>
+            <div class="mt-4">
+                <i class="fas fa-info-circle" style="color: #c90000; margin-right: 8px;"></i>
+                <small style="color: #888;">
+                    Las inscripciones se reabrirán en el próximo periodo escolar.
+                </small>
             </div>
         </div>
-    </div>
+    <?php endif; ?>
+    </div> <!-- Cierre de col-md-12 -->
+    </div> <!-- Cierre de row -->
+    </div> <!-- Cierre de container -->
+    </div> <!-- Cierre de section-container -->
     
     <!-- Modal para mostrar requisitos -->
     <div class="modal fade modal-requisitos" id="requisitosModal" tabindex="-1" role="dialog" aria-labelledby="requisitosModalLabel" aria-hidden="true">
@@ -209,11 +171,169 @@
                     <button type="button" class="btn btn-cerrar-modal" data-dismiss="modal">
                         <i class="fas fa-times mr-1"></i> Cerrar
                     </button>
+                    <a class="btn btn-requisitos" 
+                        href="../registros/requisito/reporte_requisitos.php?nivel=<?= $nivel['IdNivel'] ?>" 
+                        target="_blank">
+                        Imprimir Requisitos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal informativo antes del formulario -->
+    <div class="modal fade modal-informacion" id="informacionModal" tabindex="-1" role="dialog" aria-labelledby="informacionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content" style="border-radius: 10px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);">
+                <div class="modal-header" style="background-color: #c90000; color: white; border-radius: 10px 10px 0 0; padding: 1rem 1.5rem;">
+                    <h5 class="modal-title" id="informacionModalLabel" style="color: white !important;">
+                        <i class="fas fa-info-circle mr-2"></i> Instrucciones para la Solicitud de Cupo
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- <p class="text-center mb-4" style="font-size: 1.1rem; color: #333;">
+                        <strong>SIGA LAS SIGUIENTES INSTRUCCIONES PARA REALIZAR SU SOLICITUD DE CUPO:</strong>
+                    </p> -->
+
+                    <!-- Tabla para los pasos -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered" style="border: 2px solid #dee2e6; border-radius: 8px; overflow: hidden; margin-bottom: 1.5rem;">
+                            <thead>
+                                <tr style="background-color: #c90000; color: white; text-align: center;">
+                                    <th style="width: 10%; padding: 0.75rem; vertical-align: middle; font-size: 1.1rem;">#</th>
+                                    <th style="padding: 0.75rem; vertical-align: middle; font-size: 1.05rem;">Instrucción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold; background-color: #f8f9fa;">1</td>
+                                    <td style="color: #444; font-size: 0.95rem; line-height: 1.6;">
+                                        <strong>Siga las instrucciones</strong> a continuación, para realizar satisfactoriamente su solicitud de cupo.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold; background-color: #f8f9fa;">2</td>
+                                    <td style="color: #444; font-size: 0.95rem; line-height: 1.6;">
+                                        <strong>Descargue y lea los requisitos</strong> para el nivel correspondiente, que deberán ser consignados en la institución el <strong>día en que se le notifique</strong>, de <strong>8:00 AM a 12:00 PM</strong>, en la oficina de Administración. <strong><a href="#" id="linkDescargarRequisitos" target="_blank">[Descargar requisitos]</a></strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold; background-color: #f8f9fa;">3</td>
+                                    <td style="color: #444; font-size: 0.95rem; line-height: 1.6;">
+                                        Oprima <strong>“Continuar”</strong> para llenar en línea la Solicitud de Cupo. Debe completar todos los campos obligatorios. Al finalizar, imprima el formulario para consignarlo junto con los demás recaudos.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; font-weight: bold; background-color: #f8f9fa;">4</td>
+                                    <td style="color: #444; font-size: 0.95rem; line-height: 1.6;">
+                                        Consigne <strong>todos los recaudos solicitados</strong> en la oficina de Administración. Si tiene dudas, comuníquese al <strong>+58 414-5641168</strong>.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info mt-3" style="background-color: #f0f7ff; border-color: #c9e2ff; color: #004085; font-size: 0.9rem; border-radius: 8px;">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        <strong>Recordatorio:</strong> Tenga a mano los datos personales del estudiante, padres y representante legal para llenar el formulario sin interrupciones.
+                    </div>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f9fa; border-top: none; border-radius: 0 0 10px 10px; padding: 1rem;">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 4px; padding: 0.5rem 1.2rem;">
+                        <i class="fas fa-times mr-1"></i> Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnContinuarFormulario" style="background-color: #c90000; border-color: #c90000; border-radius: 4px; padding: 0.5rem 1.2rem;">
+                        <i class="fas fa-arrow-right mr-1"></i> Continuar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- Modal para imprimir planilla -->
+    <div class="modal fade modal-imprimir-planilla" id="imprimirPlanillaModal" tabindex="-1" role="dialog" aria-labelledby="imprimirPlanillaModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content" style="border-radius: 10px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);">
+                <div class="modal-header" style="background-color: #c90000; color: white; border-radius: 10px 10px 0 0;">
+                    <h5 class="modal-title" id="imprimirPlanillaModalLabel" style="color: white !important;">
+                        <i class="fas fa-print mr-2"></i> Imprimir planilla de Solicitud de Cupo
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" style="color: white; opacity: 0.9;">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="formImprimirPlanilla">
+                        <!-- Año Escolar -->
+                        <div class="form-group required-field mb-3">
+                            <label for="anioEscolar">Indique Año Escolar en el que solicitó cupo</label>
+                            <select class="form-control" id="anioEscolar" name="anioEscolar" required>
+                                <?php foreach ($añosEscolares as $año): ?>
+                                    <option value="<?= $año['IdFecha_Escolar'] ?>" <?= ($año['IdFecha_Escolar'] == $yearSelected) ? 'selected' : '' ?>>
+                                        <?= $año['fecha_escolar'] ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <!-- Nacionalidad y Cédula -->
+                        <div class="form-group required-field mb-3">
+                            <label>Documento del Estudiante o Representante</label>
+                            <div class="input-group">
+                                <!-- Selector de nacionalidad -->
+                                <select class="form-select form-select-sm" name="nacionalidad" id="nacionalidad" style="
+                                    max-width: 60px;
+                                    border-top-right-radius: 0;
+                                    border-bottom-right-radius: 0;
+                                    border-right: none;
+                                    text-align: center;
+                                    font-weight: bold;
+                                    background: #f8f9fa;
+                                    color: #c90000;
+                                    font-size: 0.9rem;
+                                ">
+                                    <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                        <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+
+                                <!-- Campo de cédula -->
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    id="documentoEstudiante" 
+                                    name="documentoEstudiante"
+                                    placeholder="Ej: 12345678"
+                                    minlength="7" 
+                                    maxlength="11" 
+                                    pattern="[0-9]+" 
+                                    onkeypress="return onlyNumber(event)"
+                                    required
+                                    style="border-top-left-radius: 0; border-bottom-left-radius: 0;"
+                                >
+                            </div>
+                            <p class="text-muted mt-1" style="font-size: 0.8rem;">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Ingrese solo el número de cédula.
+                            </p>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f9fa; border-top: none; border-radius: 0 0 10px 10px; padding: 1rem;">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="border-radius: 4px; padding: 0.5rem 1.2rem;">
+                        <i class="fas fa-times mr-1"></i> Cerrar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="btnImprimirPlanilla" style="background-color: #c90000; border-color: #c90000; border-radius: 4px; padding: 0.5rem 1.2rem;">
+                        <i class="fas fa-print mr-1"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para el formulario de inscripción -->
     <div class="modal fade modal-formulario" id="formularioModal" tabindex="-1" role="dialog" aria-labelledby="formularioModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
@@ -225,15 +345,17 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="formInscripcion">
+                    <form id="formInscripcion" data-origen="modal">
                         <input type="hidden" id="idCursoSeleccionado" name="idCurso">
-                        
+                        <input type="hidden" id="idNivelSeleccionado" name="idNivelSeleccionado">
+                        <input type="hidden" name="idTipoInscripcion" value="1">
+
                         <!-- Datos del Estudiante -->
                         <div class="card mb-4">
-                            <div class="card-header form-title" style="background-color: #c90000; color: white;">
+                            <div class="card-header form-title" style="background-color: #c90000; color: white;" data-toggle="collapse" data-target="#datosEstudiante">
                                 <h5><i class="fas fa-child mr-2"></i>Datos del Estudiante</h5>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body collapse show" id="datosEstudiante">
 
                                 <!-- Agregar esta leyenda al inicio del formulario -->
                                 <div class="form-legend">
@@ -244,13 +366,21 @@
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
                                             <label for="estudianteApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos" required>
+                                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
+                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                            minlength="3" maxlength="40"
+                                            onkeypress="return onlyText(event)"
+                                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
                                             <label for="estudianteNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres" required>
+                                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
+                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                            minlength="3" maxlength="40"
+                                            onkeypress="return onlyText(event)"
+                                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
                                         </div>
                                     </div>
                                 </div>
@@ -258,25 +388,12 @@
                                 <div class="row">
                                     <div class="col-md-3">
                                         <div class="form-group required-field">
-                                            <label for="estudianteNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
                                             <label for="estudianteSexo">Sexo</label>
                                             <select class="form-control" id="estudianteSexo" name="estudianteSexo" required>
-                                                <option value="F">Femenino</option>
-                                                <option value="M">Masculino</option>
+                                                <option value="">Seleccione un sexo</option>
+                                                <?php foreach ($sexos as $sexo): ?>
+                                                    <option value="<?= $sexo['IdSexo'] ?>"><?= $sexo['sexo'] ?></option>
+                                                <?php endforeach; ?>
                                             </select>
                                         </div>
                                     </div>
@@ -286,311 +403,130 @@
                                             <input type="date" class="form-control" id="estudianteFechaNacimiento" name="estudianteFechaNacimiento" required>
                                         </div>
                                     </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group required-field">
+                                            <label for="estudianteNacionalidad">Nacionalidad</label>
+                                            <select class="form-control" id="estudianteNacionalidad" name="estudianteNacionalidad" required>
+                                                <option value="">Seleccione una nacionalidad</option>
+                                                <?php foreach ($nacionalidades as $nacionalidad): ?>
+                                                    <option value="<?= $nacionalidad['IdNacionalidad'] ?>"><?= $nacionalidad['nombre_largo'] ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3" id="estudianteCedulaContainer">
+                                        <div class="form-group required-field">
+                                            <label for="estudianteCedula">Cédula</label>
+                                            <input type="text" class="form-control" id="estudianteCedula" name="estudianteCedula"
+                                            minlength="7" maxlength="8"
+                                            pattern="[0-9]+" onkeypress="return onlyNumber(event)" readonly required>
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> Primero ingrese la fecha de nacimiento
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
-                                
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group required-field">
                                             <label for="estudianteLugarNacimiento">Lugar de Nacimiento</label>
-                                            <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento" required>
+                                            <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento"
+                                            minlength="3" maxlength="40"
+                                            oninput="formatearTexto1()" placeholder="Ej: Araure, Portuguesa" required>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteTelefono">Teléfono</label>
-                                            <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono" required>
+                                    <div class="col-md-6" id="estudianteTelefonoContainer" style="display: none;">
+                                        <div class="form-group">
+                                            <label for="estudianteTelefono">Teléfono <small class="text-muted">(Opcional)</small></label>
+                                            <div class="input-group">
+                                                <!-- Prefix selector -->
+                                                <div class="position-relative" style="max-width: 90px;">
+                                                    <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono"
+                                                           id="estudianteTelefonoPrefijo_input" maxlength="4" data-prefijo-tipo="internacional"
+                                                           onkeypress="return /[0-9+]/.test(event.key)"
+                                                           oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
+                                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;"
+                                                           value="+58">
+                                                    <input type="hidden" id="estudianteTelefonoPrefijo" name="estudianteTelefonoPrefijo">
+                                                    <input type="hidden" id="estudianteTelefonoPrefijo_nombre" name="estudianteTelefonoPrefijo_nombre">
+                                                    <div id="estudianteTelefonoPrefijo_resultados" class="autocomplete-results d-none"></div>
+                                                </div>
+
+                                                <!-- Phone number input -->
+                                                <input type="tel" class="form-control" id="estudianteTelefono" name="estudianteTelefono"
+                                                       minlength="10" maxlength="10"
+                                                       pattern="[0-9]+" onkeypress="return onlyNumber(event)"
+                                                       placeholder="4121234567"
+                                                       style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                            </div>
+                                            <!-- <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> Campo disponible para estudiantes de 10 años o más
+                                            </small> -->
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="form-group required-field">
                                     <label for="estudianteCorreo">Correo electrónico</label>
-                                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo" required>
+                                    <input type="email" class="form-control" id="estudianteCorreo" name="estudianteCorreo"
+                                    minlength="10" maxlength="50" placeholder="Ej: estudiante@correo.com" required>
                                 </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label>Tiene dificultad:</label>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="dificultadVisual" name="dificultadVisual">
-                                                <label class="form-check-label" for="dificultadVisual">Visual</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="dificultadAuditiva" name="dificultadAuditiva">
-                                                <label class="form-check-label" for="dificultadAuditiva">Auditiva</label>
-                                            </div>
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="dificultadMotora" name="dificultadMotora">
-                                                <label class="form-check-label" for="dificultadMotora">Motora</label>
-                                            </div>
-                                        </div>
+
+                                <div class="form-group required-field" id="estudiantePlantelContainer">
+                                    <label for="estudiantePlantel">Plantel donde cursó el último año escolar</label>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control buscador-input" id="estudiantePlantel_input" autocomplete="off" placeholder="Buscar o escribir nuevo plantel...">
+                                        <input type="hidden" id="estudiantePlantel" name="estudiantePlantel" required>
+                                        <input type="hidden" id="estudiantePlantel_nombre" name="estudiantePlantel_nombre">
+                                        <div id="estudiantePlantel_resultados" class="autocomplete-results d-none"></div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="esAlergico" name="esAlergico">
-                                                <label class="form-check-label" for="esAlergico">Es alérgico</label>
-                                            </div>
-                                            <input type="text" class="form-control mt-2" id="alergia" name="alergia" placeholder="¿A qué?" disabled>
-                                            
-                                            <div class="form-check mt-3">
-                                                <input class="form-check-input" type="checkbox" id="tieneEnfermedad" name="tieneEnfermedad">
-                                                <label class="form-check-label" for="tieneEnfermedad">Tiene alguna enfermedad</label>
-                                            </div>
-                                            <input type="text" class="form-control mt-2" id="enfermedad" name="enfermedad" placeholder="¿Cuál?" disabled>
-                                        </div>
-                                    </div>
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle"></i> Busque o escriba el nombre del plantel educativo
+                                    </small>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Datos de la Madre -->
-                        <div class="card mb-4">
-                            <div class="card-header" style="background-color: #c90000; color: white;">
-                                <h5><i class="fas fa-female mr-2"></i>Datos de la Madre</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="madreApellidos" name="madreApellidos" required>
-                                        </div>
+
+                                <div class="form-group">
+                                    <label>Discapacidades o condiciones especiales:</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered" id="discapacidadesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tipo de Discapacidad</th>
+                                                    <th>Descripción</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="discapacidadesBody">
+                                                <!-- Fila inicial se genera automáticamente -->
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="madreNombres" name="madreNombres" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="madreNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="madreNacionalidad" name="madreNacionalidad" required>
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="madreCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="madreCedula" name="madreCedula" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="madreParentesco">Parentesco</label>
-                                            <input type="text" class="form-control" id="madreParentesco" name="madreParentesco" value="Madre" readonly>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group required-field">
-                                    <label for="madreOcupacion">Ocupación</label>
-                                    <input type="text" class="form-control" id="madreOcupacion" name="madreOcupacion" required>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreUrbanismo">Urbanismo / Sector</label>
-                                            <select class="form-control" id="madreUrbanismo" name="madreUrbanismo" required>
-                                                <option value="">Seleccione un urbanismo</option>
-                                                <?php
-                                                foreach ($urbanismos as $urbanismo) {
-                                                    echo '<option value="'.$urbanismo['IdUrbanismo'].'">'.$urbanismo['urbanismo'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreDireccion">Dirección de Habitación</label>
-                                            <input type="text" class="form-control" id="madreDireccion" name="madreDireccion" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="madreTelefonoHabitacion">Teléfono de Habitación</label>
-                                            <input type="tel" class="form-control" id="madreTelefonoHabitacion" name="madreTelefonoHabitacion" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="madreCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="madreCelular" name="madreCelular" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="madreCorreo">Correo electrónico</label>
-                                            <input type="email" class="form-control" id="madreCorreo" name="madreCorreo" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="madreLugarTrabajo">Lugar de Trabajo</label>
-                                            <input type="text" class="form-control" id="madreLugarTrabajo" name="madreLugarTrabajo" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="madreTelefonoTrabajo">Teléfono del Trabajo</label>
-                                            <input type="tel" class="form-control" id="madreTelefonoTrabajo" name="madreTelefonoTrabajo">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="emergenciaNombre">En caso de emergencia, llamar a:</label>
-                                            <input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="emergenciaParentesco">Parentesco</label>
-                                            <select class="form-control" id="emergenciaParentesco" name="emergenciaParentesco" required>
-                                                <option value="">Seleccione un parentesco</option>
-                                                <?php
-                                                foreach ($parentescos as $parentesco) {
-                                                    echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="emergenciaCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="emergenciaCelular" name="emergenciaCelular" required>
-                                        </div>
-                                    </div>
+                                    <button type="button" id="btn-agregar-discapacidad" class="btn btn-sm btn-primary mt-2">
+                                        <i class="fas fa-plus"></i> Agregar otra discapacidad
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Datos del Padre -->
-                        <div class="card mb-4">
-                            <div class="card-header" style="background-color: #c90000; color: white;">
-                                <h5><i class="fas fa-male mr-2"></i>Datos del Padre</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="padreApellidos" name="padreApellidos" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="padreNombres" name="padreNombres" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="padreNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="padreNacionalidad" name="padreNacionalidad" required>
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="padreCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="padreCedula" name="padreCedula" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="padreParentesco">Parentesco</label>
-                                            <input type="text" class="form-control" id="padreParentesco" name="padreParentesco" value="Padre" readonly>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group required-field">
-                                    <label for="padreOcupacion">Ocupación</label>
-                                    <input type="text" class="form-control" id="padreOcupacion" name="padreOcupacion" required>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreUrbanismo">Urbanismo / Sector</label>
-                                            <select class="form-control" id="padreUrbanismo" name="padreUrbanismo" required>
-                                                <option value="">Seleccione un urbanismo</option>
-                                                <?php
-                                                foreach ($urbanismos as $urbanismo) {
-                                                    echo '<option value="'.$urbanismo['IdUrbanismo'].'">'.$urbanismo['urbanismo'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreDireccion">Dirección de Habitación</label>
-                                            <input type="text" class="form-control" id="padreDireccion" name="padreDireccion" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="padreTelefonoHabitacion">Teléfono de Habitación</label>
-                                            <input type="tel" class="form-control" id="padreTelefonoHabitacion" name="padreTelefonoHabitacion" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="padreCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="padreCelular" name="padreCelular" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="padreCorreo">Correo electrónico</label>
-                                            <input type="email" class="form-control" id="padreCorreo" name="padreCorreo" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="padreLugarTrabajo">Lugar de Trabajo</label>
-                                            <input type="text" class="form-control" id="padreLugarTrabajo" name="padreLugarTrabajo" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="padreTelefonoTrabajo">Teléfono del Trabajo</label>
-                                            <input type="tel" class="form-control" id="padreTelefonoTrabajo" name="padreTelefonoTrabajo">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <?php
+                        // Incluir funciones auxiliares para renderizar formularios
+                        require_once __DIR__ . '/includes/form_persona_fields.php';
+
+                        // Preparar opciones para los selects
+                        $data_options = [
+                            'nacionalidades' => $nacionalidades,
+                            'urbanismos' => $urbanismos,
+                            'parentescos' => $parentescos,
+                            'tiposTrabajador' => $tiposTrabajador
+                        ];
+
+                        // Renderizar bloque de la Madre (con contacto de emergencia)
+                        renderizarBloquePersona('madre', 'Datos de la Madre', 'fa-female', 'datosMadre', 'Madre', $data_options, '', true);
+
+                        // Renderizar bloque del Padre
+                        renderizarBloquePersona('padre', 'Datos del Padre', 'fa-male', 'datosPadre', 'Padre', $data_options, '', false);
+                        ?>
                         
                         <div id="repAutoInfo" class="representante-auto" style="display: none;">
                             <i class="fas fa-info-circle mr-2"></i>
@@ -635,119 +571,67 @@
                         </div>
 
                         <!-- Datos del Representante Legal -->
-                        <div class="card mb-4" id="seccionRepresentante" style="display: none;">
-                            <div class="card-header" style="background-color: #c90000; color: white;">
-                                <h5><i class="fas fa-user-tie mr-2"></i>Datos del Representante Legal</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="representanteApellidos" name="representanteApellidos">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="representanteNombres" name="representanteNombres">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="representanteNacionalidad">Nacionalidad</label>
-                                            <select class="form-control" id="representanteNacionalidad" name="representanteNacionalidad">
-                                                <option value="V">V</option>
-                                                <option value="E">E</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group required-field">
-                                            <label for="representanteCedula">Cédula</label>
-                                            <input type="text" class="form-control" id="representanteCedula" name="representanteCedula">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="representanteParentesco">Parentesco</label>
-                                            <select class="form-control required-field" id="representanteParentesco" name="representanteParentesco">
-                                                <option value="">Seleccione un parentesco</option>
-                                                <?php
-                                                foreach ($parentescos as $parentesco) {
-                                                    echo '<option value="'.$parentesco['IdParentesco'].'">'.$parentesco['parentesco'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-group required-field">
-                                    <label for="representanteOcupacion">Ocupación</label>
-                                    <input type="text" class="form-control" id="representanteOcupacion" name="representanteOcupacion">
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteUrbanismo">Urbanismo / Sector</label>
-                                            <select class="form-control" id="representanteUrbanismo" name="representanteUrbanismo">
-                                                <option value="">Seleccione un urbanismo</option>
-                                                <?php
-                                                foreach ($urbanismos as $urbanismo) {
-                                                    echo '<option value="'.$urbanismo['IdUrbanismo'].'">'.$urbanismo['urbanismo'].'</option>';
-                                                }
-                                                ?>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteDireccion">Dirección de Habitación</label>
-                                            <input type="text" class="form-control" id="representanteDireccion" name="representanteDireccion">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="representanteTelefonoHabitacion">Teléfono de Habitación</label>
-                                            <input type="tel" class="form-control" id="representanteTelefonoHabitacion" name="representanteTelefonoHabitacion">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="representanteCelular">Celular</label>
-                                            <input type="tel" class="form-control" id="representanteCelular" name="representanteCelular">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group required-field">
-                                            <label for="representanteCorreo">Correo electrónico</label>
-                                            <input type="email" class="form-control" id="representanteCorreo" name="representanteCorreo">
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="representanteLugarTrabajo">Lugar de Trabajo</label>
-                                            <input type="text" class="form-control" id="representanteLugarTrabajo" name="representanteLugarTrabajo">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="representanteTelefonoTrabajo">Teléfono del Trabajo</label>
-                                            <input type="tel" class="form-control" id="representanteTelefonoTrabajo" name="representanteTelefonoTrabajo">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="seccionRepresentante" style="display: none;">
+                            <?php
+                            // Renderizar bloque del Representante Legal (con Parentesco como select)
+                            echo '<div class="card mb-4">';
+                            echo '<div class="card-header" style="background-color: #c90000; color: white;">';
+                            echo '<h5><i class="fas fa-user-tie mr-2"></i>Datos del Representante Legal</h5>';
+                            echo '</div>';
+                            echo '<div class="card-body">';
+
+                            // Renderizar campos organizados por filas
+                            $fila_actual = [];
+                            $cols_actuales = 0;
+
+                            foreach ($campos_persona as $nombre_campo => $config) {
+                                $fila_actual[] = ['nombre' => $nombre_campo, 'config' => $config];
+                                $cols_actuales += $config['col'];
+
+                                // Si completamos 12 columnas o es el último campo, renderizamos la fila
+                                if ($cols_actuales >= 12 || $nombre_campo === array_key_last($campos_persona)) {
+                                    echo '<div class="row">';
+                                    foreach ($fila_actual as $item) {
+                                        // Para el representante, el Parentesco debe ser un buscador
+                                        if ($item['nombre'] === 'Parentesco') {
+                                            $id = 'representanteParentesco';
+                                            $name = 'representanteParentesco';
+                                            $inputId = $id . '_input';
+                                            $hiddenId = $id;
+                                            $hiddenNombre = $id . '_nombre';
+                                            $resultadosId = $id . '_resultados';
+
+                                            echo '<div class="col-md-6">';
+                                            echo '<div class="form-group required-field">';
+                                            echo '<label for="' . $id . '">Parentesco</label>';
+                                            echo '<div class="position-relative">';
+                                            echo '<input type="text" class="form-control buscador-input" id="' . $inputId . '" autocomplete="off" placeholder="Buscar o escribir nuevo parentesco...">';
+                                            echo '<input type="hidden" id="' . $hiddenId . '" name="' . $name . '" required>';
+                                            echo '<input type="hidden" id="' . $hiddenNombre . '" name="' . $name . '_nombre">';
+                                            echo '<div id="' . $resultadosId . '" class="autocomplete-results d-none"></div>';
+                                            echo '</div>';
+                                            echo '<script>
+                                            document.addEventListener("DOMContentLoaded", function() {
+                                                new BuscadorGenerico("' . $inputId . '", "' . $resultadosId . '", "parentesco", "' . $hiddenId . '", "' . $hiddenNombre . '");
+                                            });
+                                            </script>';
+                                            echo '</div>';
+                                            echo '</div>';
+                                        } else {
+                                            renderizarCampoPersona('representante', $item['nombre'], $item['config'], $data_options, '');
+                                        }
+                                    }
+                                    echo '</div>';
+
+                                    // Resetear para la siguiente fila
+                                    $fila_actual = [];
+                                    $cols_actuales = 0;
+                                }
+                            }
+
+                            echo '</div>';
+                            echo '</div>';
+                            ?>
                         </div>
                     </form>
                 </div>
@@ -759,53 +643,19 @@
         </div>
     </div>
 
-    <!-- Navbar with Social Media Icons -->
-    <nav class="navbar navbar-custom" id="redes">
-        <div class="container-fluid">
-            <div class="d-flex w-100">
-                <p class="navbar-text mb-0">
-                    © 2025 Derechos Reservados.
-                </p>
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.instagram.com/uecftaraure/"><i class="fab fa-instagram"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.youtube.com/@NuestraVozRadioyTv"><i class="fab fa-youtube"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="mailto:fermin.toro.araure@gmail.com"><i class="fab fa-google"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://api.whatsapp.com/send?phone=584145641168"><i class="fab fa-whatsapp"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://maps.app.goo.gl/XRBXfB6ygZDZaS3t7"><i class="fas fa-map-marker-alt"></i></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.uefermintoroaraure.com/nuestravoz.html"><i class="fas fa-microphone"></i></a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
-    <!-- End Navbar -->
+    <?php include 'layouts/footer.php'; ?>
     
-    <!-- Javascript files-->
-    <script src="js/jquery.min.js"></script>
-    <script src="js/popper.min.js"></script>
-    <script src="js/bootstrap.bundle.min.js"></script>
-    <script src="js/jquery-3.0.0.min.js"></script>
-  
-    <!-- sidebar -->
-    <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
-    <script src="js/custom.js"></script>
-
     <!-- SweetAlert2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <!-- Tus scripts personalizados -->
+    <script src="../../assets/js/buscador_generico.js"></script>
     <script src="../../assets/js/solicitud_cupo.js"></script>
+    <script src="../../assets/js/validacion.js"></script>
+
     <script>
         // Configuración global de Toastr
         toastr.options = {
@@ -821,6 +671,178 @@
             "showMethod": "fadeIn",
             "hideMethod": "fadeOut"
         };
+
+        // Inicializar buscadores
+        document.addEventListener("DOMContentLoaded", function() {
+            // Buscador de plantel
+            new BuscadorGenerico(
+                "estudiantePlantel_input",
+                "estudiantePlantel_resultados",
+                "plantel",
+                "estudiantePlantel",
+                "estudiantePlantel_nombre"
+            );
+
+            // Buscador de prefijo para teléfono de estudiante
+            new BuscadorGenerico(
+                "estudianteTelefonoPrefijo_input",
+                "estudianteTelefonoPrefijo_resultados",
+                "prefijo",
+                "estudianteTelefonoPrefijo",
+                "estudianteTelefonoPrefijo_nombre"
+            );
+
+            // Configurar restricciones de fecha de nacimiento (6-18 años)
+            const fechaNacimientoInput = document.getElementById('estudianteFechaNacimiento');
+            if (fechaNacimientoInput) {
+                const hoy = new Date();
+
+                // Fecha máxima: hace 6 años
+                const fechaMax = new Date(hoy.getFullYear() - 6, hoy.getMonth(), hoy.getDate());
+
+                // Fecha mínima: hace 18 años
+                const fechaMin = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+
+                // Formatear fechas a YYYY-MM-DD
+                const formatoFecha = (fecha) => {
+                    const year = fecha.getFullYear();
+                    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const day = String(fecha.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                fechaNacimientoInput.setAttribute('min', formatoFecha(fechaMin));
+                fechaNacimientoInput.setAttribute('max', formatoFecha(fechaMax));
+
+                // Validar cuando se cambia el valor
+                fechaNacimientoInput.addEventListener('blur', function() {
+                    const valorSeleccionado = this.value;
+                    if (!valorSeleccionado) {
+                        // Si borra la fecha, volver a bloquear cédula y ocultar teléfono
+                        const cedulaInput = document.getElementById('estudianteCedula');
+                        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                        const telefonoInput = document.getElementById('estudianteTelefono');
+                        const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+                        if (cedulaInput) {
+                            cedulaInput.setAttribute('readonly', true);
+                            cedulaInput.value = '';
+                            if (cedulaHelpText) {
+                                cedulaHelpText.style.display = 'block';
+                            }
+                        }
+
+                        if (telefonoContainer) {
+                            telefonoContainer.style.display = 'none';
+                            if (telefonoInput) {
+                                telefonoInput.value = '';
+                                telefonoInput.removeAttribute('required');
+                            }
+                        }
+                        return;
+                    }
+
+                    const fechaSeleccionada = new Date(valorSeleccionado + 'T00:00:00');
+                    const hoy = new Date();
+
+                    // Calcular edad
+                    let edad = hoy.getFullYear() - fechaSeleccionada.getFullYear();
+                    const mes = hoy.getMonth() - fechaSeleccionada.getMonth();
+
+                    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaSeleccionada.getDate())) {
+                        edad--;
+                    }
+
+                    // Validar rango de edad
+                    if (edad < 6 || edad > 18) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Edad no válida',
+                            html: `La fecha de nacimiento seleccionada no es válida.<br><br>
+                                   <strong>El estudiante debe tener entre 6 y 18 años.</strong><br>
+                                   <small class="text-muted">Edad calculada: ${edad} años</small>`,
+                            confirmButtonColor: '#c90000',
+                            confirmButtonText: 'Entendido'
+                        });
+                        this.value = '';
+                        this.classList.add('is-invalid');
+
+                        // Bloquear cédula y ocultar teléfono si la edad no es válida
+                        const cedulaInput = document.getElementById('estudianteCedula');
+                        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                        const telefonoInput = document.getElementById('estudianteTelefono');
+
+                        if (cedulaInput) {
+                            cedulaInput.setAttribute('readonly', true);
+                            cedulaInput.value = '';
+                        }
+
+                        if (telefonoContainer) {
+                            telefonoContainer.style.display = 'none';
+                            if (telefonoInput) {
+                                telefonoInput.value = '';
+                                telefonoInput.removeAttribute('required');
+                            }
+                        }
+                    } else {
+                        this.classList.remove('is-invalid');
+
+                        // Habilitar campo de cédula
+                        const cedulaInput = document.getElementById('estudianteCedula');
+                        const cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                        const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+                        if (cedulaInput) {
+                            cedulaInput.removeAttribute('readonly');
+
+                            // Ocultar el mensaje de ayuda
+                            if (cedulaHelpText) {
+                                cedulaHelpText.style.display = 'none';
+                            }
+
+                            // Ajustar label y maxlength según la edad
+                            if (cedulaLabel) {
+                                if (edad < 10) {
+                                    // Menores de 10 años: Cédula escolar con maxlength 11
+                                    cedulaLabel.textContent = 'Cédula escolar';
+                                    cedulaInput.setAttribute('maxlength', '11');
+                                    cedulaInput.setAttribute('minlength', '7');
+                                } else {
+                                    // 10 años o más: Cédula normal con maxlength 8
+                                    cedulaLabel.textContent = 'Cédula';
+                                    cedulaInput.setAttribute('maxlength', '8');
+                                    cedulaInput.setAttribute('minlength', '7');
+                                }
+                            }
+                        }
+
+                        // Manejar visibilidad del campo teléfono según edad
+                        const telefonoContainer = document.getElementById('estudianteTelefonoContainer');
+                        const telefonoInput = document.getElementById('estudianteTelefono');
+
+                        if (telefonoContainer && telefonoInput) {
+                            if (edad < 10) {
+                                // Menores de 10 años: ocultar teléfono
+                                telefonoContainer.style.display = 'none';
+                                telefonoInput.value = '';
+                                telefonoInput.removeAttribute('required');
+
+                                // Limpiar también el prefijo
+                                const prefijoInput = document.getElementById('estudianteTelefonoPrefijo');
+                                const prefijoInputVisible = document.getElementById('estudianteTelefonoPrefijo_input');
+                                if (prefijoInput) prefijoInput.value = '';
+                                if (prefijoInputVisible) prefijoInputVisible.value = '+58';
+                            } else {
+                                // 10 años o más: mostrar teléfono como opcional
+                                telefonoContainer.style.display = 'block';
+                                // No es required, es opcional
+                                telefonoInput.removeAttribute('required');
+                            }
+                        }
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>

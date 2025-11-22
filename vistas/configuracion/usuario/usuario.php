@@ -1,7 +1,9 @@
 <?php
 session_start();
 
-// Verificación de sesión
+// ========================
+// 🔒 Verificación de sesión
+// ========================
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     echo '
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -21,31 +23,27 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     session_destroy();
     exit();
 }
-// Incluir Notificaciones
+
+// ========================
+// 📦 Dependencias
+// ========================
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
+require_once __DIR__ . '/../../../config/conexion.php';
 
-// Manejo de alertas por GET (para redirigir limpiando la URL)
-if (isset($_GET['deleted'])) {
-    $_SESSION['alert'] = 'deleted';
-    header("Location: usuario.php");
-    exit();
-} elseif (isset($_GET['success'])) {
-    $_SESSION['alert'] = 'success';
-    header("Location: usuario.php");
-    exit();
-} elseif (isset($_GET['actualizar'])) {
-    $_SESSION['alert'] = 'actualizar';
-    header("Location: usuario.php");
-    exit();
-} elseif (isset($_GET['error'])) {
-    $_SESSION['alert'] = 'error';
-    header("Location: usuario.php");
-    exit();
-}
+$database = new Database();
+$conexion = $database->getConnection();
 
-// Obtener alerta
+// ========================
+// ⚠️ Manejo de alertas (GET → sesión temporal)
+// ========================
+if (isset($_GET['deleted'])) $_SESSION['alert'] = 'deleted';
+elseif (isset($_GET['success'])) $_SESSION['alert'] = 'success';
+elseif (isset($_GET['actualizar'])) $_SESSION['alert'] = 'actualizar';
+elseif (isset($_GET['error'])) $_SESSION['alert'] = 'error';
+
+// Guardar y limpiar alerta
 $alert = $_SESSION['alert'] ?? null;
-unset($_SESSION['alert']);
+unset($_SESSION['alert']); // 🔹 Limpieza inmediata
 
 // Mostrar alerta si existe
 if ($alert) {
@@ -66,11 +64,33 @@ if ($alert) {
             $alerta = null;
     }
 
-    if ($alerta) {
-        Notificaciones::mostrar($alerta);
-    }
+    if ($alerta) Notificaciones::mostrar($alerta);
 }
+
+// ========================
+// 👥 Consulta de usuarios con perfil (sin duplicados)
+// ========================
+$query = "
+    SELECT
+        p.IdPersona,
+        p.nombre,
+        p.apellido,
+        p.usuario,
+        p.correo,
+        MIN(pf.IdPerfil) AS IdPerfil,
+        GROUP_CONCAT(DISTINCT pf.nombre_perfil ORDER BY pf.IdPerfil SEPARATOR ', ') AS nombre_perfil
+    FROM persona AS p
+    INNER JOIN detalle_perfil AS dp ON dp.IdPersona = p.IdPersona
+    INNER JOIN perfil AS pf ON pf.IdPerfil = dp.IdPerfil
+    WHERE p.usuario IS NOT NULL AND p.password IS NOT NULL
+    GROUP BY p.IdPersona, p.nombre, p.apellido, p.usuario, p.correo
+    ORDER BY p.nombre, p.apellido
+";
+$stmt = $conexion->prepare($query);
+$stmt->execute();
+$usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 
 <head>
     <title>UECFT Araure - Usuarios</title>
@@ -90,23 +110,38 @@ if ($alert) {
                             <i class='bx bxs-user-detail'></i> Gestión de Usuarios
                         </div>
                         <div class="card-body">
-                            <!-- Botones de acción (intercambiados) -->
+
+                            <!-- 🔹 Botones Superiores -->
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <!-- Imprimir Lista a la izquierda -->
                                 <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
                                     <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
                                 </button>
-                                <!-- Nuevo Usuario a la derecha -->
                                 <a href="nuevo_usuario.php" class="btn btn-danger d-flex align-items-center">
                                     <i class='bx bx-plus-medical me-1'></i> Nuevo Usuario
                                 </a>
                             </div>
 
-                            <!-- Búsqueda y Entradas por página en la misma línea -->
+                            <!-- 🔹 Filtros y Búsqueda -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                                <div class="flex-grow-1" style="max-width: 300px;">
+                                
+                                <!-- 🔸 Buscador -->
+                                <div class="flex-grow-1" style="max-width: 250px;">
                                     <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
                                 </div>
+                                
+                                <!-- 🔸 Filtro tipo de usuario -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="filtroTipo" class="fw-semibold mb-0">Tipo de Usuario:</label>
+                                    <select id="filtroTipo" class="form-select" style="width:auto;">
+                                        <option value="todos">Todos</option>
+                                        <option value="internos">Usuarios Internos</option>
+                                        <option value="representantes">Representantes</option>
+                                    </select>
+                                </div>
+
+                                
+
+                                <!-- 🔸 Entradas -->
                                 <div class="d-flex align-items-center">
                                     <label for="entries" class="me-2">Entradas por página:</label>
                                     <select id="entries" class="form-select" style="width: auto;">
@@ -117,7 +152,7 @@ if ($alert) {
                                 </div>
                             </div>
 
-                            <!-- Tabla -->
+                            <!-- 🔹 Tabla -->
                             <div class="table-responsive">
                                 <table class="table table-hover align-middle" id="tabla-usuarios">
                                     <thead class="table-light">
@@ -126,29 +161,18 @@ if ($alert) {
                                             <th>Nombre Completo</th>
                                             <th>Usuario</th>
                                             <th>Correo</th>
+                                            <th>Perfil</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <?php
-                                        require_once __DIR__ . '/../../../config/conexion.php';
-                                        $database = new Database();
-                                        $conexion = $database->getConnection();
-
-                                        $query = "SELECT IdPersona, nombre, apellido, usuario, correo 
-                                                  FROM persona 
-                                                  WHERE usuario IS NOT NULL AND password IS NOT NULL
-                                                  ORDER BY nombre, apellido";
-                                        $stmt = $conexion->prepare($query);
-                                        $stmt->execute();
-                                        $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                                        foreach ($usuarios as $user): ?>
+                                        <?php foreach ($usuarios as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($user['IdPersona']) ?></td>
                                                 <td><?= htmlspecialchars($user['nombre'] . ' ' . $user['apellido']) ?></td>
                                                 <td><?= htmlspecialchars($user['usuario']) ?></td>
                                                 <td><?= htmlspecialchars($user['correo']) ?></td>
+                                                <td><?= htmlspecialchars($user['nombre_perfil']) ?></td>
                                                 <td>
                                                     <a href="editar_usuario.php?id=<?= $user['IdPersona'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
@@ -167,6 +191,7 @@ if ($alert) {
                             <div class="d-flex justify-content-center mt-3">
                                 <div class="pagination" id="pagination"></div>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -179,28 +204,30 @@ if ($alert) {
 <script src="../../../assets/js/tablas.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../../../assets/js/reportes.js"></script>
+
 <script>
-    // === DATOS GLOBALES ===
     let allData = <?= json_encode($usuarios) ?>;
     let filteredData = [...allData];
-    let currentPage = 1;
-    let entriesPerPage = parseInt(document.getElementById('entries').value) || 10;
 
-    // Inicialización de TablaDinamica
     document.addEventListener('DOMContentLoaded', function() {
         const config = {
-            tablaId: 'tabla-usuarios',  // Coincide con tu HTML
-            tbodyId: 'table-body',      // Coincide con tu HTML
-            buscarId: 'buscar',         // Coincide con tu HTML
-            entriesId: 'entries',       // Coincide con tu HTML
-            paginationId: 'pagination', // Coincide con tu HTML
-            data: allData,
+            tablaId: 'tabla-usuarios',
+            tbodyId: 'table-body',
+            buscarId: 'buscar',
+            entriesId: 'entries',
+            paginationId: 'pagination',
+            data: allData.map(item => ({
+                ...item,
+                nombreCompleto: `${item.nombre} ${item.apellido}`,
+                tipo: (item.IdPerfil == 4 || item.IdPerfil == 5) ? 'representantes' : 'internos'
+            })),
             idField: 'IdPersona',
             columns: [
                 { label: 'ID', key: 'IdPersona' },
                 { label: 'Nombre Completo', key: 'nombreCompleto' },
                 { label: 'Usuario', key: 'usuario' },
-                { label: 'Correo', key: 'correo' }
+                { label: 'Correo', key: 'correo' },
+                { label: 'Perfil', key: 'nombre_perfil' }
             ],
             acciones: [
                 {
@@ -216,17 +243,41 @@ if ($alert) {
             ]
         };
 
-        // Preparar datos para la tabla
-        config.data = allData.map(item => ({
-            ...item,
-            nombreCompleto: `${item.nombre} ${item.apellido}`
-        }));
-
-        // Crear instancia de TablaDinamica
         window.tablaUsuarios = new TablaDinamica(config);
+
+        // === FILTROS ===
+        const filtroTipo = document.getElementById('filtroTipo');
+        const filtroBuscar = document.getElementById('buscar');
+        const filtroEntries = document.getElementById('entries');
+
+        function aplicarFiltros() {
+            const tipoVal = filtroTipo.value.trim().toLowerCase();
+            const textoBuscar = filtroBuscar.value.trim().toLowerCase();
+
+            const filtrados = config.data.filter(item => {
+                let matchTipo = true;
+                if (tipoVal !== 'todos')
+                    matchTipo = item.tipo === tipoVal;
+
+                let matchBuscar = true;
+                if (textoBuscar) {
+                    const combo = `${item.nombreCompleto} ${item.usuario} ${item.correo} ${item.nombre_perfil}`.toLowerCase();
+                    matchBuscar = combo.includes(textoBuscar);
+                }
+
+                return matchTipo && matchBuscar;
+            });
+
+            window.tablaUsuarios.updateData(filtrados);
+        }
+
+        filtroTipo.addEventListener('change', aplicarFiltros);
+        filtroBuscar.addEventListener('input', aplicarFiltros);
+        filtroEntries.addEventListener('change', aplicarFiltros);
+
+        aplicarFiltros();
     });
 
-    // === FUNCIONES ===
     function confirmDelete(id) {
         Swal.fire({
             title: "¿Está seguro que desea eliminar este usuario?",

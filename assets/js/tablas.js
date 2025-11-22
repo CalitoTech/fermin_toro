@@ -62,16 +62,36 @@ class TablaDinamica {
         return path.split('.').reduce((acc, part) => acc?.[part], obj);
     }
 
+    // Modifica el método renderTable en tablas.js
     renderTable() {
         const start = (this.currentPage - 1) * this.entriesPerPage;
         const end = start + this.entriesPerPage;
         const paginatedItems = this.filteredData.slice(start, end);
         const tbody = document.getElementById(this.config.tbodyId);
+        const tabla = document.getElementById(this.config.tablaId);
 
-        if (!tbody) return;
+        if (!tbody || !tabla) return;
 
+        // Limpiar tabla
         tbody.innerHTML = '';
 
+        // Verificar si hay datos
+        if (paginatedItems.length === 0) {
+            const noDataRow = document.createElement('tr');
+            noDataRow.innerHTML = `
+                <td colspan="${this.config.columns.length + 1}" class="text-center py-5">
+                    <div class="d-flex flex-column align-items-center">
+                        <i class='bx bx-folder-open' style="font-size: 4rem; color: #c90000; opacity: 0.7;"></i>
+                        <h5 class="mt-3 text-muted">No hay registros disponibles</h5>
+                        <p class="text-muted mb-0">No se encontraron datos para mostrar</p>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(noDataRow);
+            return;
+        }
+
+        // Renderizar datos si existen
         paginatedItems.forEach(item => {
             const tr = document.createElement('tr');
             let actionsHtml = '';
@@ -80,11 +100,9 @@ class TablaDinamica {
                 this.config.acciones.forEach(acc => {
                     let actionHtml = '';
                     if (acc.onClick) {
-                        // Acción con evento onclick (ej: eliminar)
                         const onclick = acc.onClick.replace('{id}', item[this.config.idField]);
                         actionHtml = `<button type="button" class="btn btn-sm ${acc.class}" onclick="${onclick}">${acc.icon}</button>`;
                     } else if (acc.url) {
-                        // Acción con enlace
                         const url = acc.url.replace('{id}', item[this.config.idField]);
                         actionHtml = `<a href="${url}" class="btn btn-sm ${acc.class}">${acc.icon}</a>`;
                     }
@@ -93,7 +111,10 @@ class TablaDinamica {
             }
 
             tr.innerHTML = `
-                ${this.config.columns.map(col => `<td>${this.getNestedValue(item, col.key) || ''}</td>`).join('')}
+                ${this.config.columns.map(col => {
+                    const value = this.getNestedValue(item, col.key);
+                    return `<td>${value !== undefined && value !== null ? value : ''}</td>`;
+                }).join('')}
                 <td>${actionsHtml}</td>
             `;
             tbody.appendChild(tr);
@@ -157,5 +178,36 @@ class TablaDinamica {
             pages.add(totalPages);
         }
         return Array.from(pages).sort((a, b) => a - b);
+    }
+
+    /**
+     * Actualiza los datos de la tabla y vuelve a renderizar
+     * @param {Array} newData - Nuevo conjunto de datos
+     * @param {boolean} preserveFilter - Si true, mantiene el filtro actual
+     */
+    updateData(newData, preserveFilter = false) {
+        // Actualizar datos originales
+        this.allData = [...newData];
+        
+        // Si no se preserva el filtro, reiniciar búsqueda
+        if (!preserveFilter) {
+            this.filteredData = [...newData];
+            const buscar = document.getElementById(this.config.buscarId);
+            if (buscar) buscar.value = ''; // Limpiar input de búsqueda
+        } else {
+            // Re-aplicar filtro si hay término
+            const buscar = document.getElementById(this.config.buscarId);
+            if (buscar && buscar.value.trim() !== '') {
+                this.filterData(buscar.value);
+            } else {
+                this.filteredData = [...newData];
+            }
+        }
+
+        // Resetear a la primera página
+        this.currentPage = 1;
+
+        // Volver a renderizar
+        this.renderTable();
     }
 }

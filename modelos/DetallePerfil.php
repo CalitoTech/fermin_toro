@@ -78,5 +78,15 @@ class DetallePerfil {
         $stmt->bindParam(':id', $idPersona, PDO::PARAM_INT);
         return $stmt->execute();
     }
+
+    public static function tienePerfil($conexion, $idPersona, $idPerfil) {
+    $sql = "SELECT COUNT(*) FROM detalle_perfil WHERE IdPersona = :IdPersona AND IdPerfil = :IdPerfil";
+    $stmt = $conexion->prepare($sql);
+    $stmt->bindParam(':IdPersona', $idPersona, PDO::PARAM_INT);
+    $stmt->bindParam(':IdPerfil', $idPerfil, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchColumn() > 0;
+}
+
 }
 ?>
