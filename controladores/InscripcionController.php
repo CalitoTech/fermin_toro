@@ -12,6 +12,7 @@ require_once __DIR__ . '/../modelos/FechaEscolar.php';
 require_once __DIR__ . '/../modelos/DetallePerfil.php';
 require_once __DIR__ . '/../modelos/CursoSeccion.php';
 require_once __DIR__ . '/../modelos/TipoDiscapacidad.php';
+require_once __DIR__ . '/../modelos/InscripcionHistorial.php';
 
 date_default_timezone_set('America/Caracas');
 
@@ -389,6 +390,15 @@ if (empty($action)) {
             break;
         case 'hayCupo':
             hayCupo($conexion);
+            break;
+        case 'verificarRepitiente':
+            verificarRepitiente($conexion);
+            break;
+        case 'confirmarRepitiente':
+            confirmarRepitiente($conexion);
+            break;
+        case 'obtenerHistorial':
+            obtenerHistorial($conexion);
             break;
         case 'verificar':
             $anio = intval($_GET['anio'] ?? 0);
@@ -1404,6 +1414,40 @@ function procesarInscripcion($conexion) {
 
                 $conexion->commit();
 
+                // Registrar en historial la creación de la inscripción
+                try {
+                    // Obtener el IdPersona del usuario que crea la inscripción
+                    // Prioridad: 1) Usuario logueado (administrativo o representante logueado)
+                    //            2) Responsable de inscripción (fallback si no hay sesión)
+                    $idUsuarioCreador = obtenerIdUsuario();
+
+                    // Si no hay usuario logueado, usar el responsable de la inscripción como fallback
+                    if (!$idUsuarioCreador) {
+                        $stmtResponsable = $conexion->prepare("SELECT IdPersona FROM representante WHERE IdRepresentante = :id");
+                        $stmtResponsable->execute([':id' => $idRelacionRepresentante]);
+                        $idUsuarioCreador = $stmtResponsable->fetchColumn();
+                    }
+
+                    if ($idUsuarioCreador) {
+                        // Obtener nombre del status inicial
+                        $stmtStatus = $conexion->prepare("SELECT status FROM status WHERE IdStatus = :id");
+                        $stmtStatus->execute([':id' => $inscripcion->IdStatus]);
+                        $nombreStatus = $stmtStatus->fetchColumn() ?: 'Pendiente';
+
+                        InscripcionHistorial::registrarCambio(
+                            $conexion,
+                            $numeroSolicitud,
+                            'creacion',
+                            null,
+                            $codigo_inscripcion,
+                            "Inscripción creada con código {$codigo_inscripcion}, estado inicial: {$nombreStatus}",
+                            $idUsuarioCreador
+                        );
+                    }
+                } catch (Exception $e) {
+                    error_log("Error al registrar historial de creación: " . $e->getMessage());
+                }
+
                 // Respuesta exitosa
                 echo json_encode([
                     'success' => true,
@@ -1588,9 +1632,66 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
         $conexion->prepare("UPDATE inscripcion SET IdStatus = :status WHERE IdInscripcion = :id")
             ->execute([':status' => $nuevoStatus, ':id' => $idInscripcion]);
 
-        // Auditoría
-        if ($idUsuario) {
-            actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
+        // ======================================================
+        // === REGISTRAR CAMBIO EN HISTORIAL =====================
+        // ======================================================
+        if ($idUsuario && $estadoAnterior != $nuevoStatus) {
+            // Obtener nombres de los status para la descripción
+            $stmtStatusAnterior = $conexion->prepare("SELECT status FROM status WHERE IdStatus = :id");
+            $stmtStatusAnterior->execute([':id' => $estadoAnterior]);
+            $nombreStatusAnterior = $stmtStatusAnterior->fetchColumn() ?: 'Desconocido';
+
+            $stmtStatusNuevo = $conexion->prepare("SELECT status FROM status WHERE IdStatus = :id");
+            $stmtStatusNuevo->execute([':id' => $nuevoStatus]);
+            $nombreStatusNuevo = $stmtStatusNuevo->fetchColumn() ?: 'Desconocido';
+
+            $descripcionCambio = "Cambio de estado de \"{$nombreStatusAnterior}\" a \"{$nombreStatusNuevo}\"";
+
+            InscripcionHistorial::registrarCambio(
+                $conexion,
+                $idInscripcion,
+                'IdStatus',
+                $estadoAnterior,
+                $nuevoStatus,
+                $descripcionCambio,
+                $idUsuario
+            );
+
+            // Si hubo cambio de sección, registrarlo también
+            if ($cambioRealizado && $seccionNueva) {
+                // Obtener nombre de la sección anterior y nueva
+                $stmtSeccionAnterior = $conexion->prepare("
+                    SELECT CONCAT(c.curso, ' - ', s.seccion) as nombre
+                    FROM curso_seccion cs
+                    INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+                    INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                    WHERE cs.IdCurso_Seccion = :id
+                ");
+                $stmtSeccionAnterior->execute([':id' => $inscripcionData['IdCurso_Seccion']]);
+                $nombreSeccionAnterior = $stmtSeccionAnterior->fetchColumn() ?: 'Desconocida';
+
+                $stmtSeccionNueva = $conexion->prepare("
+                    SELECT CONCAT(c.curso, ' - ', s.seccion) as nombre
+                    FROM curso_seccion cs
+                    INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+                    INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                    WHERE cs.IdCurso_Seccion = :id
+                ");
+                $stmtSeccionNueva->execute([':id' => $seccionNueva]);
+                $nombreSeccionNueva = $stmtSeccionNueva->fetchColumn() ?: 'Desconocida';
+
+                $descripcionSeccion = "Cambio automático de sección de \"{$nombreSeccionAnterior}\" a \"{$nombreSeccionNueva}\"";
+
+                InscripcionHistorial::registrarCambio(
+                    $conexion,
+                    $idInscripcion,
+                    'IdCurso_Seccion',
+                    $inscripcionData['IdCurso_Seccion'],
+                    $seccionNueva,
+                    $descripcionSeccion,
+                    $idUsuario
+                );
+            }
         }
 
         // ======================================================
@@ -1637,6 +1738,11 @@ function toggleRequisito($conexion) {
             exit;
         }
 
+        // Obtener nombre del requisito para el historial
+        $stmtRequisito = $conexion->prepare("SELECT requisito FROM requisito WHERE IdRequisito = :id");
+        $stmtRequisito->execute([':id' => $idRequisito]);
+        $nombreRequisito = $stmtRequisito->fetchColumn() ?: 'Requisito #' . $idRequisito;
+
         if ($cumplido === 1) {
             // Marcar requisito como cumplido → insertar o actualizar
             $stmt = $conexion->prepare("
@@ -1650,6 +1756,17 @@ function toggleRequisito($conexion) {
             ]);
 
             $mensaje = 'Requisito marcado como cumplido';
+
+            // Registrar en historial
+            InscripcionHistorial::registrarCambio(
+                $conexion,
+                $idInscripcion,
+                'requisito',
+                '0',
+                '1',
+                "Requisito cumplido: {$nombreRequisito}",
+                $idUsuario
+            );
         } else {
             // Desmarcar → eliminar el requisito
             $stmt = $conexion->prepare("
@@ -1662,10 +1779,18 @@ function toggleRequisito($conexion) {
             ]);
 
             $mensaje = 'Requisito desmarcado y eliminado';
-        }
 
-        // Actualizar auditoría
-        actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
+            // Registrar en historial
+            InscripcionHistorial::registrarCambio(
+                $conexion,
+                $idInscripcion,
+                'requisito',
+                '1',
+                '0',
+                "Requisito desmarcado: {$nombreRequisito}",
+                $idUsuario
+            );
+        }
 
         echo json_encode([
             'success' => true,
@@ -1702,14 +1827,38 @@ function actualizarMultiplesRequisitos($conexion) {
             echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
             exit();
         }
+
+        // Obtener requisitos anteriores para comparar
+        $stmtAnteriores = $conexion->prepare("
+            SELECT ir.IdRequisito, ir.cumplido, r.requisito as nombre
+            FROM inscripcion_requisito ir
+            INNER JOIN requisito r ON ir.IdRequisito = r.IdRequisito
+            WHERE ir.IdInscripcion = :idInscripcion
+        ");
+        $stmtAnteriores->execute([':idInscripcion' => $idInscripcion]);
+        $requisitosAnteriores = [];
+        while ($row = $stmtAnteriores->fetch(PDO::FETCH_ASSOC)) {
+            $requisitosAnteriores[$row['IdRequisito']] = [
+                'cumplido' => (int)$row['cumplido'],
+                'nombre' => $row['nombre']
+            ];
+        }
+
         // Limpio los requisitos anteriores
         $stmtDelete = $conexion->prepare("DELETE FROM inscripcion_requisito WHERE IdInscripcion = :idInscripcion");
         $stmtDelete->execute([ ':idInscripcion' => $idInscripcion ]);
 
+        // Preparar para obtener nombres de requisitos nuevos
+        $stmtNombre = $conexion->prepare("SELECT requisito FROM requisito WHERE IdRequisito = :id");
+
+        // Contadores para el historial
+        $requisitosNuevos = [];
+        $requisitosEliminados = [];
+
         // Inserto los seleccionados
         if (!empty($requisitos)) {
             $stmtInsert = $conexion->prepare("
-                INSERT INTO inscripcion_requisito (IdInscripcion, IdRequisito, cumplido) 
+                INSERT INTO inscripcion_requisito (IdInscripcion, IdRequisito, cumplido)
                 VALUES (:idInscripcion, :idRequisito, :cumplido)
             ");
             foreach ($requisitos as $idRequisito => $cumplido) {
@@ -1718,11 +1867,55 @@ function actualizarMultiplesRequisitos($conexion) {
                     ':idRequisito'   => $idRequisito,
                     ':cumplido'      => intval($cumplido)
                 ]);
+
+                // Verificar si es nuevo
+                if (!isset($requisitosAnteriores[$idRequisito])) {
+                    $stmtNombre->execute([':id' => $idRequisito]);
+                    $nombre = $stmtNombre->fetchColumn() ?: 'Requisito #' . $idRequisito;
+                    $requisitosNuevos[] = $nombre;
+                }
             }
         }
 
-        // Actualizar campos de auditoría
-        actualizarAuditoriaInscripcion($conexion, $idInscripcion, $idUsuario);
+        // Verificar requisitos eliminados
+        foreach ($requisitosAnteriores as $idReq => $data) {
+            if (!isset($requisitos[$idReq])) {
+                $requisitosEliminados[] = $data['nombre'];
+            }
+        }
+
+        // Registrar cambios en historial si hubo modificaciones
+        if (!empty($requisitosNuevos)) {
+            $descripcion = count($requisitosNuevos) === 1
+                ? "Requisito cumplido: " . $requisitosNuevos[0]
+                : "Requisitos cumplidos: " . implode(', ', array_slice($requisitosNuevos, 0, 3)) . (count($requisitosNuevos) > 3 ? " y " . (count($requisitosNuevos) - 3) . " más" : "");
+
+            InscripcionHistorial::registrarCambio(
+                $conexion,
+                $idInscripcion,
+                'requisitos',
+                null,
+                count($requisitosNuevos),
+                $descripcion,
+                $idUsuario
+            );
+        }
+
+        if (!empty($requisitosEliminados)) {
+            $descripcion = count($requisitosEliminados) === 1
+                ? "Requisito desmarcado: " . $requisitosEliminados[0]
+                : "Requisitos desmarcados: " . implode(', ', array_slice($requisitosEliminados, 0, 3)) . (count($requisitosEliminados) > 3 ? " y " . (count($requisitosEliminados) - 3) . " más" : "");
+
+            InscripcionHistorial::registrarCambio(
+                $conexion,
+                $idInscripcion,
+                'requisitos',
+                count($requisitosEliminados),
+                null,
+                $descripcion,
+                $idUsuario
+            );
+        }
 
         echo json_encode([
             'success' => true,
@@ -1867,6 +2060,17 @@ function validarPagoEInscribir($conexion) {
             throw new Exception('Error al registrar el código de pago');
         }
 
+        // Registrar en historial la validación del pago
+        InscripcionHistorial::registrarCambio(
+            $conexion,
+            $idInscripcion,
+            'codigo_pago',
+            null,
+            $codigoPago,
+            "Se validó el pago con código: {$codigoPago}",
+            $idUsuario
+        );
+
         // Ahora procedemos con la inscripción completa (status 11 = Inscrito)
         $resultado = activarInscripcionCompleta($conexion, $idInscripcion, 11, $idUsuario);
 
@@ -1924,4 +2128,246 @@ function validarCodigoEnSistemaExterno($codigoPago) {
         'valido' => true,
         'mensaje' => 'Código validado correctamente'
     ];
+}
+
+/**
+ * Verifica si un estudiante es repitiente (tiene inscripción con status "Inscrito" del año escolar anterior)
+ * para el mismo curso
+ */
+function verificarRepitiente($conexion) {
+    $idInscripcion = intval($_GET['idInscripcion'] ?? 0);
+
+    if ($idInscripcion <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID de inscripción inválido']);
+        exit();
+    }
+
+    try {
+        // Obtener datos de la inscripción actual
+        $queryActual = "
+            SELECT i.IdInscripcion, i.IdEstudiante, i.IdFecha_Escolar,
+                   cs.IdCurso, c.curso, fe.fecha_escolar,
+                   e.nombre AS estudiante_nombre, e.apellido AS estudiante_apellido
+            FROM inscripcion i
+            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+            INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+            INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+            INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
+            WHERE i.IdInscripcion = :idInscripcion
+        ";
+        $stmt = $conexion->prepare($queryActual);
+        $stmt->execute([':idInscripcion' => $idInscripcion]);
+        $inscripcionActual = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$inscripcionActual) {
+            echo json_encode(['success' => false, 'message' => 'Inscripción no encontrada']);
+            exit();
+        }
+
+        // Buscar inscripción del año anterior con status "Inscrito" (11) para el mismo curso
+        $queryAnterior = "
+            SELECT i.IdInscripcion, i.IdFecha_Escolar, fe.fecha_escolar,
+                   cs.IdCurso, c.curso
+            FROM inscripcion i
+            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+            INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+            INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+            WHERE i.IdEstudiante = :idEstudiante
+              AND i.IdStatus = 11
+              AND cs.IdCurso = :idCurso
+              AND i.IdFecha_Escolar < :idFechaActual
+            ORDER BY i.IdFecha_Escolar DESC
+            LIMIT 1
+        ";
+        $stmtAnterior = $conexion->prepare($queryAnterior);
+        $stmtAnterior->execute([
+            ':idEstudiante' => $inscripcionActual['IdEstudiante'],
+            ':idCurso' => $inscripcionActual['IdCurso'],
+            ':idFechaActual' => $inscripcionActual['IdFecha_Escolar']
+        ]);
+        $inscripcionAnterior = $stmtAnterior->fetch(PDO::FETCH_ASSOC);
+
+        $esRepitiente = ($inscripcionAnterior !== false);
+
+        echo json_encode([
+            'success' => true,
+            'esRepitiente' => $esRepitiente,
+            'estudiante' => $inscripcionActual['estudiante_nombre'] . ' ' . $inscripcionActual['estudiante_apellido'],
+            'curso' => $inscripcionActual['curso'],
+            'anioActual' => $inscripcionActual['fecha_escolar'],
+            'anioAnterior' => $esRepitiente ? $inscripcionAnterior['fecha_escolar'] : null
+        ]);
+
+    } catch (Exception $e) {
+        error_log("Error al verificar repitiente: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+    }
+    exit();
+}
+
+/**
+ * Confirma que un estudiante repite y lo mueve a la sección con menos estudiantes
+ */
+function confirmarRepitiente($conexion) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
+    $repite = filter_var($_POST['repite'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+    if ($idInscripcion <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID de inscripción inválido']);
+        exit();
+    }
+
+    try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
+
+        // Obtener datos de la inscripción
+        $queryInscripcion = "
+            SELECT i.*, cs.IdCurso, cs.IdSeccion, c.curso, s.seccion
+            FROM inscripcion i
+            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+            INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+            INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+            WHERE i.IdInscripcion = :idInscripcion
+        ";
+        $stmt = $conexion->prepare($queryInscripcion);
+        $stmt->execute([':idInscripcion' => $idInscripcion]);
+        $inscripcion = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$inscripcion) {
+            echo json_encode(['success' => false, 'message' => 'Inscripción no encontrada']);
+            exit();
+        }
+
+        $seccionAnterior = $inscripcion['IdCurso_Seccion'];
+        $nombreSeccionAnterior = $inscripcion['curso'] . ' - ' . $inscripcion['seccion'];
+        $nuevaSeccion = $seccionAnterior;
+        $cambioSeccion = false;
+
+        if ($repite) {
+            // Buscar la sección con menos estudiantes inscritos para el mismo curso
+            // Excluir la sección "Inscripcion" (IdSeccion = 1)
+            $querySeccionMenosEstudiantes = "
+                SELECT cs.IdCurso_Seccion, cs.IdSeccion, s.seccion,
+                       COUNT(i.IdInscripcion) AS total_estudiantes
+                FROM curso_seccion cs
+                INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+                    AND i.IdStatus = 11
+                    AND i.IdFecha_Escolar = :idFechaEscolar
+                WHERE cs.IdCurso = :idCurso
+                  AND cs.IdSeccion != 1
+                  AND cs.IdCurso_Seccion != :idCursoSeccionActual
+                GROUP BY cs.IdCurso_Seccion, cs.IdSeccion, s.seccion
+                ORDER BY total_estudiantes ASC, RAND()
+                LIMIT 1
+            ";
+            $stmtSeccion = $conexion->prepare($querySeccionMenosEstudiantes);
+            $stmtSeccion->execute([
+                ':idCurso' => $inscripcion['IdCurso'],
+                ':idFechaEscolar' => $inscripcion['IdFecha_Escolar'],
+                ':idCursoSeccionActual' => $seccionAnterior
+            ]);
+            $seccionRecomendada = $stmtSeccion->fetch(PDO::FETCH_ASSOC);
+
+            if ($seccionRecomendada) {
+                $nuevaSeccion = $seccionRecomendada['IdCurso_Seccion'];
+                $cambioSeccion = ($nuevaSeccion != $seccionAnterior);
+            }
+
+            // Actualizar inscripción: marcar como repitiente y cambiar sección si aplica
+            $queryUpdate = "
+                UPDATE inscripcion
+                SET repite = 1" . ($cambioSeccion ? ", IdCurso_Seccion = :nuevaSeccion" : "") . "
+                WHERE IdInscripcion = :idInscripcion
+            ";
+            $stmtUpdate = $conexion->prepare($queryUpdate);
+            $params = [':idInscripcion' => $idInscripcion];
+            if ($cambioSeccion) {
+                $params[':nuevaSeccion'] = $nuevaSeccion;
+            }
+            $stmtUpdate->execute($params);
+
+            // Registrar en historial
+            InscripcionHistorial::registrarCambio(
+                $conexion,
+                $idInscripcion,
+                'repite',
+                '0',
+                '1',
+                "El estudiante fue marcado como repitiente",
+                $idUsuario
+            );
+
+            if ($cambioSeccion) {
+                $nombreSeccionNueva = $inscripcion['curso'] . ' - ' . $seccionRecomendada['seccion'];
+                InscripcionHistorial::registrarCambio(
+                    $conexion,
+                    $idInscripcion,
+                    'IdCurso_Seccion',
+                    $seccionAnterior,
+                    $nuevaSeccion,
+                    "Cambio de sección por repitiente: de \"{$nombreSeccionAnterior}\" a \"{$nombreSeccionNueva}\"",
+                    $idUsuario
+                );
+            }
+        }
+
+        // Ahora proceder con la inscripción (status 11 = Inscrito)
+        $resultado = activarInscripcionCompleta($conexion, $idInscripcion, 11, $idUsuario);
+
+        if ($resultado['success']) {
+            $resultado['repite'] = $repite;
+            $resultado['cambioSeccion'] = $cambioSeccion;
+            if ($cambioSeccion && isset($seccionRecomendada)) {
+                $resultado['nuevaSeccion'] = $inscripcion['curso'] . ' - ' . $seccionRecomendada['seccion'];
+            }
+            $resultado['message'] = $repite
+                ? 'Estudiante marcado como repitiente e inscrito correctamente' . ($cambioSeccion ? ' (sección cambiada)' : '')
+                : 'Inscripción completada correctamente';
+        }
+
+        echo json_encode($resultado);
+
+    } catch (Exception $e) {
+        error_log("Error al confirmar repitiente: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno del servidor: ' . $e->getMessage()]);
+    }
+    exit();
+}
+
+/**
+ * Obtiene el historial de cambios de una inscripción
+ */
+function obtenerHistorial($conexion) {
+    $idInscripcion = intval($_GET['idInscripcion'] ?? 0);
+
+    if ($idInscripcion <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID de inscripción inválido']);
+        exit();
+    }
+
+    try {
+        $historial = new InscripcionHistorial($conexion);
+        $cambios = $historial->obtenerPorInscripcion($idInscripcion);
+
+        echo json_encode([
+            'success' => true,
+            'historial' => $cambios,
+            'total' => count($cambios)
+        ]);
+
+    } catch (Exception $e) {
+        error_log("Error al obtener historial: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error interno del servidor']);
+    }
+    exit();
 }

@@ -140,23 +140,18 @@ function mostrarTelefonos($telefonos) {
 $esPadreRepresentante = ($inscripcion['responsable_parentesco'] === 'Padre' || $inscripcion['IdParentesco'] == 1);
 $esMadreRepresentante = ($inscripcion['responsable_parentesco'] === 'Madre' || $inscripcion['IdParentesco'] == 2);
 
-// 🔹 Información del modificador
-if (!empty($inscripcion['modificado_por'])) {
-    $queryModificador = "SELECT nombre, apellido FROM persona WHERE IdPersona = :id";
-    $stmt = $conexion->prepare($queryModificador);
-    $stmt->bindParam(':id', $inscripcion['modificado_por'], PDO::PARAM_INT);
-    $stmt->execute();
-    $modificador = $stmt->fetch(PDO::FETCH_ASSOC);
-    $nombreModificador = $modificador
-        ? htmlspecialchars($modificador['nombre'] . ' ' . $modificador['apellido'])
-        : 'Usuario no encontrado';
-} else {
-    $nombreModificador = 'No modificado aún';
-}
+// 🔹 Información del modificador (desde inscripcion_historial)
+require_once __DIR__ . '/../../../modelos/InscripcionHistorial.php';
+$historialModel = new InscripcionHistorial($conexion);
+$ultimoCambio = $historialModel->obtenerUltimoCambio($idInscripcion);
 
-$fechaModificacion = !empty($inscripcion['ultima_modificacion'])
-    ? date('d/m/Y H:i', strtotime($inscripcion['ultima_modificacion']))
-    : 'No modificado aún';
+if ($ultimoCambio) {
+    $nombreModificador = htmlspecialchars($ultimoCambio['usuario_nombre'] . ' ' . $ultimoCambio['usuario_apellido']);
+    $fechaModificacion = date('d/m/Y H:i', strtotime($ultimoCambio['fecha_cambio']));
+} else {
+    $nombreModificador = 'Sin cambios registrados';
+    $fechaModificacion = 'Sin cambios registrados';
+}
 
 // 🔹 Secciones disponibles (optimizadas)
 $idCursoActual = $inscripcion['IdCurso'] ?? null;
@@ -258,11 +253,11 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                         <?php endif; ?>
                     </div>
 
-                    <!-- Información de modificación -->
+                    <!-- Información de modificación + Historial -->
                     <div class="row mb-3">
                         <div class="col-12">
-                            <div class="modification-info-card">
-                                <div class="d-flex justify-content-between align-items-center">
+                            <div class="modification-info-card historial-toggle" id="btn-toggle-historial" role="button" title="Click para ver historial completo">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap">
                                     <div class="d-flex align-items-center">
                                         <i class="fas fa-history me-2 text-info"></i>
                                         <span class="text-muted small">Última modificación:</span>
@@ -273,6 +268,16 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <span class="text-muted small">Por:</span>
                                         <span class="ms-1 fw-medium"><?= $nombreModificador ?></span>
                                     </div>
+                                    <div class="d-flex align-items-center historial-hint">
+                                        <i class="fas fa-chevron-down me-1 historial-chevron"></i>
+                                        <span class="small text-primary">Ver historial</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Historial expandible -->
+                            <div class="collapse" id="historial-container">
+                                <div class="historial-panel" id="historial-content">
+                                    <!-- El contenido se carga dinámicamente -->
                                 </div>
                             </div>
                         </div>
@@ -460,8 +465,13 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
 
                     <!-- Datos del Estudiante -->
                     <div class="card mb-4">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"><i class="fas fa-child me-2"></i>Datos del Estudiante</h5>
+                            <?php if (!empty($inscripcion['repite']) && $inscripcion['repite']): ?>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-redo me-1"></i>Repitiente
+                                </span>
+                            <?php endif; ?>
                         </div>
                         <div class="card-body">
                             <div class="info-grid">
@@ -837,7 +847,154 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
             </div>
         </div>
     </div>
+
 </section>
+
+<style>
+/* Estilos del timeline de historial */
+.timeline-historial {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-historial::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e0e0e0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 20px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -24px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #6c757d;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e0e0e0;
+}
+
+.timeline-item-latest .timeline-marker {
+    background: #c90000;
+    box-shadow: 0 0 0 2px #c90000;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 15px;
+    border-left: 3px solid #e0e0e0;
+}
+
+.timeline-item-latest .timeline-content {
+    border-left-color: #c90000;
+    background: #fff5f5;
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.timeline-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.timeline-user {
+    font-size: 0.8rem;
+    color: #495057;
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.timeline-body p {
+    color: #333;
+    font-size: 0.9rem;
+}
+
+/* Panel del historial expandible */
+#historial-container {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.historial-panel {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 15px;
+}
+
+/* Card de última modificación clickeable */
+.historial-toggle {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.historial-toggle:hover {
+    background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%);
+    border-color: #90caf9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.historial-toggle.expanded {
+    border-radius: 8px 8px 0 0;
+    border-bottom: none;
+    background: linear-gradient(135deg, #e3f2fd 0%, #e8f5e9 100%);
+}
+
+/* Indicador de "Ver historial" */
+.historial-hint {
+    opacity: 0.7;
+    transition: all 0.3s ease;
+}
+
+.historial-toggle:hover .historial-hint {
+    opacity: 1;
+}
+
+.historial-chevron {
+    transition: transform 0.3s ease;
+}
+
+.historial-toggle.expanded .historial-chevron {
+    transform: rotate(180deg);
+}
+
+.historial-toggle.expanded .historial-hint span {
+    display: none;
+}
+
+.historial-toggle.expanded .historial-hint::after {
+    content: "Ocultar historial";
+    font-size: 0.875rem;
+    color: #0d6efd;
+}
+</style>
 
 <?php include '../../layouts/footer.php'; ?>
 

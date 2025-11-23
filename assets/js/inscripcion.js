@@ -647,10 +647,10 @@ function manejarValidacionPago(idInscripcion, idInscrito) {
         modal.hide();
 
         Swal.fire({
-            title: 'Validando pago...',
+            title: 'Verificando...',
             html: `
                 <div class="text-center">
-                    <p>Verificando código de pago en el sistema</p>
+                    <p>Verificando información del estudiante</p>
                     <p class="text-muted small">Por favor espere...</p>
                 </div>
             `,
@@ -660,27 +660,115 @@ function manejarValidacionPago(idInscripcion, idInscrito) {
         });
 
         try {
-            const formData = new FormData();
-            formData.append('action', 'validarPagoEInscribir');
-            formData.append('idInscripcion', idInscripcion);
-            formData.append('codigoPago', codigoPago);
+            // Primero verificar si es repitiente
+            const responseRepitiente = await fetch(`/mis_apps/fermin_toro/controladores/InscripcionController.php?action=verificarRepitiente&idInscripcion=${idInscripcion}`);
+            const dataRepitiente = await responseRepitiente.json();
 
-            const response = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+            if (dataRepitiente.success && dataRepitiente.esRepitiente) {
+                // Es posible repitiente, preguntar al usuario
+                Swal.fire({
+                    icon: 'question',
+                    title: '¿Estudiante Repitiente?',
+                    html: `
+                        <div class="text-center">
+                            <p><strong>${dataRepitiente.estudiante}</strong> estuvo inscrito en <strong>${dataRepitiente.curso}</strong> durante el año escolar <strong>${dataRepitiente.anioAnterior}</strong>.</p>
+                            <p class="text-muted">¿El estudiante está repitiendo este curso?</p>
+                            <hr>
+                            <p class="small text-info"><i class="fas fa-info-circle me-1"></i>Si marca "Sí, repite", el estudiante será asignado a una sección diferente con menos estudiantes.</p>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    showDenyButton: true,
+                    confirmButtonText: '<i class="fas fa-redo me-1"></i>Sí, repite',
+                    denyButtonText: '<i class="fas fa-arrow-up me-1"></i>No, avanza',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#dc3545',
+                    denyButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d'
+                }).then(async (result) => {
+                    if (result.isDismissed) {
+                        // Cancelado, reabrir modal de pago
+                        inputCodigoPago.value = codigoPago;
+                        modal.show();
+                        return;
+                    }
+
+                    const repite = result.isConfirmed;
+                    await procesarInscripcionConRepitiente(idInscripcion, codigoPago, repite, modal, inputCodigoPago);
+                });
+            } else {
+                // No es repitiente, proceder normalmente
+                await procesarInscripcionNormal(idInscripcion, codigoPago, modal, inputCodigoPago);
+            }
+
+        } catch (error) {
+            console.error('Error al verificar repitiente:', error);
+            // Si falla la verificación de repitiente, continuar con inscripción normal
+            await procesarInscripcionNormal(idInscripcion, codigoPago, modal, inputCodigoPago);
+        }
+    });
+}
+
+// Procesar inscripción con verificación de repitiente
+async function procesarInscripcionConRepitiente(idInscripcion, codigoPago, repite, modal, inputCodigoPago) {
+    Swal.fire({
+        title: 'Procesando inscripción...',
+        html: `
+            <div class="text-center">
+                <p>Validando pago y completando inscripción</p>
+                <p class="text-muted small">Por favor espere...</p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        // Primero validar el pago
+        const formDataPago = new FormData();
+        formDataPago.append('action', 'validarPagoEInscribir');
+        formDataPago.append('idInscripcion', idInscripcion);
+        formDataPago.append('codigoPago', codigoPago);
+
+        const responsePago = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+            method: 'POST',
+            body: formDataPago
+        });
+
+        const dataPago = await responsePago.json();
+
+        if (!dataPago.success) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de validación',
+                text: dataPago.message || 'No se pudo validar el código de pago',
+                confirmButtonColor: '#c90000'
+            }).then(() => {
+                inputCodigoPago.value = codigoPago;
+                modal.show();
+            });
+            return;
+        }
+
+        // Si el pago es válido y el estudiante repite, confirmar repitiente
+        if (repite) {
+            const formDataRepite = new FormData();
+            formDataRepite.append('action', 'confirmarRepitiente');
+            formDataRepite.append('idInscripcion', idInscripcion);
+            formDataRepite.append('repite', 'true');
+
+            const responseRepite = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
                 method: 'POST',
-                body: formData
+                body: formDataRepite
             });
 
-            const data = await response.json();
+            const dataRepite = await responseRepite.json();
 
-            if (data.success) {
-                let mensaje = data.message || 'Inscripción completada exitosamente';
-
-                if (data.cambioAutomatico) {
-                    mensaje += '\nSe asignó automáticamente a la sección recomendada';
-                }
-
-                if (data.alertaCapacidad && data.alertaCapacidad.trim() !== '') {
-                    mensaje += '\n\n' + data.alertaCapacidad;
+            if (dataRepite.success) {
+                let mensajeExtra = '';
+                if (dataRepite.cambioSeccion && dataRepite.nuevaSeccion) {
+                    mensajeExtra = `<br><span class="text-info"><i class="fas fa-exchange-alt me-1"></i>Nueva sección asignada: <strong>${dataRepite.nuevaSeccion}</strong></span>`;
                 }
 
                 Swal.fire({
@@ -688,41 +776,192 @@ function manejarValidacionPago(idInscripcion, idInscrito) {
                     title: 'Inscripción Completada',
                     html: `
                         <div class="text-center">
-                            <p>${mensaje}</p>
-                            <p class="text-muted small mt-2">Código de pago: <strong>${data.codigoPago || codigoPago}</strong></p>
+                            <p>${dataRepite.message}</p>
+                            <p class="text-muted small mt-2">Código de pago: <strong>${codigoPago}</strong></p>
+                            ${mensajeExtra}
                         </div>
                     `,
                     confirmButtonColor: '#28a745',
                     confirmButtonText: 'Aceptar'
                 }).then(() => {
-                    // Recargar página para mostrar el nuevo estado
                     window.location.reload();
                 });
-
             } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de validación',
-                    text: data.message || 'No se pudo validar el código de pago',
-                    confirmButtonColor: '#c90000'
-                }).then(() => {
-                    // Reabrir modal para reintentar
-                    inputCodigoPago.value = codigoPago;
-                    modal.show();
-                });
+                throw new Error(dataRepite.message);
             }
+        } else {
+            // No repite, mostrar éxito normal
+            mostrarExitoInscripcion(dataPago, codigoPago);
+        }
 
-        } catch (error) {
-            console.error('Error al validar pago:', error);
+    } catch (error) {
+        console.error('Error al procesar inscripción:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'No se pudo completar la inscripción',
+            confirmButtonColor: '#c90000'
+        }).then(() => {
+            inputCodigoPago.value = codigoPago;
+            modal.show();
+        });
+    }
+}
+
+// Procesar inscripción normal (sin verificación de repitiente)
+async function procesarInscripcionNormal(idInscripcion, codigoPago, modal, inputCodigoPago) {
+    Swal.fire({
+        title: 'Validando pago...',
+        html: `
+            <div class="text-center">
+                <p>Verificando código de pago en el sistema</p>
+                <p class="text-muted small">Por favor espere...</p>
+            </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    try {
+        const formData = new FormData();
+        formData.append('action', 'validarPagoEInscribir');
+        formData.append('idInscripcion', idInscripcion);
+        formData.append('codigoPago', codigoPago);
+
+        const response = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            mostrarExitoInscripcion(data, codigoPago);
+        } else {
             Swal.fire({
                 icon: 'error',
-                title: 'Error de conexión',
-                text: 'No se pudo conectar con el servidor. Por favor intente nuevamente.',
+                title: 'Error de validación',
+                text: data.message || 'No se pudo validar el código de pago',
                 confirmButtonColor: '#c90000'
             }).then(() => {
                 inputCodigoPago.value = codigoPago;
                 modal.show();
             });
+        }
+
+    } catch (error) {
+        console.error('Error al validar pago:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de conexión',
+            text: 'No se pudo conectar con el servidor. Por favor intente nuevamente.',
+            confirmButtonColor: '#c90000'
+        }).then(() => {
+            inputCodigoPago.value = codigoPago;
+            modal.show();
+        });
+    }
+}
+
+// Mostrar mensaje de éxito de inscripción
+function mostrarExitoInscripcion(data, codigoPago) {
+    let mensaje = data.message || 'Inscripción completada exitosamente';
+
+    if (data.cambioAutomatico) {
+        mensaje += '\nSe asignó automáticamente a la sección recomendada';
+    }
+
+    if (data.alertaCapacidad && data.alertaCapacidad.trim() !== '') {
+        mensaje += '\n\n' + data.alertaCapacidad;
+    }
+
+    Swal.fire({
+        icon: 'success',
+        title: 'Inscripción Completada',
+        html: `
+            <div class="text-center">
+                <p>${mensaje}</p>
+                <p class="text-muted small mt-2">Código de pago: <strong>${data.codigoPago || codigoPago}</strong></p>
+            </div>
+        `,
+        confirmButtonColor: '#28a745',
+        confirmButtonText: 'Aceptar'
+    }).then(() => {
+        window.location.reload();
+    });
+}
+
+// ==============================
+// Gestión de historial de inscripción (fusionado con última modificación)
+// ==============================
+function manejarHistorial(idInscripcion) {
+    const btnToggleHistorial = document.getElementById('btn-toggle-historial');
+    const historialContainer = document.getElementById('historial-container');
+    const historialContent = document.getElementById('historial-content');
+
+    if (!btnToggleHistorial || !historialContainer) return;
+
+    let historialCargado = false;
+
+    btnToggleHistorial.addEventListener('click', async function() {
+        const isExpanded = historialContainer.classList.contains('show');
+
+        if (!isExpanded && !historialCargado) {
+            // Cargar historial si no se ha cargado
+            historialContent.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</div>';
+
+            try {
+                const response = await fetch(`/mis_apps/fermin_toro/controladores/InscripcionController.php?action=obtenerHistorial&idInscripcion=${idInscripcion}`);
+                const data = await response.json();
+
+                if (data.success && data.historial.length > 0) {
+                    let html = '<div class="timeline-historial">';
+                    data.historial.forEach((item, index) => {
+                        const fecha = new Date(item.fecha_cambio);
+                        const fechaFormateada = fecha.toLocaleDateString('es-VE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        html += `
+                            <div class="timeline-item ${index === 0 ? 'timeline-item-latest' : ''}">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="timeline-date">${fechaFormateada}</span>
+                                        <span class="timeline-user">${item.usuario_nombre} ${item.usuario_apellido}</span>
+                                    </div>
+                                    <div class="timeline-body">
+                                        <p class="mb-0">${item.descripcion || 'Cambio realizado'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    historialContent.innerHTML = html;
+                } else {
+                    historialContent.innerHTML = '<div class="text-center text-muted py-3"><i class="fas fa-history me-2"></i>No hay cambios registrados en el historial</div>';
+                }
+
+                historialCargado = true;
+            } catch (error) {
+                console.error('Error al cargar historial:', error);
+                historialContent.innerHTML = '<div class="text-center text-danger py-3"><i class="fas fa-exclamation-triangle me-2"></i>Error al cargar el historial</div>';
+            }
+        }
+
+        // Toggle collapse y clase expanded para estilos
+        if (isExpanded) {
+            historialContainer.classList.remove('show');
+            btnToggleHistorial.classList.remove('expanded');
+        } else {
+            historialContainer.classList.add('show');
+            btnToggleHistorial.classList.add('expanded');
         }
     });
 }
@@ -736,6 +975,7 @@ document.addEventListener('DOMContentLoaded', function () {
         manejarRequisitos(ID_INSCRIPCION);
         manejarCambioSeccion(ID_INSCRIPCION);
         manejarValidacionPago(ID_INSCRIPCION, ID_INSCRITO);
+        manejarHistorial(ID_INSCRIPCION);
     } else {
         console.error('Variables no definidas:', {
             ID_INSCRIPCION: typeof ID_INSCRIPCION,

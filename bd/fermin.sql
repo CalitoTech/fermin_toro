@@ -422,8 +422,7 @@ CREATE TABLE inscripcion (
     IdFecha_Escolar int NOT NULL,
     IdStatus int NOT NULL,
     IdCurso_Seccion int NOT NULL,
-    ultima_modificacion datetime DEFAULT NULL,
-    modificado_por int DEFAULT NULL,
+    repite BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Indica si el estudiante repite el curso',
     codigo_pago varchar(50) DEFAULT NULL COMMENT 'Código de factura/pago del sistema administrativo',
     fecha_validacion_pago datetime DEFAULT NULL COMMENT 'Fecha en que se validó el pago',
     validado_por int DEFAULT NULL COMMENT 'IdPersona del usuario que validó el pago',
@@ -432,11 +431,26 @@ CREATE TABLE inscripcion (
     FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
-    FOREIGN KEY (modificado_por) REFERENCES persona(IdPersona),
     FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante),
     FOREIGN KEY (ultimo_plantel) REFERENCES plantel(IdPlantel),
     FOREIGN KEY (validado_por) REFERENCES persona(IdPersona),
     INDEX idx_codigo_pago (codigo_pago)
+);
+
+-- Tabla para registrar el historial de cambios en las inscripciones
+CREATE TABLE inscripcion_historial (
+    IdHistorial int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdInscripcion int NOT NULL,
+    campo_modificado varchar(50) NOT NULL COMMENT 'Nombre del campo que fue modificado',
+    valor_anterior varchar(255) DEFAULT NULL COMMENT 'Valor antes del cambio',
+    valor_nuevo varchar(255) DEFAULT NULL COMMENT 'Valor después del cambio',
+    descripcion varchar(500) DEFAULT NULL COMMENT 'Descripción legible del cambio',
+    fecha_cambio datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    IdUsuario int NOT NULL COMMENT 'IdPersona del usuario que realizó el cambio',
+    FOREIGN KEY (IdInscripcion) REFERENCES inscripcion(IdInscripcion) ON DELETE CASCADE,
+    FOREIGN KEY (IdUsuario) REFERENCES persona(IdPersona),
+    INDEX idx_inscripcion (IdInscripcion),
+    INDEX idx_fecha (fecha_cambio)
 );
 
 CREATE TABLE inscripcion_requisito (

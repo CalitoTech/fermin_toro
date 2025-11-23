@@ -193,8 +193,6 @@ class Inscripcion {
             i.fecha_inscripcion,
             i.ultimo_plantel,
             pl.plantel AS plantel_nombre,
-            i.modificado_por,
-            i.ultima_modificacion,
             i.IdCurso_Seccion,
             c.curso,
             c.IdCurso,
@@ -211,6 +209,9 @@ class Inscripcion {
             i.validado_por,
             validador.nombre AS validador_nombre,
             validador.apellido AS validador_apellido,
+
+            -- Indicador de repitiente
+            i.repite,
 
             -- Estudiante
             e.IdPersona AS id_estudiante,
