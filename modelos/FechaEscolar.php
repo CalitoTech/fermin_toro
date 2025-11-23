@@ -127,21 +127,20 @@ class FechaEscolar {
     }
 
     public function activarFechaEscolar($id) {
+        // 1. Obtener el año escolar activo actual (antes de iniciar transacción)
+        $queryActual = "SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+        $stmtActual = $this->conexion->prepare($queryActual);
+        $stmtActual->execute();
+        $añoActual = $stmtActual->fetch(PDO::FETCH_ASSOC);
+
+        // Validación: No permitir activar un año escolar con ID menor al actual
+        if ($añoActual && $id <= $añoActual['IdFecha_Escolar']) {
+            throw new Exception("No se puede activar un año escolar anterior o igual al actual. Solo puede activar años escolares futuros.");
+        }
+
         try {
             // Iniciar transacción
             $this->conexion->beginTransaction();
-
-            // 1. Obtener el año escolar activo actual (antes de desactivarlo)
-            $queryActual = "SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
-            $stmtActual = $this->conexion->prepare($queryActual);
-            $stmtActual->execute();
-            $añoActual = $stmtActual->fetch(PDO::FETCH_ASSOC);
-
-            // Validación: No permitir activar un año escolar con ID menor al actual
-            if ($añoActual && $id <= $añoActual['IdFecha_Escolar']) {
-                $this->conexion->rollBack();
-                throw new Exception("No se puede activar un año escolar anterior o igual al actual. Solo puede activar años escolares futuros.");
-            }
 
             $inscripcionesRechazadas = [];
 
@@ -195,8 +194,10 @@ class FechaEscolar {
             return true;
 
         } catch (Exception $e) {
-            // Revertir transacción en caso de error
-            $this->conexion->rollBack();
+            // Revertir transacción en caso de error (solo si hay una activa)
+            if ($this->conexion->inTransaction()) {
+                $this->conexion->rollBack();
+            }
             throw $e;
         }
     }

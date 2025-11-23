@@ -62,8 +62,13 @@ if ($alert) {
         case 'dependency_error':
             $alerta = Notificaciones::advertencia("No se puede eliminar el año escolar porque está siendo utilizado por una o más personas.");
             break;
+        case 'activar_anterior':
+            $alerta = Notificaciones::advertencia("No se puede activar un año escolar anterior o igual al actual. Solo puede activar años escolares futuros.");
+            break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Este año escolar ya existe, verifique por favor.");
+            $mensaje_error = $_SESSION['message'] ?? "Este año escolar ya existe, verifique por favor.";
+            unset($_SESSION['message']);
+            $alerta = Notificaciones::advertencia($mensaje_error);
             break;
         default:
             $alerta = null;

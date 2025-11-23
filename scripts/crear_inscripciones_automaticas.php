@@ -129,6 +129,40 @@ try {
             $stmtIns->bindParam(':idCursoSeccion', $idCursoSeccion, PDO::PARAM_INT);
             $stmtIns->execute();
 
+            // Obtener el ID de la nueva inscripción creada
+            $idNuevaInscripcion = $conexion->lastInsertId();
+
+            // Obtener el IdNivel del nuevo curso para filtrar requisitos
+            $queryNivel = "SELECT c.IdNivel
+                          FROM curso_seccion cs
+                          INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+                          WHERE cs.IdCurso_Seccion = :idCursoSeccion";
+            $stmtNivel = $conexion->prepare($queryNivel);
+            $stmtNivel->bindParam(':idCursoSeccion', $idCursoSeccion, PDO::PARAM_INT);
+            $stmtNivel->execute();
+            $idNuevoNivel = $stmtNivel->fetchColumn();
+
+            // Copiar requisitos cumplidos de la inscripción anterior
+            // Solo copiar los que: cumplido = 1 AND (IdNivel IS NULL OR IdNivel = nuevo nivel)
+            $queryCopiarRequisitos = "INSERT INTO inscripcion_requisito (IdInscripcion, IdRequisito, cumplido)
+                SELECT :idNuevaInscripcion, ir.IdRequisito, ir.cumplido
+                FROM inscripcion_requisito ir
+                INNER JOIN requisito r ON ir.IdRequisito = r.IdRequisito
+                WHERE ir.IdInscripcion = :idInscripcionAnterior
+                AND ir.cumplido = 1
+                AND (r.IdNivel IS NULL OR r.IdNivel = :idNuevoNivel)";
+
+            $stmtCopiar = $conexion->prepare($queryCopiarRequisitos);
+            $stmtCopiar->bindParam(':idNuevaInscripcion', $idNuevaInscripcion, PDO::PARAM_INT);
+            $stmtCopiar->bindParam(':idInscripcionAnterior', $est['IdInscripcion'], PDO::PARAM_INT);
+            $stmtCopiar->bindParam(':idNuevoNivel', $idNuevoNivel, PDO::PARAM_INT);
+            $stmtCopiar->execute();
+
+            $requisitosCopiadosCount = $stmtCopiar->rowCount();
+            if ($requisitosCopiadosCount > 0) {
+                error_log("   📋 Copiados $requisitosCopiadosCount requisitos cumplidos para estudiante #{$est['IdEstudiante']}");
+            }
+
             $inscritos++;
 
         } catch (Exception $e) {
@@ -143,6 +177,7 @@ try {
     error_log("   📝 Inscritos: $inscritos");
     error_log("   🎓 Graduados: $graduados");
     error_log("   ❌ Errores: $errores");
+    error_log("   📋 Requisitos cumplidos copiados automáticamente");
 
 } catch (Exception $e) {
     if (isset($conexion) && $conexion->inTransaction()) {

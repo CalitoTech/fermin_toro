@@ -164,6 +164,12 @@ function activarFechaEscolar() {
         exit();
 
     } catch (Exception $e) {
+        // Verificar si es el error de año anterior
+        if (strpos($e->getMessage(), 'anterior') !== false) {
+            $_SESSION['alert'] = 'activar_anterior';
+            header("Location: ../vistas/configuracion/fecha_escolar/fecha_escolar.php");
+            exit();
+        }
         manejarError('Error al activar: ' . $e->getMessage(), '../vistas/configuracion/fecha_escolar/fecha_escolar.php');
     }
 }
