@@ -643,6 +643,7 @@
         </div>
     </div>
 
+    <?php include 'layouts/social_menu.php'; ?>
     <?php include 'layouts/footer.php'; ?>
     
     <!-- SweetAlert2 JS -->

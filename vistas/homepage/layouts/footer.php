@@ -1,46 +1,131 @@
-<!-- Navbar with Social Media Icons -->
-       <nav class="navbar navbar-custom" id="redes">
-         <div class="container-fluid">
-            <div class="d-flex w-100">
-               <p class="navbar-text mb-0">
-                  © 2025 Derechos Reservados.
-               </p>
-               <ul class="navbar-nav ms-auto"> <!-- Este menú sigue usando navbar-nav sin cambios -->
-                  <li class="nav-item">
-                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.instagram.com/uecftaraure/"><i class="fab fa-instagram"></i></a>
-                  </li>
-                  <li class="nav-item">
-                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.youtube.com/@NuestraVozRadioyTv"><i class="fab fa-youtube"></i></a>
-                  </li>
-                  <li class="nav-item">
-                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="mailto:fermin.toro.araure@gmail.com"><i class="fab fa-google"></i></a>
-                  </li>
-                  <li class="nav-item">
-                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://api.whatsapp.com/send?phone=584145641168"><i class="fab fa-whatsapp"></i></a>
-                  </li>
-                  <li class="nav-item">
-                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://maps.app.goo.gl/XRBXfB6ygZDZaS3t7"><i class="fas fa-map-marker-alt"></i></a>
-                  </li>
-                  <li class="nav-item">
-                     <a class="nav-link" style="padding: 0 0.25rem; font-size: 14px;" href="https://www.uefermintoroaraure.com/nuestravoz.html"><i class="fas fa-microphone"></i></a>
-                  </li>
-               </ul>
-            </div>
-         </div>
-      </nav>
-      <!-- End Navbar -->
-      
-      <!-- end footer -->
-      <!-- jQuery y Bootstrap -->
-      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-      <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<!-- Footer Design -->
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
 
-      <!-- Otros plugins -->
-      <script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js"></script>
+    .site-footer {
+        background: linear-gradient(135deg, #8a0000 0%, #c90000 100%);
+        color: #fff;
+        padding: 25px 0;
+        font-family: 'Outfit', sans-serif;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+        margin-top: auto; /* Ensure it pushes to bottom if flex container used */
+    }
+    
+    /* Decorative top border */
+    .site-footer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    }
 
-      <!-- Tu script personalizado -->
-      <script src="js/custom.js"></script>
+    .footer-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 5%;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
 
-   </body>
+    .copyright-text {
+        font-size: 0.95rem;
+        font-weight: 300;
+        letter-spacing: 0.5px;
+        opacity: 0.9;
+    }
+
+    .designer-section {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .designer-label {
+        font-size: 0.9rem;
+        font-weight: 300;
+        opacity: 0.8;
+        letter-spacing: 0.5px;
+    }
+
+    .designer-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 8px 20px;
+        border-radius: 50px;
+        color: #fff;
+        text-decoration: none !important;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(5px);
+    }
+
+    .designer-link:hover {
+        background: #fff;
+        color: #c90000;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .designer-link i {
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+
+    .designer-link:hover i {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    @media (max-width: 768px) {
+        .footer-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+            padding: 0 20px;
+        }
+        
+        .designer-section {
+            flex-direction: column;
+            gap: 8px;
+        }
+    }
+</style>
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <div class="copyright-text">
+            &copy; 2025 <strong>UECFT Araure</strong>. Todos los derechos reservados.
+        </div>
+        
+        <div class="designer-section">
+            <span class="designer-label">Diseñado por:</span>
+            <a href="https://www.linkedin.com/in/carlos-navas04/" target="_blank" class="designer-link">
+                <i class="fab fa-linkedin"></i>
+                <span>Carlos Navas</span>
+            </a>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery y Bootstrap -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+<!-- Otros plugins -->
+<script src="js/jquery.mCustomScrollbar.concat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.min.js"></script>
+
+<!-- Tu script personalizado -->
+<script src="js/custom.js"></script>
+
+</body>
 </html>

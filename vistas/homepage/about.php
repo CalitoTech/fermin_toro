@@ -170,7 +170,8 @@
       </div>
       <!-- end clients -->
 
-      <?php include 'layouts/footer.php'; ?>
+      <?php include 'layouts/social_menu.php'; ?>
+       <?php include 'layouts/footer.php'; ?>
       <script>
          $('a[href^="#"]').on('click', function(event) {
          

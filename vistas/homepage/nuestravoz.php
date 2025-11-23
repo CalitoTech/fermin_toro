@@ -97,4 +97,5 @@
    </main>
    <!-- end main content -->
 
-   <?php include 'layouts/footer.php'; ?>
+   <?php include 'layouts/social_menu.php'; ?>
+    <?php include 'layouts/footer.php'; ?>

@@ -162,4 +162,5 @@
          </div>
       </div>
        end clients -->
+<?php include 'layouts/social_menu.php'; ?>
 <?php include 'layouts/footer.php'; ?>

@@ -2,6 +2,7 @@
 /**
  * Script asíncrono para crear inscripciones automáticas
  * Inscribe automáticamente a estudiantes del año anterior en el siguiente curso
+ * Copia los requisitos cumplidos de la última inscripción (solo los aplicables al nuevo nivel)
  */
 
 // Evitar timeout
@@ -28,7 +29,9 @@ try {
     $egresoModel = new Egreso($conexion);
 
     // 1. Obtener estudiantes inscritos del año anterior (IdStatus = 11)
+    // Incluir el IdInscripcion para poder copiar los requisitos
     $queryEstudiantes = "SELECT DISTINCT
+        i.IdInscripcion,
         i.IdEstudiante,
         i.ultimo_plantel,
         i.responsable_inscripcion
