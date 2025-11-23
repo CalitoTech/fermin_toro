@@ -651,3 +651,142 @@ CREATE TABLE notificaciones_leidas (
     FOREIGN KEY (IdNotificacion) REFERENCES notificaciones(IdNotificacion) ON DELETE CASCADE,
     FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona) ON DELETE CASCADE
 );
+
+-- =====================================================
+-- Configuración de WhatsApp / Evolution API
+-- =====================================================
+
+CREATE TABLE config_whatsapp (
+    IdConfigWhatsapp INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    api_url VARCHAR(255) NOT NULL COMMENT 'URL de Evolution API',
+    api_key VARCHAR(255) NOT NULL COMMENT 'API Key hasheada',
+    nombre_instancia VARCHAR(100) NOT NULL COMMENT 'Nombre de la instancia de WhatsApp',
+    login_url VARCHAR(255) NULL COMMENT 'URL de login para incluir en mensajes',
+    activo BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Solo una configuración activa',
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insertar configuración inicial (api_key vacía, se configura desde la interfaz)
+INSERT INTO config_whatsapp (api_url, api_key, nombre_instancia, login_url, activo) VALUES
+('http://localhost:8080', 'elVL1RV5vaF8LN2cMsXNVVQ2VExPTG8zNXJkbkhLcHZGa3VhVmN4dkxJVVREZTVqbm55QjFmbGxEOUt5L1Z0dTJxU1hkei9xUFRKK1BoN1I=', 'Test', NULL, TRUE);
+
+-- Tabla para mensajes parametrizables de WhatsApp por status de inscripción
+CREATE TABLE mensaje_whatsapp (
+    IdMensajeWhatsapp INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdStatus INT NOT NULL COMMENT 'Status de inscripción asociado',
+    titulo VARCHAR(100) NOT NULL COMMENT 'Título identificador del mensaje',
+    contenido TEXT NOT NULL COMMENT 'Contenido del mensaje con variables (soporta emojis)',
+    incluir_requisitos BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'Si se incluyen requisitos del nivel',
+    activo BOOLEAN NOT NULL DEFAULT TRUE COMMENT 'Si el mensaje está activo',
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (IdStatus) REFERENCES status(IdStatus)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Mensajes por defecto para cada status de inscripción
+-- Variables disponibles: {nombre_representante}, {nombre_estudiante}, {codigo_inscripcion}, {curso}, {seccion}, {cedula_representante}, {requisitos}, {login_url}
+
+-- Status 8: Pendiente de aprobación
+INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
+(8, 'Solicitud Recibida',
+'⏳ *Solicitud en Proceso*
+
+Estimado(a) *{nombre_representante}*,
+
+La solicitud de inscripción de *{nombre_estudiante}* ha sido recibida y está en revisión inicial.
+
+Nuestro equipo administrativo verificará la documentación y le notificará los próximos pasos en un plazo de 48 horas hábiles.
+
+Código de Seguimiento: {codigo_inscripcion}',
+FALSE, TRUE);
+
+-- Status 9: Aprobada para reunión
+INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
+(9, 'Aprobado para Reunión',
+'✅ *Aprobado para Reunión*
+
+Estimado(a) *{nombre_representante}*,
+
+La solicitud de *{nombre_estudiante}* ha sido pre-aprobada.
+
+*📅 Próximo paso:* Asistir a la reunión de formalización entre el *1 y 31 de octubre* en horario de oficina.
+
+*📋 Debe traer:*
+{requisitos}
+
+Código de seguimiento: {codigo_inscripcion}',
+TRUE, TRUE);
+
+-- Status 10: En espera de pago
+INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
+(10, 'Pendiente de Pago',
+'💳 *Pendiente de Pago*
+
+Estimado(a) *{nombre_representante}*,
+
+*{nombre_estudiante}* ha sido *aceptado oficialmente* en nuestra institución.
+
+*📅 Próximo paso:* Diríjase a la caja para realizar el pago de:
+• Matrícula de inscripción
+• Primera mensualidad
+
+*⏰ Horario de caja:*
+Lunes a Viernes: 7:00 AM - 2:00 PM
+
+Una vez realizado el pago, la inscripción se completará automáticamente.
+
+Código de Seguimiento: {codigo_inscripcion}',
+FALSE, TRUE);
+
+-- Status 11: Inscrito
+INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
+(11, 'Inscripción Completada',
+'🎉 *¡Inscripción Completada!*
+
+Estimado(a) *{nombre_representante}*,
+
+*¡Felicidades!*
+
+*{nombre_estudiante}* ha sido oficialmente inscrito(a) en:
+• 🏫 Curso: {curso}
+• 📚 Sección: {seccion}
+
+*📅 Inicio de clases:*
+Primera semana de noviembre
+
+*🌐 Información importante:*
+Ahora puede consultar el horario y demás información en nuestro sitio web.
+
+👤 Usuario: {cedula_representante}
+🔑 Contraseña: {cedula_representante}
+
+⚠️ *Importante:* Por seguridad, cambie su contraseña después de iniciar sesión por primera vez.
+
+{login_url}
+
+¡Bienvenido(a) a nuestra familia fermintoriana!',
+FALSE, TRUE);
+
+-- Status 12: Rechazada
+INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
+(12, 'Solicitud Rechazada',
+'❌ *Solicitud Rechazada*
+
+Estimado(a) *{nombre_representante}*,
+
+Luego de revisar la documentación de *{nombre_estudiante}*, lamentamos informarle que la solicitud de inscripción no pudo ser procesada.
+
+*📞 Contacte a administración* para:
+• Conocer los motivos específicos
+• Recibir orientación sobre opciones disponibles
+• Solicitar reconsideración si aplica
+
+Horario de atención: Lunes a Viernes 7:00 AM - 3:00 PM
+
+Código de Seguimiento: {codigo_inscripcion}',
+FALSE, TRUE);
+
+-- Índices para búsquedas rápidas
+CREATE INDEX idx_mensaje_status ON mensaje_whatsapp(IdStatus);
+CREATE INDEX idx_mensaje_activo ON mensaje_whatsapp(activo);

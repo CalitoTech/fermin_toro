@@ -56,6 +56,48 @@ class Requisito {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Obtiene requisitos por nivel excluyendo los de tipo uniforme (IdTipo_Requisito = 2)
+     * Para usar en mensajes de WhatsApp
+     */
+    public function obtenerPorNivelSinUniforme($idNivel, $idTipoTrabajador = null, $esPlantelPrivado = false) {
+        $query = "
+            SELECT
+                r.*,
+                tr.tipo_requisito,
+                tt.tipo_trabajador
+            FROM requisito r
+            INNER JOIN tipo_requisito tr ON r.IdTipo_Requisito = tr.IdTipo_Requisito
+            LEFT JOIN tipo_trabajador tt ON r.IdTipoTrabajador = tt.IdTipoTrabajador
+            WHERE (r.IdNivel = :idNivel OR r.IdNivel IS NULL)
+            AND r.IdTipo_Requisito != 2
+        ";
+
+        // Filtrar por tipo de trabajador
+        if ($idTipoTrabajador !== null) {
+            $query .= " AND (r.IdTipoTrabajador = :idTipoTrabajador OR r.IdTipoTrabajador IS NULL)";
+        } else {
+            $query .= " AND r.IdTipoTrabajador IS NULL";
+        }
+
+        // Filtrar por plantel privado
+        if (!$esPlantelPrivado) {
+            $query .= " AND r.solo_plantel_privado = FALSE";
+        }
+
+        $query .= " ORDER BY tr.IdTipo_Requisito, r.obligatorio DESC, r.requisito";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':idNivel', $idNivel, PDO::PARAM_INT);
+
+        if ($idTipoTrabajador !== null) {
+            $stmt->bindParam(':idTipoTrabajador', $idTipoTrabajador, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function guardar() {
         $query = "INSERT INTO requisito SET
             requisito = :requisito,

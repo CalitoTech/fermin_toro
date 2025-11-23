@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/conexion.php';
+require_once __DIR__ . '/../modelos/ConfigWhatsapp.php';
+require_once __DIR__ . '/../modelos/MensajeWhatsapp.php';
 
 class WhatsAppController {
     private $conexion;
@@ -7,19 +9,30 @@ class WhatsAppController {
     private $evolutionApiKey;
     private $nombreInstancia;
     private $loginUrl;
+    private $configModel;
+    private $mensajeModel;
 
     public function __construct($conexion) {
         $this->conexion = $conexion;
-        
-        // Configuración de Evolution API
-        $this->evolutionApiUrl = 'http://localhost:8080';
-        $this->evolutionApiKey = 'A8DB43E66C28-4108-AA2D-9A3E84E98648';
-        $this->nombreInstancia = 'Test';
 
-        // 👇 URL opcional (puedes dejarla null en local)
-        $this->loginUrl = null;
-        // Ejemplo: 
-        // $this->loginUrl = 'http://localhost/mis_apps/fermin_toro/vistas/login/login.php';
+        // Cargar configuración desde la base de datos
+        $this->configModel = new ConfigWhatsapp($conexion);
+        $this->mensajeModel = new MensajeWhatsapp($conexion);
+
+        $config = $this->configModel->obtenerConfiguracionActiva();
+
+        if ($config) {
+            $this->evolutionApiUrl = $config['api_url'];
+            $this->evolutionApiKey = $this->configModel->obtenerApiKeyParaUso();
+            $this->nombreInstancia = $config['nombre_instancia'];
+            $this->loginUrl = $config['login_url'];
+        } else {
+            // Valores por defecto si no hay configuración
+            $this->evolutionApiUrl = 'http://localhost:8080';
+            $this->evolutionApiKey = 'A8DB43E66C28-4108-AA2D-9A3E84E98648';
+            $this->nombreInstancia = 'Test';
+            $this->loginUrl = null;
+        }
     }
 
     public function responderWhatsApp($telefono, $mensaje) {
@@ -223,16 +236,22 @@ class WhatsAppController {
             // 4. Enviar mensajes a todos los destinatarios
             $resultados = [];
             foreach ($destinatarios as $destinatario) {
-                // 👇 Generar mensaje personalizado para cada representante
+                // Generar mensaje personalizado para cada representante
                 $mensaje = $this->generarMensajeEstado(
-                    $nuevoEstado, 
+                    $nuevoEstado,
                     $datosInscripcion['estudiante_nombre'],
                     $datosInscripcion['codigo_inscripcion'],
                     $datosInscripcion['curso'],
                     $datosInscripcion['seccion'],
                     $datosInscripcion['IdNivel'],
-                    $destinatario // 👈 aquí pasamos el representante
+                    $destinatario
                 );
+
+                // Solo enviar si hay un mensaje activo configurado
+                if ($mensaje === null) {
+                    error_log("⏭️ No hay mensaje activo para estado $nuevoEstado - No se envía WhatsApp");
+                    continue;
+                }
 
                 $resultado = $this->enviarMensajeWhatsApp(
                     $destinatario['telefono'],
@@ -240,6 +259,11 @@ class WhatsAppController {
                     $destinatario['nombre']
                 );
                 $resultados[] = $resultado;
+            }
+
+            if (empty($resultados)) {
+                error_log("ℹ️ No se enviaron mensajes para inscripción ID: $idInscripcion (sin mensaje activo)");
+                return [];
             }
 
             error_log("✅ Enviados " . count($resultados) . " mensajes para inscripción ID: $idInscripcion");
@@ -327,7 +351,7 @@ class WhatsAppController {
     }
 
     /**
-     * Genera el mensaje según el estado
+     * Genera el mensaje según el estado usando la configuración de la BD
      */
     private function generarMensajeEstado(
         $nuevoEstado,
@@ -336,77 +360,39 @@ class WhatsAppController {
         $curso,
         $seccion,
         $idNivel = null,
-        $representante = null // 👈 lo recibimos
+        $representante = null
     ) {
         $nombreRep = $representante['nombre'] ?? 'Representante';
         $cedulaRep = $representante['cedula'] ?? 'No asignada';
 
-        // ✅ Estado 9: requisitos dinámicos
-        if ($nuevoEstado == 9 && $idNivel) {
-            require_once __DIR__ . '/../modelos/Requisito.php';
-            $requisitoModel = new Requisito($this->conexion);
-            $requisitos = $requisitoModel->obtenerPorNivel($idNivel);
+        // Intentar obtener mensaje personalizado de la BD
+        $mensajeConfig = $this->mensajeModel->obtenerPorStatus($nuevoEstado);
 
-            $listaRequisitos = "";
-            if (!empty($requisitos)) {
-                foreach ($requisitos as $req) {
-                    $listaRequisitos .= "\n• " . $req['requisito'];
-                    if ($req['obligatorio']) {
-                        $listaRequisitos .= " (Obligatorio)";
-                    }
-                }
-            } else {
-                $listaRequisitos = "\n• Requisitos generales de inscripción";
+        if ($mensajeConfig) {
+            // Preparar datos para el procesamiento del mensaje
+            $datos = [
+                'nombre_representante' => $nombreRep,
+                'nombre_estudiante' => $estudianteNombre,
+                'codigo_inscripcion' => $codigoInscripcion,
+                'curso' => $curso,
+                'seccion' => $seccion,
+                'cedula_representante' => $cedulaRep
+            ];
+
+            // Obtener requisitos si el mensaje los incluye (sin uniformes)
+            $requisitos = [];
+            if ($mensajeConfig['incluir_requisitos'] && $idNivel) {
+                require_once __DIR__ . '/../modelos/Requisito.php';
+                $requisitoModel = new Requisito($this->conexion);
+                $requisitos = $requisitoModel->obtenerPorNivelSinUniforme($idNivel);
             }
 
-            return "✅ *Aprobado para Reunión*\n\nEstimado(a) *$nombreRep*,\n\n"
-                . "La solicitud de *$estudianteNombre* ha sido pre-aprobada.\n\n"
-                . "*📅 Próximo paso:* Asistir a la reunión de formalización entre el *1 y 31 de octubre* en horario de oficina.\n\n"
-                . "*📋 Debe traer:*$listaRequisitos\n\n"
-                . "Código de seguimiento: $codigoInscripcion";
+            // Procesar el mensaje con las variables
+            return $this->mensajeModel->procesarMensaje($datos, $requisitos, $this->loginUrl);
         }
 
-        // ✅ Mensajes personalizados
-        $mensajes = [
-            8 => "⏳ *Solicitud en Proceso*\n\nEstimado(a) *$nombreRep*,\n\n"
-                 . "La solicitud de inscripción de *$estudianteNombre* " 
-                 . "ha sido recibida y está en revisión inicial.\n\n"
-                 . "Nuestro equipo administrativo verificará la documentación y le notificará "
-                 . "los próximos pasos en un plazo de 48 horas hábiles.\n"
-                 . "Código de Seguimiento: $codigoInscripcion",
-
-            10 => "💳 *Pendiente de Pago*\n\nEstimado(a) *$nombreRep*,\n\n*${estudianteNombre}*"
-                . "ha sido *aceptado oficialmente* en nuestra institución.\n\n"
-                . "*📅 Próximo paso:* Diríjase a la caja para realizar el pago de:\n"
-                . "• Matrícula de inscripción\n• Primera mensualidad\n\n"
-                . "*⏰ Horario de caja:*\nLunes a Viernes: 7:00 AM - 2:00 PM\n\n"
-                . "Una vez realizado el pago, la inscripción se completará automáticamente.\n"
-                . "Código de Seguimiento: $codigoInscripcion",
-
-            11 => "🎉 *¡Inscripción Completada!*\n\nEstimado(a) *$nombreRep*,\n\n*¡Felicidades!* \n\n*$estudianteNombre* ha sido oficialmente inscrito(a) en:\n"
-                . "• 🏫 Curso: $curso\n"
-                . "• 📚 Sección: $seccion\n\n"
-                . "*📅 Inicio de clases:*\nPrimera semana de noviembre\n\n"
-                . "*🌐 Información importante:*\n"
-                . "Ahora puede consultar el horario y demás información en nuestro sitio web.\n\n"
-                . "👤 Usuario: $cedulaRep\n"
-                . "🔑 Contraseña: $cedulaRep\n\n"
-                . "⚠️ *Importante:* Por seguridad, cambie su contraseña después de iniciar sesión por primera vez.\n\n"
-                . (!empty($this->loginUrl) ? "🔗 Acceda aquí: {$this->loginUrl}\n\n" : "") // 👈 Solo si existe URL
-                . "¡Bienvenido(a) a nuestra familia fermintoriana!",
-
-            12 => "❌ *Solicitud Rechazada*\n\nEstimado(a) *$nombreRep*,\n\n"
-                . "Luego de revisar la documentación de *$estudianteNombre*,"
-                . "lamentamos informarle que la solicitud de inscripción no pudo ser procesada.\n\n"
-                . "*📞 Contacte a administración* para:\n• Conocer los motivos específicos\n"
-                . "• Recibir orientación sobre opciones disponibles\n"
-                . "• Solicitar reconsideración si aplica\n\n"
-                . "Horario de atención: Lunes a Viernes 7:00 AM - 3:00 PM\n\n"
-                . "Código de Seguimiento: $codigoInscripcion"
-        ];
-
-        return $mensajes[$nuevoEstado] ??
-            "📢 *Actualización de Estado*\n\nEstimado(a) *$nombreRep*,\n\nEl estado de la inscripción de *$estudianteNombre* ha cambiado.\n\nNuevo estado: #$nuevoEstado\nCódigo de seguimiento: $codigoInscripcion\n\nPara más información, contacte a la administración.";
+        // No hay mensaje activo configurado para este estado - no enviar nada
+        return null;
     }
 
 

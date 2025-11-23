@@ -15,7 +15,7 @@ class Database {
                 $this->username, 
                 $this->password
             );
-            $this->conn->exec("set names utf8");
+            $this->conn->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch(PDOException $exception) {
             // Registrar error en archivo de log
