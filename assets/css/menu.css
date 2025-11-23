@@ -11,6 +11,7 @@ body {
 html {
     height: 100%;
 }
+
 /* footer {
     position: relative;
     bottom: 0;
@@ -25,7 +26,8 @@ html {
 } */
 /* Contenido principal centrado */
 .main-content {
-    min-height: calc(100vh - 56px - 50px); /* altura total - navbar - footer */
+    min-height: calc(100vh - 56px - 50px);
+    /* altura total - navbar - footer */
 }
 
 /* Logo grande */
@@ -58,19 +60,23 @@ html {
     .main-content {
         padding: 2rem 1rem;
     }
+
     .img-logo {
         width: 100px;
         height: 100px;
     }
+
     .btn-group .btn {
         display: block;
         width: 100%;
         margin: 8px 0;
     }
 }
+
 /* Variables */
 :root {
-    --clr-primary: #c90000; /* Rojo principal */
+    --clr-primary: #c90000;
+    /* Rojo principal */
     --clr-light: #f8f9fa;
     --clr-white: #ffffff;
     --clr-black: #212529;
@@ -84,6 +90,7 @@ html {
     box-sizing: border-box;
     font-family: 'Poppins', sans-serif;
 }
+
 /* Sidebar */
 .sidebar {
     position: fixed;
@@ -104,7 +111,8 @@ html {
 
 /* Contenedor interno: solo tiene scroll cuando el menú está ABIERTO */
 .sidebar-scroll {
-    height: calc(100vh - 120px - 0px); /* Ajusta: logo (~120px) + perfil (~0px) */
+    height: calc(100vh - 120px - 0px);
+    /* Ajusta: logo (~120px) + perfil (~0px) */
     overflow-y: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -112,7 +120,8 @@ html {
 
 /* En modo CERRADO, el contenedor de scroll se contrae, pero sin overflow */
 .sidebar.close .sidebar-scroll {
-    overflow-y: visible; /* ✅ Permite que los tooltips salgan */
+    overflow-y: visible;
+    /* ✅ Permite que los tooltips salgan */
     height: auto;
 }
 
@@ -132,7 +141,8 @@ html {
 }
 
 .sidebar .logo-details img {
-    width: 42px; /* Aumentado sin romper layout */
+    width: 42px;
+    /* Aumentado sin romper layout */
     height: 42px;
     border-radius: 50%;
     transition: all 0.3s ease;
@@ -251,8 +261,15 @@ html {
 
 
 @keyframes fadeInRight {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Submenús */
@@ -273,8 +290,10 @@ html {
     left: 65px;
     top: 40px;
     min-width: 200px;
-    max-height: 300px; /* Limita la altura */
-    overflow-y: auto; /* ✅ Scroll interno en el submenú */
+    max-height: 300px;
+    /* Limita la altura */
+    overflow-y: auto;
+    /* ✅ Scroll interno en el submenú */
     background: var(--clr-primary);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     z-index: 1000;
@@ -361,13 +380,15 @@ html {
     transition: all 0.5s ease;
     /* Aseguramos que el contenido no se corte */
     overflow: hidden;
-    padding-bottom: 10px; /* Espacio para el footer */
+    padding-bottom: 10px;
+    /* Espacio para el footer */
 }
 
-.sidebar.close ~ .home-section {
+.sidebar.close~.home-section {
     left: 80px;
     width: calc(100% - 80px);
 }
+
 /* Home Content - Diseño mejorado */
 .home-section .home-content {
     display: flex;
@@ -401,7 +422,7 @@ html {
     font-weight: 800;
     color: var(--clr-primary);
     letter-spacing: 1px;
-    text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.05);
 }
 
 .brand-text .separator {
@@ -421,11 +442,14 @@ html {
 /* Responsive para el título */
 @media (max-width: 768px) {
     .brand-text .full-name {
-        display: none; /* Ocultar nombre largo en móviles */
+        display: none;
+        /* Ocultar nombre largo en móviles */
     }
+
     .brand-text .separator {
         display: none;
     }
+
     .brand-text .acronym {
         font-size: 20px;
     }
@@ -494,6 +518,25 @@ html {
     color: var(--clr-black);
 }
 
+/* Animación de pulso para nuevas notificaciones */
+.pulse-animation {
+    animation: pulse 1s ease-in-out 2;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    50% {
+        transform: scale(1.15);
+        background: rgba(201, 0, 0, 0.2);
+    }
+}
+
 /* Badge de notificaciones */
 .home-section .notification .badge {
     position: absolute;
@@ -510,12 +553,29 @@ html {
     align-items: center;
     justify-content: center;
     padding: 0;
+    animation: badge-pop 0.3s ease;
+}
+
+@keyframes badge-pop {
+    0% {
+        transform: scale(0);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 /* Panel de Notificaciones */
 .notification-panel {
-    position: fixed; /* Cambiado de absolute a fixed */
-    top: 70px; /* Ajustado debajo del header */
+    position: fixed;
+    /* Cambiado de absolute a fixed */
+    top: 70px;
+    /* Ajustado debajo del header */
     right: 20px;
     width: 350px;
     background: white;
@@ -523,15 +583,23 @@ html {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     display: none;
-    z-index: 2000; /* Mucho más alto que cualquier otro elemento */
+    z-index: 2000;
+    /* Mucho más alto que cualquier otro elemento */
     animation: slideDown 0.3s ease;
     max-height: 80vh;
     overflow-y: auto;
 }
 
 @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .panel-header {
@@ -581,9 +649,20 @@ html {
     font-size: 16px;
 }
 
-.bg-blue { background: rgba(0, 123, 255, 0.1); color: #007bff; }
-.bg-green { background: rgba(40, 167, 69, 0.1); color: #28a745; }
-.bg-orange { background: rgba(255, 133, 27, 0.1); color: #fd7e14; }
+.bg-blue {
+    background: rgba(0, 123, 255, 0.1);
+    color: #007bff;
+}
+
+.bg-green {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.bg-orange {
+    background: rgba(255, 133, 27, 0.1);
+    color: #fd7e14;
+}
 
 .notif-content p {
     margin: 0 0 4px 0;
@@ -688,7 +767,8 @@ html {
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 1;
-    flex-wrap: wrap; /* Permite que los elementos se ajusten */
+    flex-wrap: wrap;
+    /* Permite que los elementos se ajusten */
 }
 
 .home-section .home-content .left-section,
@@ -703,7 +783,8 @@ html {
     cursor: pointer;
     font-size: 24px;
     color: var(--clr-primary);
-    margin-right: 0; /* Reducimos espacio */
+    margin-right: 0;
+    /* Reducimos espacio */
 }
 
 .home-section .home-content .text {
@@ -716,7 +797,8 @@ html {
 
 /* Sección Derecha */
 .home-section .right-section {
-    gap: 8px; /* Reducimos espacio entre elementos */
+    gap: 8px;
+    /* Reducimos espacio entre elementos */
 }
 
 /* Fecha y Hora - Ocultar en móviles */
@@ -764,8 +846,10 @@ html {
 .notification-panel {
     width: 300px;
     right: 10px;
-    max-height: calc(100vh - 80px); /* Ajusta altura máxima */
+    max-height: calc(100vh - 80px);
+    /* Ajusta altura máxima */
 }
+
 .mobile-menu-toggle {
     position: fixed;
     left: 15px;
@@ -780,7 +864,7 @@ html {
     font-size: 20px;
     cursor: pointer;
     display: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 /* Versión móvil del sidebar */
@@ -790,22 +874,22 @@ html {
         padding: 0;
         overflow: hidden;
     }
-    
+
     .sidebar.open {
         width: 278px;
         padding: 10px 14px;
     }
-    
+
     .sidebar.close {
         width: 0;
         padding: 0;
     }
-    
+
     .home-section {
         left: 0 !important;
         width: 100% !important;
     }
-    
+
     /* Botón para abrir/cerrar sidebar en móviles */
     .mobile-menu-toggle {
         display: block !important;
@@ -822,10 +906,12 @@ html {
         font-size: 20px;
         cursor: pointer;
     }
+
     .sidebar.open .logo-details {
-        margin-top: 20px; /* Menos espacio cuando está abierto */
+        margin-top: 20px;
+        /* Menos espacio cuando está abierto */
     }
-    
+
     .mobile-menu-toggle {
         left: 10px;
         top: 10px;
@@ -834,6 +920,7 @@ html {
 
 /* Mostrar tooltips en móviles cuando sidebar está cerrado */
 @media (max-width: 768px) {
+
     .sidebar.close .nav-links li:hover .link_name,
     .sidebar.close .nav-links li:hover .sub-menu {
         display: none !important;

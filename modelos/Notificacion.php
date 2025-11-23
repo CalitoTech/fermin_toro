@@ -41,13 +41,12 @@ class Notificacion {
         $stmtFecha->execute();
         $rowFecha = $stmtFecha->fetch(PDO::FETCH_ASSOC);
         
-        // Si no tiene fecha de asignación (no es interno), usamos una fecha futura para no mostrar nada
-        // O si es NULL (ej. usuario antiguo sin fecha), usamos una fecha muy antigua '2000-01-01'
-        // Pero como acabamos de agregar la columna con DEFAULT CURRENT_TIMESTAMP, los antiguos tendrán la fecha de hoy.
-        // Para corregir esto en producción real se debería actualizar la fecha de los antiguos.
-        // Asumiremos que si es NULL es porque no tiene rol interno.
+        // Si no tiene fecha de asignación, no mostrar notificaciones
+        if (!$rowFecha || !$rowFecha['fecha_inicio']) {
+            return [];
+        }
         
-        $fechaInicio = $rowFecha['fecha_inicio'] ?? date('Y-m-d H:i:s'); 
+        $fechaInicio = $rowFecha['fecha_inicio'];
 
         $query = "SELECT n.* 
                   FROM notificaciones n
@@ -100,16 +99,35 @@ class Notificacion {
     }
     
     public function contarNoLeidas($idPersona) {
+        // Obtener la fecha de asignación del rol interno más antiguo del usuario
+        $sqlFecha = "SELECT MIN(fecha_asignacion) as fecha_inicio 
+                     FROM detalle_perfil 
+                     WHERE IdPersona = :idPersona 
+                     AND IdPerfil IN (1, 6, 7, 8, 9, 10)";
+        $stmtFecha = $this->conn->prepare($sqlFecha);
+        $stmtFecha->bindParam(":idPersona", $idPersona, PDO::PARAM_INT);
+        $stmtFecha->execute();
+        $rowFecha = $stmtFecha->fetch(PDO::FETCH_ASSOC);
+        
+        // Si no tiene fecha de asignación, retornar 0
+        if (!$rowFecha || !$rowFecha['fecha_inicio']) {
+            return 0;
+        }
+        
+        $fechaInicio = $rowFecha['fecha_inicio'];
+        
         $query = "SELECT COUNT(*) as total
                   FROM notificaciones n
                   WHERE n.IdNotificacion NOT IN (
                       SELECT nl.IdNotificacion 
                       FROM notificaciones_leidas nl 
                       WHERE nl.IdPersona = :idPersona
-                  )";
+                  )
+                  AND n.fecha_creacion >= :fechaInicio";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":idPersona", $idPersona, PDO::PARAM_INT);
+        $stmt->bindParam(":fechaInicio", $fechaInicio);
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total'];

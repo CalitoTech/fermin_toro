@@ -32,17 +32,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Variable para rastrear el conteo anterior de notificaciones
+    let previousCount = 0;
+
     // Cargar notificaciones al inicio
     cargarNotificaciones();
 
-    // Intervalo para verificar nuevas notificaciones (cada 60 seg)
-    setInterval(cargarNotificaciones, 60000);
+    // Intervalo para verificar nuevas notificaciones cada 5 segundos (tiempo real)
+    setInterval(function () {
+        cargarNotificaciones(true); // true = verificar si hay nuevas
+    }, 5000);
 
-    function cargarNotificaciones() {
+    function cargarNotificaciones(checkNew = false) {
         fetch('../../../controladores/notificaciones/notificaciones_controller.php?action=obtener_no_leidas')
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Detectar nuevas notificaciones
+                    if (checkNew && data.total > previousCount && previousCount > 0) {
+                        // Hay nuevas notificaciones - hacer que el ícono pulse
+                        if (notificationBtn) {
+                            notificationBtn.classList.add('pulse-animation');
+                            setTimeout(() => {
+                                notificationBtn.classList.remove('pulse-animation');
+                            }, 2000);
+                        }
+                    }
+                    previousCount = data.total;
+
                     actualizarBadge(data.total);
                     renderizarLista(data.data);
                 }
@@ -139,11 +156,6 @@ document.addEventListener('DOMContentLoaded', function () {
         // Agregar listeners a botones "Ver" para marcar como leída antes de ir
         document.querySelectorAll('.btn-ver-notif').forEach(btn => {
             btn.addEventListener('click', function (e) {
-                // No prevenimos el default inmediatamente para permitir la navegación,
-                // pero idealmente deberíamos marcar como leída en segundo plano.
-                // Sin embargo, si la navegación es rápida, la petición fetch podría cancelarse.
-                // Una opción segura es usar sendBeacon o esperar un poco, pero para UX fluida:
-                // Lanzamos el fetch y dejamos que el navegador navegue.
                 const id = this.getAttribute('data-id');
                 marcarComoLeida(id, false); // false = no recargar lista
             });

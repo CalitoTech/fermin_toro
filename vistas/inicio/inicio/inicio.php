@@ -47,16 +47,50 @@ $userNombre  = $_SESSION['nombre']   ?? '';
 $userApellido= $_SESSION['apellido'] ?? '';
 $perfilId    = $_SESSION['idPerfil'] ?? 0;
 
-// Lógica del Dashboard (Solo Admin=1 y Director=6)
-$showDashboard = in_array((int)$perfilId, [1, 6], true);
+// === DETERMINAR PERFIL DE MAYOR PRIORIDAD ===
+require_once __DIR__ . '/../../../config/conexion.php';
+$database = new Database();
+$db = $database->getConnection();
+
+$sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
+$stmtPerfiles = $db->prepare($sqlPerfiles);
+$stmtPerfiles->bindParam(':idPersona', $_SESSION['idPersona'], PDO::PARAM_INT);
+$stmtPerfiles->execute();
+$todosLosPerfiles = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
+
+// Definir prioridades (menor número = mayor prioridad)
+$prioridades = [
+    1 => 1,  // Administrador
+    6 => 2,  // Director
+    7 => 3,  // Control de Estudios
+    8 => 4,  // Coordinador Inicial
+    9 => 4,  // Coordinador Primaria
+    10 => 4, // Coordinador Media General
+    2 => 5,  // Docente
+    4 => 6,  // Representante
+    5 => 7,  // Contacto de Emergencia
+    3 => 8   // Estudiante
+];
+
+// Encontrar el perfil con mayor prioridad
+$perfilPrioritario = $perfilId;
+$menorPrioridad = PHP_INT_MAX;
+
+foreach ($todosLosPerfiles as $perfil) {
+    if (isset($prioridades[$perfil]) && $prioridades[$perfil] < $menorPrioridad) {
+        $menorPrioridad = $prioridades[$perfil];
+        $perfilPrioritario = $perfil;
+    }
+}
+
+// Lógica del Dashboard (Admin, Director)
+$perfilesConDashboard = [1, 6];
+$showDashboard = in_array($perfilPrioritario, $perfilesConDashboard);
 $stats = [];
 $recentEnrollments = [];
 $chartData = [];
 
 if ($showDashboard) {
-    require_once __DIR__ . '/../../../config/conexion.php';
-    $database = new Database();
-    $db = $database->getConnection();
 
     try {
         // 1. Total Estudiantes Activos
@@ -124,7 +158,7 @@ if ($showDashboard) {
     <?php if ($showDashboard): ?>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <?php endif; ?>
-<?php if (in_array((int)$perfilId, [3,4,5], true)): ?>
+<?php if (in_array($perfilPrioritario, [3,4,5])): ?>
     <!-- === INTERFAZ REPRESENTANTE === -->
     <main class="rep-wrapper">
         <img src="../../../assets/images/fermin.png" alt="Logo UECFT Araure" class="img-logo">

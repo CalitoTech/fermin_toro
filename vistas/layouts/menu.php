@@ -137,6 +137,9 @@ $tienePerfilInterno = !empty(array_intersect($todosLosPerfiles, $perfilesInterno
 $tienePerfilExterno = !empty(array_intersect($todosLosPerfiles, $perfilesExternos));
 $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo actual
 
+// Perfiles que pueden ver notificaciones (internos excepto docentes)
+$perfilesConNotificaciones = [1, 6, 7, 8, 9, 10];
+$tienePerfilConNotificaciones = !empty(array_intersect($todosLosPerfiles, $perfilesConNotificaciones));
 ?>
 
 <button class="mobile-menu-toggle" style="display: none;">
@@ -348,7 +351,7 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
                 <i class='bx bxs-school'></i>
                 <span>2025-2026</span>
             </div>
-            <?php if (!$esSinAcceso && !in_array($idPerfil, [3, 4, 5])): ?>
+            <?php if ($tienePerfilConNotificaciones): ?>
                 <div class="notification" id="notification-btn">
                     <i class='bx bxs-bell' id="notification-btn-icon"></i>
                     <span class="badge" id="notification-badge" style="display: none;">0</span>
