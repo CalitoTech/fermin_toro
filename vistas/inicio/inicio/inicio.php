@@ -43,121 +43,87 @@ if (isset($_SESSION['login_exitoso'])) {
 }
 
 // --- Uso CONSISTENTE de claves de sesión ---
-// Según tu menu.php: 'idPersona' y 'idPerfil' (minúsculas)
 $userNombre  = $_SESSION['nombre']   ?? '';
 $userApellido= $_SESSION['apellido'] ?? '';
-$perfilId    = $_SESSION['idPerfil'] ?? 0;   // <-- IMPORTANT: 'idPerfil' en minúsculas
+$perfilId    = $_SESSION['idPerfil'] ?? 0;
 
-// Si por alguna razón aún no tienes el idPerfil en sesión, puedes intentar
-// recuperarlo desde la BD usando idPersona. (Opcional — solo si lo necesitas)
-/*
-if (empty($perfilId) && isset($_SESSION['idPersona'])) {
-    // aquí podrías incluir la lógica para consultar la BD y setear $_SESSION['idPerfil']
+// Lógica del Dashboard (Solo Admin=1 y Director=6)
+$showDashboard = in_array((int)$perfilId, [1, 6], true);
+$stats = [];
+$recentEnrollments = [];
+$chartData = [];
+
+if ($showDashboard) {
+    require_once __DIR__ . '/../../../config/conexion.php';
+    $database = new Database();
+    $db = $database->getConnection();
+
+    try {
+        // 1. Total Estudiantes Activos
+        $stmt = $db->prepare("SELECT COUNT(DISTINCT p.IdPersona) FROM persona p 
+                             JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona 
+                             WHERE dp.IdPerfil = 3 AND p.IdEstadoAcceso = 1");
+        $stmt->execute();
+        $stats['estudiantes'] = $stmt->fetchColumn();
+
+        // 2. Total Docentes Activos (COMENTADO POR AHORA)
+        /*
+        $stmt = $db->prepare("SELECT COUNT(DISTINCT p.IdPersona) FROM persona p 
+                             JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona 
+                             WHERE dp.IdPerfil = 2 AND p.IdEstadoAcceso = 1");
+        $stmt->execute();
+        $stats['docentes'] = $stmt->fetchColumn();
+        */
+
+        // 3. Inscripciones Pendientes (Diferentes de 11=Inscrito y 12=Rechazada)
+        $stmt = $db->prepare("SELECT COUNT(*) FROM inscripcion WHERE IdStatus NOT IN (11, 12)");
+        $stmt->execute();
+        $stats['pendientes'] = $stmt->fetchColumn();
+
+        // 4. Inscripciones Aprobadas/Inscritos (IdStatus = 11)
+        $stmt = $db->prepare("SELECT COUNT(*) FROM inscripcion WHERE IdStatus = 11");
+        $stmt->execute();
+        $stats['inscritos'] = $stmt->fetchColumn();
+
+        // 5. Datos para Gráfico: Inscripciones por Nivel (Solo inscritos)
+        $stmt = $db->prepare("SELECT n.nivel, COUNT(*) as total
+                             FROM inscripcion i
+                             JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                             JOIN curso c ON cs.IdCurso = c.IdCurso
+                             JOIN nivel n ON c.IdNivel = n.IdNivel
+                             WHERE i.IdStatus = 11
+                             GROUP BY n.nivel");
+        $stmt->execute();
+        $chartData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // 6. Últimas 5 Inscripciones
+        $stmt = $db->prepare("SELECT p.nombre, p.apellido, c.curso, i.fecha_inscripcion, s.status, s.IdStatus
+                             FROM inscripcion i
+                             JOIN persona p ON i.IdEstudiante = p.IdPersona
+                             JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                             JOIN curso c ON cs.IdCurso = c.IdCurso
+                             JOIN status s ON i.IdStatus = s.IdStatus
+                             ORDER BY i.fecha_inscripcion DESC
+                             LIMIT 5");
+        $stmt->execute();
+        $recentEnrollments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } catch (PDOException $e) {
+        error_log("Error Dashboard: " . $e->getMessage());
+    }
 }
-*/
 
 ?>
-<head>
-    <meta charset="utf-8">
-    <title>UECFT Araure - Inicio</title>
-    <link rel="stylesheet" href="../../../assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <style>
-        /* === ESTILO EXCLUSIVO REPRESENTANTES === */
-        .rep-wrapper {
-            min-height: calc(100vh - 56px - 50px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: linear-gradient(135deg, #fff7f7, #fff0f0);
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .img-logo {
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 6px 20px rgba(201,0,0,0.12);
-        }
-
-        .rep-card-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1.25rem;
-            margin-top: 1.75rem;
-            max-width: 1100px;
-        }
-
-        .rep-card {
-            background: #ffffff;
-            border-radius: 14px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-            padding: 1.6rem;
-            width: 280px;
-            transition: transform 0.28s ease, box-shadow 0.28s ease;
-            text-decoration: none;
-            color: #212529;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        .rep-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 18px 40px rgba(201,0,0,0.12);
-        }
-
-        .rep-card .icon {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
-            background: rgba(201,0,0,0.06);
-            color: #c90000;
-            font-size: 24px;
-        }
-
-        .rep-card h3 {
-            font-size: 18px;
-            margin: 0;
-        }
-
-        .rep-card p {
-            margin: 0;
-            color: #6c757d;
-            font-size: 14px;
-        }
-
-        .rep-welcome {
-            font-size: 1.85rem;
-            font-weight: 700;
-            color: #c90000;
-            margin-top: 10px;
-        }
-
-        .rep-subtitle {
-            color: #606f7b;
-            margin-top: 0.4rem;
-            max-width: 760px;
-        }
-
-        @media (max-width: 768px) {
-            .rep-card { width: 92%; }
-            .rep-welcome { font-size: 1.45rem; }
-        }
-    </style>
-</head>
 
 <?php include '../../layouts/header.php'; ?>
 <?php include '../../layouts/menu.php'; ?>
 
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="../../../assets/css/inicio.css">
+    <?php if ($showDashboard): ?>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <?php endif; ?>
 <?php if (in_array((int)$perfilId, [3,4,5], true)): ?>
     <!-- === INTERFAZ REPRESENTANTE === -->
     <main class="rep-wrapper">
@@ -166,12 +132,6 @@ if (empty($perfilId) && isset($_SESSION['idPersona'])) {
         <p class="rep-subtitle">Bienvenido/a al portal del representante. Gestiona inscripciones, consulta información de tus representados y recibe comunicados oficiales.</p>
 
         <div class="rep-card-container">
-            <!-- <a href="../../inscripciones/representante/inscripciones.php" class="rep-card" title="Mis Inscripciones">
-                <div class="icon"><i class="fas fa-file-signature"></i></div>
-                <h3>Mis Inscripciones</h3>
-                <p>Revisa solicitudes y estado de inscripciones.</p>
-            </a> -->
-
             <a href="../../representantes/representados/ver_representado.php" class="rep-card" title="Mis Representados">
                 <div class="icon"><i class="fas fa-user-graduate"></i></div>
                 <h3>Mis Representados</h3>
@@ -185,8 +145,176 @@ if (empty($perfilId) && isset($_SESSION['idPersona'])) {
             </a>
         </div>
     </main>
+
+<?php elseif ($showDashboard): ?>
+    <!-- === DASHBOARD ADMINISTRATIVO (ADMIN / DIRECTOR) === -->
+    <!-- Usamos 'home-section' para heredar el comportamiento del menú automáticamente -->
+    <section class="home-section" style="background: transparent; min-height: auto;">
+        <div class="dashboard-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Panel de Control</h2>
+                    <p class="text-muted mb-0">Bienvenido de nuevo, <?php echo htmlspecialchars($userNombre); ?>.</p>
+                </div>
+                <div class="date-badge bg-white px-3 py-2 rounded shadow-sm text-muted">
+                    <i class="far fa-calendar-alt me-2"></i><?php echo date('d/m/Y'); ?>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card blue">
+                        <div class="stat-info">
+                            <h3><?php echo $stats['estudiantes'] ?? 0; ?></h3>
+                            <p>Estudiantes Activos</p>
+                        </div>
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="stat-card orange">
+                        <div class="stat-info">
+                            <h3><?php echo $stats['pendientes'] ?? 0; ?></h3>
+                            <p>Solicitudes en Proceso</p>
+                        </div>
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card red">
+                        <div class="stat-info">
+                            <h3><?php echo $stats['inscritos'] ?? 0; ?></h3>
+                            <p>Total Inscritos</p>
+                        </div>
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts & Tables Row -->
+            <div class="row g-4">
+                <!-- Chart -->
+                <div class="col-lg-5">
+                    <div class="chart-container">
+                        <h5 class="fw-bold mb-4">Distribución por Nivel</h5>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="enrollmentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="col-lg-7">
+                    <div class="table-container h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold mb-0">Últimas Inscripciones</h5>
+                            <a href="../../inscripciones/inscripcion/inscripcion.php" class="btn btn-sm btn-outline-danger">Ver todas</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Estudiante</th>
+                                        <th>Curso</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($recentEnrollments)): ?>
+                                        <?php foreach ($recentEnrollments as $insc): ?>
+                                            <tr>
+                                                <td class="fw-medium"><?php echo htmlspecialchars($insc['nombre'] . ' ' . $insc['apellido']); ?></td>
+                                                <td><?php echo htmlspecialchars($insc['curso']); ?></td>
+                                                <td><?php echo date('d/m/Y', strtotime($insc['fecha_inscripcion'])); ?></td>
+                                                <td>
+                                                    <?php 
+                                                    $statusClass = 'status-default';
+                                                    // Lógica mejorada para clases de estado
+                                                    // Aseguramos que IdStatus sea entero para comparación estricta
+                                                    $statusId = (int)$insc['IdStatus'];
+                                                    
+                                                    if (in_array($statusId, [8, 9, 10])) { // Pendiente, Aprobada reunión, Espera pago
+                                                        $statusClass = 'status-pending';
+                                                    } elseif ($statusId === 11) { // Inscrito
+                                                        $statusClass = 'status-approved';
+                                                    } elseif ($statusId === 12) { // Rechazada
+                                                        $statusClass = 'status-rejected';
+                                                    }
+                                                    ?>
+                                                    <!-- Usamos la nueva clase enrollment-status-badge -->
+                                                    <span class="enrollment-status-badge <?php echo $statusClass; ?>">
+                                                        <?php echo htmlspecialchars($insc['status']); ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-3">No hay inscripciones recientes</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('enrollmentChart').getContext('2d');
+            
+            // Datos desde PHP
+            const chartData = <?php echo json_encode($chartData); ?>;
+            const labels = chartData.map(item => item.nivel);
+            const data = chartData.map(item => item.total);
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels.length ? labels : ['Sin datos'],
+                    datasets: [{
+                        data: data.length ? data : [1],
+                        backgroundColor: [
+                            '#c90000', // Rojo Corporativo
+                            '#212529', // Dark
+                            '#6c757d', // Gray
+                            '#ffc107'  // Warning
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        });
+    </script>
+
 <?php else: ?>
-    <!-- === INTERFAZ ADMINISTRATIVA ORIGINAL === -->
+    <!-- === INTERFAZ GENÉRICA PARA OTROS ROLES === -->
     <main class="main-content d-flex align-items-center justify-content-center">
         <div class="text-center py-5">
             <div class="mb-4"><img src="../../../assets/images/fermin.png" alt="Logo UECFT Araure" class="img-logo"></div>
