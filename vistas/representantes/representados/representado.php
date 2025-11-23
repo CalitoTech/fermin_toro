@@ -64,19 +64,28 @@ function calcularEdad($fechaNacimiento) {
     return $edad->y;
 }
 
-function tieneCupoPendiente($idEstudiante, $conexion) {
-    // Verificar si el estudiante tiene una renovación pendiente
-    // IdTipo_Inscripcion = 2 (Estudiante Regular) y IdStatus != 11 (Inscrito)
-    $query = "SELECT COUNT(*) as total FROM inscripcion
-              WHERE IdEstudiante = :idEstudiante
-              AND IdTipo_Inscripcion = 2
-              AND IdStatus != 11
-              ORDER BY fecha_inscripcion DESC LIMIT 1";
-    $stmt = $conexion->prepare($query);
-    $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
-    $stmt->execute();
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['total'] > 0;
+// Comentado: Función de renovación de cupo (no se usa actualmente)
+// function tieneCupoPendiente($idEstudiante, $conexion) {
+//     // Verificar si el estudiante tiene una renovación pendiente
+//     // IdTipo_Inscripcion = 2 (Estudiante Regular) y IdStatus != 11 (Inscrito)
+//     $query = "SELECT COUNT(*) as total FROM inscripcion
+//               WHERE IdEstudiante = :idEstudiante
+//               AND IdTipo_Inscripcion = 2
+//               AND IdStatus != 11
+//               ORDER BY fecha_inscripcion DESC LIMIT 1";
+//     $stmt = $conexion->prepare($query);
+//     $stmt->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+//     $stmt->execute();
+//     $result = $stmt->fetch(PDO::FETCH_ASSOC);
+//     return $result['total'] > 0;
+// }
+
+// Obtener el ID del año escolar activo
+$idAnoEscolarActivo = $añoEscolar ? $añoEscolar['IdFecha_Escolar'] ?? 0 : 0;
+
+// Función para verificar si el estudiante tiene inscripción en el año activo
+function tieneInscripcionEnAnoActivo($estudiante) {
+    return !empty($estudiante['IdInscripcion']);
 }
 ?>
 
@@ -549,28 +558,47 @@ function tieneCupoPendiente($idEstudiante, $conexion) {
                                             Ver Detalles Completos
                                         </a>
                                         <?php
-                                        $tienePendiente = tieneCupoPendiente($estudiante['IdEstudiante'], $conexion);
+                                        $tieneInscripcion = tieneInscripcionEnAnoActivo($estudiante);
 
-                                        if ($tienePendiente):
-                                            // Si ya tiene una renovación pendiente
+                                        if (!$tieneInscripcion && $inscripcionActiva):
+                                            // No tiene inscripción en el año activo y las inscripciones están abiertas
                                         ?>
-                                            <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;">
+                                            <a href="solicitar_reinscripcion.php?id=<?= $estudiante['IdEstudiante'] ?>" class="btn btn-renew-quota">
+                                                <i class='bx bx-user-plus'></i>
+                                                Solicitar Reinscripción
+                                            </a>
+                                        <?php elseif (!$tieneInscripcion && !$inscripcionActiva): ?>
+                                            <!-- No tiene inscripción y las inscripciones están cerradas -->
+                                            <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;" title="Las inscripciones están cerradas actualmente">
+                                                <i class='bx bx-lock'></i>
+                                                Inscripciones Cerradas
+                                            </button>
+                                        <?php endif; ?>
+
+                                        <?php
+                                        // Comentado: Opción de renovar cupo (no se usa actualmente)
+                                        // $tienePendiente = tieneCupoPendiente($estudiante['IdEstudiante'], $conexion);
+                                        // if ($tienePendiente):
+                                        //     // Si ya tiene una renovación pendiente
+                                        // ?>
+                                        <!--     <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;">
                                                 <i class='bx bx-check-circle'></i>
                                                 Cupo Renovado Exitosamente
                                             </button>
-                                        <?php elseif (!$renovacionActiva): ?>
+                                        <?php // elseif (!$renovacionActiva): ?>
                                             <!-- Si las renovaciones están desactivadas -->
-                                            <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;" title="Las renovaciones de cupo están cerradas actualmente">
+                                        <!--    <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;" title="Las renovaciones de cupo están cerradas actualmente">
                                                 <i class='bx bx-lock'></i>
                                                 Renovaciones Cerradas
                                             </button>
-                                        <?php else: ?>
+                                        <?php // else: ?>
                                             <!-- Si puede renovar -->
-                                            <a href="renovar_cupo.php?id=<?= $estudiante['IdEstudiante'] ?>" class="btn btn-renew-quota">
+                                        <!--    <a href="renovar_cupo.php?id=<?php // echo $estudiante['IdEstudiante'] ?>" class="btn btn-renew-quota">
                                                 <i class='bx bx-refresh'></i>
                                                 Renovar Cupo
                                             </a>
-                                        <?php endif; ?>
+                                        <?php // endif; ?>
+                                        -->
                                     </div>
                                 </div>
                             </div>

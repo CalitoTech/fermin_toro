@@ -23,8 +23,8 @@ class BuscadorGenerico {
             minLength: tipo === 'prefijo' ? 1 : 2, // Prefijos con 1 carácter mínimo
             delay: 300,
             placeholder: this.getPlaceholder(tipo),
-            allowCreate: !['estudiante', 'estudiante_regular', 'persona_masculino', 'persona_femenino'].includes(tipo), // Solo permitir crear en urbanismo, parentesco y prefijo
-            showOnFocus: !['estudiante', 'estudiante_regular', 'persona_masculino', 'persona_femenino'].includes(tipo), // Mostrar lista al hacer click (todos excepto estudiante y persona)
+            allowCreate: !['estudiante', 'estudiante_regular', 'estudiante_reinscripcion', 'persona_masculino', 'persona_femenino'].includes(tipo), // Solo permitir crear en urbanismo, parentesco y prefijo
+            showOnFocus: !['estudiante', 'estudiante_regular', 'estudiante_reinscripcion', 'persona_masculino', 'persona_femenino'].includes(tipo), // Mostrar lista al hacer click (todos excepto estudiante y persona)
             ...options
         };
 
@@ -63,6 +63,7 @@ class BuscadorGenerico {
         const placeholders = {
             'estudiante': 'Buscar por nombre, apellido o cédula...',
             'estudiante_regular': 'Buscar estudiante inscrito el año anterior...',
+            'estudiante_reinscripcion': 'Buscar estudiante para reinscripción...',
             'urbanismo': 'Buscar o escribir nuevo urbanismo...',
             'parentesco': 'Buscar o escribir nuevo parentesco...',
             'prefijo': 'Buscar por código (+58) o país...',
@@ -207,6 +208,7 @@ class BuscadorGenerico {
         switch (this.tipo) {
             case 'estudiante':
             case 'estudiante_regular':
+            case 'estudiante_reinscripcion':
                 return `<strong>${item.apellido} ${item.nombre}</strong> - ${item.nacionalidad}-${item.cedula}`;
 
             case 'urbanismo':
@@ -256,7 +258,7 @@ class BuscadorGenerico {
         if (this.tipo === 'estudiante') {
             this.input.value = `${item.apellido} ${item.nombre} (${item.nacionalidad}-${item.cedula})`;
             this.hiddenIdField.value = item.IdPersona;
-        } else if (this.tipo === 'estudiante_regular') {
+        } else if (this.tipo === 'estudiante_regular' || this.tipo === 'estudiante_reinscripcion') {
             this.input.value = `${item.apellido} ${item.nombre} (${item.nacionalidad}-${item.cedula})`;
             // Usar IdEstudiante que es igual a IdPersona para estudiantes
             this.hiddenIdField.value = item.IdEstudiante || item.IdPersona;

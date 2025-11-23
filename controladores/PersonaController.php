@@ -50,6 +50,9 @@ switch ($action) {
     case 'obtenerCursoSiguiente':
         obtenerCursoSiguienteEstudiante();
         break;
+    case 'obtenerUltimaInscripcion':
+        obtenerUltimaInscripcion();
+        break;
     case 'verificarCorreo':
         verificarCorreo();
         break;
@@ -1078,6 +1081,87 @@ function verificarCorreo() {
             'existe' => false,
             'error' => 'Error al verificar el correo'
         ]);
+    }
+    exit();
+}
+
+/**
+ * Obtiene la última inscripción de un estudiante y los cursos disponibles para reinscripción
+ */
+function obtenerUltimaInscripcion() {
+    header('Content-Type: application/json');
+
+    try {
+        $idEstudiante = intval($_GET['idEstudiante'] ?? 0);
+
+        if ($idEstudiante <= 0) {
+            echo json_encode(['success' => false, 'error' => 'ID de estudiante inválido']);
+            exit();
+        }
+
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Obtener datos del estudiante
+        $queryEstudiante = "
+            SELECT p.IdPersona, p.nombre, p.apellido, p.cedula, n.nacionalidad
+            FROM persona p
+            LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+            WHERE p.IdPersona = :idEstudiante
+        ";
+        $stmtEstudiante = $conexion->prepare($queryEstudiante);
+        $stmtEstudiante->execute([':idEstudiante' => $idEstudiante]);
+        $estudiante = $stmtEstudiante->fetch(PDO::FETCH_ASSOC);
+
+        if (!$estudiante) {
+            echo json_encode(['success' => false, 'error' => 'Estudiante no encontrado']);
+            exit();
+        }
+
+        // Obtener última inscripción del estudiante
+        $queryUltima = "
+            SELECT i.IdInscripcion, i.IdFecha_Escolar, i.IdStatus,
+                   cs.IdCurso, c.curso, n.nivel,
+                   fe.fecha_escolar, st.status
+            FROM inscripcion i
+            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+            INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+            INNER JOIN nivel n ON c.IdNivel = n.IdNivel
+            INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+            LEFT JOIN status st ON i.IdStatus = st.IdStatus
+            WHERE i.IdEstudiante = :idEstudiante
+            ORDER BY i.IdFecha_Escolar DESC, i.IdInscripcion DESC
+            LIMIT 1
+        ";
+        $stmtUltima = $conexion->prepare($queryUltima);
+        $stmtUltima->execute([':idEstudiante' => $idEstudiante]);
+        $ultimaInscripcion = $stmtUltima->fetch(PDO::FETCH_ASSOC);
+
+        // Determinar el curso mínimo para reinscripción
+        $idCursoMinimo = $ultimaInscripcion ? $ultimaInscripcion['IdCurso'] : 1;
+
+        // Obtener cursos disponibles (>= último curso)
+        $queryCursos = "
+            SELECT c.IdCurso, c.curso, n.nivel, n.IdNivel
+            FROM curso c
+            INNER JOIN nivel n ON c.IdNivel = n.IdNivel
+            WHERE c.IdCurso >= :idCursoMinimo
+            ORDER BY n.IdNivel ASC, c.IdCurso ASC
+        ";
+        $stmtCursos = $conexion->prepare($queryCursos);
+        $stmtCursos->execute([':idCursoMinimo' => $idCursoMinimo]);
+        $cursosDisponibles = $stmtCursos->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'success' => true,
+            'estudiante' => $estudiante,
+            'ultimaInscripcion' => $ultimaInscripcion,
+            'cursosDisponibles' => $cursosDisponibles
+        ]);
+
+    } catch (Exception $e) {
+        error_log("Error en obtenerUltimaInscripcion: " . $e->getMessage());
+        echo json_encode(['success' => false, 'error' => 'Error interno del servidor']);
     }
     exit();
 }

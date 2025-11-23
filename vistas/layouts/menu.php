@@ -140,6 +140,13 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
 // Perfiles que pueden ver notificaciones (internos excepto docentes)
 $perfilesConNotificaciones = [1, 6, 7, 8, 9, 10];
 $tienePerfilConNotificaciones = !empty(array_intersect($todosLosPerfiles, $perfilesConNotificaciones));
+
+// Obtener el año escolar activo
+$queryAnoActivo = "SELECT fecha_escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+$stmtAnoActivo = $conexion->prepare($queryAnoActivo);
+$stmtAnoActivo->execute();
+$anoEscolarActivo = $stmtAnoActivo->fetch(PDO::FETCH_ASSOC);
+$nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Sin año activo';
 ?>
 
 <button class="mobile-menu-toggle" style="display: none;">
@@ -349,7 +356,7 @@ $tienePerfilConNotificaciones = !empty(array_intersect($todosLosPerfiles, $perfi
 
             <div class="school-year">
                 <i class='bx bxs-school'></i>
-                <span>2025-2026</span>
+                <span><?= htmlspecialchars($nombreAnoEscolar) ?></span>
             </div>
             <?php if ($tienePerfilConNotificaciones): ?>
                 <div class="notification" id="notification-btn">

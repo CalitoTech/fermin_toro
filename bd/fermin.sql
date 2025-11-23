@@ -409,7 +409,7 @@ CREATE TABLE tipo_inscripcion (
 );
 
 INSERT INTO `tipo_inscripcion` (`IdTipo_Inscripcion`, `tipo_inscripcion`) VALUES
-(1, 'Nuevo Ingreso'), (2, 'Estudiante Regular');
+(1, 'Nuevo Ingreso'), (2, 'Estudiante Regular'), (3, 'Reinscripción');
 
 CREATE TABLE inscripcion (
     IdInscripcion int NOT NULL AUTO_INCREMENT PRIMARY KEY,

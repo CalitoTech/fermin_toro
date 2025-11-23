@@ -519,8 +519,17 @@ class Persona {
         }
     }
 
-    public function obtenerSeccionActualEstudiante($idPersona) {
+    public function obtenerSeccionActualEstudiante($idPersona, $idFechaEscolar = null) {
         try {
+            // Si no se proporciona año escolar, usar el activo
+            if ($idFechaEscolar === null) {
+                $sqlAnoActivo = "SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+                $stmtAno = $this->conn->prepare($sqlAnoActivo);
+                $stmtAno->execute();
+                $anoActivo = $stmtAno->fetch(PDO::FETCH_ASSOC);
+                $idFechaEscolar = $anoActivo ? $anoActivo['IdFecha_Escolar'] : 0;
+            }
+
             $query = "
                 SELECT
                     nvl.nivel,
@@ -528,7 +537,9 @@ class Persona {
                     s.seccion,
                     aula.aula,
                     a.fecha_escolar,
-                    st.status
+                    st.status,
+                    i.IdStatus,
+                    i.IdInscripcion
                 FROM inscripcion i
                 INNER JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
                 INNER JOIN curso c ON c.IdCurso = cs.IdCurso
@@ -537,12 +548,14 @@ class Persona {
                 LEFT JOIN aula ON aula.IdAula = cs.IdAula
                 INNER JOIN fecha_escolar a ON a.IdFecha_Escolar = i.IdFecha_Escolar
                 LEFT JOIN status st ON st.IdStatus = i.IdStatus
-                WHERE i.IdEstudiante = :id AND i.IdStatus = 11
+                WHERE i.IdEstudiante = :id
+                AND i.IdFecha_Escolar = :idFechaEscolar
                 ORDER BY i.IdInscripcion DESC
                 LIMIT 1
             ";
             $stmt = $this->conn->prepare($query);
             $stmt->bindParam(':id', $idPersona, PDO::PARAM_INT);
+            $stmt->bindParam(':idFechaEscolar', $idFechaEscolar, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {

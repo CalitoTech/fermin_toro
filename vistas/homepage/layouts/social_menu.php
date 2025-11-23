@@ -91,7 +91,7 @@
         <i class="fas fa-map-marker-alt"></i>
         <span>Ubicación</span>
     </a>
-    <a href="https://www.uefermintoroaraure.com/nuestravoz.html" target="_blank" class="nuestravoz" title="Nuestra Voz">
+    <a href="nuestravoz.php" target="_blank" class="nuestravoz" title="Nuestra Voz">
         <i class="fas fa-microphone"></i>
         <span>Nuestra Voz</span>
     </a>

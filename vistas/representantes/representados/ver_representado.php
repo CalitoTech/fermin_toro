@@ -64,7 +64,16 @@ if (!$estudiante) {
     exit();
 }
 
-$seccionActual = $personaModel->obtenerSeccionActualEstudiante($idEstudiante);
+// Obtener el año escolar activo
+$queryAnoActivo = "SELECT IdFecha_Escolar, fecha_escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+$stmtAnoActivo = $conexion->prepare($queryAnoActivo);
+$stmtAnoActivo->execute();
+$anoEscolarActivo = $stmtAnoActivo->fetch(PDO::FETCH_ASSOC);
+$idAnoActivo = $anoEscolarActivo ? $anoEscolarActivo['IdFecha_Escolar'] : null;
+$nombreAnoActivo = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Sin año activo';
+
+// Obtener sección actual del estudiante según el año escolar activo
+$seccionActual = $personaModel->obtenerSeccionActualEstudiante($idEstudiante, $idAnoActivo);
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idEstudiante);
 $telefonos = $telefonoModel->obtenerPorPersona($idEstudiante);
 
@@ -275,7 +284,7 @@ function calcularEdad($fechaNacimiento) {
                     <!-- INFORMACIÓN ACADÉMICA -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header bg-danger text-white d-flex align-items-center">
-                            <i class='bx bxs-graduation me-2'></i> Información Académica
+                            <i class='bx bxs-graduation me-2'></i> Información Académica - <?= htmlspecialchars($nombreAnoActivo) ?>
                         </div>
                         <div class="card-body">
                             <?php if ($seccionActual): ?>
@@ -308,6 +317,7 @@ function calcularEdad($fechaNacimiento) {
                                                 $statusText = $seccionActual['status'] ?? 'No registrado';
                                                 if (stripos($statusText, 'Inscrito') !== false) $statusClass = 'success';
                                                 elseif (stripos($statusText, 'Rechazado') !== false) $statusClass = 'danger';
+                                                elseif (stripos($statusText, 'Pendiente') !== false) $statusClass = 'warning';
                                             ?>
                                             <span class="badge bg-<?= $statusClass ?>">
                                                 <?= htmlspecialchars($statusText) ?>
@@ -316,10 +326,10 @@ function calcularEdad($fechaNacimiento) {
                                     </div>
                                 </div>
                             <?php else: ?>
-                                <div class="alert alert-warning mb-0">
-                                    <i class='bx bx-error me-2'></i>
-                                    <strong>No hay información académica registrada</strong><br>
-                                    El estudiante no tiene una inscripción activa en el sistema.
+                                <div class="alert alert-info mb-0">
+                                    <i class='bx bx-info-circle me-2'></i>
+                                    <strong>Sin inscripción para el año escolar <?= htmlspecialchars($nombreAnoActivo) ?></strong><br>
+                                    El estudiante no tiene una inscripción registrada para el año escolar activo.
                                 </div>
                             <?php endif; ?>
                         </div>

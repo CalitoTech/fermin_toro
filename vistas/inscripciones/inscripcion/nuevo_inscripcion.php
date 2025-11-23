@@ -55,6 +55,17 @@ $tiposInscripcion = $tipoInscripcionModel->obtenerTodos();
 $tiposTrabajador = $modeloTipoTrabajador->obtenerTodos();
 $planteles = $modeloPlantel->obtenerTodos();
 $añoEscolarActivo = $fechaEscolarModel->obtenerActivo();
+
+// ========================================
+// CONFIGURACIÓN DE TIPOS DE INSCRIPCIÓN
+// ========================================
+// Cambiar a true para mostrar el tipo "Estudiante Regular" en el select
+$MOSTRAR_TIPO_REGULAR = false;
+
+// IDs de tipos de inscripción (referencia)
+// 1 = Nuevo Ingreso
+// 2 = Estudiante Regular (Prosecución)
+// 3 = Reinscripción
 ?>
 
 <head>
@@ -84,12 +95,13 @@ $data_options = [
 
 <div class="container mt-4" style="min-height: 80vh;">
     <form id="formInscripcion" data-origen="pagina" method="POST">
-        <!-- Hidden fields para formulario de estudiante regular -->
+        <!-- Hidden fields para formulario -->
         <input type="hidden" name="IdEstudiante" id="IdEstudiante" value="">
         <input type="hidden" name="IdFechaEscolar" id="IdFechaEscolar" value="<?= $añoEscolarActivo['IdFecha_Escolar'] ?? '' ?>">
         <input type="hidden" name="IdCurso" id="IdCurso" value="">
         <input type="hidden" name="idTipoInscripcion" id="idTipoInscripcion" value="1">
         <input type="hidden" name="origen" id="origen" value="administrativo">
+        <input type="hidden" name="esReinscripcion" id="esReinscripcion" value="0">
         <input type="hidden" id="idCursoSeleccionado" name="idCurso">
         <input type="hidden" id="idNivelSeleccionado" name="idNivelSeleccionado">
 
@@ -110,6 +122,12 @@ $data_options = [
                             <select class="form-control" id="tipoInscripcion" name="idTipoInscripcion" required>
                                 <option value="">Seleccione tipo</option>
                                 <?php foreach ($tiposInscripcion as $tipo): ?>
+                                    <?php
+                                    // Ocultar "Estudiante Regular" (ID=2) si $MOSTRAR_TIPO_REGULAR es false
+                                    if (!$MOSTRAR_TIPO_REGULAR && $tipo['IdTipo_Inscripcion'] == 2) {
+                                        continue;
+                                    }
+                                    ?>
                                     <option value="<?= $tipo['IdTipo_Inscripcion'] ?>">
                                         <?= htmlspecialchars($tipo['tipo_inscripcion']) ?>
                                     </option>
@@ -255,6 +273,64 @@ $data_options = [
                                                     <?= htmlspecialchars($status['status']) ?>
                                                 </option>
                                             <?php endif; ?>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor para Reinscripción -->
+                    <div id="reinscripcionContainer" class="col-12" style="display: none;">
+                        <div class="row g-3">
+                            <!-- Buscador de Estudiante para Reinscripción -->
+                            <div class="col-12">
+                                <div class="form-group required-field">
+                                    <label for="buscadorEstudianteReinscripcion">
+                                        <i class='bx bx-search'></i> Buscar Estudiante
+                                    </label>
+                                    <div class="position-relative">
+                                        <input type="text" class="form-control buscador-input" id="buscadorEstudianteReinscripcion"
+                                               autocomplete="off" placeholder="Escriba cédula, nombre o apellido del estudiante...">
+                                        <input type="hidden" id="IdEstudianteReinscripcion">
+                                        <div id="resultadosBusquedaReinscripcion" class="autocomplete-results d-none"></div>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> Busque al estudiante que desea reinscribir
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Información del estudiante para reinscripción -->
+                            <div id="infoEstudianteReinscripcionContainer" class="col-12" style="display: none;">
+                                <div class="alert alert-warning">
+                                    <h6><i class='bx bx-user'></i> Estudiante Seleccionado</h6>
+                                    <p class="mb-1"><strong>Nombre:</strong> <span id="infoEstudianteReinscripcionNombre"></span></p>
+                                    <p class="mb-1"><strong>Última inscripción:</strong> <span id="infoUltimaInscripcion"></span></p>
+                                </div>
+
+                                <!-- Curso (seleccionable) -->
+                                <div class="form-group required-field mb-3">
+                                    <label for="cursoReinscripcion">
+                                        <i class='bx bxs-graduation'></i> Curso
+                                    </label>
+                                    <select id="cursoReinscripcion" class="form-control" required>
+                                        <option value="">Seleccione un curso</option>
+                                    </select>
+                                    <small class="text-muted">Solo se muestran cursos iguales o superiores al último cursado</small>
+                                </div>
+
+                                <!-- Status (todos los disponibles) -->
+                                <div class="form-group required-field mb-3">
+                                    <label for="statusReinscripcion">
+                                        <i class='bx bx-info-circle'></i> Status
+                                    </label>
+                                    <select id="statusReinscripcion" class="form-control" required>
+                                        <option value="">Seleccione un status</option>
+                                        <?php foreach ($listaStatus as $status): ?>
+                                            <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
+                                                <?= htmlspecialchars($status['status']) ?>
+                                            </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -908,6 +984,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoInscripcionSelect = document.getElementById('tipoInscripcion');
     const nuevoIngresoContainer = document.getElementById('nuevoIngresoContainer');
     const regularContainer = document.getElementById('regularContainer');
+    const reinscripcionContainer = document.getElementById('reinscripcionContainer');
 
     // Contenedores del formulario completo
     const seccionDatosEstudiante = document.getElementById('seccionDatosEstudiante');
@@ -927,15 +1004,28 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('buscadorEstudiante')) {
             document.getElementById('buscadorEstudiante').value = '';
         }
+        if (document.getElementById('buscadorEstudianteReinscripcion')) {
+            document.getElementById('buscadorEstudianteReinscripcion').value = '';
+        }
         document.getElementById('IdEstudiante').value = '';
         if (document.getElementById('infoEstudianteContainer')) {
             document.getElementById('infoEstudianteContainer').style.display = 'none';
         }
+        if (document.getElementById('infoEstudianteReinscripcionContainer')) {
+            document.getElementById('infoEstudianteReinscripcionContainer').style.display = 'none';
+        }
+
+        // Función auxiliar para ocultar todos los contenedores de tipo
+        function ocultarTodosContenedores() {
+            nuevoIngresoContainer.style.display = 'none';
+            regularContainer.style.display = 'none';
+            if (reinscripcionContainer) reinscripcionContainer.style.display = 'none';
+        }
 
         if (tipoSeleccionado === 1) {
             // Nuevo Ingreso - Mostrar formulario completo tradicional
+            ocultarTodosContenedores();
             nuevoIngresoContainer.style.display = 'flex';
-            regularContainer.style.display = 'none';
             btnGuardar.style.display = 'inline-block';
 
             // Mostrar formulario completo
@@ -964,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } else if (tipoSeleccionado === 2) {
             // Estudiante Regular (Prosecución) - Mostrar buscador simple
-            nuevoIngresoContainer.style.display = 'none';
+            ocultarTodosContenedores();
             regularContainer.style.display = 'flex';
             btnGuardar.style.display = 'inline-block';
 
@@ -994,10 +1084,52 @@ document.addEventListener('DOMContentLoaded', function () {
             if (seccionRegular) seccionRegular.setAttribute('required', 'required');
             if (statusRegular) statusRegular.setAttribute('required', 'required');
 
+            // Remover required de reinscripción
+            const cursoReinscripcion = document.getElementById('cursoReinscripcion');
+            const statusReinscripcion = document.getElementById('statusReinscripcion');
+            if (cursoReinscripcion) cursoReinscripcion.removeAttribute('required');
+            if (statusReinscripcion) statusReinscripcion.removeAttribute('required');
+
+        } else if (tipoSeleccionado === 3) {
+            // Reinscripción - Mostrar buscador y selección de curso
+            ocultarTodosContenedores();
+            reinscripcionContainer.style.display = 'flex';
+            btnGuardar.style.display = 'inline-block';
+
+            // Cambiar action del formulario al endpoint de renovación (mismo que regular)
+            form.action = '../../../controladores/representantes/procesar_renovacion.php';
+            form.method = 'POST';
+
+            // Ocultar formulario completo
+            seccionDatosEstudiante.style.display = 'none';
+            seccionMadreContainer.style.display = 'none';
+            seccionPadreContainer.style.display = 'none';
+            seccionRepresentanteSelector.style.display = 'none';
+            seccionRepresentante.style.display = 'none';
+            if (repInfo) repInfo.style.display = 'none';
+
+            // Remover required del formulario tradicional y regular
+            const nivelSelect = document.getElementById('nivel');
+            const cursoSelect = document.getElementById('curso');
+            const statusSelect = document.getElementById('IdStatus');
+            if (nivelSelect) nivelSelect.removeAttribute('required');
+            if (cursoSelect) cursoSelect.removeAttribute('required');
+            if (statusSelect) statusSelect.removeAttribute('required');
+
+            const seccionRegular = document.getElementById('seccionRegular');
+            const statusRegular = document.getElementById('statusRegular');
+            if (seccionRegular) seccionRegular.removeAttribute('required');
+            if (statusRegular) statusRegular.removeAttribute('required');
+
+            // Hacer required los campos de reinscripción
+            const cursoReinscripcion = document.getElementById('cursoReinscripcion');
+            const statusReinscripcion = document.getElementById('statusReinscripcion');
+            if (cursoReinscripcion) cursoReinscripcion.setAttribute('required', 'required');
+            if (statusReinscripcion) statusReinscripcion.setAttribute('required', 'required');
+
         } else {
             // Sin selección - Ocultar todo
-            nuevoIngresoContainer.style.display = 'none';
-            regularContainer.style.display = 'none';
+            ocultarTodosContenedores();
             btnGuardar.style.display = 'none';
             form.action = '';
 
@@ -1010,7 +1142,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // === INTERCEPTAR SUBMIT PARA TIPO REGULAR ===
+    // === INTERCEPTAR SUBMIT PARA TIPO REGULAR Y REINSCRIPCIÓN ===
     document.getElementById('btnEnviarFormulario').addEventListener('click', function(e) {
         const tipoInscripcion = parseInt(document.getElementById('idTipoInscripcion').value || 1);
 
@@ -1053,6 +1185,63 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
                 return;
             }
+
+            // Si todas las validaciones pasan, enviar el formulario
+            document.getElementById('formInscripcion').submit();
+        }
+        // Si es reinscripción (tipo 3), validar y enviar
+        else if (tipoInscripcion === 3) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            const idEstudiante = document.getElementById('IdEstudianteReinscripcion').value;
+            const cursoReinscripcion = document.getElementById('cursoReinscripcion').value;
+            const statusReinscripcion = document.getElementById('statusReinscripcion').value;
+
+            if (!idEstudiante) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un estudiante',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            if (!cursoReinscripcion) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un curso',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            if (!statusReinscripcion) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Datos incompletos',
+                    text: 'Debe seleccionar un status',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            // Copiar valores de reinscripción a los campos principales del formulario
+            document.getElementById('IdEstudiante').value = idEstudiante;
+            document.getElementById('IdCurso').value = cursoReinscripcion;
+            document.getElementById('esReinscripcion').value = '1';
+
+            // Crear campo temporal para el status si no existe uno con name
+            let statusInput = document.querySelector('input[name="idStatus"]');
+            if (!statusInput) {
+                statusInput = document.createElement('input');
+                statusInput.type = 'hidden';
+                statusInput.name = 'idStatus';
+                document.getElementById('formInscripcion').appendChild(statusInput);
+            }
+            statusInput.value = statusReinscripcion;
 
             // Si todas las validaciones pasan, enviar el formulario
             document.getElementById('formInscripcion').submit();
@@ -1190,6 +1379,98 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error al cargar secciones:', error);
             }
         }
+    }
+
+    // === BUSCADOR DE ESTUDIANTE PARA REINSCRIPCIÓN ===
+    if (document.getElementById('buscadorEstudianteReinscripcion')) {
+        const buscadorReinscripcion = new BuscadorGenerico(
+            'buscadorEstudianteReinscripcion',
+            'resultadosBusquedaReinscripcion',
+            'estudiante_reinscripcion',
+            'IdEstudianteReinscripcion'
+        );
+
+        const inputBuscadorReinscripcion = document.getElementById('buscadorEstudianteReinscripcion');
+        inputBuscadorReinscripcion.addEventListener('itemSeleccionado', async function(e) {
+            const idEstudiante = e.detail?.IdEstudiante || e.detail?.IdPersona;
+            if (idEstudiante) {
+                try {
+                    // Obtener última inscripción del estudiante
+                    const response = await fetch(`../../../controladores/PersonaController.php?action=obtenerUltimaInscripcion&idEstudiante=${idEstudiante}`);
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.error || 'No se pudo obtener la información del estudiante',
+                            confirmButtonColor: '#c90000'
+                        });
+                        return;
+                    }
+
+                    // Mostrar información del estudiante
+                    document.getElementById('infoEstudianteReinscripcionNombre').textContent =
+                        `${data.estudiante.apellido} ${data.estudiante.nombre} (${data.estudiante.nacionalidad}-${data.estudiante.cedula || 'Sin cédula'})`;
+
+                    if (data.ultimaInscripcion) {
+                        document.getElementById('infoUltimaInscripcion').textContent =
+                            `${data.ultimaInscripcion.curso} - ${data.ultimaInscripcion.fecha_escolar}`;
+                    } else {
+                        document.getElementById('infoUltimaInscripcion').textContent = 'Sin inscripciones previas';
+                    }
+
+                    // Mostrar el contenedor de información
+                    document.getElementById('infoEstudianteReinscripcionContainer').style.display = 'block';
+
+                    // Cargar cursos disponibles (>= último curso)
+                    const cursoSelect = document.getElementById('cursoReinscripcion');
+                    cursoSelect.innerHTML = '<option value="">Seleccione un curso</option>';
+
+                    if (data.cursosDisponibles && data.cursosDisponibles.length > 0) {
+                        let currentNivel = '';
+                        let optgroup = null;
+
+                        data.cursosDisponibles.forEach(curso => {
+                            // Crear optgroup si cambia el nivel
+                            if (curso.nivel !== currentNivel) {
+                                if (optgroup) {
+                                    cursoSelect.appendChild(optgroup);
+                                }
+                                optgroup = document.createElement('optgroup');
+                                optgroup.label = curso.nivel;
+                                currentNivel = curso.nivel;
+                            }
+
+                            const option = document.createElement('option');
+                            option.value = curso.IdCurso;
+                            option.textContent = curso.curso;
+
+                            // Preseleccionar el curso de la última inscripción si existe
+                            if (data.ultimaInscripcion && curso.IdCurso == data.ultimaInscripcion.IdCurso) {
+                                option.selected = true;
+                            }
+
+                            optgroup.appendChild(option);
+                        });
+
+                        // Agregar el último optgroup
+                        if (optgroup) {
+                            cursoSelect.appendChild(optgroup);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Ocurrió un error al obtener la información del estudiante',
+                        confirmButtonColor: '#c90000'
+                    });
+                }
+            }
+        });
     }
 
     // === VALIDACIÓN DE CORREO DUPLICADO ===

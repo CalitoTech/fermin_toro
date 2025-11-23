@@ -21,7 +21,7 @@ if ($limit < 1 || $limit > 50) {
 }
 
 // Validar tipo de búsqueda
-$tiposPermitidos = ['estudiante', 'estudiante_regular', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso', 'persona_masculino', 'persona_femenino'];
+$tiposPermitidos = ['estudiante', 'estudiante_regular', 'estudiante_reinscripcion', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso', 'persona_masculino', 'persona_femenino'];
 if (!in_array($tipo, $tiposPermitidos)) {
     echo json_encode(['error' => 'Tipo de búsqueda no válido']);
     exit;
@@ -35,6 +35,10 @@ switch ($tipo) {
 
     case 'estudiante_regular':
         buscarEstudiantesRegulares($conexion, $q, $limit);
+        break;
+
+    case 'estudiante_reinscripcion':
+        buscarEstudiantesReinscripcion($conexion, $q, $limit);
         break;
 
     case 'urbanismo':
@@ -155,6 +159,65 @@ function buscarEstudiantesRegulares($conexion, $q, $limit = 10) {
 
     $search = "%$q%";
     $stmt->bindParam(':idAnioAnterior', $idAnioAnterior, PDO::PARAM_INT);
+    $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT);
+    $stmt->bindParam(':q', $search);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
+
+/**
+ * Buscar estudiantes para reinscripción
+ * Muestra estudiantes (IdPerfil = 3) que NO tengan inscripción en el año escolar activo
+ * Pueden ser estudiantes antiguos que regresan a la institución
+ */
+function buscarEstudiantesReinscripcion($conexion, $q, $limit = 10) {
+    // Si la búsqueda está vacía, no mostrar nada
+    if (empty(trim($q))) {
+        echo json_encode([]);
+        return;
+    }
+
+    // Obtener el año escolar activo
+    $stmtAnio = $conexion->prepare("SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1");
+    $stmtAnio->execute();
+    $anioActivo = $stmtAnio->fetch(PDO::FETCH_ASSOC);
+
+    if (!$anioActivo) {
+        echo json_encode([]);
+        return;
+    }
+
+    $idAnioActivo = $anioActivo['IdFecha_Escolar'];
+
+    // Buscar estudiantes que:
+    // 1. Tengan perfil de estudiante (IdPerfil = 3)
+    // 2. NO tengan inscripción en el año escolar activo
+    // 3. NO estén egresados
+    // 4. Pueden o no tener inscripciones previas (para reinscripción)
+    $stmt = $conexion->prepare("
+        SELECT DISTINCT
+            p.IdPersona,
+            p.IdPersona AS IdEstudiante,
+            p.nombre,
+            p.apellido,
+            p.cedula,
+            n.nacionalidad
+        FROM persona p
+        INNER JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
+        LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+        WHERE dp.IdPerfil = 3
+        AND p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
+        AND p.IdPersona NOT IN (
+            SELECT IdEstudiante FROM inscripcion WHERE IdFecha_Escolar = :idAnioActivo
+        )
+        AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        ORDER BY p.apellido, p.nombre
+        LIMIT :limit
+    ");
+
+    $search = "%$q%";
     $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT);
     $stmt->bindParam(':q', $search);
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);

@@ -25,11 +25,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $idCurso = isset($_POST['IdCurso']) ? (int)$_POST['IdCurso'] : 0;
         $idCursoSeccion = isset($_POST['IdCursoSeccion']) ? (int)$_POST['IdCursoSeccion'] : 0;
         $idStatus = isset($_POST['idStatus']) ? (int)$_POST['idStatus'] : 10; // Status por defecto: Pendiente de pago
+        $idTipoInscripcion = isset($_POST['idTipoInscripcion']) ? (int)$_POST['idTipoInscripcion'] : 2; // Por defecto: Estudiante Regular
+        $esReinscripcion = isset($_POST['esReinscripcion']) && $_POST['esReinscripcion'] == '1';
         $origen = isset($_POST['origen']) ? $_POST['origen'] : 'representante';
         $idPersonaUsuario = $_SESSION['idPersona'];
 
         // Validaciones básicas
-        if ($idEstudiante <= 0 || $idFechaEscolar <= 0 || $idCurso <= 0 || $idCursoSeccion <= 0) {
+        if ($idEstudiante <= 0 || $idFechaEscolar <= 0) {
+            throw new Exception("Datos incompletos. Por favor complete todos los campos requeridos.");
+        }
+
+        // Para reinscripción, validar que el curso sea válido y obtener sección "Inscripcion" (IdSeccion = 1)
+        if ($esReinscripcion) {
+            if ($idCurso <= 0) {
+                throw new Exception("Debe seleccionar un curso válido.");
+            }
+
+            // Obtener el IdCurso_Seccion con la sección "Inscripcion" (IdSeccion = 1)
+            if ($idCursoSeccion <= 0) {
+                $sqlSeccion = "SELECT cs.IdCurso_Seccion
+                              FROM curso_seccion cs
+                              WHERE cs.IdCurso = :idCurso
+                              AND cs.IdSeccion = 1
+                              LIMIT 1";
+                $stmtSeccion = $conexion->prepare($sqlSeccion);
+                $stmtSeccion->bindParam(':idCurso', $idCurso, PDO::PARAM_INT);
+                $stmtSeccion->execute();
+                $seccionResult = $stmtSeccion->fetch(PDO::FETCH_ASSOC);
+
+                if (!$seccionResult) {
+                    throw new Exception("No existe la sección 'Inscripcion' para el curso seleccionado.");
+                }
+                $idCursoSeccion = $seccionResult['IdCurso_Seccion'];
+            }
+        } elseif ($idCursoSeccion <= 0) {
             throw new Exception("Datos incompletos. Por favor complete todos los campos requeridos.");
         }
 
@@ -152,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $codigoInscripcion = "$anioActual-$correlativo";
 
             // Preparar datos de inscripción
-            $inscripcionModel->IdTipo_Inscripcion = 2; // Estudiante Regular
+            $inscripcionModel->IdTipo_Inscripcion = $idTipoInscripcion; // 2=Regular, 3=Reinscripción
             $inscripcionModel->codigo_inscripcion = $codigoInscripcion;
             $inscripcionModel->IdEstudiante = $idEstudiante;
             $now = new DateTime('now', new DateTimeZone('America/Caracas'));
@@ -179,7 +208,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['message'] = "Inscripción registrada exitosamente. Código: $codigoInscripcion";
                 header("Location: ../../vistas/inscripciones/inscripcion/inscripcion.php");
             } else {
-                $_SESSION['mensaje_exito'] = "Renovación de cupo solicitada exitosamente. Código de seguimiento: $codigoInscripcion";
+                $tipoMensaje = $esReinscripcion ? "Reinscripción" : "Renovación de cupo";
+                $_SESSION['mensaje_exito'] = "$tipoMensaje solicitada exitosamente. Código de seguimiento: $codigoInscripcion";
                 header("Location: ../../vistas/representantes/representados/representado.php");
             }
             exit();
@@ -200,9 +230,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['message'] = $e->getMessage();
             header("Location: ../../vistas/inscripciones/inscripcion/nuevo_inscripcion.php");
         } else {
-            // Si hay un ID de estudiante, redirigir a la página de renovación
+            // Si hay un ID de estudiante, redirigir a la página correspondiente
             if (isset($idEstudiante) && $idEstudiante > 0) {
-                header("Location: ../../vistas/representantes/representados/renovar_cupo.php?id=$idEstudiante");
+                if (isset($esReinscripcion) && $esReinscripcion) {
+                    header("Location: ../../vistas/representantes/representados/solicitar_reinscripcion.php?id=$idEstudiante");
+                } else {
+                    header("Location: ../../vistas/representantes/representados/renovar_cupo.php?id=$idEstudiante");
+                }
             } else {
                 header("Location: ../../vistas/representantes/representados/representado.php");
             }

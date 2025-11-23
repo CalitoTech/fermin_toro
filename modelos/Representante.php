@@ -273,6 +273,13 @@ class Representante {
 
 
     public function obtenerEstudiantesPorRepresentante($idPersona) {
+        // Obtener el año escolar activo
+        $sqlAnoActivo = "SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+        $stmtAno = $this->conn->prepare($sqlAnoActivo);
+        $stmtAno->execute();
+        $anoActivo = $stmtAno->fetch(PDO::FETCH_ASSOC);
+        $idAnoActivo = $anoActivo ? $anoActivo['IdFecha_Escolar'] : 0;
+
         $sql = "
             SELECT
                 p.IdPersona AS IdEstudiante,
@@ -284,16 +291,20 @@ class Representante {
                 sx.sexo,
                 u.urbanismo,
                 p.direccion,
-                CONCAT(c.curso, ' \"', s.seccion, '\"') AS curso_actual
+                CONCAT(c.curso, ' \"', s.seccion, '\"') AS curso_actual,
+                i.IdInscripcion,
+                i.IdStatus,
+                st.status AS status_inscripcion
             FROM representante r
             INNER JOIN persona p ON p.IdPersona = r.IdEstudiante
             LEFT JOIN nacionalidad n ON n.IdNacionalidad = p.IdNacionalidad
             LEFT JOIN sexo sx ON sx.IdSexo = p.IdSexo
             LEFT JOIN urbanismo u ON u.IdUrbanismo = p.IdUrbanismo
-            LEFT JOIN inscripcion i ON i.IdEstudiante = p.IdPersona
+            LEFT JOIN inscripcion i ON i.IdEstudiante = p.IdPersona AND i.IdFecha_Escolar = :idAnoActivo
             LEFT JOIN curso_seccion cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
             LEFT JOIN curso c ON c.IdCurso = cs.IdCurso
             LEFT JOIN seccion s ON s.IdSeccion = cs.IdSeccion
+            LEFT JOIN status st ON st.IdStatus = i.IdStatus
             WHERE r.IdPersona = :id
                 AND (p.IdEstadoInstitucional IS NULL OR p.IdEstadoInstitucional != 7)
             GROUP BY p.IdPersona
@@ -301,6 +312,7 @@ class Representante {
         ";
         $stmt = $this->conn->prepare($sql);
         $stmt->bindParam(':id', $idPersona, PDO::PARAM_INT);
+        $stmt->bindParam(':idAnoActivo', $idAnoActivo, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

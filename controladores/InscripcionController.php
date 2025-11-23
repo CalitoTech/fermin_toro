@@ -1608,21 +1608,35 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
 
             // ======================================================
             // === CAMBIO AUTOMÁTICO DE SECCIÓN =====================
+            // === Solo cambiar si la sección actual es "Inscripcion" (IdSeccion = 1)
             // ======================================================
-            $seccionRecomendada = obtenerSeccionRecomendada(
-                $conexion,
-                $inscripcionData['IdCurso'],
-                $inscripcionData['IdUrbanismo'],
-                $inscripcionData['IdCurso_Seccion']
-            );
 
-            if ($seccionRecomendada && $seccionRecomendada != $inscripcionData['IdCurso_Seccion']) {
-                $conexion->prepare("UPDATE inscripcion 
-                    SET IdCurso_Seccion = :nuevaSeccion 
-                    WHERE IdInscripcion = :id")
-                    ->execute([':nuevaSeccion' => $seccionRecomendada, ':id' => $idInscripcion]);
-                $cambioRealizado = true;
-                $seccionNueva = $seccionRecomendada;
+            // Obtener el IdSeccion actual
+            $stmtSeccionActual = $conexion->prepare("
+                SELECT cs.IdSeccion
+                FROM curso_seccion cs
+                WHERE cs.IdCurso_Seccion = :idCursoSeccion
+            ");
+            $stmtSeccionActual->execute([':idCursoSeccion' => $inscripcionData['IdCurso_Seccion']]);
+            $idSeccionActual = $stmtSeccionActual->fetchColumn();
+
+            // Solo cambiar sección si está en "Inscripcion" (IdSeccion = 1)
+            if ($idSeccionActual == 1) {
+                $seccionRecomendada = obtenerSeccionRecomendada(
+                    $conexion,
+                    $inscripcionData['IdCurso'],
+                    $inscripcionData['IdUrbanismo'],
+                    $inscripcionData['IdCurso_Seccion']
+                );
+
+                if ($seccionRecomendada && $seccionRecomendada != $inscripcionData['IdCurso_Seccion']) {
+                    $conexion->prepare("UPDATE inscripcion
+                        SET IdCurso_Seccion = :nuevaSeccion
+                        WHERE IdInscripcion = :id")
+                        ->execute([':nuevaSeccion' => $seccionRecomendada, ':id' => $idInscripcion]);
+                    $cambioRealizado = true;
+                    $seccionNueva = $seccionRecomendada;
+                }
             }
         }
 
@@ -2164,36 +2178,54 @@ function verificarRepitiente($conexion) {
             exit();
         }
 
-        // Buscar inscripción del año anterior con status "Inscrito" (11) para el mismo curso
-        $queryAnterior = "
-            SELECT i.IdInscripcion, i.IdFecha_Escolar, fe.fecha_escolar,
-                   cs.IdCurso, c.curso
-            FROM inscripcion i
-            INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
-            INNER JOIN curso c ON cs.IdCurso = c.IdCurso
-            INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
-            WHERE i.IdEstudiante = :idEstudiante
-              AND i.IdStatus = 11
-              AND cs.IdCurso = :idCurso
-              AND i.IdFecha_Escolar < :idFechaActual
-            ORDER BY i.IdFecha_Escolar DESC
+        // Obtener el año escolar INMEDIATAMENTE anterior al actual
+        // Solo preguntamos si repite cuando el estudiante tiene inscripción con status "Inscrito" (11)
+        // específicamente en el año escolar inmediatamente anterior al activo
+        $queryAnoAnterior = "
+            SELECT IdFecha_Escolar, fecha_escolar
+            FROM fecha_escolar
+            WHERE IdFecha_Escolar < :idFechaActual
+            ORDER BY IdFecha_Escolar DESC
             LIMIT 1
         ";
-        $stmtAnterior = $conexion->prepare($queryAnterior);
-        $stmtAnterior->execute([
-            ':idEstudiante' => $inscripcionActual['IdEstudiante'],
-            ':idCurso' => $inscripcionActual['IdCurso'],
-            ':idFechaActual' => $inscripcionActual['IdFecha_Escolar']
-        ]);
-        $inscripcionAnterior = $stmtAnterior->fetch(PDO::FETCH_ASSOC);
+        $stmtAnoAnterior = $conexion->prepare($queryAnoAnterior);
+        $stmtAnoAnterior->execute([':idFechaActual' => $inscripcionActual['IdFecha_Escolar']]);
+        $anoAnterior = $stmtAnoAnterior->fetch(PDO::FETCH_ASSOC);
 
-        $esRepitiente = ($inscripcionAnterior !== false);
+        $inscripcionAnterior = null;
+        $esRepitiente = false;
+
+        // Solo buscar inscripción anterior si existe un año escolar anterior
+        if ($anoAnterior) {
+            // Buscar inscripción con status "Inscrito" (11) SOLO en el año escolar inmediatamente anterior
+            $queryAnterior = "
+                SELECT i.IdInscripcion, i.IdFecha_Escolar, fe.fecha_escolar,
+                       cs.IdCurso, c.curso
+                FROM inscripcion i
+                INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+                INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
+                WHERE i.IdEstudiante = :idEstudiante
+                  AND i.IdStatus = 11
+                  AND i.IdFecha_Escolar = :idFechaAnterior
+                LIMIT 1
+            ";
+            $stmtAnterior = $conexion->prepare($queryAnterior);
+            $stmtAnterior->execute([
+                ':idEstudiante' => $inscripcionActual['IdEstudiante'],
+                ':idFechaAnterior' => $anoAnterior['IdFecha_Escolar']
+            ]);
+            $inscripcionAnterior = $stmtAnterior->fetch(PDO::FETCH_ASSOC);
+
+            $esRepitiente = ($inscripcionAnterior !== false);
+        }
 
         echo json_encode([
             'success' => true,
             'esRepitiente' => $esRepitiente,
             'estudiante' => $inscripcionActual['estudiante_nombre'] . ' ' . $inscripcionActual['estudiante_apellido'],
-            'curso' => $inscripcionActual['curso'],
+            'curso' => $esRepitiente ? $inscripcionAnterior['curso'] : $inscripcionActual['curso'],
+            'cursoActual' => $inscripcionActual['curso'],
             'anioActual' => $inscripcionActual['fecha_escolar'],
             'anioAnterior' => $esRepitiente ? $inscripcionAnterior['fecha_escolar'] : null
         ]);
@@ -2253,7 +2285,30 @@ function confirmarRepitiente($conexion) {
         $cambioSeccion = false;
 
         if ($repite) {
-            // Buscar la sección con menos estudiantes inscritos para el mismo curso
+            // Buscar la inscripción anterior para obtener el curso donde estuvo inscrito
+            $queryInscripcionAnterior = "
+                SELECT cs.IdCurso, c.curso
+                FROM inscripcion i
+                INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+                WHERE i.IdEstudiante = :idEstudiante
+                  AND i.IdStatus = 11
+                  AND i.IdFecha_Escolar < :idFechaActual
+                ORDER BY i.IdFecha_Escolar DESC
+                LIMIT 1
+            ";
+            $stmtAnterior = $conexion->prepare($queryInscripcionAnterior);
+            $stmtAnterior->execute([
+                ':idEstudiante' => $inscripcion['IdEstudiante'],
+                ':idFechaActual' => $inscripcion['IdFecha_Escolar']
+            ]);
+            $inscripcionAnterior = $stmtAnterior->fetch(PDO::FETCH_ASSOC);
+
+            // Usar el curso de la inscripción anterior (donde repite)
+            $idCursoRepite = $inscripcionAnterior ? $inscripcionAnterior['IdCurso'] : $inscripcion['IdCurso'];
+            $nombreCursoRepite = $inscripcionAnterior ? $inscripcionAnterior['curso'] : $inscripcion['curso'];
+
+            // Buscar la sección con menos estudiantes inscritos para el curso donde repite
             // Excluir la sección "Inscripcion" (IdSeccion = 1)
             $querySeccionMenosEstudiantes = "
                 SELECT cs.IdCurso_Seccion, cs.IdSeccion, s.seccion,
@@ -2265,16 +2320,14 @@ function confirmarRepitiente($conexion) {
                     AND i.IdFecha_Escolar = :idFechaEscolar
                 WHERE cs.IdCurso = :idCurso
                   AND cs.IdSeccion != 1
-                  AND cs.IdCurso_Seccion != :idCursoSeccionActual
                 GROUP BY cs.IdCurso_Seccion, cs.IdSeccion, s.seccion
                 ORDER BY total_estudiantes ASC, RAND()
                 LIMIT 1
             ";
             $stmtSeccion = $conexion->prepare($querySeccionMenosEstudiantes);
             $stmtSeccion->execute([
-                ':idCurso' => $inscripcion['IdCurso'],
-                ':idFechaEscolar' => $inscripcion['IdFecha_Escolar'],
-                ':idCursoSeccionActual' => $seccionAnterior
+                ':idCurso' => $idCursoRepite,
+                ':idFechaEscolar' => $inscripcion['IdFecha_Escolar']
             ]);
             $seccionRecomendada = $stmtSeccion->fetch(PDO::FETCH_ASSOC);
 
@@ -2308,7 +2361,7 @@ function confirmarRepitiente($conexion) {
             );
 
             if ($cambioSeccion) {
-                $nombreSeccionNueva = $inscripcion['curso'] . ' - ' . $seccionRecomendada['seccion'];
+                $nombreSeccionNueva = $nombreCursoRepite . ' - ' . $seccionRecomendada['seccion'];
                 InscripcionHistorial::registrarCambio(
                     $conexion,
                     $idInscripcion,
@@ -2321,18 +2374,19 @@ function confirmarRepitiente($conexion) {
             }
         }
 
-        // Ahora proceder con la inscripción (status 11 = Inscrito)
-        $resultado = activarInscripcionCompleta($conexion, $idInscripcion, 11, $idUsuario);
+        // La inscripción ya fue completada por validarPagoEInscribir,
+        // solo retornamos el resultado de la operación de repitiente
+        $resultado = [
+            'success' => true,
+            'repite' => $repite,
+            'cambioSeccion' => $cambioSeccion,
+            'message' => $repite
+                ? 'Estudiante marcado como repitiente' . ($cambioSeccion ? ' y sección cambiada' : '')
+                : 'Inscripción completada correctamente'
+        ];
 
-        if ($resultado['success']) {
-            $resultado['repite'] = $repite;
-            $resultado['cambioSeccion'] = $cambioSeccion;
-            if ($cambioSeccion && isset($seccionRecomendada)) {
-                $resultado['nuevaSeccion'] = $inscripcion['curso'] . ' - ' . $seccionRecomendada['seccion'];
-            }
-            $resultado['message'] = $repite
-                ? 'Estudiante marcado como repitiente e inscrito correctamente' . ($cambioSeccion ? ' (sección cambiada)' : '')
-                : 'Inscripción completada correctamente';
+        if ($cambioSeccion && isset($seccionRecomendada) && isset($nombreCursoRepite)) {
+            $resultado['nuevaSeccion'] = $nombreCursoRepite . ' - ' . $seccionRecomendada['seccion'];
         }
 
         echo json_encode($resultado);

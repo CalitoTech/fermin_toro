@@ -29,13 +29,15 @@ try {
     $egresoModel = new Egreso($conexion);
 
     // 1. Obtener estudiantes inscritos del año anterior (IdStatus = 11)
-    // Incluir el IdInscripcion para poder copiar los requisitos
+    // Incluir el IdInscripcion y la sección para mantener la misma sección en el nuevo año
     $queryEstudiantes = "SELECT DISTINCT
         i.IdInscripcion,
         i.IdEstudiante,
         i.ultimo_plantel,
-        i.responsable_inscripcion
+        i.responsable_inscripcion,
+        cs.IdSeccion
     FROM inscripcion i
+    INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
     WHERE i.IdFecha_Escolar = :idAnoAnterior
     AND i.IdStatus = 11";
 
@@ -120,10 +122,27 @@ try {
             $stmtIns->bindParam(':responsable', $est['responsable_inscripcion'], PDO::PARAM_INT);
             $stmtIns->bindParam(':idAnoNuevo', $idAnoNuevo, PDO::PARAM_INT);
 
-            // Obtener el IdCurso_Seccion de la primera sección disponible
-            $idCursoSeccion = $cursoSiguienteData['secciones'][0]['IdCurso_Seccion'] ?? null;
+            // Obtener el IdCurso_Seccion del nuevo curso con la MISMA sección que tenía el año anterior
+            $idCursoSiguiente = $cursoSiguienteData['IdCurso'];
+            $idSeccionAnterior = $est['IdSeccion'];
+
+            $queryMismaSeccion = "SELECT IdCurso_Seccion
+                                  FROM curso_seccion
+                                  WHERE IdCurso = :idCurso
+                                  AND IdSeccion = :idSeccion";
+            $stmtSeccion = $conexion->prepare($queryMismaSeccion);
+            $stmtSeccion->bindParam(':idCurso', $idCursoSiguiente, PDO::PARAM_INT);
+            $stmtSeccion->bindParam(':idSeccion', $idSeccionAnterior, PDO::PARAM_INT);
+            $stmtSeccion->execute();
+            $idCursoSeccion = $stmtSeccion->fetchColumn();
+
             if (!$idCursoSeccion) {
-                throw new Exception("No hay secciones disponibles para el curso siguiente");
+                // Si no existe la misma sección para el nuevo curso, usar la primera disponible
+                $idCursoSeccion = $cursoSiguienteData['secciones'][0]['IdCurso_Seccion'] ?? null;
+                if (!$idCursoSeccion) {
+                    throw new Exception("No hay secciones disponibles para el curso siguiente");
+                }
+                error_log("   ⚠️ No existe sección $idSeccionAnterior para curso $idCursoSiguiente, usando sección alternativa");
             }
 
             $stmtIns->bindParam(':idCursoSeccion', $idCursoSeccion, PDO::PARAM_INT);
