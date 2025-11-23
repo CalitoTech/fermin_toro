@@ -216,6 +216,8 @@ class Inscripcion {
             fe.fecha_escolar,
             st.status AS status_inscripcion,
             st.IdStatus,
+            i.IdTipo_Inscripcion,
+            ti.tipo_inscripcion,
 
             -- Datos de validación de pago
             i.codigo_pago,
@@ -341,6 +343,7 @@ class Inscripcion {
         INNER JOIN nivel n ON c.IdNivel = n.IdNivel
         INNER JOIN fecha_escolar fe ON i.IdFecha_Escolar = fe.IdFecha_Escolar
         INNER JOIN status st ON i.IdStatus = st.IdStatus
+        LEFT JOIN tipo_inscripcion ti ON i.IdTipo_Inscripcion = ti.IdTipo_Inscripcion
         LEFT JOIN plantel pl ON i.ultimo_plantel = pl.IdPlantel
         LEFT JOIN persona validador ON i.validado_por = validador.IdPersona
 

@@ -338,6 +338,17 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                             <strong>Fecha:</strong> <?= date('d/m/Y', strtotime($inscripcion['fecha_inscripcion'])) ?>
                                         </div>
                                         <div class="mb-2">
+                                            <strong>Tipo:</strong>
+                                            <span class="badge <?= match($inscripcion['IdTipo_Inscripcion'] ?? 1) {
+                                                1 => 'bg-success',
+                                                2 => 'bg-primary',
+                                                3 => 'bg-warning text-dark',
+                                                default => 'bg-secondary'
+                                            } ?>">
+                                                <?= htmlspecialchars($inscripcion['tipo_inscripcion'] ?? 'Nuevo Ingreso') ?>
+                                            </span>
+                                        </div>
+                                        <div class="mb-2">
                                             <strong>Curso:</strong> <?= htmlspecialchars($inscripcion['curso']) ?>
                                         </div>
                                         <div class="mb-2">

@@ -117,6 +117,14 @@ $cursos = $cursoModel->obtenerCursos($idPersona);
                                 </a>
                             </div>
 
+                            <!-- Filtros -->
+                            <div class="d-flex flex-wrap align-items-center mb-3 gap-2">
+                                <label for="filtroNivel" class="fw-semibold mb-0">Nivel:</label>
+                                <select id="filtroNivel" class="form-select" style="width:auto;">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+
                             <!-- Buscador y Entradas -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <div class="flex-grow-1" style="max-width: 300px;">
@@ -224,6 +232,38 @@ $cursos = $cursoModel->obtenerCursos($idPersona);
 
         // Crear instancia de TablaDinamica
         window.tablaCursos = new TablaDinamica(config);
+
+        // === POBLAR FILTROS ===
+        const filtroNivel = document.getElementById('filtroNivel');
+
+        // Obtener valores únicos
+        const nivelesUnicos = [...new Set(allData.map(item => item.nombre_nivel).filter(Boolean))];
+
+        // Poblar select de niveles
+        nivelesUnicos.sort().forEach(nivel => {
+            const opt = document.createElement('option');
+            opt.value = nivel;
+            opt.textContent = nivel;
+            filtroNivel.appendChild(opt);
+        });
+
+        // === FUNCIÓN DE FILTROS ===
+        function aplicarFiltros() {
+            const nivelVal = filtroNivel.value.trim();
+
+            const filtered = allData.filter(item => {
+                let matchNivel = true;
+                if (nivelVal) {
+                    matchNivel = item.nombre_nivel === nivelVal;
+                }
+                return matchNivel;
+            });
+
+            window.tablaCursos.updateData(filtered);
+        }
+
+        // === LISTENERS DE FILTROS ===
+        filtroNivel.addEventListener('change', aplicarFiltros);
     });
 
     // Confirmar eliminación

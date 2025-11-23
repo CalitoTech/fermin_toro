@@ -105,6 +105,14 @@ if ($alert) {
                                 </a>
                             </div>
 
+                            <!-- Filtros -->
+                            <div class="d-flex flex-wrap align-items-center mb-3 gap-2">
+                                <label for="filtroTipoStatus" class="fw-semibold mb-0">Tipo:</label>
+                                <select id="filtroTipoStatus" class="form-select" style="width:auto;">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+
                             <!-- Búsqueda y Entradas por página en la misma línea -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <div class="flex-grow-1" style="max-width: 300px;">
@@ -223,6 +231,38 @@ if ($alert) {
 
         // Crear instancia de TablaDinamica
         window.tablaStatus = new TablaDinamica(config);
+
+        // === POBLAR FILTROS ===
+        const filtroTipoStatus = document.getElementById('filtroTipoStatus');
+
+        // Obtener valores únicos
+        const tiposUnicos = [...new Set(allData.map(item => item.tipo_status).filter(Boolean))];
+
+        // Poblar select de tipos
+        tiposUnicos.sort().forEach(tipo => {
+            const opt = document.createElement('option');
+            opt.value = tipo;
+            opt.textContent = tipo;
+            filtroTipoStatus.appendChild(opt);
+        });
+
+        // === FUNCIÓN DE FILTROS ===
+        function aplicarFiltros() {
+            const tipoVal = filtroTipoStatus.value.trim();
+
+            const filtered = allData.filter(item => {
+                let matchTipo = true;
+                if (tipoVal) {
+                    matchTipo = item.tipo_status === tipoVal;
+                }
+                return matchTipo;
+            });
+
+            window.tablaStatus.updateData(filtered);
+        }
+
+        // === LISTENERS DE FILTROS ===
+        filtroTipoStatus.addEventListener('change', aplicarFiltros);
     });
 
     // === FUNCIONES ===

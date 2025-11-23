@@ -118,11 +118,30 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
 
                             <!-- Búsqueda y Entradas por página en la misma línea -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-                                <div class="flex-grow-1" style="max-width: 300px;">
+                                <div class="flex-grow-1" style="max-width: 250px;">
                                     <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
                                 </div>
+
+                                <!-- Filtros -->
+                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                    <label for="filtroNivel" class="fw-semibold mb-0">Nivel:</label>
+                                    <select id="filtroNivel" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                    </select>
+
+                                    <label for="filtroCurso" class="fw-semibold mb-0">Curso:</label>
+                                    <select id="filtroCurso" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                    </select>
+
+                                    <label for="filtroSeccion" class="fw-semibold mb-0">Sección:</label>
+                                    <select id="filtroSeccion" class="form-select" style="width:auto;">
+                                        <option value="">Todos</option>
+                                    </select>
+                                </div>
+
                                 <div class="d-flex align-items-center">
-                                    <label for="entries" class="me-2">Entradas por página:</label>
+                                    <label for="entries" class="me-2">Entradas:</label>
                                     <select id="entries" class="form-select" style="width: auto;">
                                         <option value="10">10</option>
                                         <option value="25">25</option>
@@ -137,9 +156,10 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
                                     <thead class="table-light">
                                         <tr>
                                             <th>ID</th>
+                                            <th>Nivel</th>
                                             <th>Curso</th>
                                             <th>Sección</th>
-                                            <th>Cantidad de Estudiantes</th>
+                                            <th>Estudiantes</th>
                                             <th>Aula</th>
                                             <th>Acciones</th>
                                         </tr>
@@ -148,6 +168,7 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
                                         <?php foreach ($curso_seccions as $user): ?>
                                             <tr>
                                                 <td><?= htmlspecialchars($user['IdCurso_Seccion']) ?></td>
+                                                <td><?= htmlspecialchars($user['nivel'] ?? '') ?></td>
                                                 <td><?= htmlspecialchars($user['curso']) ?></td>
                                                 <td><?= htmlspecialchars($user['seccion']) ?></td>
                                                 <td><?= ($user['cantidad_estudiantes'] === 0) ? '0' : htmlspecialchars($user['cantidad_estudiantes']) ?></td>
@@ -201,9 +222,10 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
             idField: 'IdCurso_Seccion',
             columns: [
                 { label: 'ID', key: 'IdCurso_Seccion' },
+                { label: 'Nivel', key: 'nivel' },
                 { label: 'Curso', key: 'curso' },
                 { label: 'Sección', key: 'seccion' },
-                { label: 'Cantidad de Estudiantes', key: 'cantidad_estudiantes' },
+                { label: 'Estudiantes', key: 'cantidad_estudiantes' },
                 { label: 'Aula', key: 'aula' },
             ],
             acciones: [
@@ -220,14 +242,95 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
             ]
         };
 
-        // Preparar datos para la tabla
-        config.data = allData.map(item => ({
-            ...item,
-            nombreCompleto: `${item.nombre} ${item.apellido}`
-        }));
-
         // Crear instancia de TablaDinamica
         window.tablaCursoSeccion = new TablaDinamica(config);
+
+        // === POBLAR FILTROS ===
+        const filtroNivel = document.getElementById('filtroNivel');
+        const filtroCurso = document.getElementById('filtroCurso');
+        const filtroSeccion = document.getElementById('filtroSeccion');
+
+        // Obtener valores únicos
+        const nivelesUnicos = [...new Set(allData.map(item => item.nivel).filter(Boolean))];
+        const cursosUnicos = [...new Set(allData.map(item => item.curso).filter(Boolean))];
+        const seccionesUnicas = [...new Set(allData.map(item => item.seccion).filter(Boolean))];
+
+        // Poblar select de niveles
+        nivelesUnicos.sort().forEach(nivel => {
+            const opt = document.createElement('option');
+            opt.value = nivel;
+            opt.textContent = nivel;
+            filtroNivel.appendChild(opt);
+        });
+
+        // Poblar select de cursos
+        cursosUnicos.sort().forEach(curso => {
+            const opt = document.createElement('option');
+            opt.value = curso;
+            opt.textContent = curso;
+            filtroCurso.appendChild(opt);
+        });
+
+        // Poblar select de secciones
+        seccionesUnicas.sort().forEach(seccion => {
+            const opt = document.createElement('option');
+            opt.value = seccion;
+            opt.textContent = seccion;
+            filtroSeccion.appendChild(opt);
+        });
+
+        // === FUNCIÓN DE FILTROS ===
+        function aplicarFiltros() {
+            const nivelVal = filtroNivel.value.trim();
+            const cursoVal = filtroCurso.value.trim();
+            const seccionVal = filtroSeccion.value.trim();
+
+            const filtered = allData.filter(item => {
+                let matchNivel = true;
+                if (nivelVal) {
+                    matchNivel = item.nivel === nivelVal;
+                }
+
+                let matchCurso = true;
+                if (cursoVal) {
+                    matchCurso = item.curso === cursoVal;
+                }
+
+                let matchSeccion = true;
+                if (seccionVal) {
+                    matchSeccion = item.seccion === seccionVal;
+                }
+
+                return matchNivel && matchCurso && matchSeccion;
+            });
+
+            window.tablaCursoSeccion.updateData(filtered);
+        }
+
+        // === LISTENERS DE FILTROS ===
+        filtroNivel.addEventListener('change', function() {
+            // Actualizar opciones de curso según nivel seleccionado
+            const nivelSeleccionado = this.value;
+            filtroCurso.innerHTML = '<option value="">Todos</option>';
+
+            let cursosFiltrados = allData;
+            if (nivelSeleccionado) {
+                cursosFiltrados = allData.filter(item => item.nivel === nivelSeleccionado);
+            }
+
+            const cursosDelNivel = [...new Set(cursosFiltrados.map(item => item.curso).filter(Boolean))];
+            cursosDelNivel.sort().forEach(curso => {
+                const opt = document.createElement('option');
+                opt.value = curso;
+                opt.textContent = curso;
+                filtroCurso.appendChild(opt);
+            });
+
+            aplicarFiltros();
+        });
+
+        filtroCurso.addEventListener('change', aplicarFiltros);
+        filtroSeccion.addEventListener('change', aplicarFiltros);
     });
 
     // === FUNCIONES ===

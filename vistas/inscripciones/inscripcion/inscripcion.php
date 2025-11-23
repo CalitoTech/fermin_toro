@@ -247,7 +247,7 @@ foreach ($statuses as $st) {
                                             <th>Código Insc.</th>
                                             <th>Estudiante</th>
                                             <th>Responsable</th>
-                                            <th>Fecha Insc.</th>
+                                            <th>Tipo</th>
                                             <th>Sección</th>
                                             <th>Año Escolar</th>
                                             <th>Status</th>
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
             { label: 'Código Insc.', key: 'codigo_inscripcion' },
             { label: 'Estudiante', key: 'nombreCompleto' },
             { label: 'Responsable', key: 'nombreResponsable' },
-            { label: 'Fecha Inscripción', key: 'fecha_inscripcion' },
+            { label: 'Tipo', key: 'tipo_inscripcion' },
             { label: 'Sección', key: 'curso_seccion' },
             { label: 'Fecha Escolar', key: 'fecha_escolar' },
             { label: 'Status', key: 'status' }
