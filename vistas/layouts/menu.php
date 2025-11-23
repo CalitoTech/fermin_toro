@@ -331,7 +331,11 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
     <div class="home-content">
         <div class="left-section">
             <i class='bx bx-menu'></i>
-            <span class="text">Sistema de Inscripción Escolar - UECFT Araure</span>
+            <div class="brand-text">
+                <span class="acronym">SIGECI</span>
+                <span class="separator">|</span>
+                <span class="full-name">Sistema de Gestión y Control de Inscripciones</span>
+            </div>
         </div>
 
         <div class="right-section">

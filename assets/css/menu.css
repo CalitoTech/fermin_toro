@@ -388,10 +388,47 @@ html {
     gap: 15px;
 }
 
-.home-section .home-content .text {
-    font-size: 18px;
+/* NUEVOS ESTILOS PARA EL TÍTULO SIGECI */
+.brand-text {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.brand-text .acronym {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--clr-primary);
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+}
+
+.brand-text .separator {
+    color: #ddd;
+    font-size: 24px;
+    font-weight: 300;
+    margin-top: -2px;
+}
+
+.brand-text .full-name {
+    font-size: 15px;
     font-weight: 500;
-    color: var(--clr-black);
+    color: #555;
+    letter-spacing: 0.3px;
+}
+
+/* Responsive para el título */
+@media (max-width: 768px) {
+    .brand-text .full-name {
+        display: none; /* Ocultar nombre largo en móviles */
+    }
+    .brand-text .separator {
+        display: none;
+    }
+    .brand-text .acronym {
+        font-size: 20px;
+    }
 }
 
 /* Icono del menú */
@@ -799,73 +836,6 @@ html {
 @media (max-width: 768px) {
     .sidebar.close .nav-links li:hover .link_name,
     .sidebar.close .nav-links li:hover .sub-menu {
-        display: none !important; /* Desactivamos los hover effects en móviles */
-    }
-}
-
-/* Media Queries para Responsive */
-@media (max-width: 992px) {
-    .home-section .home-content .text {
-        max-width: 150px;
-        font-size: 15px;
-    }
-    
-    .home-section .school-year span {
-        display: none; /* Ocultamos el texto, solo muestra icono */
-    }
-    
-    .home-section .school-year {
-        padding: 4px 6px;
-    }
-}
-
-@media (max-width: 768px) {
-    .home-section .home-content {
-        padding: 10px 12px;
-    }
-    
-    .home-section .home-content .text {
-        display: none; /* Ocultamos completamente el texto en móviles */
-    }
-    
-    .home-section .datetime {
-        display: none; /* Ocultamos fecha/hora en móviles */
-    }
-    
-    .home-section .school-year {
-        background: transparent;
-        padding: 0;
-    }
-    
-    .home-section .school-year i {
-        font-size: 20px; /* Icono más grande para mejor visibilidad */
-    }
-    
-    /* Ajustamos el panel de notificaciones para móviles */
-    .notification-panel {
-        width: 280px;
-        right: 5px;
-    }
-}
-@media (max-width: 480px) {
-    /* Ocultar completamente el año escolar en móviles */
-    .home-section .school-year {
         display: none !important;
     }
-    
-    /* Ajustar espacios en el home-content */
-    .home-section .home-content {
-        padding: 8px 10px;
-    }
-    
-    .home-section .right-section {
-        gap: 6px;
-    }
-    
-    /* Asegurar que el menú hamburguesa sea accesible */
-    .home-section .bx-menu {
-        font-size: 20px;
-        margin-right: 5px;
-    }
 }
-
