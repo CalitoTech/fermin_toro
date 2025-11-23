@@ -466,6 +466,7 @@ CREATE TABLE detalle_perfil (
     IdDetalle_Perfil int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdPerfil int NOT NULL,
     IdPersona int NOT NULL,
+    fecha_asignacion datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (IdPerfil) REFERENCES perfil(IdPerfil),
     FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona)
 );
@@ -630,4 +631,23 @@ CREATE TABLE inscripcion_grupo_interes (
     fecha_ingreso_grupo datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (IdGrupo_Interes) REFERENCES grupo_interes(IdGrupo_Interes),
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona)
+);
+
+CREATE TABLE notificaciones (
+    IdNotificacion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    titulo varchar(100) NOT NULL,
+    mensaje varchar(255) NOT NULL,
+    fecha_creacion datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    tipo varchar(50) NOT NULL,
+    enlace varchar(255) NULL,
+    destinatarios varchar(50) NOT NULL DEFAULT 'admin'
+);
+
+CREATE TABLE notificaciones_leidas (
+    IdNotificacionLeida int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    IdNotificacion int NOT NULL,
+    IdPersona int NOT NULL,
+    fecha_lectura datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (IdNotificacion) REFERENCES notificaciones(IdNotificacion) ON DELETE CASCADE,
+    FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona) ON DELETE CASCADE
 );

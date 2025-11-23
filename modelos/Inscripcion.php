@@ -63,6 +63,20 @@ class Inscripcion {
 
         if ($stmt->execute()) {
             $this->IdInscripcion = $this->conn->lastInsertId();
+
+            // === NOTIFICACIÓN AUTOMÁTICA ===
+            try {
+                require_once __DIR__ . '/Notificacion.php';
+                $notificacion = new Notificacion($this->conn);
+                $titulo = "Nueva Solicitud de Cupo";
+                $mensaje = "Solicitud de cupo ({$this->codigo_inscripcion}) creada.";
+                $enlace = "../../inscripciones/inscripcion/ver_inscripcion.php?id=" . $this->IdInscripcion;
+                $notificacion->crear($titulo, $mensaje, 'inscripcion', $enlace, 'admin');
+            } catch (Exception $e) {
+                error_log("Error creando notificación: " . $e->getMessage());
+            }
+            // ================================
+
             return $this->IdInscripcion;
         }
         return false;

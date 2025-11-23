@@ -351,7 +351,7 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
             <?php if (!$esSinAcceso && !in_array($idPerfil, [3, 4, 5])): ?>
                 <div class="notification" id="notification-btn">
                     <i class='bx bxs-bell' id="notification-btn-icon"></i>
-                    <span class="badge" id="notification-badge">3</span>
+                    <span class="badge" id="notification-badge" style="display: none;">0</span>
                 </div>
             <?php endif; ?>
         </div>
@@ -363,16 +363,11 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
             <i class='bx bx-x' id="close-panel"></i>
         </div>
         <div class="panel-body">
-            <div class="notification-item">
-                <div class="notif-icon bg-blue"><i class='bx bxs-user-plus'></i></div>
-                <div class="notif-content">
-                    <p><strong>Juan Pérez</strong> solicitó cupo para 1er Grado.</p>
-                    <small>hace 2 minutos</small>
-                </div>
-            </div>
+            <!-- Contenido dinámico -->
         </div>
         <div class="panel-footer">
             <a href="#">Ver todas las notificaciones</a>
         </div>
     </div>
 </section>
+<script src="../../../assets/js/notificaciones.js"></script>

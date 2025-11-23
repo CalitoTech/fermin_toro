@@ -46,7 +46,44 @@ class InscripcionHistorial {
         $stmt->bindParam(":descripcion", $this->descripcion);
         $stmt->bindParam(":IdUsuario", $this->IdUsuario);
 
-        return $stmt->execute();
+        if ($stmt->execute()) {
+            // === NOTIFICACIÓN AUTOMÁTICA DE CAMBIO DE ESTADO ===
+            if ($this->campo_modificado === 'IdStatus') {
+                try {
+                    require_once __DIR__ . '/Notificacion.php';
+                    $notificacion = new Notificacion($this->conn);
+                    
+                    // Obtener nombre del nuevo status
+                    $stmtStatus = $this->conn->prepare("SELECT status FROM status WHERE IdStatus = :id");
+                    $stmtStatus->bindParam(":id", $this->valor_nuevo, PDO::PARAM_INT);
+                    $stmtStatus->execute();
+                    $statusData = $stmtStatus->fetch(PDO::FETCH_ASSOC);
+                    $nuevoStatus = $statusData ? $statusData['status'] : 'Desconocido';
+
+                    // Obtener nombre del usuario que hizo el cambio
+                    $stmtUser = $this->conn->prepare("SELECT nombre, apellido FROM persona WHERE IdPersona = :id");
+                    $stmtUser->bindParam(":id", $this->IdUsuario, PDO::PARAM_INT);
+                    $stmtUser->execute();
+                    $userData = $stmtUser->fetch(PDO::FETCH_ASSOC);
+                    $nombreUsuario = $userData ? $userData['nombre'] . ' ' . $userData['apellido'] : 'Usuario';
+
+                    // Obtener código de inscripción para el título (opcional, requiere consulta extra)
+                    // Por simplicidad, usamos el ID o un mensaje genérico
+                    
+                    $titulo = "Cambio de Estado de Inscripción";
+                    $mensaje = "Inscripción #{$this->IdInscripcion} pasada a '{$nuevoStatus}' por {$nombreUsuario}.";
+                    $enlace = "../../inscripciones/inscripcion/ver_inscripcion.php?id=" . $this->IdInscripcion;
+                    
+                    $notificacion->crear($titulo, $mensaje, 'inscripcion', $enlace, 'admin');
+
+                } catch (Exception $e) {
+                    error_log("Error creando notificación de historial: " . $e->getMessage());
+                }
+            }
+            // ===================================================
+            return true;
+        }
+        return false;
     }
 
     /**
