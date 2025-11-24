@@ -1,7 +1,10 @@
 // Manejo de teléfonos dinámicos
     document.addEventListener('DOMContentLoaded', function() {
         const telefonosContainer = document.getElementById('telefonos-container');
-        let telefonoCount = 1;
+        if (!telefonosContainer) return; // Salir si no existe el contenedor
+
+        // Contar teléfonos existentes (para formularios de edición)
+        let telefonoCount = document.querySelectorAll('.telefono-item').length || 1;
 
         // Agregar nuevo teléfono
         function agregarTelefono() {
@@ -43,8 +46,8 @@
             `;
             telefonosContainer.appendChild(nuevoTelefono);
 
-            // Inicializar el buscador de prefijo para el nuevo campo
-            inicializarBuscadorPrefijo(telefonoCount);
+            // Inicializar el buscador de prefijo para el nuevo campo (esNuevo = true)
+            inicializarBuscadorPrefijo(telefonoCount, true);
 
             telefonoCount++;
             actualizarBotones();
@@ -112,7 +115,7 @@
         }, true);
 
         // Función para inicializar el buscador de prefijos
-        function inicializarBuscadorPrefijo(index) {
+        function inicializarBuscadorPrefijo(index, esNuevo = false) {
             const item = document.querySelectorAll('.telefono-item')[index];
             if (!item) return;
 
@@ -120,6 +123,11 @@
             const prefijoHidden = item.querySelector('.prefijo-hidden');
             const prefijoNombreHidden = item.querySelector('.prefijo-nombre-hidden');
             const prefijoResultados = item.querySelector('.prefijo-resultados');
+
+            // Si ya tiene un ID asignado, no reinicializar (evitar duplicados)
+            if (prefijoInput.id && prefijoInput.id.startsWith('prefijo_') && !esNuevo) {
+                return;
+            }
 
             // Crear un ID único para este buscador
             const uniqueId = `prefijo_${index}_${Date.now()}`;
@@ -137,42 +145,55 @@
                 prefijoNombreHidden.id
             );
 
-            // Establecer valor por defecto
-            prefijoInput.value = '+58';
+            // Solo establecer valor por defecto si está vacío (nuevo teléfono)
+            const valorActual = prefijoInput.value.trim();
+            const idPrefijoActual = prefijoHidden.value.trim();
 
-            // Formatear prefijo: evitar que se borre el +
+            if (!valorActual || esNuevo) {
+                // Es un teléfono nuevo, establecer +58 por defecto
+                prefijoInput.value = '+58';
+
+                // Buscar el ID del prefijo por defecto
+                const baseUrl = buscador.baseUrl;
+                fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            const prefijoEncontrado = data.find(p => p.codigo_prefijo === '+58');
+                            if (prefijoEncontrado) {
+                                prefijoHidden.value = prefijoEncontrado.IdPrefijo;
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Error al cargar prefijo por defecto:', err));
+            }
+            // Si ya tiene valor (viene de la BD), no lo sobrescribimos
+
+            // Formatear prefijo: evitar que se borre el + solo para prefijos internacionales
             prefijoInput.addEventListener('input', function(e) {
                 let valor = this.value;
-                if (!valor.startsWith('+')) {
-                    this.value = '+' + valor.replace(/\+/g, '');
-                }
-                if (valor.indexOf('+') > 0) {
-                    this.value = '+' + valor.replace(/\+/g, '');
+                // Solo forzar + para prefijos que empiezan con +
+                if (valor.startsWith('+') || valor === '') {
+                    if (!valor.startsWith('+') && valor.length > 0) {
+                        this.value = '+' + valor.replace(/\+/g, '');
+                    }
+                    if (valor.indexOf('+') > 0) {
+                        this.value = '+' + valor.replace(/\+/g, '');
+                    }
                 }
             });
             prefijoInput.addEventListener('keydown', function(e) {
-                if (this.value === '+' && (e.key === 'Backspace' || e.key === 'Delete')) {
+                // Solo prevenir borrar el + si el prefijo actual empieza con +
+                if (this.value === '+' && this.value.startsWith('+') && (e.key === 'Backspace' || e.key === 'Delete')) {
                     e.preventDefault();
                 }
             });
-
-            // Buscar el ID del prefijo por defecto
-            const baseUrl = buscador.baseUrl;
-            fetch(`${baseUrl}?tipo=prefijo&q=%2B58&filtro=internacional`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const prefijoEncontrado = data.find(p => p.codigo_prefijo === '+58');
-                        if (prefijoEncontrado) {
-                            prefijoHidden.value = prefijoEncontrado.IdPrefijo;
-                        }
-                    }
-                })
-                .catch(err => console.error('Error al cargar prefijo por defecto:', err));
         }
 
-        // Inicializar el primer prefijo
-        inicializarBuscadorPrefijo(0);
+        // Inicializar todos los prefijos existentes (sin sobrescribir valores)
+        document.querySelectorAll('.telefono-item').forEach((item, index) => {
+            inicializarBuscadorPrefijo(index, false);
+        });
 
         // Inicializar
         actualizarBotones();

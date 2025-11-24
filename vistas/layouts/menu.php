@@ -269,10 +269,9 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                             <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
                             <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
                         <?php endif; ?>
-                        <!-- Mensajes WhatsApp: visible para todos los internos -->
-                        <li><a href="../../configuracion/whatsapp/mensajes.php">Mensajes WhatsApp</a></li>
                         <!-- Configuración API WhatsApp: solo administrador -->
                         <?php if ($idPerfil == 1): ?>
+                            <li><a href="../../configuracion/whatsapp/mensajes.php">Mensajes WhatsApp</a></li>
                             <li><a href="../../configuracion/whatsapp/whatsapp.php">Config. WhatsApp API</a></li>
                         <?php endif; ?>
                     </ul>

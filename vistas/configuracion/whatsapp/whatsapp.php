@@ -22,26 +22,6 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     exit();
 }
 
-// Verificar que sea administrador
-if (!isset($_SESSION['idPerfil']) || $_SESSION['idPerfil'] != 1) {
-    echo '
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            Swal.fire({
-                title: "Acceso Denegado",
-                text: "Solo los administradores pueden acceder a esta sección",
-                icon: "error",
-                confirmButtonText: "Aceptar",
-                confirmButtonColor: "#c90000"
-            }).then(() => {
-                window.location.href = "../../inicio/inicio/inicio.php";
-            });
-        });
-    </script>';
-    exit();
-}
-
 // Incluir Notificaciones
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
@@ -87,6 +67,29 @@ $config = $configModel->obtenerConfiguracionActiva();
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
+
+<?php
+// Verificar que sea administrador (usa $todosLosPerfiles del menu.php)
+if (!in_array(1, $todosLosPerfiles)) {
+    echo '
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: "Acceso Denegado",
+                text: "Solo los administradores pueden acceder a esta sección",
+                icon: "error",
+                confirmButtonText: "Aceptar",
+                confirmButtonColor: "#c90000"
+            }).then(() => {
+                window.location.href = "../../inicio/inicio/inicio.php";
+            });
+        });
+    </script>';
+    exit();
+}
+?>
+
 <?php include '../../layouts/header.php'; ?>
 
 <!-- Sección Principal -->

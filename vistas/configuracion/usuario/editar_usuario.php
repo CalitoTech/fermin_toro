@@ -393,8 +393,9 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                                         <!-- Prefix selector -->
                                                         <div class="position-relative" style="max-width: 90px;">
                                                             <input type="text" class="form-control buscador-input text-center fw-bold prefijo-telefono prefijo-input"
-                                                                   data-index="<?= $index ?>" maxlength="4" data-prefijo-tipo="internacional"
-                                                                   value="<?= htmlspecialchars($tel['codigo_prefijo'] ?? '+58') ?>"
+                                                                   data-index="<?= $index ?>" maxlength="5" data-prefijo-tipo="internacional"
+                                                                   value="<?= htmlspecialchars($tel['codigo_prefijo'] ?? '') ?>"
+                                                                   data-max-digitos="<?= $tel['max_digitos'] ?? '' ?>"
                                                                    onkeypress="return /[0-9+]/.test(event.key)"
                                                                    oninput="this.value = this.value.replace(/[^0-9+]/g, '')"
                                                                    style="border-radius: 0; border-right: none; background: #f8f9fa; color: #c90000;">
@@ -409,8 +410,8 @@ $telefonosUsuario = $telefonoModel->obtenerPorPersona($idUsuario);
                                                             name="telefonos[<?= $index ?>][numero]"
                                                             value="<?= htmlspecialchars($tel['numero_telefono']) ?>"
                                                             placeholder="Ej: 4141234567"
-                                                            minlength="10"
-                                                            maxlength="10"
+                                                            minlength="<?= $tel['max_digitos'] ?? 7 ?>"
+                                                            maxlength="<?= $tel['max_digitos'] ?? 15 ?>"
                                                             pattern="^[0-9]+"
                                                             onkeypress="return onlyNumber(event)"
                                                             style="border-top-left-radius: 0; border-bottom-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0;">

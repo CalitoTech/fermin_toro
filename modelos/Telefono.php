@@ -124,11 +124,14 @@ class Telefono {
     }
 
     public function obtenerPorPersona($idPersona) {
-        $query = "SELECT t.*, tt.tipo_telefono, p.codigo_prefijo, p.pais
+        $query = "SELECT t.IdTelefono, t.numero_telefono, t.IdTipo_Telefono, t.IdPersona, t.IdPrefijo,
+                         tt.tipo_telefono,
+                         p.codigo_prefijo, p.pais, p.max_digitos
                 FROM telefono t
                 JOIN tipo_telefono tt ON t.IdTipo_Telefono = tt.IdTipo_Telefono
                 LEFT JOIN prefijo p ON t.IdPrefijo = p.IdPrefijo
-                WHERE t.IdPersona = ?";
+                WHERE t.IdPersona = ?
+                ORDER BY t.IdTipo_Telefono";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $idPersona, PDO::PARAM_INT);
         $stmt->execute();

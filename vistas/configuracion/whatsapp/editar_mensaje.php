@@ -22,27 +22,6 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     exit();
 }
 
-// Verificar perfiles internos
-$perfilesPermitidos = [1, 6, 7, 8, 9, 10];
-if (!isset($_SESSION['idPerfil']) || !in_array($_SESSION['idPerfil'], $perfilesPermitidos)) {
-    echo '
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            Swal.fire({
-                title: "Acceso Denegado",
-                text: "No tiene permisos para acceder a esta sección",
-                icon: "error",
-                confirmButtonText: "Aceptar",
-                confirmButtonColor: "#c90000"
-            }).then(() => {
-                window.location.href = "../../inicio/inicio/inicio.php";
-            });
-        });
-    </script>';
-    exit();
-}
-
 // Obtener ID del mensaje a editar
 $idMensaje = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($idMensaje <= 0) {
@@ -99,6 +78,30 @@ $statusList = $mensajeModel->obtenerStatusInscripcion();
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
+
+<?php
+// Verificar perfiles internos (usa $todosLosPerfiles del menu.php)
+$perfilesPermitidos = [1, 6, 7, 8, 9, 10];
+if (empty(array_intersect($todosLosPerfiles, $perfilesPermitidos))) {
+    echo '
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            Swal.fire({
+                title: "Acceso Denegado",
+                text: "No tiene permisos para acceder a esta sección",
+                icon: "error",
+                confirmButtonText: "Aceptar",
+                confirmButtonColor: "#c90000"
+            }).then(() => {
+                window.location.href = "../../inicio/inicio/inicio.php";
+            });
+        });
+    </script>';
+    exit();
+}
+?>
+
 <?php include '../../layouts/header.php'; ?>
 
 <!-- Sección Principal -->
