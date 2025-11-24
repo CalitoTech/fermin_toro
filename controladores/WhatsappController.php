@@ -12,6 +12,12 @@ class WhatsAppController {
     private $configModel;
     private $mensajeModel;
 
+    // ========== CONFIGURACIÓN DE PRUEBAS ==========
+    // Cambiar a TRUE para usar número real de la BD, FALSE para usar número de pruebas
+    private const USAR_TELEFONO_REAL = true;
+    private const TELEFONO_PRUEBAS = '584263519830';
+    // ==============================================
+
     public function __construct($conexion) {
         $this->conexion = $conexion;
 
@@ -88,24 +94,25 @@ class WhatsAppController {
     }
 
     public function enviarAvisoBloqueo($idPersona, $tipoAviso = 'bloqueo') {
-        // 1. Buscar el número y usuario
-        $query = "SELECT usuario, nombre, apellido, 
-                        (SELECT numero_telefono FROM telefono t 
-                        WHERE t.IdPersona = p.IdPersona 
-                        LIMIT 1) AS telefono
-                FROM persona p 
-                WHERE p.IdPersona = :id";
+        // 1. Buscar datos de la persona y su teléfono con prefijo
+        $query = "SELECT p.usuario, p.nombre, p.apellido,
+                         t.numero_telefono, pref.codigo_prefijo
+                  FROM persona p
+                  LEFT JOIN telefono t ON t.IdPersona = p.IdPersona
+                  LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
+                  WHERE p.IdPersona = :id
+                  LIMIT 1";
         $stmt = $this->conexion->prepare($query);
         $stmt->bindParam(":id", $idPersona, PDO::PARAM_INT);
         $stmt->execute();
         $persona = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$persona || empty($persona['telefono'])) {
+        if (!$persona || empty($persona['numero_telefono'])) {
             error_log("❌ No se encontró teléfono para la persona $idPersona");
             return false;
         }
 
-        $telefono = $this->formatearTelefono($persona['telefono']);
+        $telefono = $this->obtenerTelefonoParaEnvio($persona['codigo_prefijo'], $persona['numero_telefono']);
         $usuario  = $persona['usuario'];
         $nombre   = "{$persona['nombre']} {$persona['apellido']}";
         $endpoint = $this->evolutionApiUrl . '/message/sendList/' . $this->nombreInstancia;
@@ -170,7 +177,7 @@ class WhatsAppController {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        error_log("📤 WhatsApp ($tipoAviso) enviado a {$persona['telefono']} -> HTTP $httpCode -> Respuesta: $response");
+        error_log("📤 WhatsApp ($tipoAviso) enviado a {$persona['numero_telefono']} -> HTTP $httpCode -> Respuesta: $response");
 
         // 🧩 Analizar la respuesta JSON de Evolution API (si existe)
         $responseData = json_decode($response, true);
@@ -253,8 +260,14 @@ class WhatsAppController {
                     continue;
                 }
 
+                // Obtener teléfono formateado (prefijo + número, sin +)
+                $telefonoFormateado = $this->obtenerTelefonoParaEnvio(
+                    $destinatario['codigo_prefijo'],
+                    $destinatario['numero_telefono']
+                );
+
                 $resultado = $this->enviarMensajeWhatsApp(
-                    $destinatario['telefono'],
+                    $telefonoFormateado,
                     $mensaje,
                     $destinatario['nombre']
                 );
@@ -306,31 +319,33 @@ class WhatsAppController {
     }
 
     /**
-     * Obtiene los destinatarios únicos (solo celulares)
+     * Obtiene los destinatarios únicos (solo celulares) con prefijo
      */
     private function obtenerDestinatarios($datosInscripcion) {
          $query = "SELECT DISTINCT
             p.IdPersona,
             p.nombre,
             p.apellido,
-            t.numero_telefono AS telefono,
+            t.numero_telefono,
+            pref.codigo_prefijo,
             par.parentesco,
             pr.nombre_perfil,
             p.password,
-            p.usuario, 
+            p.usuario,
             p.cedula
         FROM representante r
         INNER JOIN persona p ON r.IdPersona = p.IdPersona
         INNER JOIN parentesco par ON r.IdParentesco = par.IdParentesco
         INNER JOIN telefono t ON p.IdPersona = t.IdPersona
         INNER JOIN tipo_telefono tt ON t.IdTipo_Telefono = tt.IdTipo_Telefono
+        LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
         INNER JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
         INNER JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil
         WHERE r.IdEstudiante = (
             SELECT IdEstudiante FROM inscripcion WHERE IdInscripcion = :idInscripcion
         )
-        AND tt.tipo_telefono = 'Celular'  -- Solo teléfonos celulares
-        AND pr.nombre_perfil = 'Representante'  -- Solo representantes, no contactos de emergencia
+        AND tt.tipo_telefono = 'Celular'
+        AND pr.nombre_perfil = 'Representante'
         ORDER BY par.IdParentesco";
 
         $stmt = $this->conexion->prepare($query);
@@ -339,7 +354,6 @@ class WhatsAppController {
 
         $destinatarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // ✅ Log esencial: cuántos destinatarios se encontraron
         if (!empty($destinatarios)) {
             error_log("📞 Destinatarios encontrados: " . count($destinatarios));
             foreach ($destinatarios as $dest) {
@@ -400,114 +414,75 @@ class WhatsAppController {
      * Envía mensaje a través de Evolution API
      */
     private function enviarMensajeWhatsApp($telefono, $mensaje, $nombreDestinatario) {
-    // ✅ Hardcodeado para pruebas
-    $telefonoLimpio = '584263519830';
-    
-    $endpoint = $this->evolutionApiUrl . '/message/sendText/' . $this->nombreInstancia;
+        $endpoint = $this->evolutionApiUrl . '/message/sendText/' . $this->nombreInstancia;
 
-    $payload = [
-        'number' => $telefonoLimpio,
-        'text' => $mensaje,
-        'options' => [
-            'delay' => 1200,
-            'presence' => 'composing',
-            'linkPreview' => true
-        ]
-    ];
+        $payload = [
+            'number' => $telefono,
+            'text' => $mensaje,
+            'options' => [
+                'delay' => 1200,
+                'presence' => 'composing',
+                'linkPreview' => true
+            ]
+        ];
 
-    $ch = curl_init();
-    curl_setopt_array($ch, [
-        CURLOPT_URL => $endpoint,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload),
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'apikey: ' . $this->evolutionApiKey
-        ],
-        CURLOPT_TIMEOUT => 30,
-        CURLOPT_SSL_VERIFYPEER => false, // ← Agregar para debugging
-        CURLOPT_SSL_VERIFYHOST => false  // ← Agregar para debugging
-    ]);
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $endpoint,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'apikey: ' . $this->evolutionApiKey
+            ],
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false
+        ]);
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch); // ← Capturar error de conexión
-    curl_close($ch);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-    // ✅ Debugging completo
-    error_log("🔧 Debug Evolution API:");
-    error_log("   URL: $endpoint");
-    error_log("   HTTP Code: $httpCode");
-    error_log("   Response: " . $response);
-    error_log("   Error: " . $error);
-    error_log("   Payload: " . json_encode($payload));
+        // Log de debug
+        error_log("🔧 Debug Evolution API:");
+        error_log("   URL: $endpoint");
+        error_log("   Teléfono: $telefono");
+        error_log("   HTTP Code: $httpCode");
+        error_log("   Response: " . $response);
+        if ($error) error_log("   Error: " . $error);
 
-    if ($httpCode !== 200) {
-        error_log("❌ Error enviando WhatsApp a $nombreDestinatario - Código: $httpCode");
-        return false;
+        if ($httpCode !== 200) {
+            error_log("❌ Error enviando WhatsApp a $nombreDestinatario - Código: $httpCode");
+            return false;
+        }
+
+        error_log("✅ Mensaje enviado a $telefono para $nombreDestinatario");
+        return true;
     }
 
-    error_log("✅ Mensaje enviado a $telefonoLimpio para $nombreDestinatario");
-    return true;
-}
-
     /**
-     * Formatea el número de teléfono para WhatsApp usando el prefijo de la base de datos
+     * Obtiene el teléfono formateado para envío (prefijo + número, sin +)
+     * Respeta la configuración de pruebas (USAR_TELEFONO_REAL)
+     *
+     * @param string|null $codigoPrefijo El prefijo del país (ej: "+58")
+     * @param string $numeroTelefono El número de teléfono
+     * @return string Teléfono listo para enviar (ej: "584263519830")
      */
-    private function formatearTelefono($telefono) {
-        // Eliminar todo excepto números y el signo +
-        $telefonoLimpio = preg_replace('/[^0-9+]/', '', $telefono);
-
-        // Si empieza con +, es formato internacional
-        if (strpos($telefonoLimpio, '+') === 0) {
-            // Eliminar el + y mantener solo números
-            return substr($telefonoLimpio, 1);
+    private function obtenerTelefonoParaEnvio($codigoPrefijo, $numeroTelefono) {
+        // Si está en modo pruebas, usar el teléfono hardcodeado
+        if (!self::USAR_TELEFONO_REAL) {
+            error_log("📱 Modo pruebas: usando teléfono " . self::TELEFONO_PRUEBAS . " en lugar de $codigoPrefijo$numeroTelefono");
+            return self::TELEFONO_PRUEBAS;
         }
 
-        // Intentar obtener el número con prefijo de la base de datos
-        try {
-            $query = "SELECT t.numero_telefono, p.codigo_prefijo
-                     FROM telefono t
-                     LEFT JOIN prefijo p ON t.IdPrefijo = p.IdPrefijo
-                     WHERE t.numero_telefono = :telefono
-                     LIMIT 1";
+        // Modo producción: construir teléfono real desde BD
+        // Quitar el + del prefijo si existe
+        $prefijoLimpio = str_replace('+', '', $codigoPrefijo ?? '');
 
-            $stmt = $this->conexion->prepare($query);
-            $stmt->bindParam(':telefono', $telefonoLimpio);
-            $stmt->execute();
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($result && !empty($result['codigo_prefijo'])) {
-                // Usar el prefijo de la base de datos
-                $codigoPrefijo = str_replace('+', '', $result['codigo_prefijo']);
-                return $codigoPrefijo . $telefonoLimpio;
-            }
-        } catch (Exception $e) {
-            error_log("Error al obtener prefijo: " . $e->getMessage());
-        }
-
-        // Fallback: lógica antigua para números venezolanos sin prefijo en BD
-        $longitud = strlen($telefonoLimpio);
-
-        // Formato 10 dígitos (0412-3456789)
-        if ($longitud === 10 && substr($telefonoLimpio, 0, 1) === '0') {
-            return '58' . substr($telefonoLimpio, 1);
-        }
-        // Formato 11 dígitos que empieza con 0 (04263519830)
-        elseif ($longitud === 11 && substr($telefonoLimpio, 0, 1) === '0') {
-            return '58' . substr($telefonoLimpio, 1);
-        }
-        // Formato 9 dígitos (4123456789) - sin el 0 inicial
-        elseif ($longitud === 9) {
-            return '58' . $telefonoLimpio;
-        }
-        // Ya está en formato internacional (584123456789)
-        elseif ($longitud >= 11 && substr($telefonoLimpio, 0, 2) === '58') {
-            return $telefonoLimpio;
-        }
-
-        error_log("Formato de teléfono no reconocido: $telefono (limpio: $telefonoLimpio)");
-        return false;
+        // Concatenar prefijo + número
+        return $prefijoLimpio . $numeroTelefono;
     }
 }

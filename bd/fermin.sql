@@ -561,8 +561,8 @@ CREATE TABLE telefono (
     FOREIGN KEY (IdPrefijo) REFERENCES prefijo(IdPrefijo)
 );
 
-INSERT INTO `telefono` (`IdTelefono`, `IdTipo_Telefono`, `numero_telefono`, `IdPersona`) VALUES
-(1, 2, '4263519830', 1);
+INSERT INTO `telefono` (`IdTelefono`, `IdTipo_Telefono`, `numero_telefono`, `IdPersona`, `IdPrefijo`) VALUES
+(1, 2, '4263519830', 1, 1);
 
 CREATE TABLE materia (
     IdMateria int NOT NULL AUTO_INCREMENT PRIMARY KEY,
