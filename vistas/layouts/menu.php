@@ -141,6 +141,31 @@ $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo
 $perfilesConNotificaciones = [1, 6, 7, 8, 9, 10];
 $tienePerfilConNotificaciones = !empty(array_intersect($todosLosPerfiles, $perfilesConNotificaciones));
 
+// === LÓGICA DEL SWITCH DE MENÚ ===
+// Solo mostrar switch si tiene perfil interno Y externo (representante/contacto)
+$perfilesRepresentante = [4, 5]; // Representante, Contacto de Emergencia
+$tienePerfilRepresentante = !empty(array_intersect($todosLosPerfiles, $perfilesRepresentante));
+$mostrarSwitch = $tienePerfilInterno && $tienePerfilRepresentante;
+
+// Determinar qué menú mostrar (por defecto: administrativo si tiene perfil interno)
+if (!isset($_SESSION['menu_modo'])) {
+    $_SESSION['menu_modo'] = $tienePerfilInterno ? 'admin' : 'representante';
+}
+
+// Procesar cambio de modo si se envió por GET
+if (isset($_GET['cambiar_menu'])) {
+    $nuevoModo = $_GET['cambiar_menu'];
+    if (in_array($nuevoModo, ['admin', 'representante'])) {
+        $_SESSION['menu_modo'] = $nuevoModo;
+    }
+    // Redirigir para limpiar la URL
+    $urlActual = strtok($_SERVER['REQUEST_URI'], '?');
+    header("Location: $urlActual");
+    exit;
+}
+
+$menuModo = $_SESSION['menu_modo'];
+
 // Obtener el año escolar activo
 $queryAnoActivo = "SELECT fecha_escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
 $stmtAnoActivo = $conexion->prepare($queryAnoActivo);
@@ -163,6 +188,29 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
     <div class="sidebar-scroll">
         <ul class="nav-links">
 
+            <!-- === SWITCH PARA CAMBIAR MODO DE MENÚ === -->
+            <?php if ($mostrarSwitch): ?>
+                <li class="menu-switch-container">
+                    <div class="menu-switch-wrapper">
+                        <span class="switch-label <?= $menuModo === 'admin' ? 'active' : '' ?>">
+                            <i class='bx bx-briefcase'></i>
+                        </span>
+                        <label class="menu-switch">
+                            <input type="checkbox" id="menuModeSwitch"
+                                   <?= $menuModo === 'representante' ? 'checked' : '' ?>
+                                   onchange="cambiarModoMenu(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label <?= $menuModo === 'representante' ? 'active' : '' ?>">
+                            <i class='bx bx-user-voice'></i>
+                        </span>
+                    </div>
+                    <span class="switch-mode-text">
+                        <?= $menuModo === 'admin' ? 'Administrativo' : 'Representante' ?>
+                    </span>
+                </li>
+            <?php endif; ?>
+
             <!-- === MENÚ PARA DOCENTE Y ESTUDIANTE (Sin acceso completo) === -->
             <?php if ($esSinAcceso): ?>
                 <li>
@@ -180,7 +228,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                 </li>
 
             <!-- === MENÚ INTERNO (TRABAJADORES CON ACCESO) === -->
-            <?php elseif ($tienePerfilInterno): ?>
+            <?php elseif ($menuModo === 'admin' && $tienePerfilInterno): ?>
                 <!-- Inicio -->
                 <li>
                     <a href="../../inicio/inicio/inicio.php">
@@ -280,39 +328,30 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
             <?php endif; ?>
 
 
-            <!-- === MENÚ EXTERNO (ESTUDIANTE / REPRESENTANTE / CONTACTO) === -->
-            <?php if ($tienePerfilExterno && !$esSinAcceso): ?>
-                <?php if ($tienePerfilInterno): ?>
-                <?php endif; ?>
+            <!-- === MENÚ EXTERNO (REPRESENTANTE / CONTACTO) === -->
+            <?php if ($menuModo === 'representante' && $tienePerfilRepresentante): ?>
+                <li>
+                    <a href="../../inicio/inicio/inicio.php">
+                        <i class='bx bx-home-alt'></i>
+                        <span class="link_name">Inicio</span>
+                    </a>
+                </li>
 
-                <?php if (!$tienePerfilInterno): ?>
-                    <li>
-                        <a href="../../inicio/inicio/inicio.php">
-                            <i class='bx bx-home-alt'></i>
-                            <span class="link_name">Inicio</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
-                
-                <?php if (in_array(4, $todosLosPerfiles) || in_array(5, $todosLosPerfiles)): ?>
-                    <!-- Mis Representados (solo para Representante o Contacto de Emergencia) -->
-                    <li>
-                        <a href="../../representantes/representados/representado.php">
-                            <i class='bx bx-user-voice'></i>
-                            <span class="link_name">Mis Representados</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
+                <!-- Mis Representados -->
+                <li>
+                    <a href="../../representantes/representados/representado.php">
+                        <i class='bx bx-user-voice'></i>
+                        <span class="link_name">Mis Representados</span>
+                    </a>
+                </li>
 
-                <?php if (!$tienePerfilInterno): ?>
-                    <!-- Cambiar Contraseña (solo si no tiene perfil interno) -->
-                    <li>
-                        <a href="../../configuracion/contrasena/contrasena.php">
-                            <i class='bx bx-lock-alt'></i>
-                            <span class="link_name">Cambiar Contraseña</span>
-                        </a>
-                    </li>
-                <?php endif; ?>
+                <!-- Cambiar Contraseña -->
+                <li>
+                    <a href="../../configuracion/contrasena/contrasena.php">
+                        <i class='bx bx-lock-alt'></i>
+                        <span class="link_name">Cambiar Contraseña</span>
+                    </a>
+                </li>
             <?php endif; ?>
 
             <!-- Cerrar sesión (siempre visible) -->
@@ -387,3 +426,9 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
     </div>
 </section>
 <script src="../../../assets/js/notificaciones.js"></script>
+<script>
+function cambiarModoMenu(esRepresentante) {
+    const nuevoModo = esRepresentante ? 'representante' : 'admin';
+    window.location.href = window.location.pathname + '?cambiar_menu=' + nuevoModo;
+}
+</script>

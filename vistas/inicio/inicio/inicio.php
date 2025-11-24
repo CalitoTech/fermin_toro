@@ -83,9 +83,28 @@ foreach ($todosLosPerfiles as $perfil) {
     }
 }
 
-// Lógica del Dashboard (Admin, Director)
+// === DETERMINAR MODO DE VISTA SEGÚN SESIÓN ===
+// Si menu_modo está en sesión (establecido por menu.php), usarlo
+// Si no, usar el perfil prioritario para determinarlo
+$perfilesInternos = [1, 2, 6, 7, 8, 9, 10];
+$perfilesRepresentante = [4, 5];
+$tienePerfilInterno = !empty(array_intersect($todosLosPerfiles, $perfilesInternos));
+$tienePerfilRepresentante = !empty(array_intersect($todosLosPerfiles, $perfilesRepresentante));
+
+// Establecer modo por defecto si no existe
+if (!isset($_SESSION['menu_modo'])) {
+    $_SESSION['menu_modo'] = $tienePerfilInterno ? 'admin' : 'representante';
+}
+
+$menuModo = $_SESSION['menu_modo'];
+
+// Lógica del Dashboard (Admin, Director) - Solo si está en modo admin
 $perfilesConDashboard = [1, 6];
-$showDashboard = in_array($perfilPrioritario, $perfilesConDashboard);
+$showDashboard = ($menuModo === 'admin') && in_array($perfilPrioritario, $perfilesConDashboard);
+
+// Mostrar interfaz de representante si está en modo representante
+$showRepresentante = ($menuModo === 'representante') && $tienePerfilRepresentante;
+
 $stats = [];
 $recentEnrollments = [];
 $chartData = [];
@@ -158,7 +177,7 @@ if ($showDashboard) {
     <?php if ($showDashboard): ?>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <?php endif; ?>
-<?php if (in_array($perfilPrioritario, [3,4,5])): ?>
+<?php if ($showRepresentante): ?>
     <!-- === INTERFAZ REPRESENTANTE === -->
     <main class="rep-wrapper">
         <img src="../../../assets/images/fermin.png" alt="Logo UECFT Araure" class="img-logo">
