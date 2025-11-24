@@ -190,9 +190,6 @@ if ($showDashboard) {
                     <h2 class="fw-bold text-dark mb-1">Panel de Control</h2>
                     <p class="text-muted mb-0">Bienvenido de nuevo, <?php echo htmlspecialchars($userNombre); ?>.</p>
                 </div>
-                <div class="date-badge bg-white px-3 py-2 rounded shadow-sm text-muted">
-                    <i class="far fa-calendar-alt me-2"></i><?php echo date('d/m/Y'); ?>
-                </div>
             </div>
 
             <!-- Stats Row -->
