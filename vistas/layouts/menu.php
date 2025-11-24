@@ -212,6 +212,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                         <!-- Enlaces visibles SOLO para Administrador, Director y Control de Estudios -->
                         <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
                             <li><a href="../../registros/urbanismo/urbanismo.php">Urbanismos</a></li>
+                            <li><a href="../../registros/plantel/plantel.php">Planteles</a></li>
                             <li><a href="../../registros/status/status.php">Status</a></li>
                             <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
                             <!-- <li><a href="../../registros/bloque/bloque.php">Bloques</a></li> -->
