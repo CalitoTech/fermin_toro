@@ -127,16 +127,65 @@ CREATE TABLE aula (
 );
 
 INSERT INTO `aula` (`IdAula`, `IdNivel`, `aula`, `capacidad`) VALUES
-(1, 1, 'Aula 1', 35), 
-(2, 1, 'Aula 2', 35), 
+-- Aulas Nivel Inicial
+(1, 1, 'Aula 1', 35),
+(2, 1, 'Aula 2', 35),
 (3, 1, 'Aula 3', 35),
-(4, 1, 'Aula 4', 35), 
-(5, 1, 'Aula 5', 35), 
-(6, 1, 'Aula 6', 35), 
-(7, 1, 'Aula 7', 35), 
-(8, 1, 'Aula 8', 35), 
+(4, 1, 'Aula 4', 35),
+(5, 1, 'Aula 5', 35),
+(6, 1, 'Aula 6', 35),
+(7, 1, 'Aula 7', 35),
+(8, 1, 'Aula 8', 35),
 (9, 1, 'Aula 9', 35),
-(10, 1, 'Aula 10', 35);
+(10, 1, 'Aula 10', 35),
+(11, 1, 'Aula 11', 35),
+(12, 1, 'Aula 12', 35),
+-- Aulas Nivel Primaria
+(13, 2, 'Aula 13', 35),
+(14, 2, 'Aula 14', 35),
+(15, 2, 'Aula 15', 35),
+(16, 2, 'Aula 16', 35),
+(17, 2, 'Aula 17', 35),
+(18, 2, 'Aula 18', 35),
+(19, 2, 'Aula 19', 35),
+(20, 2, 'Aula 20', 35),
+(21, 2, 'Aula 21', 35),
+(22, 2, 'Aula 22', 35),
+(23, 2, 'Aula 23', 35),
+(24, 2, 'Aula 24', 35),
+(25, 2, 'Aula 25', 35),
+(26, 2, 'Aula 26', 35),
+(27, 2, 'Aula 27', 35),
+(28, 2, 'Aula 28', 35),
+(29, 2, 'Aula 29', 35),
+(30, 2, 'Aula 30', 35),
+(31, 2, 'Aula 31', 35),
+(32, 2, 'Aula 32', 35),
+(33, 2, 'Aula 33', 35),
+(34, 2, 'Aula 34', 35),
+(35, 2, 'Aula 35', 35),
+(36, 2, 'Aula 36', 35),
+-- Aulas Nivel Media General
+(37, 3, 'Aula 37', 35),
+(38, 3, 'Aula 38', 35),
+(39, 3, 'Aula 39', 35),
+(40, 3, 'Aula 40', 35),
+(41, 3, 'Aula 41', 35),
+(42, 3, 'Aula 42', 35),
+(43, 3, 'Aula 43', 35),
+(44, 3, 'Aula 44', 35),
+(45, 3, 'Aula 45', 35),
+(46, 3, 'Aula 46', 35),
+(47, 3, 'Aula 47', 35),
+(48, 3, 'Aula 48', 35),
+(49, 3, 'Aula 49', 35),
+(50, 3, 'Aula 50', 35),
+(51, 3, 'Aula 51', 35),
+(52, 3, 'Aula 52', 35),
+(53, 3, 'Aula 53', 35),
+(54, 3, 'Aula 54', 35),
+(55, 3, 'Aula 55', 35),
+(56, 3, 'Aula 56', 35);
 
 CREATE TABLE curso (
     IdCurso int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -180,6 +229,7 @@ CREATE TABLE curso_seccion (
 );
 
 INSERT INTO `curso_seccion` (`IdCurso_Seccion`, `IdCurso`, `IdSeccion`, `IdAula`) VALUES
+-- Sección Inscripción (sin aula asignada)
 (1, 1, 1, NULL),
 (2, 2, 1, NULL),
 (3, 3, 1, NULL),
@@ -194,48 +244,51 @@ INSERT INTO `curso_seccion` (`IdCurso_Seccion`, `IdCurso`, `IdSeccion`, `IdAula`
 (12, 12, 1, NULL),
 (13, 13, 1, NULL),
 (14, 14, 1, NULL),
-(15, 1, 2, NULL),
-(16, 2, 2, NULL),
-(17, 3, 2, NULL),
-(18, 4, 2, NULL),
-(19, 5, 2, NULL),
-(20, 6, 2, NULL),
-(21, 7, 2, NULL),
-(22, 8, 2, NULL),
-(23, 9, 2, NULL),
-(24, 10, 2, NULL),
-(25, 11, 2, NULL),
-(26, 12, 2, NULL),
-(27, 13, 2, NULL),
-(28, 14, 2, NULL),
-(29, 1, 3, NULL),
-(30, 2, 3, NULL),
-(31, 3, 3, NULL),
-(32, 4, 3, NULL),
-(33, 5, 3, NULL),
-(34, 6, 3, NULL),
-(35, 7, 3, NULL),
-(36, 8, 3, NULL),
-(37, 9, 3, NULL),
-(38, 10, 3, NULL),
-(39, 11, 3, NULL),
-(40, 12, 3, NULL),
-(41, 13, 3, NULL),
-(42, 14, 3, NULL),
-(43, 1, 4, NULL),
-(44, 2, 4, NULL),
-(45, 3, 4, NULL),
-(46, 4, 4, NULL),
-(47, 5, 4, NULL),
-(48, 6, 4, NULL),
-(49, 7, 4, NULL),
-(50, 8, 4, NULL),
-(51, 9, 4, NULL),
-(52, 10, 4, NULL),
-(53, 11, 4, NULL),
-(54, 12, 4, NULL),
-(55, 13, 4, NULL),
-(56, 14, 4, NULL);
+-- Sección A
+(15, 1, 2, 1),   -- 1er Nivel A -> Aula 1
+(16, 2, 2, 2),   -- 2do Nivel A -> Aula 2
+(17, 3, 2, 3),   -- 3er Nivel A -> Aula 3
+(18, 4, 2, 13),  -- 1er Grado A -> Aula 13
+(19, 5, 2, 14),  -- 2do Grado A -> Aula 14
+(20, 6, 2, 15),  -- 3er Grado A -> Aula 15
+(21, 7, 2, 16),  -- 4to Grado A -> Aula 16
+(22, 8, 2, 17),  -- 5to Grado A -> Aula 17
+(23, 9, 2, 18),  -- 6to Grado A -> Aula 18
+(24, 10, 2, 37), -- 1er Año A -> Aula 37
+(25, 11, 2, 38), -- 2do Año A -> Aula 38
+(26, 12, 2, 39), -- 3er Año A -> Aula 39
+(27, 13, 2, 40), -- 4to Año A -> Aula 40
+(28, 14, 2, 41), -- 5to Año A -> Aula 41
+-- Sección B
+(29, 1, 3, 4),   -- 1er Nivel B -> Aula 4
+(30, 2, 3, 5),   -- 2do Nivel B -> Aula 5
+(31, 3, 3, 6),   -- 3er Nivel B -> Aula 6
+(32, 4, 3, 19),  -- 1er Grado B -> Aula 19
+(33, 5, 3, 20),  -- 2do Grado B -> Aula 20
+(34, 6, 3, 21),  -- 3er Grado B -> Aula 21
+(35, 7, 3, 22),  -- 4to Grado B -> Aula 22
+(36, 8, 3, 23),  -- 5to Grado B -> Aula 23
+(37, 9, 3, 24),  -- 6to Grado B -> Aula 24
+(38, 10, 3, 42), -- 1er Año B -> Aula 42
+(39, 11, 3, 43), -- 2do Año B -> Aula 43
+(40, 12, 3, 44), -- 3er Año B -> Aula 44
+(41, 13, 3, 45), -- 4to Año B -> Aula 45
+(42, 14, 3, 46), -- 5to Año B -> Aula 46
+-- Sección C
+(43, 1, 4, 7),   -- 1er Nivel C -> Aula 7
+(44, 2, 4, 8),   -- 2do Nivel C -> Aula 8
+(45, 3, 4, 9),   -- 3er Nivel C -> Aula 9
+(46, 4, 4, 25),  -- 1er Grado C -> Aula 25
+(47, 5, 4, 26),  -- 2do Grado C -> Aula 26
+(48, 6, 4, 27),  -- 3er Grado C -> Aula 27
+(49, 7, 4, 28),  -- 4to Grado C -> Aula 28
+(50, 8, 4, 29),  -- 5to Grado C -> Aula 29
+(51, 9, 4, 30),  -- 6to Grado C -> Aula 30
+(52, 10, 4, 47), -- 1er Año C -> Aula 47
+(53, 11, 4, 48), -- 2do Año C -> Aula 48
+(54, 12, 4, 49), -- 3er Año C -> Aula 49
+(55, 13, 4, 50), -- 4to Año C -> Aula 50
+(56, 14, 4, 51); -- 5to Año C -> Aula 51
 
 CREATE TABLE sexo (
     IdSexo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
