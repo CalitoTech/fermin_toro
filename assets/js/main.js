@@ -322,7 +322,8 @@ const MobileMenuManager = {
         this.sidebarBtn = document.querySelector('.bx-menu');
         this.homeSection = document.querySelector('.home-section');
         this.logoDetails = document.querySelector('.logo-details');
-        
+        this.overlay = document.querySelector('.sidebar-overlay');
+
         // 2. Solo continuar si existen los elementos esenciales
         if (!this.sidebar || !this.sidebarBtn) {
             console.warn('Elementos esenciales no encontrados');
@@ -331,10 +332,10 @@ const MobileMenuManager = {
 
         // 3. Crear botón móvil (igual que antes)
         this.createMobileToggle();
-        
+
         // 4. Configurar eventos (adaptado a tu estructura)
         this.setupEventListeners();
-        
+
         // 5. Estado inicial (forzar cerrado en móviles)
         this.updateMobileMenu();
     },
@@ -353,35 +354,63 @@ const MobileMenuManager = {
 
     setupEventListeners: function() {
         const self = this;
-        
+
         // 1. Click en botón móvil - usa misma lógica que SidebarManager
         this.mobileToggle.addEventListener('click', function(e) {
             e.stopPropagation();
             $(self.sidebar).toggleClass('close').toggleClass('open');
             $(self.homeSection).toggleClass('expand');
             self.adjustLogoPosition();
+            self.toggleOverlay();
         });
-        
+
         // 2. Click en botón regular (.bx-menu) - delegamos a SidebarManager
         this.sidebarBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             SidebarManager.toggleSidebar();
             self.adjustLogoPosition();
+            if (window.innerWidth <= 768) {
+                self.toggleOverlay();
+            }
         });
-        
-        // 3. Cerrar al hacer click fuera (solo móviles)
+
+        // 3. Click en overlay para cerrar menú
+        if (this.overlay) {
+            this.overlay.addEventListener('click', function() {
+                self.closeSidebar();
+            });
+        }
+
+        // 4. Cerrar al hacer click fuera (solo móviles)
         document.addEventListener('click', function(e) {
             if (window.innerWidth <= 768) {
-                if (!self.sidebar.contains(e.target) && 
-                    !e.target.closest('.mobile-menu-toggle') && 
+                if (!self.sidebar.contains(e.target) &&
+                    !e.target.closest('.mobile-menu-toggle') &&
                     e.target !== self.sidebarBtn) {
-                    
-                    $(self.sidebar).addClass('close').removeClass('open');
-                    $(self.homeSection).removeClass('expand');
-                    self.adjustLogoPosition();
+
+                    self.closeSidebar();
                 }
             }
         });
+    },
+
+    toggleOverlay: function() {
+        if (!this.overlay || window.innerWidth > 768) return;
+
+        if ($(this.sidebar).hasClass('open')) {
+            this.overlay.classList.add('active');
+        } else {
+            this.overlay.classList.remove('active');
+        }
+    },
+
+    closeSidebar: function() {
+        $(this.sidebar).addClass('close').removeClass('open');
+        $(this.homeSection).removeClass('expand');
+        this.adjustLogoPosition();
+        if (this.overlay) {
+            this.overlay.classList.remove('active');
+        }
     },
 
     adjustLogoPosition: function() {

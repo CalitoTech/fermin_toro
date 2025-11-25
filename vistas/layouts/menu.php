@@ -178,6 +178,9 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
     <i class='bx bx-menu'></i>
 </button>
 
+<!-- Overlay para móviles -->
+<div class="sidebar-overlay"></div>
+
 <!-- Sidebar -->
 <div class="sidebar close">
     <div class="logo-details">
