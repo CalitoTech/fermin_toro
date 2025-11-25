@@ -38,10 +38,12 @@ if (!isset($conexion)) {
 }
 
 try {
-    // Consulta única para obtener nombre, apellido y perfil
+    // Consulta única para obtener nombre, apellido, perfil, foto y sexo
     $sql = "SELECT
                 p.nombre,
                 p.apellido,
+                p.foto_perfil,
+                p.IdSexo,
                 pr.nombre_perfil,
                 pr.IdPerfil
             FROM persona p
@@ -91,6 +93,24 @@ try {
     $userApellido = $_SESSION['apellido'];
     $userPerfil = $_SESSION['perfil'];
     $idPerfil = $_SESSION['idPerfil'];
+
+    // === LÓGICA PARA SELECCIONAR IMAGEN DE PERFIL ===
+    $fotoPerfil = '../../../assets/images/perfil.png'; // Imagen por defecto si sexo es null
+
+    if (!empty($userData['foto_perfil'])) {
+        // Si tiene foto personalizada, usarla
+        $fotoPerfil = '../../../' . $userData['foto_perfil'];
+    } else {
+        // Si no tiene foto, determinar según sexo
+        if ($userData['IdSexo'] == 1) {
+            // Masculino
+            $fotoPerfil = '../../../assets/images/avatar.svg';
+        } elseif ($userData['IdSexo'] == 2) {
+            // Femenino
+            $fotoPerfil = '../../../assets/images/avatar_fem.png';
+        }
+        // Si IdSexo es null, mantiene el valor por defecto (perfil.png)
+    }
 
 } catch (PDOException $e) {
     // Error de base de datos - registrar y redirigir
@@ -222,7 +242,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                 <li>
                     <a href="../../configuracion/contrasena/contrasena.php">
                         <i class='bx bx-lock-alt'></i>
-                        <span class="link_name">Cambiar Contraseña</span>
+                        <span class="link_name">Conf. Cuenta</span>
                     </a>
                 </li>
 
@@ -311,7 +331,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                         <i class='bx bxs-chevron-down arrow'></i>
                     </div>
                     <ul class="sub-menu">
-                        <li><a href="../../configuracion/contrasena/contrasena.php">Contraseña</a></li>
+                        <li><a href="../../configuracion/contrasena/contrasena.php">Mi Cuenta</a></li>
                         <!-- Solo para Administrador, Director y Control de Estudios -->
                         <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
                             <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
@@ -352,11 +372,11 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                     </a>
                 </li>
 
-                <!-- Cambiar Contraseña -->
+                <!-- Configuración de Cuenta -->
                 <li>
                     <a href="../../configuracion/contrasena/contrasena.php">
                         <i class='bx bx-lock-alt'></i>
-                        <span class="link_name">Cambiar Contraseña</span>
+                        <span class="link_name">Configuración de Cuenta</span>
                     </a>
                 </li>
             <?php endif; ?>
@@ -375,7 +395,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
             <li>
                 <div class="profile-details">
                     <div class="profile-content">
-                        <img src="../../../assets/images/avatar.svg" alt="Perfil">
+                        <img src="<?php echo htmlspecialchars($fotoPerfil); ?>" alt="Perfil">
                     </div>
                     <div class="name-job">
                         <div class="profile_name"><?php echo htmlspecialchars($userNombre . ' ' . $userApellido); ?></div>

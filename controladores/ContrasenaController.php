@@ -42,6 +42,11 @@ class ContrasenaController {
     }
 
     private function procesarFormulario() {
+        // Verificar si es un envío del formulario de credenciales (no de foto)
+        if (!isset($_POST['password3'])) {
+            return; // No es el formulario de contraseña, ignorar
+        }
+
         $usuario = trim($_POST['usuario'] ?? '');
         $passwordActual = $_POST['password3'] ?? '';
         $nuevaPassword = $_POST['password'] ?? '';
@@ -53,6 +58,11 @@ class ContrasenaController {
         // Verificar si está bloqueado
         if ($actual < $tiempo_bloqueo) {
             $this->alerta = Notificaciones::bloqueo($tiempo_bloqueo - $actual);
+            return;
+        }
+
+        // Si NO se ingresó contraseña actual, no hacer nada
+        if (empty($passwordActual)) {
             return;
         }
 
@@ -69,23 +79,52 @@ class ContrasenaController {
                 $intentos_restantes = $max_intentos - $intento;
                 $this->alerta = Notificaciones::advertencia("Contraseña incorrecta. Te quedan $intentos_restantes intentos.");
             }
-        } else {
-            // Contraseña correcta: reiniciar intentos
-            $_SESSION['intento_cambio'] = 0;
-            $_SESSION['tiempo_cambio'] = 0;
+            return;
+        }
 
-            // Validar nuevas contraseñas
-            if ($nuevaPassword !== $confirmarPassword) {
-                $this->alerta = Notificaciones::error("Las contraseñas no coinciden.");
+        // Contraseña correcta: reiniciar intentos
+        $_SESSION['intento_cambio'] = 0;
+        $_SESSION['tiempo_cambio'] = 0;
+
+        // Determinar qué se va a actualizar
+        $cambiarUsuario = !empty($usuario) && $usuario !== $this->credenciales['usuario'];
+        $cambiarPassword = !empty($nuevaPassword);
+
+        // Si no hay cambios, mostrar mensaje
+        if (!$cambiarUsuario && !$cambiarPassword) {
+            $this->alerta = Notificaciones::advertencia("No hay cambios para guardar.");
+            return;
+        }
+
+        // Validar nuevas contraseñas si se van a cambiar
+        if ($cambiarPassword && $nuevaPassword !== $confirmarPassword) {
+            $this->alerta = Notificaciones::error("Las contraseñas no coinciden.");
+            return;
+        }
+
+        // Actualizar según lo que se haya modificado
+        if ($cambiarUsuario && $cambiarPassword) {
+            // Cambiar usuario y contraseña
+            if ($this->persona->actualizarCredenciales($usuario, $nuevaPassword)) {
+                $_SESSION['usuario'] = $usuario;
+                $this->alerta = Notificaciones::exito("Usuario y contraseña actualizados correctamente.");
             } else {
-                $usuarioFinal = !empty($usuario) ? $usuario : $this->credenciales['usuario'];
-
-                if ($this->persona->actualizarCredenciales($usuarioFinal, $nuevaPassword)) {
-                    $_SESSION['usuario'] = $usuarioFinal;
-                    $this->alerta = Notificaciones::exito("Datos actualizados correctamente.");
-                } else {
-                    $this->alerta = Notificaciones::error();
-                }
+                $this->alerta = Notificaciones::error();
+            }
+        } elseif ($cambiarUsuario) {
+            // Solo cambiar usuario
+            if ($this->persona->actualizarCredenciales($usuario)) {
+                $_SESSION['usuario'] = $usuario;
+                $this->alerta = Notificaciones::exito("Usuario actualizado correctamente.");
+            } else {
+                $this->alerta = Notificaciones::error();
+            }
+        } elseif ($cambiarPassword) {
+            // Solo cambiar contraseña
+            if ($this->persona->actualizarCredenciales($this->credenciales['usuario'], $nuevaPassword)) {
+                $this->alerta = Notificaciones::exito("Contraseña actualizada correctamente.");
+            } else {
+                $this->alerta = Notificaciones::error();
             }
         }
     }
