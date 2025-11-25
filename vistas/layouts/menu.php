@@ -192,18 +192,14 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
             <?php if ($mostrarSwitch): ?>
                 <li class="menu-switch-container">
                     <div class="menu-switch-wrapper">
-                        <span class="switch-label <?= $menuModo === 'admin' ? 'active' : '' ?>">
-                            <i class='bx bx-briefcase'></i>
-                        </span>
                         <label class="menu-switch">
                             <input type="checkbox" id="menuModeSwitch"
                                    <?= $menuModo === 'representante' ? 'checked' : '' ?>
                                    onchange="cambiarModoMenu(this.checked)">
-                            <span class="slider"></span>
+                            <span class="slider">
+                                <i class='bx <?= $menuModo === 'admin' ? 'bx-briefcase' : 'bx-user-voice' ?>'></i>
+                            </span>
                         </label>
-                        <span class="switch-label <?= $menuModo === 'representante' ? 'active' : '' ?>">
-                            <i class='bx bx-user-voice'></i>
-                        </span>
                     </div>
                     <span class="switch-mode-text">
                         <?= $menuModo === 'admin' ? 'Administrativo' : 'Representante' ?>
@@ -429,6 +425,13 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
 <script>
 function cambiarModoMenu(esRepresentante) {
     const nuevoModo = esRepresentante ? 'representante' : 'admin';
+    const icono = document.querySelector('.menu-switch .slider i');
+
+    // Cambiar el icono inmediatamente para mejor UX
+    if (icono) {
+        icono.className = esRepresentante ? 'bx bx-user-voice' : 'bx bx-briefcase';
+    }
+
     window.location.href = window.location.pathname + '?cambiar_menu=' + nuevoModo;
 }
 </script>
