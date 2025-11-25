@@ -77,6 +77,13 @@ $seccionActual = $personaModel->obtenerSeccionActualEstudiante($idEstudiante, $i
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idEstudiante);
 $telefonos = $telefonoModel->obtenerPorPersona($idEstudiante);
 
+// Obtener todos los representantes del estudiante
+$todosRepresentantes = $representanteModel->obtenerPorEstudiante($idEstudiante);
+// Filtrar para excluir al usuario actual
+$otrosRepresentantes = array_filter($todosRepresentantes, function($rep) use ($idRepresentante) {
+    return $rep['IdPersona'] != $idRepresentante;
+});
+
 // === FUNCIÓN DE LIMPIEZA ===
 function mostrar($valor, $texto = 'No registrado') {
     return !empty(trim($valor)) ? htmlspecialchars($valor) : '<span class="text-muted">' . $texto . '</span>';
@@ -334,6 +341,47 @@ function calcularEdad($fechaNacimiento) {
                             <?php endif; ?>
                         </div>
                     </div>
+
+                    <!-- OTROS REPRESENTANTES -->
+                    <?php if (!empty($otrosRepresentantes)): ?>
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header bg-danger text-white d-flex align-items-center">
+                                <i class='bx bx-group me-2'></i> Otros Representantes del Estudiante
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th><i class='bx bx-user me-1'></i> Nombre Completo</th>
+                                                <th><i class='bx bx-id-card me-1'></i> Cédula</th>
+                                                <th><i class='bx bx-heart me-1'></i> Parentesco</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach ($otrosRepresentantes as $rep): ?>
+                                                <tr>
+                                                    <td>
+                                                        <strong><?= htmlspecialchars($rep['nombre'] . ' ' . $rep['apellido']) ?></strong>
+                                                    </td>
+                                                    <td>
+                                                        <?php
+                                                            if (!empty($rep['cedula'])) {
+                                                                echo htmlspecialchars($rep['nacionalidad']) . ' ' . number_format($rep['cedula'], 0, '', '.');
+                                                            } else {
+                                                                echo '<span class="text-muted">No registrado</span>';
+                                                            }
+                                                        ?>
+                                                    </td>
+                                                    <td><?= mostrar($rep['parentesco']) ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- DISCAPACIDADES -->
                     <?php if (!empty($discapacidades)): ?>
