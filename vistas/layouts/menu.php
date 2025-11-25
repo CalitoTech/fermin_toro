@@ -336,6 +336,14 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                     </a>
                 </li>
 
+                <!-- Mi Perfil -->
+                <li>
+                    <a href="../../representantes/representados/mi_perfil.php">
+                        <i class='bx bx-user-circle'></i>
+                        <span class="link_name">Mi Perfil</span>
+                    </a>
+                </li>
+
                 <!-- Mis Representados -->
                 <li>
                     <a href="../../representantes/representados/representado.php">

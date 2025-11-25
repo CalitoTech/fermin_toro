@@ -491,6 +491,7 @@ class Persona {
                     sx.IdSexo,
                     p.correo,
                     p.direccion,
+                    p.foto_perfil,
                     u.urbanismo,
                     u.IdUrbanismo,
                     ea.status AS estado_acceso,

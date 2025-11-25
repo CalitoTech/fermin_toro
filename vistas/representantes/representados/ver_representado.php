@@ -167,6 +167,129 @@ function calcularEdad($fechaNacimiento) {
             font-size: 1.2rem;
             margin-right: 0.5rem;
         }
+
+        /* 🔹 FOTO DE PERFIL */
+        .profile-photo-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .profile-photo-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border: 4px solid #fff;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .profile-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-photo-default {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .profile-photo-default i {
+            font-size: 5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .profile-photo-edit {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #c90000;
+            border: 3px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(201, 0, 0, 0.3);
+        }
+
+        .profile-photo-edit:hover {
+            background: #a00000;
+            transform: scale(1.1);
+        }
+
+        .profile-photo-edit i {
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .profile-photo-name {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-photo-role {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        /* Modal de foto */
+        .modal-backdrop.show {
+            opacity: 0.7;
+        }
+
+        .photo-preview-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 1.5rem auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #e9ecef;
+        }
+
+        .photo-preview-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .photo-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .photo-upload-area:hover {
+            border-color: #c90000;
+            background: #fff;
+        }
+
+        .photo-upload-area i {
+            font-size: 3rem;
+            color: #c90000;
+            margin-bottom: 1rem;
+        }
 </style>
 
 
@@ -199,6 +322,41 @@ function calcularEdad($fechaNacimiento) {
                     <div class="alert-readonly">
                         <i class='bx bx-info-circle'></i>
                         <strong>Vista de Solo Lectura:</strong> Esta información es solo para consulta. Si necesitas actualizar algún dato, contacta con la administración de la institución.
+                    </div>
+
+                    <!-- FOTO DE PERFIL -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body text-center py-4">
+                            <div class="profile-photo-container">
+                                <div class="profile-photo-wrapper">
+                                    <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
+                                        <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                                             alt="Foto de perfil"
+                                             class="profile-photo">
+                                    <?php else: ?>
+                                        <div class="profile-photo-default">
+                                            <i class='bx bx-user'></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="profile-photo-edit" data-bs-toggle="modal" data-bs-target="#modalFotoPerfil" title="Cambiar foto">
+                                    <i class='bx bx-camera'></i>
+                                </div>
+                            </div>
+                            <div class="profile-photo-name">
+                                <?= htmlspecialchars($estudiante['nombre'] . ' ' . $estudiante['apellido']) ?>
+                            </div>
+                            <div class="profile-photo-role">
+                                <i class='bx bx-id-card me-1'></i>
+                                <?php
+                                    if (!empty($estudiante['cedula'])) {
+                                        echo htmlspecialchars($estudiante['nacionalidad']) . '-' . number_format($estudiante['cedula'], 0, '', '.');
+                                    } else {
+                                        echo 'Estudiante';
+                                    }
+                                ?>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- INFORMACIÓN PERSONAL -->
@@ -428,5 +586,165 @@ function calcularEdad($fechaNacimiento) {
         </div>
     </div>
 </section>
+
+<!-- Modal para cambiar foto de perfil -->
+<div class="modal fade" id="modalFotoPerfil" tabindex="-1" aria-labelledby="modalFotoPerfilLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalFotoPerfilLabel">
+                    <i class='bx bx-camera me-2'></i>Cambiar Foto de Perfil
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formFotoPerfil" enctype="multipart/form-data">
+                    <input type="hidden" name="idEstudiante" value="<?= $idEstudiante ?>">
+
+                    <!-- Vista previa -->
+                    <div class="photo-preview-container" id="photoPreviewContainer">
+                        <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
+                            <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                                 alt="Vista previa"
+                                 id="photoPreview">
+                        <?php else: ?>
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23667eea' width='200' height='200'/%3E%3Ctext fill='white' font-size='80' font-family='Arial' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E%3F%3C/text%3E%3C/svg%3E"
+                                 alt="Vista previa"
+                                 id="photoPreview">
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Área de carga -->
+                    <div class="photo-upload-area" onclick="document.getElementById('inputFoto').click()">
+                        <i class='bx bx-cloud-upload'></i>
+                        <p class="mb-2"><strong>Haz clic para seleccionar una foto</strong></p>
+                        <p class="text-muted mb-0" style="font-size: 0.85rem;">
+                            Formatos permitidos: JPG, JPEG, PNG (Máx. 2MB)
+                        </p>
+                    </div>
+
+                    <input type="file"
+                           id="inputFoto"
+                           name="foto"
+                           accept="image/jpeg,image/jpg,image/png"
+                           style="display: none;"
+                           onchange="previewPhoto(this)">
+
+                    <div id="errorFoto" class="alert alert-danger mt-3" style="display: none;"></div>
+                    <div id="successFoto" class="alert alert-success mt-3" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class='bx bx-x me-1'></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" onclick="uploadPhoto()" id="btnGuardarFoto">
+                    <i class='bx bx-save me-1'></i>Guardar Foto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+function previewPhoto(input) {
+    const errorDiv = document.getElementById('errorFoto');
+    const successDiv = document.getElementById('successFoto');
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        // Validar tipo de archivo
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            errorDiv.textContent = 'Por favor selecciona una imagen válida (JPG, JPEG o PNG)';
+            errorDiv.style.display = 'block';
+            input.value = '';
+            return;
+        }
+
+        // Validar tamaño (2MB máximo)
+        if (file.size > 2 * 1024 * 1024) {
+            errorDiv.textContent = 'La imagen no debe superar los 2MB';
+            errorDiv.style.display = 'block';
+            input.value = '';
+            return;
+        }
+
+        selectedFile = file;
+
+        // Mostrar vista previa
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photoPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function uploadPhoto() {
+    const errorDiv = document.getElementById('errorFoto');
+    const successDiv = document.getElementById('successFoto');
+    const btnGuardar = document.getElementById('btnGuardarFoto');
+
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+
+    if (!selectedFile) {
+        errorDiv.textContent = 'Por favor selecciona una foto primero';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    const formData = new FormData(document.getElementById('formFotoPerfil'));
+
+    // Deshabilitar botón
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Guardando...';
+
+    fetch('../../../controladores/estudiante/actualizar_foto.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            successDiv.textContent = data.message;
+            successDiv.style.display = 'block';
+
+            // Actualizar la foto en la página
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else {
+            errorDiv.textContent = data.message || 'Error al subir la foto';
+            errorDiv.style.display = 'block';
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="bx bx-save me-1"></i>Guardar Foto';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        errorDiv.textContent = 'Error al procesar la solicitud';
+        errorDiv.style.display = 'block';
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = '<i class="bx bx-save me-1"></i>Guardar Foto';
+    });
+}
+
+// Resetear el formulario cuando se cierra el modal
+document.getElementById('modalFotoPerfil').addEventListener('hidden.bs.modal', function () {
+    selectedFile = null;
+    document.getElementById('inputFoto').value = '';
+    document.getElementById('errorFoto').style.display = 'none';
+    document.getElementById('successFoto').style.display = 'none';
+    document.getElementById('btnGuardarFoto').disabled = false;
+    document.getElementById('btnGuardarFoto').innerHTML = '<i class="bx bx-save me-1"></i>Guardar Foto';
+});
+</script>
 
 <?php include '../../layouts/footer.php'; ?>
