@@ -5,11 +5,16 @@
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 9999;
+    z-index: 1000;
     display: flex;
     flex-direction: column;
     gap: 10px;
     align-items: flex-end; /* Prevent items from stretching to container width */
+}
+
+/* Ocultar el menú social cuando hay un modal abierto */
+body.modal-open .sticky-social-menu {
+    z-index: 1040; /* Por debajo del modal backdrop (1050) */
 }
 
 .sticky-social-menu a {
