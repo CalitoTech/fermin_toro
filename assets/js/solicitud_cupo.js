@@ -244,6 +244,131 @@ function enviarFormulario() {
     // 1. Validación de prefijos de teléfono
     let camposFaltantes = [];
 
+    // ✅ VALIDACIONES DE LONGITUD Y FORMATO
+    // Validar longitud de cédulas
+    const cedulasValidar = [
+        {id: 'estudianteCedula', label: 'Cédula del estudiante', container: '#estudianteCedulaContainer'},
+        {id: 'padreCedula', label: 'Cédula del padre'},
+        {id: 'madreCedula', label: 'Cédula de la madre'},
+        {id: 'emergenciaCedula', label: 'Cédula de emergencia'},
+        {id: 'representanteCedula', label: 'Cédula del representante'}
+    ];
+
+    cedulasValidar.forEach(c => {
+        const input = $(`#${c.id}`);
+        if (input.length && input.is(':visible')) {
+            // Si el contenedor existe y está oculto, skip
+            if (c.container && $(c.container).is(':hidden')) return;
+
+            const valor = input.val()?.trim();
+            if (valor) {
+                if (!/^[0-9]+$/.test(valor)) {
+                    camposFaltantes.push(`${c.label} debe contener solo números`);
+                    input.addClass('is-invalid');
+                } else if (valor.length < 7) {
+                    camposFaltantes.push(`${c.label} debe tener al menos 7 dígitos`);
+                    input.addClass('is-invalid');
+                } else if (valor.length > 8) {
+                    camposFaltantes.push(`${c.label} no puede tener más de 8 dígitos`);
+                    input.addClass('is-invalid');
+                }
+            }
+        }
+    });
+
+    // Validar longitud de teléfonos
+    const telefonosValidar = [
+        {id: 'padreTelefonoHabitacion', label: 'Teléfono del padre', min: 7, max: 10},
+        {id: 'padreCelular', label: 'Celular del padre', min: 10, max: 10},
+        {id: 'madreTelefonoHabitacion', label: 'Teléfono de la madre', min: 7, max: 10},
+        {id: 'madreCelular', label: 'Celular de la madre', min: 10, max: 10},
+        {id: 'emergenciaCelular', label: 'Celular de emergencia', min: 10, max: 10},
+        {id: 'representanteTelefonoHabitacion', label: 'Teléfono del representante', min: 7, max: 10},
+        {id: 'representanteCelular', label: 'Celular del representante', min: 10, max: 10}
+    ];
+
+    telefonosValidar.forEach(t => {
+        const input = $(`#${t.id}`);
+        if (input.length && input.is(':visible')) {
+            const valor = input.val()?.trim();
+            if (valor) {
+                if (!/^[0-9]+$/.test(valor)) {
+                    camposFaltantes.push(`${t.label} debe contener solo números`);
+                    input.addClass('is-invalid');
+                } else if (valor.startsWith('0')) {
+                    camposFaltantes.push(`${t.label} no puede comenzar con 0`);
+                    input.addClass('is-invalid');
+                } else if (valor.length < t.min) {
+                    camposFaltantes.push(`${t.label} debe tener al menos ${t.min} dígitos`);
+                    input.addClass('is-invalid');
+                } else if (valor.length > t.max) {
+                    camposFaltantes.push(`${t.label} no puede tener más de ${t.max} dígitos`);
+                    input.addClass('is-invalid');
+                }
+            }
+        }
+    });
+
+    // Validar longitud de nombres/apellidos
+    const textosValidar = [
+        {id: 'estudianteNombres', label: 'Nombres del estudiante', min: 3, max: 40, soloLetras: true},
+        {id: 'estudianteApellidos', label: 'Apellidos del estudiante', min: 3, max: 40, soloLetras: true},
+        {id: 'padreNombres', label: 'Nombres del padre', min: 3, max: 40, soloLetras: true},
+        {id: 'padreApellidos', label: 'Apellidos del padre', min: 3, max: 40, soloLetras: true},
+        {id: 'madreNombres', label: 'Nombres de la madre', min: 3, max: 40, soloLetras: true},
+        {id: 'madreApellidos', label: 'Apellidos de la madre', min: 3, max: 40, soloLetras: true},
+        {id: 'padreOcupacion', label: 'Ocupación del padre', min: 3, max: 40},
+        {id: 'madreOcupacion', label: 'Ocupación de la madre', min: 3, max: 40},
+        {id: 'padreDireccion', label: 'Dirección del padre', min: 3, max: 40},
+        {id: 'madreDireccion', label: 'Dirección de la madre', min: 3, max: 40}
+    ];
+
+    textosValidar.forEach(t => {
+        const input = $(`#${t.id}`);
+        if (input.length && input.is(':visible')) {
+            const valor = input.val()?.trim();
+            if (valor) {
+                if (valor.length < t.min) {
+                    camposFaltantes.push(`${t.label} debe tener al menos ${t.min} caracteres`);
+                    input.addClass('is-invalid');
+                } else if (valor.length > t.max) {
+                    camposFaltantes.push(`${t.label} no puede tener más de ${t.max} caracteres`);
+                    input.addClass('is-invalid');
+                } else if (t.soloLetras && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(valor)) {
+                    camposFaltantes.push(`${t.label} solo puede contener letras y espacios`);
+                    input.addClass('is-invalid');
+                }
+            }
+        }
+    });
+
+    // Validar correos
+    const correosValidar = [
+        {id: 'estudianteCorreo', label: 'Correo del estudiante'},
+        {id: 'padreCorreo', label: 'Correo del padre'},
+        {id: 'madreCorreo', label: 'Correo de la madre'}
+    ];
+
+    correosValidar.forEach(c => {
+        const input = $(`#${c.id}`);
+        if (input.length && input.is(':visible')) {
+            const valor = input.val()?.trim();
+            if (valor) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(valor)) {
+                    camposFaltantes.push(`${c.label} no tiene un formato válido`);
+                    input.addClass('is-invalid');
+                } else if (valor.length < 10) {
+                    camposFaltantes.push(`${c.label} debe tener al menos 10 caracteres`);
+                    input.addClass('is-invalid');
+                } else if (valor.length > 50) {
+                    camposFaltantes.push(`${c.label} no puede tener más de 50 caracteres`);
+                    input.addClass('is-invalid');
+                }
+            }
+        }
+    });
+
     // Validar prefijos de teléfonos (EXCLUIR ESTUDIANTE - siempre es opcional)
     const prefijosTelefono = [
         {inputId: 'padreTelefonoHabitacionPrefijo', hiddenId: 'padreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del padre'},
@@ -274,6 +399,7 @@ function enviarFormulario() {
     const camposEstudiante = [
         {id: 'estudianteNombres', nombre: 'Nombres del estudiante', container: null, opcional: false},
         {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante', container: null, opcional: false},
+        {id: 'estudianteNacionalidad', nombre: 'Nacionalidad del estudiante', container: null, opcional: false},
         {id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer', opcional: false},
         {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null, opcional: false},
         {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null, opcional: false},
@@ -618,6 +744,11 @@ function enviarFormularioFinal(formData, btn) {
     })
     .then(data => {
         if (data.success) {
+            // Marcar el formulario como enviado exitosamente para evitar alerta de cierre
+            if (typeof validadorSolicitud !== 'undefined') {
+                validadorSolicitud.marcarComoEnviado();
+            }
+
             showSuccessAlert(
                 'Solicitud enviada correctamente.<br>' +
                 'Número de solicitud: ' + data.numeroSolicitud + '<br>' +
@@ -677,14 +808,14 @@ function inicializarFormulario() {
         }
     });
 
-    // Manejo del envío del formulario
-    $(document).on('click', '#btnEnviarFormulario', function(e) {
+    // Manejo del envío del formulario (ASÍNCRONO)
+    $(document).on('click', '#btnEnviarFormulario', async function(e) {
         e.preventDefault(); // Prevenir envío por defecto
-        
+
         const form = document.getElementById('formInscripcion');
-    const nacionalidad = $('#estudianteNacionalidad').val();
-    let cedula = $('#estudianteCedula').val();
-    const idNivelSeleccionado = parseInt($('#idNivelSeleccionado').val() || 0);
+        const nacionalidad = $('#estudianteNacionalidad').val();
+        let cedula = $('#estudianteCedula').val();
+        const idNivelSeleccionado = parseInt($('#idNivelSeleccionado').val() || 0);
 
         // Si el nivel es inicial (IdNivel == 1), forzamos cedula vacía y no validamos
         if (idNivelSeleccionado === 1) {
@@ -693,16 +824,16 @@ function inicializarFormulario() {
 
         // Primero validar cédula si está completa y visible
         if (nacionalidad && cedula) {
-            verificarCedulaExistente(cedula, nacionalidad, function(inscrito, estado) {
+            verificarCedulaExistente(cedula, nacionalidad, async function(inscrito, estado) {
                 if (inscrito) {
                     mostrarAlertaCedulaExistente(estado);
                     return false; // Detener el proceso dentro del callback
                 } else {
-                    enviarFormulario(); // Proceder con el envío
+                    await enviarFormulario(); // Proceder con el envío (AWAIT)
                 }
             });
         } else {
-            enviarFormulario(); // Si no hay cédula (o no es visible), proceder con validación normal
+            await enviarFormulario(); // Si no hay cédula (o no es visible), proceder con validación normal (AWAIT)
         }
     });
 }

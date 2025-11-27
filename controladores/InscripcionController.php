@@ -802,7 +802,21 @@ function procesarInscripcion($conexion) {
                         default => null
                     };
 
-                    $idEstudiante = $personaEstudiante->guardar();
+                    try {
+                        $idEstudiante = $personaEstudiante->guardar();
+                    } catch (Exception $e) {
+                        // Convertir errores técnicos en mensajes amigables
+                        $mensajeError = $e->getMessage();
+                        if (strpos($mensajeError, 'IdNacionalidad') !== false) {
+                            throw new Exception("Debe seleccionar la nacionalidad del estudiante");
+                        } elseif (strpos($mensajeError, 'IdSexo') !== false) {
+                            throw new Exception("Debe seleccionar el sexo del estudiante");
+                        } elseif (strpos($mensajeError, 'IdUrbanismo') !== false) {
+                            throw new Exception("Debe seleccionar el urbanismo del estudiante");
+                        } else {
+                            throw $e; // Re-lanzar si es otro tipo de error
+                        }
+                    }
 
                     // Si es el primer curso y no se proporcionó cédula, generar una automáticamente usando la cédula de la madre
                     if ($esPrimerCurso && empty($_POST['estudianteCedula'])) {
@@ -940,7 +954,22 @@ function procesarInscripcion($conexion) {
                             $_POST['padreUrbanismo'] ?? null,
                             $_POST['padreUrbanismo_nombre'] ?? ''
                         );
-                        $idPadre = $personaPadre->guardar();
+
+                        try {
+                            $idPadre = $personaPadre->guardar();
+                        } catch (Exception $e) {
+                            // Convertir errores técnicos en mensajes amigables
+                            $mensajeError = $e->getMessage();
+                            if (strpos($mensajeError, 'IdNacionalidad') !== false) {
+                                throw new Exception("Debe seleccionar la nacionalidad del padre");
+                            } elseif (strpos($mensajeError, 'IdSexo') !== false) {
+                                throw new Exception("Debe seleccionar el sexo del padre");
+                            } elseif (strpos($mensajeError, 'IdUrbanismo') !== false) {
+                                throw new Exception("Debe seleccionar el urbanismo del padre");
+                            } else {
+                                throw $e; // Re-lanzar si es otro tipo de error
+                            }
+                        }
                     }
 
                     // Teléfonos del padre
@@ -1053,7 +1082,22 @@ function procesarInscripcion($conexion) {
                             $_POST['madreUrbanismo'] ?? null,
                             $_POST['madreUrbanismo_nombre'] ?? ''
                         );
-                        $idMadre = $personaMadre->guardar();
+
+                        try {
+                            $idMadre = $personaMadre->guardar();
+                        } catch (Exception $e) {
+                            // Convertir errores técnicos en mensajes amigables
+                            $mensajeError = $e->getMessage();
+                            if (strpos($mensajeError, 'IdNacionalidad') !== false) {
+                                throw new Exception("Debe seleccionar la nacionalidad de la madre");
+                            } elseif (strpos($mensajeError, 'IdSexo') !== false) {
+                                throw new Exception("Debe seleccionar el sexo de la madre");
+                            } elseif (strpos($mensajeError, 'IdUrbanismo') !== false) {
+                                throw new Exception("Debe seleccionar el urbanismo de la madre");
+                            } else {
+                                throw $e; // Re-lanzar si es otro tipo de error
+                            }
+                        }
                     }
 
                     // Teléfonos de la madre
@@ -1189,7 +1233,22 @@ function procesarInscripcion($conexion) {
                             $_POST['representanteUrbanismo'] ?? null,
                             $_POST['representanteUrbanismo_nombre'] ?? ''
                         );
-                        $idRepresentante = $personaRep->guardar();
+
+                        try {
+                            $idRepresentante = $personaRep->guardar();
+                        } catch (Exception $e) {
+                            // Convertir errores técnicos en mensajes amigables
+                            $mensajeError = $e->getMessage();
+                            if (strpos($mensajeError, 'IdNacionalidad') !== false) {
+                                throw new Exception("Debe seleccionar la nacionalidad del representante legal");
+                            } elseif (strpos($mensajeError, 'IdSexo') !== false) {
+                                throw new Exception("Debe seleccionar el sexo del representante legal");
+                            } elseif (strpos($mensajeError, 'IdUrbanismo') !== false) {
+                                throw new Exception("Debe seleccionar el urbanismo del representante legal");
+                            } else {
+                                throw $e; // Re-lanzar si es otro tipo de error
+                            }
+                        }
                     }
 
                     // Teléfonos del representante

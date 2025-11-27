@@ -935,3 +935,177 @@ label {
         font-size: 0.8rem;
     }
 }
+
+/* ========================================= */
+/* ESTILOS MEJORADOS PARA VALIDACIONES */
+/* ========================================= */
+
+/* Estilo para campos válidos */
+.is-valid {
+    border-color: #28a745 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.is-valid:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+}
+
+/* Mensajes de feedback */
+.invalid-feedback,
+.valid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    font-weight: 500;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+}
+
+.valid-feedback {
+    color: #28a745;
+}
+
+.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+.is-valid ~ .valid-feedback {
+    display: block;
+}
+
+/* Iconos en los mensajes de feedback */
+.invalid-feedback::before {
+    content: '\f071';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 5px;
+}
+
+.valid-feedback::before {
+    content: '\f058';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 5px;
+}
+
+/* Animación sutil para campos inválidos */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.is-invalid {
+    animation: shake 0.3s ease-in-out;
+}
+
+/* Estilo para campos con errores en inputs de grupo */
+.input-group .is-invalid {
+    z-index: 3;
+}
+
+.input-group .is-valid {
+    z-index: 3;
+}
+
+/* Mejorar la visibilidad de campos requeridos pendientes */
+.required-field .form-control:not(.is-valid):not(.is-invalid):focus {
+    border-color: #c90000;
+    box-shadow: 0 0 0 0.25rem rgba(201, 0, 0, 0.15);
+}
+
+/* Tooltip de ayuda para campos */
+.form-text {
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #6c757d;
+}
+
+.form-text i {
+    margin-right: 4px;
+}
+
+/* Indicador de carga para validaciones asíncronas */
+.validating {
+    position: relative;
+}
+
+.validating::after {
+    content: '';
+    position: absolute;
+    right: calc(0.375em + 0.1875rem);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #c90000;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Mejorar el diseño de select con validaciones */
+.form-select.is-invalid {
+    background-position: right 0.75rem center, right 2.25rem center;
+}
+
+.form-select.is-valid {
+    background-position: right 0.75rem center, right 2.25rem center;
+}
+
+/* Estilos para mensajes de confirmación */
+.swal-wide {
+    width: 600px !important;
+}
+
+@media (max-width: 768px) {
+    .swal-wide {
+        width: 95% !important;
+    }
+}
+
+/* Resaltar secciones colapsadas con errores */
+.card-header.has-errors {
+    border-left: 4px solid #dc3545;
+    background-color: #f8d7da !important;
+}
+
+.card-header.has-errors h5 {
+    color: #721c24 !important;
+}
+
+/* Contador de errores en sección */
+.error-badge {
+    display: inline-block;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    font-weight: bold;
+}
+
+/* Mejoras para dispositivos móviles */
+@media (max-width: 768px) {
+    .invalid-feedback,
+    .valid-feedback {
+        font-size: 0.8em;
+    }
+
+    .form-text {
+        font-size: 0.8em;
+    }
+}
