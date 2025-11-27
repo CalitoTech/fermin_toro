@@ -4,11 +4,12 @@
  */
 
 class ValidadorFormulario {
-    constructor(formId) {
+    constructor(formId, basePath = '../../') {
         this.form = document.getElementById(formId);
         this.camposEditados = new Set();
         this.erroresActivos = new Map();
         this.formularioEnviado = false; // Bandera para indicar si el formulario se envió exitosamente
+        this.basePath = basePath; // Ruta base para los controladores
         this.inicializar();
     }
 
@@ -97,14 +98,20 @@ class ValidadorFormulario {
             return false;
         }
 
+        // Obtener el maxlength y minlength actual del campo para determinar si es cédula escolar o normal
+        const maxLength = parseInt(input.getAttribute('maxlength')) || config.max;
+        const minLength = parseInt(input.getAttribute('minlength')) || config.min;
+        const esCedulaEscolar = maxLength === 11;
+        const tipoCedula = esCedulaEscolar ? 'Cédula escolar' : 'Cédula';
+
         // Validar longitud
-        if (cedula.length < config.min) {
-            this.mostrarError(input, `La cédula debe tener al menos ${config.min} dígitos`);
+        if (cedula.length < minLength) {
+            this.mostrarError(input, `${tipoCedula} debe tener al menos ${minLength} dígitos`);
             return false;
         }
 
-        if (cedula.length > config.max) {
-            this.mostrarError(input, `La cédula no puede tener más de ${config.max} dígitos`);
+        if (cedula.length > maxLength) {
+            this.mostrarError(input, `${tipoCedula} no puede tener más de ${maxLength} dígitos`);
             return false;
         }
 
@@ -221,7 +228,7 @@ class ValidadorFormulario {
         const telefonoCompleto = prefijo + numero;
 
         try {
-            const response = await fetch(`../../controladores/TelefonoController.php?action=verificarTelefono&telefono=${encodeURIComponent(numero)}&prefijo=${encodeURIComponent(prefijoHidden ? prefijoHidden.value : '')}`);
+            const response = await fetch(`${this.basePath}controladores/TelefonoController.php?action=verificarTelefono&telefono=${encodeURIComponent(numero)}&prefijo=${encodeURIComponent(prefijoHidden ? prefijoHidden.value : '')}`);
             const data = await response.json();
 
             if (data.existe) {
@@ -801,7 +808,16 @@ class ValidadorFormulario {
 let validadorSolicitud = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    validadorSolicitud = new ValidadorFormulario('formInscripcion');
+    // Detectar la ruta base según la ubicación del HTML
+    const currentPath = window.location.pathname;
+    let basePath = '../../';
+
+    // Si estamos en vistas/inscripciones/inscripcion/, necesitamos ../../../
+    if (currentPath.includes('/vistas/inscripciones/inscripcion/')) {
+        basePath = '../../../';
+    }
+
+    validadorSolicitud = new ValidadorFormulario('formInscripcion', basePath);
 });
 
 // Exportar para uso global

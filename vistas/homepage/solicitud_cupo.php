@@ -803,12 +803,12 @@
                             // Ajustar label y maxlength según la edad
                             if (cedulaLabel) {
                                 if (edad < 10) {
-                                    // Menores de 10 años: Cédula escolar con maxlength 11
+                                    // Menores de 10 años: Cédula escolar con maxlength 11, minlength 10
                                     cedulaLabel.textContent = 'Cédula escolar';
                                     cedulaInput.setAttribute('maxlength', '11');
-                                    cedulaInput.setAttribute('minlength', '7');
+                                    cedulaInput.setAttribute('minlength', '10');
                                 } else {
-                                    // 10 años o más: Cédula normal con maxlength 8
+                                    // 10 años o más: Cédula normal con maxlength 8, minlength 7
                                     cedulaLabel.textContent = 'Cédula';
                                     cedulaInput.setAttribute('maxlength', '8');
                                     cedulaInput.setAttribute('minlength', '7');

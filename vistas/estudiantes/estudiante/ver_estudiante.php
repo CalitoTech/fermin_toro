@@ -94,6 +94,7 @@ function mostrar($valor, $texto = 'No registrado') {
 <head>
     <title>UECFT Araure - Ver Estudiante</title>
     <link rel="stylesheet" href="../../../assets/css/ver_representante.css">
+    <link rel="stylesheet" href="../../../assets/css/foto_perfil.css">
 </head>
 
 <?php include '../../layouts/menu.php'; ?>
@@ -118,6 +119,39 @@ function mostrar($valor, $texto = 'No registrado') {
                             <a href="editar_estudiante.php?id=<?= $estudiante['IdPersona'] ?>" class="btn btn-primary">
                                 <i class="fas fa-edit me-1"></i> Editar
                             </a>
+                        </div>
+                    </div>
+
+                    <!-- FOTO DE PERFIL -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body text-center py-4">
+                            <div class="profile-photo-container">
+                                <div class="profile-photo-wrapper">
+                                    <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
+                                        <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                                             alt="Foto de perfil"
+                                             class="profile-photo">
+                                    <?php else: ?>
+                                        <div class="profile-photo-default">
+                                            <i class='bx bx-user'></i>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <!-- Sin botón de editar porque es solo vista -->
+                            </div>
+                            <div class="profile-photo-name">
+                                <?= htmlspecialchars($estudiante['nombre'] . ' ' . $estudiante['apellido']) ?>
+                            </div>
+                            <div class="profile-photo-role">
+                                <i class='bx bx-id-card me-1'></i>
+                                <?php
+                                    if (!empty($estudiante['cedula'])) {
+                                        echo htmlspecialchars($estudiante['nacionalidad']) . '-' . number_format($estudiante['cedula'], 0, '', '.');
+                                    } else {
+                                        echo 'Estudiante';
+                                    }
+                                ?>
+                            </div>
                         </div>
                     </div>
 

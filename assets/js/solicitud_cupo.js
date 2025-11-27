@@ -262,14 +262,20 @@ function enviarFormulario() {
 
             const valor = input.val()?.trim();
             if (valor) {
+                // Verificar si es cédula escolar (maxlength 11) o cédula normal (maxlength 8)
+                const maxLength = parseInt(input.attr('maxlength')) || 8;
+                const minLength = parseInt(input.attr('minlength')) || 7;
+                const esCedulaEscolar = maxLength === 11;
+                const labelTipo = esCedulaEscolar ? 'Cédula escolar' : c.label;
+
                 if (!/^[0-9]+$/.test(valor)) {
-                    camposFaltantes.push(`${c.label} debe contener solo números`);
+                    camposFaltantes.push(`${labelTipo} debe contener solo números`);
                     input.addClass('is-invalid');
-                } else if (valor.length < 7) {
-                    camposFaltantes.push(`${c.label} debe tener al menos 7 dígitos`);
+                } else if (valor.length < minLength) {
+                    camposFaltantes.push(`${labelTipo} debe tener al menos ${minLength} dígitos`);
                     input.addClass('is-invalid');
-                } else if (valor.length > 8) {
-                    camposFaltantes.push(`${c.label} no puede tener más de 8 dígitos`);
+                } else if (valor.length > maxLength) {
+                    camposFaltantes.push(`${labelTipo} no puede tener más de ${maxLength} dígitos`);
                     input.addClass('is-invalid');
                 }
             }

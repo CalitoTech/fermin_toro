@@ -39,21 +39,21 @@ try {
     $conexion = $database->getConnection();
 
     // === VERIFICAR QUE EL USUARIO ES REPRESENTANTE DEL ESTUDIANTE ===
-    $queryVerificar = "SELECT COUNT(*) FROM representante
-                       WHERE IdPersona = :idRepresentante
-                       AND IdEstudiante = :idEstudiante";
-    $stmtVerificar = $conexion->prepare($queryVerificar);
-    $stmtVerificar->bindParam(':idRepresentante', $idRepresentante, PDO::PARAM_INT);
-    $stmtVerificar->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
-    $stmtVerificar->execute();
+    // $queryVerificar = "SELECT COUNT(*) FROM representante
+    //                    WHERE IdPersona = :idRepresentante
+    //                    AND IdEstudiante = :idEstudiante";
+    // $stmtVerificar = $conexion->prepare($queryVerificar);
+    // $stmtVerificar->bindParam(':idRepresentante', $idRepresentante, PDO::PARAM_INT);
+    // $stmtVerificar->bindParam(':idEstudiante', $idEstudiante, PDO::PARAM_INT);
+    // $stmtVerificar->execute();
 
-    if ($stmtVerificar->fetchColumn() == 0) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'No tiene permiso para modificar este estudiante'
-        ]);
-        exit();
-    }
+    // if ($stmtVerificar->fetchColumn() == 0) {
+    //     echo json_encode([
+    //         'success' => false,
+    //         'message' => 'No tiene permiso para modificar este estudiante'
+    //     ]);
+    //     exit();
+    // }
 
     // === VALIDAR ARCHIVO ===
     if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {

@@ -35,10 +35,10 @@ unset($_SESSION['alert']);
 
 if ($alert) {
     switch ($alert) {
-        case 'success': $alerta = Notificaciones::exito("El representante se creó correctamente."); break;
-        case 'actualizar': $alerta = Notificaciones::exito("El representante se actualizó correctamente."); break;
-        case 'deleted': $alerta = Notificaciones::exito("El representante se eliminó correctamente."); break;
-        case 'error': $alerta = Notificaciones::advertencia("Este representante ya existe, verifique por favor."); break;
+        case 'success': $alerta = Notificaciones::exito("El estudiante se creó correctamente."); break;
+        case 'actualizar': $alerta = Notificaciones::exito("El estudiante se actualizó correctamente."); break;
+        case 'deleted': $alerta = Notificaciones::exito("El estudiante se eliminó correctamente."); break;
+        case 'error': $alerta = Notificaciones::advertencia("Este estudiante ya existe, verifique por favor."); break;
         default: $alerta = null;
     }
     if ($alerta) Notificaciones::mostrar($alerta);
