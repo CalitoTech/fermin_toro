@@ -109,8 +109,6 @@
                                 echo '<button class="btn-registro" onclick="mostrarInformacionModal(' . $curso['IdCurso'] . ', ' . $nivel['IdNivel'] . ')">Solicitar Cupo</button>';
                                 echo ' ';
                                 echo '<button class="btn-requisitos" onclick="mostrarRequisitos(' . $nivel['IdNivel'] . ')">Ver Requisitos</button>';
-                                echo ' ';
-                                echo '<button class="btn-descargar-planilla" onclick="abrirModalImprimir(' . $curso['IdCurso'] . ')"><i class="fas fa-file-alt"></i>Descargar Planilla</button>';
                                 echo '</td>';
                                 echo '</tr>';
                             }
