@@ -250,8 +250,9 @@ function verificarCedulaRepresentante() {
                 'existe' => true,
                 'tieneAcceso' => (bool)$persona['tiene_credenciales'],
                 'persona' => [
-                    'nombre' => $persona['nombre'],
-                    'apellido' => $persona['apellido'],
+                    'idPersona' => $persona['IdPersona'],
+                    'nombres' => $persona['nombre'],
+                    'apellidos' => $persona['apellido'],
                     'nombreCompleto' => $persona['nombre'] . ' ' . $persona['apellido'],
                     'nacionalidad' => $persona['nacionalidad'],
                     'cedula' => $persona['cedula']

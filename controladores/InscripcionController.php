@@ -475,14 +475,19 @@ function procesarInscripcion($conexion) {
                     'padreDireccion' => 'Dirección del padre',
                     'padreTelefonoHabitacion' => 'Teléfono de habitación del padre',
                     'padreCelular' => 'Celular del padre',
-                    'padreCorreo' => 'Correo electrónico del padre',
-                    'padreLugarTrabajo' => 'Lugar de trabajo del padre'
+                    'padreCorreo' => 'Correo electrónico del padre'
                 ];
 
                 foreach ($camposPadre as $campo => $nombre) {
                     if (empty($_POST[$campo])) {
                         $camposFaltantes[] = $nombre;
                     }
+                }
+
+                // Validar Lugar de Trabajo del padre SOLO si NO es "Sin actividad laboral" (ID = 1)
+                $tipoTrabajadorPadre = $_POST['padreTipoTrabajador'] ?? '';
+                if ($tipoTrabajadorPadre !== '1' && empty($_POST['padreLugarTrabajo'])) {
+                    $camposFaltantes[] = 'Lugar de trabajo del padre';
                 }
             }
             
@@ -505,8 +510,7 @@ function procesarInscripcion($conexion) {
                     'madreDireccion' => 'Dirección de la madre',
                     'madreTelefonoHabitacion' => 'Teléfono de habitación de la madre',
                     'madreCelular' => 'Celular de la madre',
-                    'madreCorreo' => 'Correo electrónico de la madre',
-                    'madreLugarTrabajo' => 'Lugar de trabajo de la madre'
+                    'madreCorreo' => 'Correo electrónico de la madre'
                 ];
 
                 foreach ($camposMadre as $campo => $nombre) {
@@ -514,20 +518,38 @@ function procesarInscripcion($conexion) {
                         $camposFaltantes[] = $nombre;
                     }
                 }
+
+                // Validar Lugar de Trabajo de la madre SOLO si NO es "Sin actividad laboral" (ID = 1)
+                $tipoTrabajadorMadre = $_POST['madreTipoTrabajador'] ?? '';
+                if ($tipoTrabajadorMadre !== '1' && empty($_POST['madreLugarTrabajo'])) {
+                    $camposFaltantes[] = 'Lugar de trabajo de la madre';
+                }
             }
 
-            // Validación de contacto de emergencia (siempre requerido)
-            $camposEmergencia = [
-                'emergenciaNombre' => 'Nombre de contacto de emergencia',
-                'emergenciaNacionalidad' => 'Nacionalidad de contacto de emergencia',
-                'emergenciaCedula' => 'Cédula de contacto de emergencia',
-                'emergenciaParentesco' => 'Parentesco de contacto de emergencia',
-                'emergenciaCelular' => 'Teléfono de contacto de emergencia'
-            ];
+            // Validación de contacto de emergencia
+            // Solo validar si NO marcó "No tengo contacto de emergencia"
+            $noTieneContactoEmergencia = !empty($_POST['noTieneContactoEmergencia']);
 
-            foreach ($camposEmergencia as $campo => $nombre) {
-                if (empty($_POST[$campo])) {
-                    $camposFaltantes[] = $nombre;
+            if (!$noTieneContactoEmergencia) {
+                // Si hay ID de persona existente, solo validar campos básicos
+                $emergenciaIdExistente = !empty($_POST['emergenciaIdPersonaExistente']);
+
+                $camposEmergencia = [
+                    'emergenciaNombre' => 'Nombre de contacto de emergencia',
+                    'emergenciaNacionalidad' => 'Nacionalidad de contacto de emergencia',
+                    'emergenciaCedula' => 'Cédula de contacto de emergencia'
+                ];
+
+                // Solo validar Parentesco y Celular si NO es una persona existente
+                if (!$emergenciaIdExistente) {
+                    $camposEmergencia['emergenciaParentesco'] = 'Parentesco de contacto de emergencia';
+                    $camposEmergencia['emergenciaCelular'] = 'Teléfono de contacto de emergencia';
+                }
+
+                foreach ($camposEmergencia as $campo => $nombre) {
+                    if (empty($_POST[$campo])) {
+                        $camposFaltantes[] = $nombre;
+                    }
                 }
             }
             
@@ -547,14 +569,19 @@ function procesarInscripcion($conexion) {
                     'representanteDireccion' => 'Dirección del representante legal',
                     'representanteTelefonoHabitacion' => 'Teléfono de habitación del representante legal',
                     'representanteCelular' => 'Celular del representante legal',
-                    'representanteCorreo' => 'Correo electrónico del representante legal',
-                    'representanteLugarTrabajo' => 'Lugar de trabajo del representante legal'
+                    'representanteCorreo' => 'Correo electrónico del representante legal'
                 ];
 
                 foreach ($camposRepresentante as $campo => $nombre) {
                     if (empty($_POST[$campo])) {
                         $camposFaltantes[] = $nombre;
                     }
+                }
+
+                // Validar Lugar de Trabajo del representante SOLO si NO es "Sin actividad laboral" (ID = 1)
+                $tipoTrabajadorRepresentante = $_POST['representanteTipoTrabajador'] ?? '';
+                if ($tipoTrabajadorRepresentante !== '1' && empty($_POST['representanteLugarTrabajo'])) {
+                    $camposFaltantes[] = 'Lugar de trabajo del representante legal';
                 }
             }
             
@@ -1300,49 +1327,81 @@ function procesarInscripcion($conexion) {
                     throw new Exception("Tipo de representante no válido");
                 }
 
-                if (!empty($_POST['emergenciaNombre'])) {
-                    try {
-                        $emergencia = new Representante($conexion);
-                        // Obtener o crear el parentesco de emergencia
-                        $emergencia->IdParentesco = obtenerOCrearParentesco(
-                            $conexion,
-                            $_POST['emergenciaParentesco'] ?? null,
-                            $_POST['emergenciaParentesco_nombre'] ?? ''
-                        );
-                        $emergencia->IdEstudiante = $idEstudiante;
-                        $emergencia->nombre_contacto = trim($_POST['emergenciaNombre']);
-                        $emergencia->telefono_contacto = trim($_POST['emergenciaCelular']);
-                        $emergencia->IdPrefijo = obtenerOCrearPrefijo(
-                            $conexion,
-                            $_POST['emergenciaCelularPrefijo'] ?? null,
-                            $_POST['emergenciaCelularPrefijo_nombre'] ?? ''
-                        );
+                // Solo guardar contacto de emergencia si NO marcó "No tengo contacto de emergencia"
+                $noTieneContactoEmergencia = !empty($_POST['noTieneContactoEmergencia']);
 
-                        // Cédula y nacionalidad del contacto de emergencia
-                        $emergencia->cedula_contacto = trim($_POST['emergenciaCedula'] ?? '');
-                        $emergencia->IdNacionalidad_contacto = !empty($_POST['emergenciaNacionalidad'])
-                            ? (int)$_POST['emergenciaNacionalidad']
+                if (!$noTieneContactoEmergencia && !empty($_POST['emergenciaNombre'])) {
+                    try {
+                        // Verificar si se está usando una persona existente
+                        $emergenciaIdExistente = !empty($_POST['emergenciaIdPersonaExistente'])
+                            ? (int)$_POST['emergenciaIdPersonaExistente']
                             : null;
 
-                        // Validación adicional para el nombre de emergencia
-                        if (str_word_count($emergencia->nombre_contacto) < 2) {
-                            throw new Exception("Debe ingresar nombre y apellido para el contacto de emergencia");
-                        }
+                        if ($emergenciaIdExistente) {
+                            // Usar persona existente como contacto de emergencia
+                            $emergencia = new Representante($conexion);
+                            $emergencia->IdPersona = $emergenciaIdExistente;
+                            $emergencia->IdEstudiante = $idEstudiante;
 
-                        if (empty($emergencia->telefono_contacto)) {
-                            throw new Exception("Debe ingresar un teléfono para el contacto de emergencia");
-                        }
+                            // No se requiere parentesco ni teléfono para persona existente
+                            // El sistema usará los datos ya registrados de esa persona
+                            if (!$emergencia->guardarContactoEmergenciaExistente()) {
+                                throw new Exception("Error al vincular el contacto de emergencia existente");
+                            }
 
-                        if (!$emergencia->guardarContactoEmergencia()) {
-                            throw new Exception("Error al guardar el contacto de emergencia");
-                        }
+                            // Asignar perfil de contacto de emergencia si no lo tiene
+                            if (!DetallePerfil::tienePerfil($conexion, $emergenciaIdExistente, 5)) {
+                                $detallePerfilEmergencia = new DetallePerfil($conexion);
+                                $detallePerfilEmergencia->IdPerfil = 5; // Contacto de Emergencia
+                                $detallePerfilEmergencia->IdPersona = $emergenciaIdExistente;
+                                if (!$detallePerfilEmergencia->guardar()) {
+                                    throw new Exception("Error al asignar perfil de contacto de emergencia");
+                                }
+                            }
+                        } else {
+                            // Crear nuevo contacto de emergencia
+                            $emergencia = new Representante($conexion);
+                            // Obtener o crear el parentesco de emergencia
+                            $emergencia->IdParentesco = obtenerOCrearParentesco(
+                                $conexion,
+                                $_POST['emergenciaParentesco'] ?? null,
+                                $_POST['emergenciaParentesco_nombre'] ?? ''
+                            );
+                            $emergencia->IdEstudiante = $idEstudiante;
+                            $emergencia->nombre_contacto = trim($_POST['emergenciaNombre']);
+                            $emergencia->telefono_contacto = trim($_POST['emergenciaCelular'] ?? '');
+                            $emergencia->IdPrefijo = obtenerOCrearPrefijo(
+                                $conexion,
+                                $_POST['emergenciaCelularPrefijo'] ?? null,
+                                $_POST['emergenciaCelularPrefijo_nombre'] ?? ''
+                            );
 
-                        // Asignar perfil de contacto de emergencia (IdPerfil = 5)
-                        $detallePerfilEmergencia = new DetallePerfil($conexion);
-                        $detallePerfilEmergencia->IdPerfil = 5; // Contacto de Emergencia
-                        $detallePerfilEmergencia->IdPersona = $emergencia->IdPersona;
-                        if (!$detallePerfilEmergencia->guardar()) {
-                            throw new Exception("Error al asignar perfil de contacto de emergencia");
+                            // Cédula y nacionalidad del contacto de emergencia
+                            $emergencia->cedula_contacto = trim($_POST['emergenciaCedula'] ?? '');
+                            $emergencia->IdNacionalidad_contacto = !empty($_POST['emergenciaNacionalidad'])
+                                ? (int)$_POST['emergenciaNacionalidad']
+                                : null;
+
+                            // Validación adicional para el nombre de emergencia
+                            if (str_word_count($emergencia->nombre_contacto) < 2) {
+                                throw new Exception("Debe ingresar nombre y apellido para el contacto de emergencia");
+                            }
+
+                            if (empty($emergencia->telefono_contacto)) {
+                                throw new Exception("Debe ingresar un teléfono para el contacto de emergencia");
+                            }
+
+                            if (!$emergencia->guardarContactoEmergencia()) {
+                                throw new Exception("Error al guardar el contacto de emergencia");
+                            }
+
+                            // Asignar perfil de contacto de emergencia (IdPerfil = 5)
+                            $detallePerfilEmergencia = new DetallePerfil($conexion);
+                            $detallePerfilEmergencia->IdPerfil = 5; // Contacto de Emergencia
+                            $detallePerfilEmergencia->IdPersona = $emergencia->IdPersona;
+                            if (!$detallePerfilEmergencia->guardar()) {
+                                throw new Exception("Error al asignar perfil de contacto de emergencia");
+                            }
                         }
                     } catch (Exception $e) {
                         throw $e;

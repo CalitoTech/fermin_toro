@@ -147,6 +147,36 @@ class Representante {
     }
 
     /**
+     * Guarda la relación de contacto de emergencia usando una persona existente
+     * No requiere parentesco ni teléfono ya que usa datos ya registrados
+     */
+    public function guardarContactoEmergenciaExistente() {
+        // Validar que se haya proporcionado el ID de la persona
+        if (empty($this->IdPersona)) {
+            throw new Exception("Debe proporcionar el ID de la persona existente");
+        }
+
+        // Validar que se haya proporcionado el ID del estudiante
+        if (empty($this->IdEstudiante)) {
+            throw new Exception("Debe proporcionar el ID del estudiante");
+        }
+
+        // Verificar que la persona existe
+        $persona = new Persona($this->conn);
+        $personaData = $persona->obtenerPorId($this->IdPersona);
+
+        if (!$personaData) {
+            throw new Exception("La persona seleccionada no existe en el sistema");
+        }
+
+        // Crear relación como representante (contacto de emergencia)
+        // No se requiere IdParentesco para contacto de emergencia existente
+        $this->IdParentesco = null; // O podrías usar un valor por defecto
+
+        return $this->guardar();
+    }
+
+    /**
      * Obtiene la relación representante por IdPersona e IdEstudiante
      */
     public function obtenerPorPersonaYEstudiante($idPersona, $idEstudiante) {

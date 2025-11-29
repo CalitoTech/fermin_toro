@@ -361,29 +361,6 @@
                                 </div>
 
                                 <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteApellidos">Apellidos</label>
-                                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group required-field">
-                                            <label for="estudianteNombres">Nombres</label>
-                                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
-                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                                            minlength="3" maxlength="40"
-                                            onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
                                     <div class="col-md-3">
                                         <div class="form-group required-field">
                                             <label for="estudianteSexo">Sexo</label>
@@ -421,6 +398,29 @@
                                             <small class="form-text text-muted">
                                                 <i class="fas fa-info-circle"></i> Primero ingrese la fecha de nacimiento
                                             </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group required-field">
+                                            <label for="estudianteApellidos">Apellidos</label>
+                                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
+                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                            minlength="3" maxlength="40"
+                                            onkeypress="return onlyText(event)"
+                                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group required-field">
+                                            <label for="estudianteNombres">Nombres</label>
+                                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
+                                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                                            minlength="3" maxlength="40"
+                                            onkeypress="return onlyText(event)"
+                                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
                                         </div>
                                     </div>
                                 </div>

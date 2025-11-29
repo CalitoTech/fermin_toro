@@ -1,3 +1,18 @@
+/**
+ * VERSIÓN ACTUALIZADA - 2025-v8
+ * Mejoras implementadas:
+ * - Validación de cédula de estudiante con limpieza automática
+ * - Sistema de autocompletado para representantes (TODOS, incluso con usuario)
+ * - Detección de cambios en cédula para restaurar campos
+ * - Cédula EDITABLE después de autocompletar (permite cambios)
+ * - Oculta TODOS los campos excepto: Nacionalidad, Cédula, Nombres, Apellidos
+ * - Contacto de emergencia: manejo especial, solo oculta Parentesco y Celular
+ * - Validación condicional: Lugar de Trabajo opcional solo si "Sin actividad laboral"
+ * - Envío de ID de persona existente para contacto de emergencia
+ * - Checkbox "No tengo contacto de emergencia" para hacer opcional toda la sección
+ * Última actualización: Contacto de emergencia completamente opcional con checkbox
+ */
+
 // Reemplaza el alert de éxito al enviar el formulario
 function showSuccessAlert(message) {
     Swal.fire({
@@ -46,7 +61,7 @@ function showWarningAlert(message) {
 
 let nivelSeleccionadoGlobal = null;
 
-$('#formularioModal').on('hidden.bs.modal', function() {
+$('#formularioModal').on('hidden.bs.modal', function () {
     nivelSeleccionadoGlobal = null;
 });
 
@@ -161,10 +176,10 @@ $(document).ready(function () {
     inicializarFormulario();
 });
 
-$(document).on('change', 'input[name="tipoRepresentante"]', function() {
+$(document).on('change', 'input[name="tipoRepresentante"]', function () {
     const valor = $(this).val();
     const repInfo = $('#repAutoInfo');
-    
+
     if (valor === 'otro') {
         repInfo.hide();
         // Resto del código para mostrar sección
@@ -220,9 +235,9 @@ function abrirFormulario(idCurso, idNivel) {
 
     // Obtener el nombre del curso desde los datos ya cargados en la página
     const cursoSeleccionado = $(`button[onclick="abrirModalImprimir(${idCurso})"]`)
-                              .closest('tr')
-                              .find('td:first')
-                              .text().trim();
+        .closest('tr')
+        .find('td:first')
+        .text().trim();
 
     if (cursoSeleccionado) {
         $('#formularioModalLabel').html(`Formulario de Solicitud de Cupo - ${cursoSeleccionado}`);
@@ -247,11 +262,11 @@ function enviarFormulario() {
     // ✅ VALIDACIONES DE LONGITUD Y FORMATO
     // Validar longitud de cédulas
     const cedulasValidar = [
-        {id: 'estudianteCedula', label: 'Cédula del estudiante', container: '#estudianteCedulaContainer'},
-        {id: 'padreCedula', label: 'Cédula del padre'},
-        {id: 'madreCedula', label: 'Cédula de la madre'},
-        {id: 'emergenciaCedula', label: 'Cédula de emergencia'},
-        {id: 'representanteCedula', label: 'Cédula del representante'}
+        { id: 'estudianteCedula', label: 'Cédula del estudiante', container: '#estudianteCedulaContainer' },
+        { id: 'padreCedula', label: 'Cédula del padre' },
+        { id: 'madreCedula', label: 'Cédula de la madre' },
+        { id: 'emergenciaCedula', label: 'Cédula de emergencia' },
+        { id: 'representanteCedula', label: 'Cédula del representante' }
     ];
 
     cedulasValidar.forEach(c => {
@@ -284,13 +299,13 @@ function enviarFormulario() {
 
     // Validar longitud de teléfonos
     const telefonosValidar = [
-        {id: 'padreTelefonoHabitacion', label: 'Teléfono del padre', min: 7, max: 10},
-        {id: 'padreCelular', label: 'Celular del padre', min: 10, max: 10},
-        {id: 'madreTelefonoHabitacion', label: 'Teléfono de la madre', min: 7, max: 10},
-        {id: 'madreCelular', label: 'Celular de la madre', min: 10, max: 10},
-        {id: 'emergenciaCelular', label: 'Celular de emergencia', min: 10, max: 10},
-        {id: 'representanteTelefonoHabitacion', label: 'Teléfono del representante', min: 7, max: 10},
-        {id: 'representanteCelular', label: 'Celular del representante', min: 10, max: 10}
+        { id: 'padreTelefonoHabitacion', label: 'Teléfono del padre', min: 7, max: 10 },
+        { id: 'padreCelular', label: 'Celular del padre', min: 10, max: 10 },
+        { id: 'madreTelefonoHabitacion', label: 'Teléfono de la madre', min: 7, max: 10 },
+        { id: 'madreCelular', label: 'Celular de la madre', min: 10, max: 10 },
+        { id: 'emergenciaCelular', label: 'Celular de emergencia', min: 10, max: 10 },
+        { id: 'representanteTelefonoHabitacion', label: 'Teléfono del representante', min: 7, max: 10 },
+        { id: 'representanteCelular', label: 'Celular del representante', min: 10, max: 10 }
     ];
 
     telefonosValidar.forEach(t => {
@@ -317,16 +332,16 @@ function enviarFormulario() {
 
     // Validar longitud de nombres/apellidos
     const textosValidar = [
-        {id: 'estudianteNombres', label: 'Nombres del estudiante', min: 3, max: 40, soloLetras: true},
-        {id: 'estudianteApellidos', label: 'Apellidos del estudiante', min: 3, max: 40, soloLetras: true},
-        {id: 'padreNombres', label: 'Nombres del padre', min: 3, max: 40, soloLetras: true},
-        {id: 'padreApellidos', label: 'Apellidos del padre', min: 3, max: 40, soloLetras: true},
-        {id: 'madreNombres', label: 'Nombres de la madre', min: 3, max: 40, soloLetras: true},
-        {id: 'madreApellidos', label: 'Apellidos de la madre', min: 3, max: 40, soloLetras: true},
-        {id: 'padreOcupacion', label: 'Ocupación del padre', min: 3, max: 40},
-        {id: 'madreOcupacion', label: 'Ocupación de la madre', min: 3, max: 40},
-        {id: 'padreDireccion', label: 'Dirección del padre', min: 3, max: 40},
-        {id: 'madreDireccion', label: 'Dirección de la madre', min: 3, max: 40}
+        { id: 'estudianteNombres', label: 'Nombres del estudiante', min: 3, max: 40, soloLetras: true },
+        { id: 'estudianteApellidos', label: 'Apellidos del estudiante', min: 3, max: 40, soloLetras: true },
+        { id: 'padreNombres', label: 'Nombres del padre', min: 3, max: 40, soloLetras: true },
+        { id: 'padreApellidos', label: 'Apellidos del padre', min: 3, max: 40, soloLetras: true },
+        { id: 'madreNombres', label: 'Nombres de la madre', min: 3, max: 40, soloLetras: true },
+        { id: 'madreApellidos', label: 'Apellidos de la madre', min: 3, max: 40, soloLetras: true },
+        { id: 'padreOcupacion', label: 'Ocupación del padre', min: 3, max: 40 },
+        { id: 'madreOcupacion', label: 'Ocupación de la madre', min: 3, max: 40 },
+        { id: 'padreDireccion', label: 'Dirección del padre', min: 3, max: 40 },
+        { id: 'madreDireccion', label: 'Dirección de la madre', min: 3, max: 40 }
     ];
 
     textosValidar.forEach(t => {
@@ -350,9 +365,9 @@ function enviarFormulario() {
 
     // Validar correos
     const correosValidar = [
-        {id: 'estudianteCorreo', label: 'Correo del estudiante'},
-        {id: 'padreCorreo', label: 'Correo del padre'},
-        {id: 'madreCorreo', label: 'Correo de la madre'}
+        { id: 'estudianteCorreo', label: 'Correo del estudiante' },
+        { id: 'padreCorreo', label: 'Correo del padre' },
+        { id: 'madreCorreo', label: 'Correo de la madre' }
     ];
 
     correosValidar.forEach(c => {
@@ -377,11 +392,11 @@ function enviarFormulario() {
 
     // Validar prefijos de teléfonos (EXCLUIR ESTUDIANTE - siempre es opcional)
     const prefijosTelefono = [
-        {inputId: 'padreTelefonoHabitacionPrefijo', hiddenId: 'padreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del padre'},
-        {inputId: 'padreCelularPrefijo', hiddenId: 'padreCelularPrefijo', nombre: 'Prefijo del celular del padre'},
-        {inputId: 'madreTelefonoHabitacionPrefijo', hiddenId: 'madreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación de la madre'},
-        {inputId: 'madreCelularPrefijo', hiddenId: 'madreCelularPrefijo', nombre: 'Prefijo del celular de la madre'},
-        {inputId: 'emergenciaCelularPrefijo', hiddenId: 'emergenciaCelularPrefijo', nombre: 'Prefijo del teléfono de emergencia'}
+        { inputId: 'padreTelefonoHabitacionPrefijo', hiddenId: 'padreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del padre' },
+        { inputId: 'padreCelularPrefijo', hiddenId: 'padreCelularPrefijo', nombre: 'Prefijo del celular del padre' },
+        { inputId: 'madreTelefonoHabitacionPrefijo', hiddenId: 'madreTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación de la madre' },
+        { inputId: 'madreCelularPrefijo', hiddenId: 'madreCelularPrefijo', nombre: 'Prefijo del celular de la madre' },
+        { inputId: 'emergenciaCelularPrefijo', hiddenId: 'emergenciaCelularPrefijo', nombre: 'Prefijo del teléfono de emergencia' }
     ];
 
     prefijosTelefono.forEach(prefijo => {
@@ -403,14 +418,14 @@ function enviarFormulario() {
 
     // Validar sección del estudiante (siempre requerido) pero omitir cédula/telefono si sus contenedores están ocultos
     const camposEstudiante = [
-        {id: 'estudianteNombres', nombre: 'Nombres del estudiante', container: null, opcional: false},
-        {id: 'estudianteApellidos', nombre: 'Apellidos del estudiante', container: null, opcional: false},
-        {id: 'estudianteNacionalidad', nombre: 'Nacionalidad del estudiante', container: null, opcional: false},
-        {id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer', opcional: false},
-        {id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null, opcional: false},
-        {id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null, opcional: false},
-        {id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante', container: null, opcional: false},
-        {id: 'estudiantePlantel', nombre: 'Plantel donde cursó el último año escolar', container: '#estudiantePlantelContainer', opcional: false}
+        { id: 'estudianteNombres', nombre: 'Nombres del estudiante', container: null, opcional: false },
+        { id: 'estudianteApellidos', nombre: 'Apellidos del estudiante', container: null, opcional: false },
+        { id: 'estudianteNacionalidad', nombre: 'Nacionalidad del estudiante', container: null, opcional: false },
+        { id: 'estudianteCedula', nombre: 'Cédula del estudiante', container: '#estudianteCedulaContainer', opcional: false },
+        { id: 'estudianteFechaNacimiento', nombre: 'Fecha de nacimiento del estudiante', container: null, opcional: false },
+        { id: 'estudianteLugarNacimiento', nombre: 'Lugar de nacimiento del estudiante', container: null, opcional: false },
+        { id: 'estudianteCorreo', nombre: 'Correo electrónico del estudiante', container: null, opcional: false },
+        { id: 'estudiantePlantel', nombre: 'Plantel donde cursó el último año escolar', container: '#estudiantePlantelContainer', opcional: false }
     ];
 
     const idCursoSeleccionado = parseInt($('#idCursoSeleccionado').val() || 0);
@@ -441,22 +456,21 @@ function enviarFormulario() {
             $(`#${campo.id}`).addClass('is-invalid');
         }
     });
-    
+
     // 2. Validación de datos del padre (siempre requeridos)
     const camposPadre = [
-        {id: 'padreNombres', nombre: 'Nombres del padre'},
-        {id: 'padreApellidos', nombre: 'Apellidos del padre'},
-        {id: 'padreCedula', nombre: 'Cédula del padre'},
-        {id: 'padreNacionalidad', nombre: 'Nacionalidad del padre'},
-        {id: 'padreOcupacion', nombre: 'Ocupación del padre'},
-        {id: 'padreUrbanismo', nombre: 'Urbanismo/Sector del padre'},
-        {id: 'padreDireccion', nombre: 'Dirección del padre'},
-        {id: 'padreTelefonoHabitacion', nombre: 'Teléfono de habitación del padre'},
-        {id: 'padreCelular', nombre: 'Celular del padre'},
-        {id: 'padreCorreo', nombre: 'Correo electrónico del padre'},
-        {id: 'padreLugarTrabajo', nombre: 'Lugar de trabajo del padre'}
+        { id: 'padreNombres', nombre: 'Nombres del padre' },
+        { id: 'padreApellidos', nombre: 'Apellidos del padre' },
+        { id: 'padreCedula', nombre: 'Cédula del padre' },
+        { id: 'padreNacionalidad', nombre: 'Nacionalidad del padre' },
+        { id: 'padreOcupacion', nombre: 'Ocupación del padre' },
+        { id: 'padreUrbanismo', nombre: 'Urbanismo/Sector del padre' },
+        { id: 'padreDireccion', nombre: 'Dirección del padre' },
+        { id: 'padreTelefonoHabitacion', nombre: 'Teléfono de habitación del padre' },
+        { id: 'padreCelular', nombre: 'Celular del padre' },
+        { id: 'padreCorreo', nombre: 'Correo electrónico del padre' }
     ];
-    
+
     camposPadre.forEach(campo => {
         if (!$(`#${campo.id}`).val()) {
             camposFaltantes.push(campo.nombre);
@@ -464,27 +478,52 @@ function enviarFormulario() {
             $('#seccionPadre').collapse('show');
         }
     });
-    
+
+    // Validar Lugar de Trabajo del padre SOLO si NO es "Sin actividad laboral" (ID = 1)
+    const tipoTrabajadorPadre = $('input[name="padreTipoTrabajador"]:checked').val();
+    if (tipoTrabajadorPadre !== '1' && !$('#padreLugarTrabajo').val()) {
+        camposFaltantes.push('Lugar de trabajo del padre');
+        $('#padreLugarTrabajo').addClass('is-invalid');
+        $('#seccionPadre').collapse('show');
+    }
+
     // 3. Validación de datos de la madre (siempre requeridos)
     const camposMadre = [
-        {id: 'madreNombres', nombre: 'Nombres de la madre'},
-        {id: 'madreApellidos', nombre: 'Apellidos de la madre'},
-        {id: 'madreCedula', nombre: 'Cédula de la madre'},
-        {id: 'madreNacionalidad', nombre: 'Nacionalidad de la madre'},
-        {id: 'madreOcupacion', nombre: 'Ocupación de la madre'},
-        {id: 'madreUrbanismo', nombre: 'Urbanismo/Sector de la madre'},
-        {id: 'madreDireccion', nombre: 'Dirección de la madre'},
-        {id: 'madreTelefonoHabitacion', nombre: 'Teléfono de habitación de la madre'},
-        {id: 'madreCelular', nombre: 'Celular de la madre'},
-        {id: 'madreCorreo', nombre: 'Correo electrónico de la madre'},
-        {id: 'madreLugarTrabajo', nombre: 'Lugar de trabajo de la madre'},
-        {id: 'emergenciaNombre', nombre: 'Nombre de contacto de emergencia'},
-        {id: 'emergenciaNacionalidad', nombre: 'Nacionalidad de contacto de emergencia'},
-        {id: 'emergenciaCedula', nombre: 'Cédula de contacto de emergencia'},
-        {id: 'emergenciaParentesco', nombre: 'Parentesco de contacto de emergencia'},
-        {id: 'emergenciaCelular', nombre: 'Teléfono de contacto de emergencia'}
+        { id: 'madreNombres', nombre: 'Nombres de la madre' },
+        { id: 'madreApellidos', nombre: 'Apellidos de la madre' },
+        { id: 'madreCedula', nombre: 'Cédula de la madre' },
+        { id: 'madreNacionalidad', nombre: 'Nacionalidad de la madre' },
+        { id: 'madreOcupacion', nombre: 'Ocupación de la madre' },
+        { id: 'madreUrbanismo', nombre: 'Urbanismo/Sector de la madre' },
+        { id: 'madreDireccion', nombre: 'Dirección de la madre' },
+        { id: 'madreTelefonoHabitacion', nombre: 'Teléfono de habitación de la madre' },
+        { id: 'madreCelular', nombre: 'Celular de la madre' },
+        { id: 'madreCorreo', nombre: 'Correo electrónico de la madre' },
+        { id: 'emergenciaNombre', nombre: 'Nombre de contacto de emergencia' },
+        { id: 'emergenciaNacionalidad', nombre: 'Nacionalidad de contacto de emergencia' },
+        { id: 'emergenciaCedula', nombre: 'Cédula de contacto de emergencia' }
     ];
-    
+
+    // Si está marcado "No tengo contacto de emergencia", NO validar campos de emergencia
+    const noTieneContactoEmergencia = $('#noTieneContactoEmergencia').is(':checked');
+
+    if (!noTieneContactoEmergencia) {
+        // Si NO hay una persona existente seleccionada para emergencia, validar TODOS los campos
+        const emergenciaIdExistente = $('#emergenciaIdPersonaExistente').val();
+        if (!emergenciaIdExistente) {
+            // Solo agregar Parentesco y Celular si no es persona existente
+            camposMadre.push(
+                { id: 'emergenciaParentesco', nombre: 'Parentesco de contacto de emergencia' },
+                { id: 'emergenciaCelular', nombre: 'Teléfono de contacto de emergencia' }
+            );
+        }
+    } else {
+        // Si marcó "No tengo contacto", eliminar los campos de emergencia de la validación
+        camposMadre = camposMadre.filter(campo =>
+            !campo.id.startsWith('emergencia')
+        );
+    }
+
     camposMadre.forEach(campo => {
         if (!$(`#${campo.id}`).val()) {
             camposFaltantes.push(campo.nombre);
@@ -492,22 +531,29 @@ function enviarFormulario() {
             $('#seccionMadre').collapse('show');
         }
     });
-    
+
+    // Validar Lugar de Trabajo de la madre SOLO si NO es "Sin actividad laboral" (ID = 1)
+    const tipoTrabajadorMadre = $('input[name="madreTipoTrabajador"]:checked').val();
+    if (tipoTrabajadorMadre !== '1' && !$('#madreLugarTrabajo').val()) {
+        camposFaltantes.push('Lugar de trabajo de la madre');
+        $('#madreLugarTrabajo').addClass('is-invalid');
+        $('#seccionMadre').collapse('show');
+    }
+
     // 4. Validación del representante legal (si es otro)
     if (tipoRep === 'otro') {
         const camposRepresentante = [
-            {id: 'representanteNombres', nombre: 'Nombres del representante legal'},
-            {id: 'representanteApellidos', nombre: 'Apellidos del representante legal'},
-            {id: 'representanteCedula', nombre: 'Cédula del representante legal'},
-            {id: 'representanteNacionalidad', nombre: 'Nacionalidad del representante legal'},
-            {id: 'representanteParentesco', nombre: 'Parentesco del representante legal'},
-            {id: 'representanteOcupacion', nombre: 'Ocupación del representante legal'},
-            {id: 'representanteUrbanismo', nombre: 'Urbanismo/Sector del representante legal'},
-            {id: 'representanteDireccion', nombre: 'Dirección del representante legal'},
-            {id: 'representanteTelefonoHabitacion', nombre: 'Teléfono de habitación del representante legal'},
-            {id: 'representanteCelular', nombre: 'Celular del representante legal'},
-            {id: 'representanteCorreo', nombre: 'Correo electrónico del representante legal'},
-            {id: 'representanteLugarTrabajo', nombre: 'Lugar de trabajo del representante legal'}
+            { id: 'representanteNombres', nombre: 'Nombres del representante legal' },
+            { id: 'representanteApellidos', nombre: 'Apellidos del representante legal' },
+            { id: 'representanteCedula', nombre: 'Cédula del representante legal' },
+            { id: 'representanteNacionalidad', nombre: 'Nacionalidad del representante legal' },
+            { id: 'representanteParentesco', nombre: 'Parentesco del representante legal' },
+            { id: 'representanteOcupacion', nombre: 'Ocupación del representante legal' },
+            { id: 'representanteUrbanismo', nombre: 'Urbanismo/Sector del representante legal' },
+            { id: 'representanteDireccion', nombre: 'Dirección del representante legal' },
+            { id: 'representanteTelefonoHabitacion', nombre: 'Teléfono de habitación del representante legal' },
+            { id: 'representanteCelular', nombre: 'Celular del representante legal' },
+            { id: 'representanteCorreo', nombre: 'Correo electrónico del representante legal' }
         ];
 
         camposRepresentante.forEach(campo => {
@@ -518,10 +564,18 @@ function enviarFormulario() {
             }
         });
 
+        // Validar Lugar de Trabajo del representante SOLO si NO es "Sin actividad laboral" (ID = 1)
+        const tipoTrabajadorRepresentante = $('input[name="representanteTipoTrabajador"]:checked').val();
+        if (tipoTrabajadorRepresentante !== '1' && !$('#representanteLugarTrabajo').val()) {
+            camposFaltantes.push('Lugar de trabajo del representante legal');
+            $('#representanteLugarTrabajo').addClass('is-invalid');
+            $('#seccionRepresentante').slideDown();
+        }
+
         // Validar prefijos del representante legal
         const prefijosRepresentante = [
-            {inputId: 'representanteTelefonoHabitacionPrefijo', hiddenId: 'representanteTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del representante legal'},
-            {inputId: 'representanteCelularPrefijo', hiddenId: 'representanteCelularPrefijo', nombre: 'Prefijo del celular del representante legal'}
+            { inputId: 'representanteTelefonoHabitacionPrefijo', hiddenId: 'representanteTelefonoHabitacionPrefijo', nombre: 'Prefijo del teléfono de habitación del representante legal' },
+            { inputId: 'representanteCelularPrefijo', hiddenId: 'representanteCelularPrefijo', nombre: 'Prefijo del celular del representante legal' }
         ];
 
         prefijosRepresentante.forEach(prefijo => {
@@ -536,13 +590,13 @@ function enviarFormulario() {
             }
         });
     }
-    
+
     // 5. Validación de discapacidades
     let discapacidadesValidas = true;
-    $('.discapacidad-row').each(function() {
+    $('.discapacidad-row').each(function () {
         const tipo = $(this).find('.tipo-discapacidad').val();
         const descripcion = $(this).find('.descripcion-discapacidad').val();
-        
+
         if ((tipo && !descripcion) || (!tipo && descripcion)) {
             $(this).find('.descripcion-discapacidad').addClass('is-invalid');
             discapacidadesValidas = false;
@@ -685,17 +739,17 @@ function enviarFormulario() {
             },
             body: JSON.stringify(cedulasRepresentantes)
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.representantesConAcceso.length > 0) {
-                // Hay representantes con acceso al sistema
-                const nombres = data.representantesConAcceso.map(r => r.nombre).join(', ');
-                const plural = data.representantesConAcceso.length > 1;
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.representantesConAcceso.length > 0) {
+                    // Hay representantes con acceso al sistema
+                    const nombres = data.representantesConAcceso.map(r => r.nombre).join(', ');
+                    const plural = data.representantesConAcceso.length > 1;
 
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Acceso al sistema detectado',
-                    html: `
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Acceso al sistema detectado',
+                        html: `
                         <div class="text-left">
                             <p><strong>${plural ? 'Los representantes' : 'El representante'} ${nombres} ${plural ? 'tienen' : 'tiene'} acceso al sistema.</strong></p>
                             <p>Por favor, ${plural ? 'que inicien' : 'que inicie'} sesión en ${plural ? 'sus cuentas' : 'su cuenta'} y realicen la solicitud de inscripción desde allí.</p>
@@ -705,27 +759,27 @@ function enviarFormulario() {
                             </p>
                         </div>
                     `,
-                    confirmButtonColor: '#c90000',
-                    confirmButtonText: 'Entendido',
-                    showCloseButton: true,
-                    customClass: {
-                        popup: 'swal-wide'
-                    }
-                });
+                        confirmButtonColor: '#c90000',
+                        confirmButtonText: 'Entendido',
+                        showCloseButton: true,
+                        customClass: {
+                            popup: 'swal-wide'
+                        }
+                    });
 
-                btn.html('Enviar Solicitud');
-                btn.prop('disabled', false);
-                return;
-            }
+                    btn.html('Enviar Solicitud');
+                    btn.prop('disabled', false);
+                    return;
+                }
 
-            // Si no hay representantes con acceso, continuar con el envío
-            enviarFormularioFinal(formData, btn);
-        })
-        .catch(error => {
-            console.error('Error al verificar acceso:', error);
-            // Si hay error en la verificación, continuar con el envío
-            enviarFormularioFinal(formData, btn);
-        });
+                // Si no hay representantes con acceso, continuar con el envío
+                enviarFormularioFinal(formData, btn);
+            })
+            .catch(error => {
+                console.error('Error al verificar acceso:', error);
+                // Si hay error en la verificación, continuar con el envío
+                enviarFormularioFinal(formData, btn);
+            });
     } else {
         // Si no hay representantes para verificar, enviar directamente
         enviarFormularioFinal(formData, btn);
@@ -744,69 +798,69 @@ function enviarFormularioFinal(formData, btn) {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Error en la respuesta del servidor');
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Marcar el formulario como enviado exitosamente para evitar alerta de cierre
-            if (typeof validadorSolicitud !== 'undefined') {
-                validadorSolicitud.marcarComoEnviado();
+        .then(response => {
+            if (!response.ok) throw new Error('Error en la respuesta del servidor');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Marcar el formulario como enviado exitosamente para evitar alerta de cierre
+                if (typeof validadorSolicitud !== 'undefined') {
+                    validadorSolicitud.marcarComoEnviado();
+                }
+
+                showSuccessAlert(
+                    'Solicitud enviada correctamente.<br>' +
+                    'Número de solicitud: ' + data.numeroSolicitud + '<br>' +
+                    'Código de Seguimiento: ' + data.codigo_inscripcion
+                );
+
+                const form = document.getElementById('formInscripcion');
+                const origen = form.getAttribute('data-origen');
+
+                if (origen === 'modal') {
+                    // ✅ Si se envió desde un modal, solo lo cerramos
+                    $('#formularioModal').modal('hide');
+                } else if (origen === 'pagina') {
+                    // ✅ Si se envió desde inscripcion.php, redirigimos
+                    setTimeout(() => {
+                        window.location.href = 'inscripcion.php';
+                    }, 1500);
+                }
+            } else {
+                throw new Error(data.message || 'Error al procesar la solicitud');
             }
-
-            showSuccessAlert(
-                'Solicitud enviada correctamente.<br>' +
-                'Número de solicitud: ' + data.numeroSolicitud + '<br>' +
-                'Código de Seguimiento: ' + data.codigo_inscripcion
-            );
-
-            const form = document.getElementById('formInscripcion');
-            const origen = form.getAttribute('data-origen');
-
-            if (origen === 'modal') {
-                // ✅ Si se envió desde un modal, solo lo cerramos
-                $('#formularioModal').modal('hide');
-            } else if (origen === 'pagina') {
-                // ✅ Si se envió desde inscripcion.php, redirigimos
-                setTimeout(() => {
-                    window.location.href = 'inscripcion.php';
-                }, 1500);
-            }
-        } else {
-            throw new Error(data.message || 'Error al procesar la solicitud');
-        }
-    })
-    .catch(error => {
-        console.error('Error al enviar el formulario:', error);
-        showErrorAlert(error.message || 'Error de conexión. Por favor, intente nuevamente.');
-    })
-    .finally(() => {
-        btn.html('Enviar Solicitud');
-        btn.prop('disabled', false);
-    });
+        })
+        .catch(error => {
+            console.error('Error al enviar el formulario:', error);
+            showErrorAlert(error.message || 'Error de conexión. Por favor, intente nuevamente.');
+        })
+        .finally(() => {
+            btn.html('Enviar Solicitud');
+            btn.prop('disabled', false);
+        });
 }
 
 function inicializarFormulario() {
     // Inicializar acordeón
-    $('.form-title').click(function() {
+    $('.form-title').click(function () {
         $(this).toggleClass('collapsed');
     });
-    
+
     // Por defecto, solo el estudiante está abierto
     $('.form-title').not(':first').addClass('collapsed');
 
     // Validación de cédula al perder foco
-    $('#estudianteCedula').on('blur', function() {
+    $('#estudianteCedula').on('blur', function () {
         const idNivelSeleccionado = parseInt(nivelSeleccionadoGlobal || 0);
         // Si es nivel inicial, no hacemos verificación
         if (idNivelSeleccionado === 1) return;
 
         const nacionalidad = $('#estudianteNacionalidad').val();
         const cedula = $(this).val();
-        
+
         if (nacionalidad && cedula) {
-            verificarCedulaExistente(cedula, nacionalidad, function(inscrito, estado) {
+            verificarCedulaExistente(cedula, nacionalidad, function (inscrito, estado) {
                 if (inscrito) {
                     mostrarAlertaCedulaExistente(estado);
                 }
@@ -815,7 +869,7 @@ function inicializarFormulario() {
     });
 
     // Manejo del envío del formulario (ASÍNCRONO)
-    $(document).on('click', '#btnEnviarFormulario', async function(e) {
+    $(document).on('click', '#btnEnviarFormulario', async function (e) {
         e.preventDefault(); // Prevenir envío por defecto
 
         const form = document.getElementById('formInscripcion');
@@ -830,7 +884,7 @@ function inicializarFormulario() {
 
         // Primero validar cédula si está completa y visible
         if (nacionalidad && cedula) {
-            verificarCedulaExistente(cedula, nacionalidad, async function(inscrito, estado) {
+            verificarCedulaExistente(cedula, nacionalidad, async function (inscrito, estado) {
                 if (inscrito) {
                     mostrarAlertaCedulaExistente(estado);
                     return false; // Detener el proceso dentro del callback
@@ -846,11 +900,11 @@ function inicializarFormulario() {
 
 
 // --- B. Control de campos condicionales (alergia, enfermedad) ---
-$(document).on('change', '#esAlergico', function() {
+$(document).on('change', '#esAlergico', function () {
     $('#alergia').prop('disabled', !this.checked).val(this.checked ? '' : '');
 });
 
-$(document).on('change', '#tieneEnfermedad', function() {
+$(document).on('change', '#tieneEnfermedad', function () {
     $('#enfermedad').prop('disabled', !this.checked).val(this.checked ? '' : '');
 });
 
@@ -861,9 +915,9 @@ $('#formularioModal').on('hidden.bs.modal', function () {
     $('#alergia, #enfermedad').prop('disabled', true).val('');
 });
 
-$(document).on('change', 'input[name="tipoRepresentante"]', function() {
+$(document).on('change', 'input[name="tipoRepresentante"]', function () {
     const valor = $(this).val();
-    
+
     if (valor === 'otro') {
         $('#seccionRepresentante').slideDown();
     } else {
@@ -873,20 +927,20 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function() {
 });
 
 // Para inicializar correctamente al abrir el modal
-$('#formularioModal').on('show.bs.modal', function() {
+$('#formularioModal').on('show.bs.modal', function () {
     $('input[name="tipoRepresentante"][value="madre"]').prop('checked', true);
     $('#seccionRepresentante').hide();
 });
 
-$(document).on('change', 'input[name="tipoRepresentante"]', function() {
+$(document).on('change', 'input[name="tipoRepresentante"]', function () {
     const valor = $(this).val();
     const seccionRep = $('#seccionRepresentante');
     const camposRep = seccionRep.find('input, select');
-    
+
     if (valor === 'otro') {
         seccionRep.slideDown();
         // Hacer los campos requeridos
-        camposRep.each(function() {
+        camposRep.each(function () {
             if ($(this).data('original-required') === undefined) {
                 $(this).data('original-required', $(this).prop('required'));
             }
@@ -895,7 +949,7 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function() {
     } else {
         seccionRep.slideUp();
         // Quitar requeridos
-        camposRep.each(function() {
+        camposRep.each(function () {
             $(this).prop('required', false);
         });
     }
@@ -910,7 +964,7 @@ function cargarTiposDiscapacidad() {
         })
         .then(tipos => {
             if (tipos.error) throw new Error(tipos.error);
-            
+
             window.tiposDiscapacidad = tipos;
             actualizarSelectsDiscapacidad();
         })
@@ -918,11 +972,11 @@ function cargarTiposDiscapacidad() {
             console.error('Error al cargar tipos de discapacidad:', error);
             // Opcional: Mostrar tipos por defecto si falla
             window.tiposDiscapacidad = [
-                {IdTipo_Discapacidad: 1, tipo_discapacidad: 'Visual'},
-                {IdTipo_Discapacidad: 2, tipo_discapacidad: 'Auditiva'},
-                {IdTipo_Discapacidad: 3, tipo_discapacidad: 'Motora'},
-                {IdTipo_Discapacidad: 4, tipo_discapacidad: 'Alergia'},
-                {IdTipo_Discapacidad: 5, tipo_discapacidad: 'Enfermedad'}
+                { IdTipo_Discapacidad: 1, tipo_discapacidad: 'Visual' },
+                { IdTipo_Discapacidad: 2, tipo_discapacidad: 'Auditiva' },
+                { IdTipo_Discapacidad: 3, tipo_discapacidad: 'Motora' },
+                { IdTipo_Discapacidad: 4, tipo_discapacidad: 'Alergia' },
+                { IdTipo_Discapacidad: 5, tipo_discapacidad: 'Enfermedad' }
             ];
             actualizarSelectsDiscapacidad();
         });
@@ -931,11 +985,11 @@ function cargarTiposDiscapacidad() {
 // Actualizar selects existentes con los tipos cargados
 function actualizarSelectsDiscapacidad() {
     const $selects = $('.tipo-discapacidad');
-    
-    $selects.each(function() {
+
+    $selects.each(function () {
         const $select = $(this);
         $select.empty().append('<option value="">Seleccione tipo</option>');
-        
+
         if (window.tiposDiscapacidad) {
             window.tiposDiscapacidad.forEach(tipo => {
                 $select.append(`<option value="${tipo.IdTipo_Discapacidad}">${tipo.tipo_discapacidad}</option>`);
@@ -951,10 +1005,10 @@ function agregarFilaDiscapacidad() {
             <td>
                 <select class="form-control tipo-discapacidad" name="tipo_discapacidad[]">
                     <option value="">Seleccione tipo</option>
-                    ${window.tiposDiscapacidad ? 
-                      window.tiposDiscapacidad.map(t => 
-                        `<option value="${t.IdTipo_Discapacidad}">${t.tipo_discapacidad}</option>`
-                      ).join('') : ''}
+                    ${window.tiposDiscapacidad ?
+            window.tiposDiscapacidad.map(t =>
+                `<option value="${t.IdTipo_Discapacidad}">${t.tipo_discapacidad}</option>`
+            ).join('') : ''}
                 </select>
             </td>
             <td>
@@ -968,7 +1022,7 @@ function agregarFilaDiscapacidad() {
             </td>
         </tr>
     `;
-    
+
     $('#discapacidadesBody').append(nuevaFila);
     actualizarBotonesEliminar();
 }
@@ -979,15 +1033,15 @@ function inicializarDiscapacidades() {
     if ($('#discapacidadesBody tr').length === 0) {
         agregarFilaDiscapacidad();
     }
-    
+
     // Configurar botón para agregar
     $('#btn-agregar-discapacidad').off('click').on('click', agregarFilaDiscapacidad);
-    
+
     // Manejar eliminación de filas
-    $(document).on('click', '.btn-eliminar-discapacidad', function() {
+    $(document).on('click', '.btn-eliminar-discapacidad', function () {
         const $fila = $(this).closest('tr');
         const $todasFilas = $('#discapacidadesBody tr');
-        
+
         if ($todasFilas.length > 1) {
             $fila.remove();
         } else {
@@ -996,16 +1050,16 @@ function inicializarDiscapacidades() {
         }
         actualizarBotonesEliminar();
     });
-    
+
     // Validación en tiempo real
-    $(document).on('change input', '.tipo-discapacidad, .descripcion-discapacidad', function() {
+    $(document).on('change input', '.tipo-discapacidad, .descripcion-discapacidad', function () {
         const $fila = $(this).closest('tr');
         const tipo = $fila.find('.tipo-discapacidad').val();
         const $input = $fila.find('.descripcion-discapacidad');
-        
+
         $input.toggleClass('is-invalid', tipo && !$input.val());
     });
-    
+
     actualizarBotonesEliminar();
 }
 
@@ -1016,13 +1070,13 @@ function actualizarBotonesEliminar() {
 }
 
 // En tu document.ready:
-$(document).ready(function() {
+$(document).ready(function () {
     // Cargar tipos al iniciar
     cargarTiposDiscapacidad();
-    
+
     // Inicializar sistema de discapacidades
     inicializarDiscapacidades();
-    
+
     // Reinicializar cuando se abre el modal
     $('#formularioModal').on('shown.bs.modal', inicializarDiscapacidades);
 });
@@ -1078,7 +1132,7 @@ function mostrarAlertaCedulaExistente(estadoRaw) {
         mensaje = '⚠️ Este estudiante ya tiene una solicitud pendiente de aprobación.';
     }
 
-    // Mostramos con Swal (más fiable / ya utilizado en tu app). Si Swal no existe, usamos toastr si está disponible.
+    // Mostramos con Swal y VACIAMOS EL CAMPO
     if (typeof Swal !== 'undefined') {
         Swal.fire({
             icon: 'warning',
@@ -1086,6 +1140,10 @@ function mostrarAlertaCedulaExistente(estadoRaw) {
             html: mensaje,
             confirmButtonColor: '#c90000',
             confirmButtonText: 'Entendido'
+        }).then(() => {
+            // VACIAR el campo de cédula del estudiante
+            $('#estudianteCedula').val('');
+            $('#estudianteCedula').focus();
         });
     } else if (typeof toastr !== 'undefined') {
         toastr.warning(mensaje, 'Advertencia', {
@@ -1093,9 +1151,14 @@ function mostrarAlertaCedulaExistente(estadoRaw) {
             iconClass: 'toast-warning',
             positionClass: "toast-top-center"
         });
+        // VACIAR el campo de cédula del estudiante
+        $('#estudianteCedula').val('');
+        $('#estudianteCedula').focus();
     } else {
         // último recurso
         alert(mensaje);
+        $('#estudianteCedula').val('');
+        $('#estudianteCedula').focus();
     }
 }
 
@@ -1132,7 +1195,115 @@ function instalarHandlersCedula() {
 $(document).ready(function () {
     instalarHandlersCedula();
     instalarValidacionCedulasDuplicadas();
+    instalarValidacionLugarTrabajo();
+    instalarCheckboxContactoEmergencia();
 });
+
+/**
+ * Controla el checkbox "No tengo contacto de emergencia"
+ * Oculta/muestra los campos de emergencia según el estado del checkbox
+ */
+function instalarCheckboxContactoEmergencia() {
+    const checkbox = $('#noTieneContactoEmergencia');
+    const camposEmergencia = $('#camposContactoEmergencia');
+
+    if (checkbox.length === 0 || camposEmergencia.length === 0) return;
+
+    checkbox.on('change', function () {
+        const noTieneContacto = $(this).is(':checked');
+
+        if (noTieneContacto) {
+            // Ocultar todos los campos de emergencia
+            camposEmergencia.slideUp(300);
+
+            // Quitar required de todos los campos
+            camposEmergencia.find('input, select').each(function () {
+                const $input = $(this);
+                // Guardar el estado required original
+                if (!$input.data('emergency-required-saved')) {
+                    $input.data('emergency-required-original', $input.prop('required'));
+                    $input.data('emergency-required-saved', true);
+                }
+                $input.prop('required', false);
+            });
+
+            // Limpiar valores de los campos
+            camposEmergencia.find('input[type="text"], input[type="tel"]').val('');
+            camposEmergencia.find('select').prop('selectedIndex', 0);
+
+            // Quitar clases de validación
+            camposEmergencia.find('.is-invalid, .is-valid').removeClass('is-invalid is-valid');
+        } else {
+            // Mostrar campos de emergencia
+            camposEmergencia.slideDown(300);
+
+            // Restaurar required original de los campos
+            camposEmergencia.find('input, select').each(function () {
+                const $input = $(this);
+                const requiredOriginal = $input.data('emergency-required-original');
+                if (requiredOriginal !== undefined) {
+                    $input.prop('required', requiredOriginal);
+                }
+            });
+        }
+    });
+
+    // Estado inicial: si está marcado, ocultar los campos
+    if (checkbox.is(':checked')) {
+        camposEmergencia.hide();
+        camposEmergencia.find('input, select').prop('required', false);
+    }
+}
+
+/**
+ * Controla la validación condicional del campo "Lugar de Trabajo"
+ * Solo es obligatorio si el tipo de trabajador NO es "Sin actividad laboral" (ID = 1)
+ */
+function instalarValidacionLugarTrabajo() {
+    const tiposPersona = ['padre', 'madre', 'representante'];
+
+    tiposPersona.forEach(tipo => {
+        // Seleccionar todos los radio buttons de tipo trabajador para esta persona
+        const radioButtons = document.querySelectorAll(`input[name="${tipo}TipoTrabajador"]`);
+        const lugarTrabajoInput = document.getElementById(`${tipo}LugarTrabajo`);
+
+        if (!lugarTrabajoInput || radioButtons.length === 0) return;
+
+        // Función para actualizar el estado required del campo
+        const actualizarRequired = () => {
+            const tipoSeleccionado = document.querySelector(`input[name="${tipo}TipoTrabajador"]:checked`);
+
+            if (tipoSeleccionado) {
+                const idTipoTrabajador = tipoSeleccionado.value;
+
+                // ID 1 = "Sin actividad laboral"
+                if (idTipoTrabajador === '1') {
+                    // No obligatorio
+                    lugarTrabajoInput.removeAttribute('required');
+                    const formGroup = lugarTrabajoInput.closest('.form-group');
+                    if (formGroup) {
+                        formGroup.classList.remove('required-field');
+                    }
+                } else {
+                    // Obligatorio para otros tipos
+                    lugarTrabajoInput.setAttribute('required', 'required');
+                    const formGroup = lugarTrabajoInput.closest('.form-group');
+                    if (formGroup) {
+                        formGroup.classList.add('required-field');
+                    }
+                }
+            }
+        };
+
+        // Instalar listeners en todos los radio buttons
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', actualizarRequired);
+        });
+
+        // Ejecutar una vez al inicio para configurar el estado inicial
+        actualizarRequired();
+    });
+}
 
 // Validación de cédulas duplicadas con blur
 function instalarValidacionCedulasDuplicadas() {
@@ -1149,12 +1320,29 @@ function instalarValidacionCedulasDuplicadas() {
         const nacionalidadInput = $(`#${campo.nacionalidad}`);
 
         if (cedulaInput.length && nacionalidadInput.length) {
+            // Detectar cambios en la cédula para limpiar autocompletado
+            if (campo.esRepresentante) {
+                cedulaInput.on('input', function () {
+                    const tipoPersona = obtenerTipoPersona(campo.cedula);
+                    if (tipoPersona && window.personasConfirmadas[tipoPersona]) {
+                        // Si había una persona confirmada, limpiar el autocompletado
+                        limpiarAutocompletado(tipoPersona);
+
+                        // Mostrar notificación
+                        toastr.info(`Se han restaurado los campos de ${obtenerNombreRol(tipoPersona)}`, 'Campos restaurados', {
+                            timeOut: 2000,
+                            positionClass: "toast-top-right"
+                        });
+                    }
+                });
+            }
+
             // Validar al perder el foco de la cédula
-            cedulaInput.on('blur', function() {
+            cedulaInput.on('blur', function () {
                 // Primero validar duplicados en el formulario
                 validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
 
-                // Si es representante (padre, madre o representante legal),
+                // Si es representante (padre, madre, representante legal o emergencia),
                 // también validar si ya existe en la base de datos
                 if (campo.esRepresentante) {
                     validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
@@ -1162,7 +1350,7 @@ function instalarValidacionCedulasDuplicadas() {
             });
 
             // También validar al cambiar nacionalidad
-            nacionalidadInput.on('change', function() {
+            nacionalidadInput.on('change', function () {
                 const cedula = cedulaInput.val();
                 if (cedula) {
                     validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
@@ -1258,15 +1446,351 @@ function validarCedulaDuplicadaEnFormulario(cedulaId, nacionalidadId, nombrePers
     }
 }
 
+// =====================================================
+// SISTEMA DE VALIDACIÓN DE CÉDULAS CON AUTOCOMPLETADO
+// =====================================================
+
+// Variable global para rastrear personas confirmadas para autocompletar
+window.personasConfirmadas = {
+    padre: null,
+    madre: null,
+    representante: null,
+    emergencia: null
+};
+
+/**
+ * Obtener el nombre del tipo de persona según el ID del campo
+ */
+function obtenerTipoPersona(cedulaId) {
+    if (cedulaId.includes('padre')) return 'padre';
+    if (cedulaId.includes('madre')) return 'madre';
+    if (cedulaId.includes('representante')) return 'representante';
+    if (cedulaId.includes('emergencia')) return 'emergencia';
+    return null;
+}
+
+/**
+ * Obtener el nombre descriptivo del rol
+ */
+function obtenerNombreRol(tipo) {
+    const nombres = {
+        'padre': 'Padre',
+        'madre': 'Madre',
+        'representante': 'Representante Legal',
+        'emergencia': 'Contacto de Emergencia'
+    };
+    return nombres[tipo] || tipo;
+}
+
+/**
+ * Obtiene la lista de campos que se deben ocultar al autocompletar
+ */
+function obtenerCamposOcultar(tipo) {
+    // Campos comunes a ocultar (todos excepto nacionalidad, cédula, nombres y apellidos)
+    const camposComunes = [
+        'Ocupacion', 'Urbanismo', 'Direccion', 'TelefonoHabitacion',
+        'TelefonoHabitacionPrefijo', 'Celular', 'CelularPrefijo',
+        'Correo', 'LugarTrabajo', 'TipoTrabajador'
+    ];
+
+    // Para emergencia, también ocultar parentesco
+    if (tipo === 'emergencia') {
+        return [...camposComunes, 'Parentesco'];
+    }
+
+    // Para representante, también ocultar parentesco
+    if (tipo === 'representante') {
+        return [...camposComunes, 'Parentesco'];
+    }
+
+    return camposComunes;
+}
+
+/**
+ * Autocompleta los datos de una persona existente y oculta campos innecesarios
+ */
+function autocompletarPersona(tipo, datosPersona) {
+    // Guardar confirmación
+    window.personasConfirmadas[tipo] = datosPersona;
+
+    const prefijo = tipo; // 'padre', 'madre', 'representante', 'emergencia'
+
+    // CASO ESPECIAL: Contacto de emergencia
+    if (prefijo === 'emergencia') {
+        // Llenar el campo "En caso de emergencia, llamar a:" con nombre completo en readonly
+        $('#emergenciaNombre').val(datosPersona.nombreCompleto).prop('readonly', true);
+        $('#emergenciaNacionalidad').val(datosPersona.nacionalidad).prop('disabled', true);
+        $('#emergenciaCedula').val(datosPersona.cedula).prop('readonly', false); // Editable
+
+        // Agregar campo hidden con el ID de la persona
+        let hiddenInput = $('#emergenciaIdPersonaExistente');
+        if (hiddenInput.length === 0) {
+            hiddenInput = $('<input type="hidden" />').attr('id', 'emergenciaIdPersonaExistente').attr('name', 'emergenciaIdPersonaExistente');
+            $('#emergenciaCedula').after(hiddenInput);
+        }
+        hiddenInput.val(datosPersona.idPersona);
+
+        // Ocultar SOLO los campos de parentesco y celular del contacto de emergencia
+        const camposEmergenciaOcultar = [
+            '#emergenciaParentesco_input',
+            '#emergenciaParentesco',
+            '#emergenciaParentesco_nombre',
+            '#emergenciaCelular',
+            '#emergenciaCelularPrefijo_input',
+            '#emergenciaCelularPrefijo',
+            '#emergenciaCelularPrefijo_nombre'
+        ];
+
+        camposEmergenciaOcultar.forEach(selector => {
+            const $input = $(selector);
+            const $formGroup = $input.closest('.form-group');
+
+            if ($input.length) {
+                // Guardar estado original
+                if (!$input.data('original-required-saved')) {
+                    $input.data('original-required', $input.prop('required'));
+                    $input.data('original-required-saved', true);
+                }
+                $input.prop('required', false).prop('disabled', true);
+            }
+
+            if ($formGroup.length) {
+                $formGroup.hide();
+            }
+        });
+
+        // Marcar campos visibles como válidos
+        $('#emergenciaNombre').addClass('is-valid').removeClass('is-invalid');
+        $('#emergenciaNacionalidad').addClass('is-valid').removeClass('is-invalid');
+        $('#emergenciaCedula').addClass('is-valid').removeClass('is-invalid');
+
+        toastr.success(`Se usarán los datos de ${datosPersona.nombreCompleto} como contacto de emergencia`, 'Autocompletado', {
+            timeOut: 3000,
+            positionClass: "toast-top-right"
+        });
+
+        return; // Salir temprano para emergencia
+    }
+
+    // CASO NORMAL: Padre, Madre, Representante Legal
+    // Llenar campos básicos (nombres y apellidos en readonly, cédula EDITABLE)
+    $(`#${prefijo}Nombres`).val(datosPersona.nombres).prop('readonly', true);
+    $(`#${prefijo}Apellidos`).val(datosPersona.apellidos).prop('readonly', true);
+    $(`#${prefijo}Nacionalidad`).val(datosPersona.nacionalidad).prop('disabled', true);
+
+    // La cédula NO va en readonly para permitir cambios
+    $(`#${prefijo}Cedula`).val(datosPersona.cedula).prop('readonly', false);
+
+    // Agregar campo hidden con el ID de la persona
+    let hiddenInput = $(`#${prefijo}IdPersonaExistente`);
+    if (hiddenInput.length === 0) {
+        hiddenInput = $('<input type="hidden" />').attr('id', `${prefijo}IdPersonaExistente`).attr('name', `${prefijo}IdPersonaExistente`);
+        $(`#${prefijo}Cedula`).after(hiddenInput);
+    }
+    hiddenInput.val(datosPersona.idPersona);
+
+    // Ocultar TODOS los demás campos del formulario para este tipo de persona
+    // Mapear el prefijo al ID de la sección correcta en el HTML
+    const seccionesMap = {
+        'padre': '#datosPadre',
+        'madre': '#datosMadre',
+        'representante': '#seccionRepresentante'
+    };
+    const seccionId = seccionesMap[prefijo] || `#seccion${prefijo.charAt(0).toUpperCase() + prefijo.slice(1)}`;
+    const $seccion = $(seccionId);
+
+    if ($seccion.length) {
+        // Ocultar todos los form-group EXCEPTO los de nombres, apellidos, nacionalidad y cédula
+        // TAMBIÉN excluir los campos del contacto de emergencia (si es madre)
+        $seccion.find('.form-group').each(function () {
+            const $formGroup = $(this);
+            const $input = $formGroup.find('input, select, textarea').first();
+
+            if ($input.length) {
+                const inputId = $input.attr('id') || '';
+
+                // NO ocultar: nombres, apellidos, nacionalidad, cédula
+                const camposNoOcultar = [
+                    `${prefijo}Nombres`,
+                    `${prefijo}Apellidos`,
+                    `${prefijo}Nacionalidad`,
+                    `${prefijo}Cedula`
+                ];
+
+                // Si es madre, también NO ocultar los campos del contacto de emergencia
+                if (prefijo === 'madre') {
+                    camposNoOcultar.push(
+                        'emergenciaNombre',
+                        'emergenciaNacionalidad',
+                        'emergenciaCedula',
+                        'emergenciaParentesco',
+                        'emergenciaParentesco_input',
+                        'emergenciaCelular',
+                        'emergenciaCelularPrefijo_input'
+                    );
+                }
+
+                if (!camposNoOcultar.includes(inputId)) {
+                    // Guardar el estado original de required
+                    if (!$input.data('original-required-saved')) {
+                        $input.data('original-required', $input.prop('required'));
+                        $input.data('original-required-saved', true);
+                    }
+
+                    // Deshabilitar required y ocultar
+                    $input.prop('required', false).prop('disabled', true);
+                    $formGroup.hide();
+                }
+            }
+        });
+    }
+
+    // Marcar campos visibles como válidos
+    $(`#${prefijo}Nombres`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Apellidos`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Nacionalidad`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Cedula`).addClass('is-valid').removeClass('is-invalid');
+
+    // Mostrar mensaje de confirmación
+    toastr.success(`Se usarán los datos de ${datosPersona.nombreCompleto} para ${obtenerNombreRol(tipo)}`, 'Autocompletado', {
+        timeOut: 3000,
+        positionClass: "toast-top-right"
+    });
+}
+
+/**
+ * Limpia el autocompletado de una persona y restaura campos
+ */
+function limpiarAutocompletado(tipo) {
+    // Limpiar confirmación
+    window.personasConfirmadas[tipo] = null;
+
+    const prefijo = tipo;
+
+    // CASO ESPECIAL: Contacto de emergencia
+    if (prefijo === 'emergencia') {
+        // Limpiar y habilitar campos de emergencia
+        $('#emergenciaNombre').prop('readonly', false).removeClass('is-valid is-invalid').val('');
+        $('#emergenciaNacionalidad').prop('disabled', false).removeClass('is-valid is-invalid');
+        $('#emergenciaCedula').prop('readonly', false).removeClass('is-valid is-invalid');
+
+        // Eliminar campo hidden
+        $('#emergenciaIdPersonaExistente').remove();
+
+        // Restaurar SOLO los campos específicos de emergencia que se ocultaron
+        const camposEmergenciaRestaurar = [
+            '#emergenciaParentesco_input',
+            '#emergenciaParentesco',
+            '#emergenciaParentesco_nombre',
+            '#emergenciaCelular',
+            '#emergenciaCelularPrefijo_input',
+            '#emergenciaCelularPrefijo',
+            '#emergenciaCelularPrefijo_nombre'
+        ];
+
+        camposEmergenciaRestaurar.forEach(selector => {
+            const $input = $(selector);
+            const $formGroup = $input.closest('.form-group');
+
+            if ($input.length) {
+                // Restaurar el required original si lo tenía
+                const requiredOriginal = $input.data('original-required');
+                if (requiredOriginal !== undefined) {
+                    $input.prop('required', requiredOriginal);
+                }
+                $input.prop('disabled', false);
+            }
+
+            if ($formGroup.length) {
+                $formGroup.show();
+            }
+        });
+
+        return; // Salir temprano para emergencia
+    }
+
+    // CASO NORMAL: Padre, Madre, Representante Legal
+    // Habilitar y limpiar campos básicos
+    $(`#${prefijo}Nombres`).prop('readonly', false).removeClass('is-valid is-invalid').val('');
+    $(`#${prefijo}Apellidos`).prop('readonly', false).removeClass('is-valid is-invalid').val('');
+    $(`#${prefijo}Nacionalidad`).prop('disabled', false).removeClass('is-valid is-invalid');
+    $(`#${prefijo}Cedula`).prop('readonly', false).removeClass('is-valid is-invalid');
+
+    // Eliminar campo hidden
+    $(`#${prefijo}IdPersonaExistente`).remove();
+
+    // Restaurar TODOS los campos ocultos de la sección
+    // Mapear el prefijo al ID de la sección correcta en el HTML
+    const seccionesMap = {
+        'padre': '#datosPadre',
+        'madre': '#datosMadre',
+        'representante': '#seccionRepresentante'
+    };
+    const seccionId = seccionesMap[prefijo] || `#seccion${prefijo.charAt(0).toUpperCase() + prefijo.slice(1)}`;
+    const $seccion = $(seccionId);
+
+    if ($seccion.length) {
+        // Mostrar todos los form-group que estaban ocultos
+        $seccion.find('.form-group').each(function () {
+            const $formGroup = $(this);
+            const $input = $formGroup.find('input, select, textarea').first();
+
+            if ($input.length) {
+                const inputId = $input.attr('id') || '';
+
+                // Restaurar TODOS excepto nombres, apellidos, nacionalidad y cédula (que ya se limpiaron arriba)
+                // TAMBIÉN evitar restaurar campos de emergencia (si es madre)
+                const camposNoRestaurar = [
+                    `${prefijo}Nombres`,
+                    `${prefijo}Apellidos`,
+                    `${prefijo}Nacionalidad`,
+                    `${prefijo}Cedula`
+                ];
+
+                // Si es madre, NO restaurar campos de emergencia (solo si emergencia está autocompletada)
+                if (prefijo === 'madre' && window.personasConfirmadas['emergencia']) {
+                    camposNoRestaurar.push(
+                        'emergenciaNombre',
+                        'emergenciaNacionalidad',
+                        'emergenciaCedula'
+                    );
+                }
+
+                if (!camposNoRestaurar.includes(inputId)) {
+                    // Restaurar el required original si lo tenía
+                    const requiredOriginal = $input.data('original-required');
+                    if (requiredOriginal !== undefined) {
+                        $input.prop('required', requiredOriginal);
+                    }
+
+                    // Habilitar y mostrar
+                    $input.prop('disabled', false);
+                    $formGroup.show();
+                }
+            }
+        });
+    }
+}
+
 /**
  * Valida si la cédula de un representante ya existe en la base de datos
- * Se ejecuta en el evento blur de las cédulas de padre, madre y representante
+ * Se ejecuta en el evento blur de las cédulas de padre, madre, representante y emergencia
  */
 function validarCedulaRepresentanteExistente(cedulaId, nacionalidadId, nombrePersona) {
     const cedula = $(`#${cedulaId}`).val();
     const nacionalidad = $(`#${nacionalidadId}`).val();
 
     if (!cedula || !nacionalidad) return;
+
+    const tipoPersona = obtenerTipoPersona(cedulaId);
+    if (!tipoPersona) return;
+
+    // Si ya está confirmada esta persona, no hacer nada
+    if (window.personasConfirmadas[tipoPersona] &&
+        window.personasConfirmadas[tipoPersona].cedula === cedula &&
+        window.personasConfirmadas[tipoPersona].nacionalidad === nacionalidad) {
+        return;
+    }
 
     // Llamar al endpoint para verificar si la cédula existe
     fetch('../../controladores/PersonaController.php?action=verificarCedulaRepresentante', {
@@ -1279,67 +1803,71 @@ function validarCedulaRepresentanteExistente(cedulaId, nacionalidadId, nombrePer
             nacionalidad: nacionalidad
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.existe) {
-            // La persona ya existe en la base de datos
-            const nombreCompleto = data.persona ? data.persona.nombreCompleto : '';
-            const nacionalidadLetra = data.persona ? data.persona.nacionalidad : '';
-            const cedulaNumero = data.persona ? data.persona.cedula : '';
-            const cedulaCompletaCorrecta = nacionalidadLetra + '-' + cedulaNumero;
+        .then(response => response.json())
+        .then(data => {
+            if (data.existe) {
+                // La persona ya existe en la base de datos
+                const nombreCompleto = data.persona ? data.persona.nombreCompleto : '';
+                const nacionalidadLetra = data.persona ? data.persona.nacionalidad : '';
+                const cedulaNumero = data.persona ? data.persona.cedula : '';
+                const cedulaCompletaCorrecta = nacionalidadLetra + '-' + cedulaNumero;
+                const idPersona = data.persona ? data.persona.idPersona : null;
+                const rolDescriptivo = obtenerNombreRol(tipoPersona);
 
-            if (data.tieneAcceso) {
-                // Tiene usuario y contraseña
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Usuario registrado en el sistema',
-                    html: `
-                        <div class="text-left">
-                            <p>La persona con cédula <strong>${cedulaCompletaCorrecta}</strong> (${nombreCompleto}) ya tiene una cuenta en el sistema.</p>
-                            <p><strong>Por favor, solicite que inicie sesión en su cuenta para realizar la inscripción.</strong></p>
-                            <p class="text-muted small mt-3">
-                                <i class="fas fa-info-circle"></i>
-                                Los usuarios registrados deben gestionar las inscripciones desde su propia cuenta.
-                            </p>
-                        </div>
-                    `,
-                    confirmButtonColor: '#c90000',
-                    confirmButtonText: 'Entendido',
-                    showCloseButton: true
-                });
+                // SIEMPRE preguntar si desea usar esta persona (sin importar si tiene usuario o no)
+                let mensajeAdicional = '';
+                if (data.tieneAcceso) {
+                    mensajeAdicional = '<p class="text-warning small mt-2"><i class="fas fa-exclamation-triangle mr-1"></i> <strong>Nota:</strong> Esta persona ya tiene una cuenta en el sistema.</p>';
+                }
 
-                $(`#${cedulaId}`).addClass('is-invalid');
-                $(`#${cedulaId}`).val('');
-            } else {
-                // Existe pero no tiene credenciales de acceso
                 Swal.fire({
-                    icon: 'warning',
+                    icon: 'question',
                     title: 'Persona ya registrada',
                     html: `
-                        <div class="text-left">
-                            <p>La persona con cédula <strong>${cedulaCompletaCorrecta}</strong> (${nombreCompleto}) ya está registrada en el sistema.</p>
-                            <p class="text-muted small">
-                                <i class="fas fa-info-circle"></i>
-                                No puede registrar nuevamente a una persona que ya existe en la base de datos.
-                            </p>
-                        </div>
-                    `,
+                    <div class="text-left">
+                        <p>Está ingresando la cédula de <strong>${nombreCompleto}</strong> (${cedulaCompletaCorrecta}).</p>
+                        <p class="mt-3"><strong>¿Desea registrar a esta persona como ${rolDescriptivo}?</strong></p>
+                        ${mensajeAdicional}
+                        <p class="text-muted small mt-2">
+                            <i class="fas fa-info-circle"></i>
+                            Si selecciona "Sí", se usarán los datos ya registrados de esta persona.
+                        </p>
+                    </div>
+                `,
+                    showCancelButton: true,
                     confirmButtonColor: '#c90000',
-                    confirmButtonText: 'Entendido'
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, usar esta persona',
+                    cancelButtonText: 'No, usar otra cédula',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Usuario confirmó - Autocompletar y bloquear campos
+                        autocompletarPersona(tipoPersona, {
+                            idPersona: idPersona,
+                            nombres: data.persona.nombres,
+                            apellidos: data.persona.apellidos,
+                            nacionalidad: nacionalidad,
+                            cedula: cedula,
+                            nombreCompleto: nombreCompleto
+                        });
+                    } else {
+                        // Usuario canceló - Vaciar el campo para que ingrese otra cédula
+                        $(`#${cedulaId}`).val('');
+                        $(`#${cedulaId}`).focus();
+                        limpiarAutocompletado(tipoPersona);
+                    }
                 });
-
-                $(`#${cedulaId}`).addClass('is-invalid');
-                $(`#${cedulaId}`).val('');
+            } else {
+                // No existe, todo bien - limpiar cualquier autocompletado previo
+                $(`#${cedulaId}`).removeClass('is-invalid');
+                limpiarAutocompletado(tipoPersona);
             }
-        } else {
-            // No existe, todo bien
-            $(`#${cedulaId}`).removeClass('is-invalid');
-        }
-    })
-    .catch(error => {
-        console.error('Error al verificar cédula de representante:', error);
-        // En caso de error de red, permitir continuar pero loguear el error
-    });
+        })
+        .catch(error => {
+            console.error('Error al verificar cédula de representante:', error);
+            // En caso de error de red, permitir continuar pero loguear el error
+        });
 }
 
 // Variable para guardar temporalmente el ID del curso
@@ -1357,14 +1885,14 @@ function mostrarInformacionModal(idCurso, idNivel) {
     $('#informacionModal').modal('show');
 }
 
-$('#btnContinuarFormulario').on('click', function() {
+$('#btnContinuarFormulario').on('click', function () {
     if (!cursoSeleccionadoTemporal) {
         showWarningAlert('No se ha seleccionado un curso válido.');
         return;
     }
 
     // Cerrar el modal informativo y esperar a que esté completamente oculto
-    $('#informacionModal').one('hidden.bs.modal', function() {
+    $('#informacionModal').one('hidden.bs.modal', function () {
         // Abrir el formulario después de que el modal informativo se haya cerrado
         // Detectar si el curso corresponde a nivel Inicial (IdNivel == 1)
         const idNivel = $('#informacionModal').data('idNivel') || 0;
@@ -1408,8 +1936,8 @@ function imprimirInscripcion(anioEscolar, nacionalidad, nacionalidadTexto, cedul
         });
 }
 
-$(document).ready(function() {
-    $('#btnImprimirPlanilla').on('click', function() {
+$(document).ready(function () {
+    $('#btnImprimirPlanilla').on('click', function () {
         const anioEscolar = $('#anioEscolar').val();
         const nacionalidad = $('#nacionalidad').val();
         const nacionalidadTexto = $('#nacionalidad option:selected').text();
@@ -1443,7 +1971,7 @@ function instalarValidacionCorreosDuplicados() {
     camposCorreo.forEach(campo => {
         const input = document.getElementById(campo.id);
         if (input) {
-            input.addEventListener('blur', function() {
+            input.addEventListener('blur', function () {
                 validarCorreoDuplicado(this, campo.nombre);
             });
         }
