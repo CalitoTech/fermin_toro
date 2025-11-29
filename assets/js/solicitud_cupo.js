@@ -195,15 +195,29 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function () {
 function abrirFormulario(idCurso, idNivel) {
     $('#idCursoSeleccionado').val(idCurso);
 
-    // Ocultar campos de cédula y teléfono SOLO para el primer curso (IdCurso == 1)
-    // Este es el único caso de nuevo ingreso sin antecedentes
+    // Para el primer curso (IdCurso == 1), hacer campos opcionales
+    // Este es el caso de nuevo ingreso sin antecedentes
     if (parseInt(idCurso) === 1) {
-        $('#estudianteCedulaContainer').hide();
+        // MOSTRAR la cédula pero hacerla OPCIONAL
+        $('#estudianteCedulaContainer').show();
+        const $cedulaFormGroup = $('#estudianteCedulaContainer .form-group');
+        $cedulaFormGroup.removeClass('required-field'); // Quitar asterisco rojo
+
+        // Actualizar label para indicar que es opcional
+        const $cedulaLabel = $('#estudianteCedulaContainer label[for="estudianteCedula"]');
+        if ($cedulaLabel.find('.text-muted').length === 0) {
+            $cedulaLabel.append(' <small class="text-muted">(Opcional)</small>');
+        }
+
+        // Marcar con data attribute que es opcional para preservar el estado
+        $('#estudianteCedula').attr('data-opcional-nivel-inicial', 'true');
+
+        // Hacer campo opcional (sin required) y readonly hasta ingresar fecha
+        $('#estudianteCedula').prop('required', false).val('').attr('readonly', true);
+
+        // Ocultar teléfono y plantel anterior
         $('#estudianteTelefonoContainer').hide();
         $('#estudiantePlantelContainer').hide();
-
-        // Desactivar validación HTML y limpiar valores
-        $('#estudianteCedula').prop('required', false).val('').attr('readonly', true);
         $('#estudianteTelefono').prop('required', false).val('');
 
         // Para el buscador de plantel, configurar el valor predeterminado
@@ -217,6 +231,15 @@ function abrirFormulario(idCurso, idNivel) {
         // Para todos los demás cursos, mostrar cédula (readonly hasta ingresar fecha)
         // El teléfono se mostrará/ocultará según la edad cuando se ingrese la fecha de nacimiento
         $('#estudianteCedulaContainer').show();
+
+        // Restaurar como campo requerido
+        const $cedulaFormGroup = $('#estudianteCedulaContainer .form-group');
+        $cedulaFormGroup.addClass('required-field'); // Añadir asterisco rojo
+
+        // Limpiar el label de "(Opcional)" si existía
+        const $cedulaLabel = $('#estudianteCedulaContainer label[for="estudianteCedula"]');
+        $cedulaLabel.find('small.text-muted').remove();
+
         $('#estudianteCedula').prop('required', true).attr('readonly', true);
 
         // Teléfono oculto por defecto, se mostrará cuando se ingrese fecha si edad >= 10
@@ -1156,22 +1179,37 @@ function instalarHandlersCedula() {
         const nacionalidad = $('#estudianteNacionalidad').val();
 
         const idNivelSeleccionado = parseInt(nivelSeleccionadoGlobal || 0);
-        // Si es nivel inicial, no hacemos verificación de existencia
-        if (idNivelSeleccionado === 1) return;
 
+        // Para nivel inicial: si está vacío, está ok (es opcional)
+        if (idNivelSeleccionado === 1 && !cedula) {
+            $input.removeClass('is-invalid is-valid');
+            return;
+        }
+
+        // Para nivel inicial: si escribió algo, validar que sea correcto
+        // Para otros niveles: validar normalmente (solo si no es nivel inicial)
         if (cedula && nacionalidad) {
-            verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
-                console.log('🔄 verificarCedulaExistente RESPUESTA - existe:', existe, 'cedula:', cedula);
-                if (existe) {
-                    console.log('❌ ESTUDIANTE YA EXISTE - añadiendo is-invalid');
-                    mostrarAlertaCedulaExistente(estado);
-                    $input.removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    // No existe, marcar como válido
-                    console.log('✅ ESTUDIANTE NO EXISTE - añadiendo is-valid');
-                    $input.removeClass('is-invalid').addClass('is-valid');
-                }
-            });
+            // Para nivel inicial, NO verificar si ya existe (permitir duplicados)
+            // Solo validar para otros niveles
+            if (idNivelSeleccionado !== 1) {
+                verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
+                    console.log('🔄 verificarCedulaExistente RESPUESTA - existe:', existe, 'cedula:', cedula);
+                    if (existe) {
+                        console.log('❌ ESTUDIANTE YA EXISTE - añadiendo is-invalid');
+                        mostrarAlertaCedulaExistente(estado);
+                        $input.removeClass('is-valid').addClass('is-invalid');
+                    } else {
+                        // No existe, marcar como válido
+                        console.log('✅ ESTUDIANTE NO EXISTE - añadiendo is-valid');
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                    }
+                });
+            } else {
+                // Nivel inicial: solo marcar como válido si tiene el formato correcto
+                // (la validación de formato ya la hace validaciones_solicitud.js en el input event)
+                console.log('✅ NIVEL INICIAL - cédula opcional pero con formato válido');
+                $input.removeClass('is-invalid').addClass('is-valid');
+            }
         }
     });
 
@@ -1198,12 +1236,58 @@ function instalarHandlersCedula() {
     });
 }
 
+/**
+ * Restaurar label "(Opcional)" si es nivel inicial y se perdió
+ */
+function preservarLabelOpcionalCedula() {
+    const $cedula = $('#estudianteCedula');
+    if ($cedula.attr('data-opcional-nivel-inicial') === 'true') {
+        const $cedulaLabel = $('#estudianteCedulaContainer label[for="estudianteCedula"]');
+        const $formGroup = $('#estudianteCedulaContainer .form-group');
+
+        // Restaurar label si se perdió
+        if ($cedulaLabel.find('.text-muted').length === 0) {
+            $cedulaLabel.append(' <small class="text-muted">(Opcional)</small>');
+        }
+
+        // Asegurar que no tenga la clase required-field
+        $formGroup.removeClass('required-field');
+
+        // Asegurar que no sea required
+        $cedula.prop('required', false);
+    }
+}
+
 // Llamar a la instalación cuando el formulario esté listo (ya tienes inicializarFormulario)
 $(document).ready(function () {
     instalarHandlersCedula();
     instalarValidacionCedulasDuplicadas();
     instalarValidacionLugarTrabajo();
     instalarCheckboxContactoEmergencia();
+
+    // Observar cambios en el DOM para preservar el label "(Opcional)"
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                preservarLabelOpcionalCedula();
+            }
+        });
+    });
+
+    // Observar el label de cédula
+    const cedulaLabel = document.querySelector('#estudianteCedulaContainer label[for="estudianteCedula"]');
+    if (cedulaLabel) {
+        observer.observe(cedulaLabel, {
+            childList: true,
+            characterData: true,
+            subtree: true
+        });
+    }
+
+    // También ejecutar en eventos clave
+    $('#estudianteFechaNacimiento, #estudianteCedula').on('change blur focus', function() {
+        preservarLabelOpcionalCedula();
+    });
 });
 
 /**
