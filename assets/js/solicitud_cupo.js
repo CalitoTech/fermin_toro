@@ -488,7 +488,7 @@ function enviarFormulario() {
     }
 
     // 3. Validación de datos de la madre (siempre requeridos)
-    const camposMadre = [
+    let camposMadre = [
         { id: 'madreNombres', nombre: 'Nombres de la madre' },
         { id: 'madreApellidos', nombre: 'Apellidos de la madre' },
         { id: 'madreCedula', nombre: 'Cédula de la madre' },
@@ -850,23 +850,8 @@ function inicializarFormulario() {
     // Por defecto, solo el estudiante está abierto
     $('.form-title').not(':first').addClass('collapsed');
 
-    // Validación de cédula al perder foco
-    $('#estudianteCedula').on('blur', function () {
-        const idNivelSeleccionado = parseInt(nivelSeleccionadoGlobal || 0);
-        // Si es nivel inicial, no hacemos verificación
-        if (idNivelSeleccionado === 1) return;
-
-        const nacionalidad = $('#estudianteNacionalidad').val();
-        const cedula = $(this).val();
-
-        if (nacionalidad && cedula) {
-            verificarCedulaExistente(cedula, nacionalidad, function (inscrito, estado) {
-                if (inscrito) {
-                    mostrarAlertaCedulaExistente(estado);
-                }
-            });
-        }
-    });
+    // NOTA: La validación de cédula al perder foco se maneja en instalarHandlersCedula()
+    // No necesitamos duplicar el event handler aquí
 
     // Manejo del envío del formulario (ASÍNCRONO)
     $(document).on('click', '#btnEnviarFormulario', async function (e) {
@@ -1166,12 +1151,25 @@ function mostrarAlertaCedulaExistente(estadoRaw) {
 function instalarHandlersCedula() {
     // blur en la cédula
     $('#estudianteCedula').off('blur.cedulaCheck').on('blur.cedulaCheck', function () {
-        const cedula = $(this).val().trim();
+        const $input = $(this);
+        const cedula = $input.val().trim();
         const nacionalidad = $('#estudianteNacionalidad').val();
+
+        const idNivelSeleccionado = parseInt(nivelSeleccionadoGlobal || 0);
+        // Si es nivel inicial, no hacemos verificación de existencia
+        if (idNivelSeleccionado === 1) return;
+
         if (cedula && nacionalidad) {
             verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
+                console.log('🔄 verificarCedulaExistente RESPUESTA - existe:', existe, 'cedula:', cedula);
                 if (existe) {
+                    console.log('❌ ESTUDIANTE YA EXISTE - añadiendo is-invalid');
                     mostrarAlertaCedulaExistente(estado);
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                } else {
+                    // No existe, marcar como válido
+                    console.log('✅ ESTUDIANTE NO EXISTE - añadiendo is-valid');
+                    $input.removeClass('is-invalid').addClass('is-valid');
                 }
             });
         }
@@ -1180,11 +1178,20 @@ function instalarHandlersCedula() {
     // si el usuario cambia la nacionalidad después de escribir la cédula, revalidamos
     $('#estudianteNacionalidad').off('change.cedulaCheck').on('change.cedulaCheck', function () {
         const nacionalidad = $(this).val();
-        const cedula = $('#estudianteCedula').val().trim();
+        const $cedulaInput = $('#estudianteCedula');
+        const cedula = $cedulaInput.val().trim();
+
+        const idNivelSeleccionado = parseInt(nivelSeleccionadoGlobal || 0);
+        if (idNivelSeleccionado === 1) return;
+
         if (cedula && nacionalidad) {
             verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
                 if (existe) {
                     mostrarAlertaCedulaExistente(estado);
+                    $cedulaInput.removeClass('is-valid').addClass('is-invalid');
+                } else {
+                    // No existe, marcar como válido
+                    $cedulaInput.removeClass('is-invalid').addClass('is-valid');
                 }
             });
         }
@@ -1365,10 +1372,14 @@ function instalarValidacionCedulasDuplicadas() {
 }
 
 function validarCedulaDuplicadaEnFormulario(cedulaId, nacionalidadId, nombrePersona) {
+    console.log('🔍 validarCedulaDuplicadaEnFormulario - INICIO', cedulaId);
     const cedula = $(`#${cedulaId}`).val();
     const nacionalidad = $(`#${nacionalidadId}`).val();
 
-    if (!cedula || !nacionalidad) return;
+    if (!cedula || !nacionalidad) {
+        console.log('⚠️ validarCedulaDuplicadaEnFormulario - SIN CEDULA O NACIONALIDAD');
+        return;
+    }
 
     const tipoRep = $('input[name="tipoRepresentante"]:checked').val();
     const cedulaCompleta = nacionalidad + '-' + cedula;
@@ -1438,11 +1449,13 @@ function validarCedulaDuplicadaEnFormulario(cedulaId, nacionalidadId, nombrePers
             confirmButtonText: 'Entendido'
         });
 
-        $(`#${cedulaId}`).addClass('is-invalid');
+        console.log('❌ HAY DUPLICADO - añadiendo is-invalid', cedulaId);
+        $(`#${cedulaId}`).addClass('is-invalid').removeClass('is-valid');
         $(`#${cedulaId}`).val('');
     } else {
-        // No hay duplicado, quitar clase invalid
-        $(`#${cedulaId}`).removeClass('is-invalid');
+        // No hay duplicado, marcar como válido
+        console.log('✅ NO HAY DUPLICADO - añadiendo is-valid', cedulaId);
+        $(`#${cedulaId}`).removeClass('is-invalid').addClass('is-valid');
     }
 }
 
@@ -1670,9 +1683,10 @@ function limpiarAutocompletado(tipo) {
     // CASO ESPECIAL: Contacto de emergencia
     if (prefijo === 'emergencia') {
         // Limpiar y habilitar campos de emergencia
-        $('#emergenciaNombre').prop('readonly', false).removeClass('is-valid is-invalid').val('');
-        $('#emergenciaNacionalidad').prop('disabled', false).removeClass('is-valid is-invalid');
-        $('#emergenciaCedula').prop('readonly', false).removeClass('is-valid is-invalid');
+        // NO remover is-valid/is-invalid de los campos - dejar que las validaciones lo manejen
+        $('#emergenciaNombre').prop('readonly', false).val('');
+        $('#emergenciaNacionalidad').prop('disabled', false);
+        $('#emergenciaCedula').prop('readonly', false);
 
         // Eliminar campo hidden
         $('#emergenciaIdPersonaExistente').remove();
@@ -1711,10 +1725,11 @@ function limpiarAutocompletado(tipo) {
 
     // CASO NORMAL: Padre, Madre, Representante Legal
     // Habilitar y limpiar campos básicos
-    $(`#${prefijo}Nombres`).prop('readonly', false).removeClass('is-valid is-invalid').val('');
-    $(`#${prefijo}Apellidos`).prop('readonly', false).removeClass('is-valid is-invalid').val('');
-    $(`#${prefijo}Nacionalidad`).prop('disabled', false).removeClass('is-valid is-invalid');
-    $(`#${prefijo}Cedula`).prop('readonly', false).removeClass('is-valid is-invalid');
+    // NO remover is-valid/is-invalid de los campos - dejar que las validaciones lo manejen
+    $(`#${prefijo}Nombres`).prop('readonly', false).val('');
+    $(`#${prefijo}Apellidos`).prop('readonly', false).val('');
+    $(`#${prefijo}Nacionalidad`).prop('disabled', false);
+    $(`#${prefijo}Cedula`).prop('readonly', false);
 
     // Eliminar campo hidden
     $(`#${prefijo}IdPersonaExistente`).remove();
@@ -1859,8 +1874,9 @@ function validarCedulaRepresentanteExistente(cedulaId, nacionalidadId, nombrePer
                     }
                 });
             } else {
-                // No existe, todo bien - limpiar cualquier autocompletado previo
-                $(`#${cedulaId}`).removeClass('is-invalid');
+                // No existe, todo bien - limpiar cualquier autocompletado previo y marcar como válido
+                console.log('✅ REPRESENTANTE NO EXISTE - añadiendo is-valid', cedulaId);
+                $(`#${cedulaId}`).removeClass('is-invalid').addClass('is-valid');
                 limpiarAutocompletado(tipoPersona);
             }
         })

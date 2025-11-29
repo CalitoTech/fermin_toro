@@ -106,6 +106,8 @@ function fechita(e) {
 
     function formatearTexto() {
         const input = document.getElementById('texto');
+        if (!input || !input.value) return;
+
         let palabras = input.value.split(' ');
         palabras = palabras.map(palabra => {
             if (palabra.length > 0) {
@@ -116,8 +118,22 @@ function fechita(e) {
         input.value = palabras.join(' ');
     }
 
-    function formatearTexto1() {
-        const input = document.getElementById('nombre');
+    function formatearTexto1(input) {
+        // Si no se pasa input, intentar obtener por ID 'nombre' (compatibilidad)
+        if (!input) {
+            input = document.getElementById('nombre');
+        }
+
+        // Si input es un evento, obtener el elemento target
+        if (input && input.target) {
+            input = input.target;
+        }
+
+        // Validar que input existe antes de continuar
+        if (!input || !input.value) {
+            return;
+        }
+
         let palabras = input.value.split(' ');
         palabras = palabras.map(palabra => {
             if (palabra.length > 0) {
@@ -128,8 +144,22 @@ function fechita(e) {
         input.value = palabras.join(' ');
     }
 
-    function formatearTexto2() {
-        const input = document.getElementById('apellido');
+    function formatearTexto2(input) {
+        // Si no se pasa input, intentar obtener por ID 'apellido' (compatibilidad)
+        if (!input) {
+            input = document.getElementById('apellido');
+        }
+
+        // Si input es un evento, obtener el elemento target
+        if (input && input.target) {
+            input = input.target;
+        }
+
+        // Validar que input existe antes de continuar
+        if (!input || !input.value) {
+            return;
+        }
+
         let palabras = input.value.split(' ');
         palabras = palabras.map(palabra => {
             if (palabra.length > 0) {

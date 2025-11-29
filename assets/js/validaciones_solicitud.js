@@ -62,10 +62,12 @@ class ValidadorFormulario {
                 e.target.value = valor;
             });
 
-            // Validar al perder foco
-            input.addEventListener('blur', (e) => {
-                this.validarCedula(config);
-            });
+            // NO validar al perder foco - dejar que solicitud_cupo.js maneje
+            // toda la validación de cédulas (incluyendo is-valid/is-invalid)
+            // para evitar conflictos con validaciones asíncronas
+            // input.addEventListener('blur', (e) => {
+            //     this.validarCedula(config);
+            // });
         });
     }
 
@@ -81,8 +83,9 @@ class ValidadorFormulario {
         const cedula = input.value.trim();
         const nacionalidad = nacionalidadInput.value;
 
-        // Limpiar estado anterior
-        this.limpiarError(input);
+        // NO limpiar estado anterior para cédulas - dejar que las validaciones
+        // personalizadas manejen las clases is-valid/is-invalid
+        // this.limpiarError(input);
 
         // Si está vacío y es requerido
         if (!cedula && input.hasAttribute('required')) {
@@ -121,8 +124,10 @@ class ValidadorFormulario {
             return false;
         }
 
-        // Marcar como válido visualmente
-        this.marcarValido(input);
+        // NO marcar como válido aquí - dejar que las validaciones personalizadas
+        // de solicitud_cupo.js lo hagan (verificación de duplicados y existencia)
+        // Solo nos aseguramos de que no esté marcado como inválido
+        input.classList.remove('is-invalid');
 
         return true;
     }
@@ -516,7 +521,8 @@ class ValidadorFormulario {
      * Limpiar error de un campo
      */
     limpiarError(input) {
-        input.classList.remove('is-invalid', 'is-valid');
+        // Solo remover is-invalid, preservar is-valid
+        input.classList.remove('is-invalid');
 
         // Eliminar error registrado
         this.erroresActivos.delete(input.id);

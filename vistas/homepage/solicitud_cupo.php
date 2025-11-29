@@ -410,7 +410,7 @@
                                             pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
                                             minlength="3" maxlength="40"
                                             onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
+                                            oninput="formatearTexto2(this)" placeholder="Ej: Rodríguez Gómez" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -420,7 +420,7 @@
                                             pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
                                             minlength="3" maxlength="40"
                                             onkeypress="return onlyText(event)"
-                                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
+                                            oninput="formatearTexto1(this)" placeholder="Ej: Juan Carlos" required>
                                         </div>
                                     </div>
                                 </div>
@@ -431,7 +431,7 @@
                                             <label for="estudianteLugarNacimiento">Lugar de Nacimiento</label>
                                             <input type="text" class="form-control" id="estudianteLugarNacimiento" name="estudianteLugarNacimiento"
                                             minlength="3" maxlength="40"
-                                            oninput="formatearTexto1()" placeholder="Ej: Araure, Portuguesa" required>
+                                            oninput="formatearTexto1(this)" placeholder="Ej: Araure, Portuguesa" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6" id="estudianteTelefonoContainer" style="display: none;">
@@ -652,9 +652,9 @@
 
     <!-- Tus scripts personalizados -->
     <script src="../../assets/js/buscador_generico.js"></script>
-    <script src="../../assets/js/validaciones_solicitud.js"></script>
-    <script src="../../assets/js/solicitud_cupo.js"></script>
-    <script src="../../assets/js/validacion.js"></script>
+    <script src="../../assets/js/validaciones_solicitud.js?v=5"></script>
+    <script src="../../assets/js/solicitud_cupo.js?v=11"></script>
+    <script src="../../assets/js/validacion.js?v=4"></script>
 
     <script>
         // Configuración global de Toastr

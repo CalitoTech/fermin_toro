@@ -32,21 +32,21 @@ $campos_persona = [
         'type' => 'text',
         'label' => 'Nombres',
         'col' => 6,
-        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1()" placeholder="Ej: María José"',
+        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1(this)" placeholder="Ej: María José"',
         'required' => true
     ],
     'Apellidos' => [
         'type' => 'text',
         'label' => 'Apellidos',
         'col' => 6,
-        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto2()" placeholder="Ej: García Pérez"',
+        'attrs' => 'pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto2(this)" placeholder="Ej: García Pérez"',
         'required' => true
     ],
     'Ocupacion' => [
         'type' => 'text',
         'label' => 'Ocupación',
         'col' => 6,
-        'attrs' => 'minlength="3" maxlength="40" onkeypress="return onlyText3(event)" oninput="formatearTexto1()" placeholder="Ej: Docente, Comerciante, Sin Empleo"',
+        'attrs' => 'minlength="3" maxlength="40" onkeypress="return onlyText3(event)" oninput="formatearTexto1(this)" placeholder="Ej: Docente, Comerciante, Sin Empleo"',
         'required' => true
     ],
     'TipoTrabajador' => [
@@ -69,7 +69,7 @@ $campos_persona = [
         'type' => 'text',
         'label' => 'Dirección de Habitación',
         'col' => 6,
-        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1()" placeholder="Ej: Calle Principal, Casa Nº 45"',
+        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1(this)" placeholder="Ej: Calle Principal, Casa Nº 45"',
         'required' => true
     ],
     'TelefonoHabitacion' => [
@@ -101,7 +101,7 @@ $campos_persona = [
         'type' => 'text',
         'label' => 'Lugar de Trabajo',
         'col' => 6,
-        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1()" placeholder="Ej: Farmacia Central, No Aplica"',
+        'attrs' => 'minlength="3" maxlength="40" oninput="formatearTexto1(this)" placeholder="Ej: Farmacia Central, No Aplica"',
         'required' => true,
         'conditional_required' => true  // Será manejado por JavaScript según tipo trabajador
     ],
@@ -347,20 +347,22 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
         echo '<hr style="border: none; border-top: 2px solid #c90000; margin: 2rem 0 1rem 0;">';
 
         // Contenedor del header con checkbox
-        echo '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding: 0.75rem 1rem; background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%); border-left: 4px solid #c90000; border-radius: 4px; box-shadow: 0 2px 4px rgba(201, 0, 0, 0.08);">';
+        echo '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%); border-left: 4px solid #c90000; border-radius: 6px; box-shadow: 0 2px 8px rgba(201, 0, 0, 0.1);">';
 
         // Título
-        echo '<h6 style="color: #c90000; font-weight: bold; margin: 0; display: flex; align-items: center;">';
+        echo '<h6 style="color: #c90000; font-weight: 600; margin: 0; display: flex; align-items: center;">';
         echo '<i class="fas fa-ambulance mr-2" style="font-size: 1.2rem;"></i>';
         echo '<span>Contacto de Emergencia</span>';
         echo '</h6>';
 
-        // Checkbox estilizado
-        echo '<div class="custom-control custom-checkbox" style="margin: 0;">';
-        echo '<input type="checkbox" class="custom-control-input" id="noTieneContactoEmergencia" name="noTieneContactoEmergencia">';
-        echo '<label class="custom-control-label" for="noTieneContactoEmergencia" style="color: #666; font-weight: 500; font-size: 0.875rem; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s ease;">';
-        echo '<i class="fas fa-ban" style="color: #dc3545; font-size: 0.9rem;"></i>';
-        echo '<span>No tengo contacto de emergencia</span>';
+        // Checkbox estilizado (sin usar custom-control de Bootstrap para evitar conflictos)
+        echo '<div style="display: flex; align-items: center; gap: 0.75rem;">';
+        echo '<label for="noTieneContactoEmergencia" style="display: flex; align-items: center; gap: 0.75rem; margin: 0; cursor: pointer; user-select: none; color: #666; font-weight: 500; font-size: 0.9rem; padding: 0.5rem 0.75rem; background: #ffffff; border: 1px solid #e0e0e0; border-radius: 6px; transition: all 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">';
+        echo '<input type="checkbox" id="noTieneContactoEmergencia" name="noTieneContactoEmergencia" style="width: 18px; height: 18px; cursor: pointer; accent-color: #dc3545; margin: 0; flex-shrink: 0;">';
+        echo '<div style="display: flex; align-items: center; gap: 0.5rem;">';
+        echo '<i class="fas fa-ban" style="color: #dc3545; font-size: 0.95rem;"></i>';
+        echo '<span style="white-space: nowrap;">No tengo contacto de emergencia</span>';
+        echo '</div>';
         echo '</label>';
         echo '</div>';
 
@@ -389,7 +391,7 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
         echo '<div class="col-md-4">';
         echo '<div class="form-group required-field">';
         echo '<label for="emergenciaNombre"><i class="fas fa-user mr-1" style="color: #c90000;"></i> Nombre Completo</label>';
-        echo '<input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1()" placeholder="Ej: Juan Pérez" required>';
+        echo '<input type="text" class="form-control" id="emergenciaNombre" name="emergenciaNombre" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+" minlength="3" maxlength="40" onkeypress="return onlyText(event)" oninput="formatearTexto1(this)" placeholder="Ej: Juan Pérez" required>';
         echo '</div>';
         echo '</div>';
 
