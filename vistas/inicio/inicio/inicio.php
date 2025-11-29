@@ -187,21 +187,108 @@ if (empty($perfilId) && isset($_SESSION['idPersona'])) {
     </main>
 <?php else: ?>
     <!-- === INTERFAZ ADMINISTRATIVA ORIGINAL === -->
-    <main class="main-content d-flex align-items-center justify-content-center">
-        <div class="text-center py-5">
-            <div class="mb-4"><img src="../../../assets/images/fermin.png" alt="Logo UECFT Araure" class="img-logo"></div>
-            <h1 class="display-5 fw-bold text-gray-800 mb-3">
-                Bienvenido/a, <span class="text-danger"><?php echo htmlspecialchars($userNombre . ' ' . $userApellido); ?></span> 👋
-            </h1>
-            <p class="lead text-muted mb-4">Ya puedes comenzar a gestionar el sistema educativo.</p>
-            <div class="btn-group">
-                <a href="../../inscripciones/inscripcion/inscripcion.php" class="btn btn-lg btn-danger px-4 shadow-sm">
-                    <i class="fas fa-edit me-2"></i>Insc. Pendientes
-                </a>
-                <a href="../../estudiantes/estudiante/estudiante.php" class="btn btn-lg btn-outline-secondary px-4 shadow-sm">
-                    <i class="fas fa-users me-2"></i>Estudiantes
-                </a>
+    <?php
+    // Obtener últimas inscripciones para el dashboard
+    require_once __DIR__ . '/../../../modelos/Inscripcion.php';
+    require_once __DIR__ . '/../../../config/conexion.php';
+    
+    $database = new Database();
+    $conexion = $database->getConnection();
+    $inscripcionModel = new Inscripcion($conexion);
+    
+    // Obtener todas las inscripciones y limitar a las últimas 10
+    $todasInscripciones = $inscripcionModel->obtenerTodas($perfilId, $_SESSION['idPersona']);
+    $ultimasInscripciones = array_slice(array_reverse($todasInscripciones), 0, 10);
+    ?>
+    
+    <main class="main-content">
+        <div class="container-fluid py-4">
+            <!-- Sección de Bienvenida -->
+            <div class="text-center mb-5">
+                <div class="mb-4"><img src="../../../assets/images/fermin.png" alt="Logo UECFT Araure" class="img-logo"></div>
+                <h1 class="display-5 fw-bold text-gray-800 mb-3">
+                    Bienvenido/a, <span class="text-danger"><?php echo htmlspecialchars($userNombre . ' ' . $userApellido); ?></span> 👋
+                </h1>
+                <p class="lead text-muted mb-4">Ya puedes comenzar a gestionar el sistema educativo.</p>
+                <div class="btn-group">
+                    <a href="../../inscripciones/inscripcion/inscripcion.php" class="btn btn-lg btn-danger px-4 shadow-sm">
+                        <i class="fas fa-edit me-2"></i>Insc. Pendientes
+                    </a>
+                    <a href="../../estudiantes/estudiante/estudiante.php" class="btn btn-lg btn-outline-secondary px-4 shadow-sm">
+                        <i class="fas fa-users me-2"></i>Estudiantes
+                    </a>
+                </div>
             </div>
+
+            <!-- Sección de Últimas Inscripciones -->
+            <?php if (!empty($ultimasInscripciones)): ?>
+            <div class="row justify-content-center">
+                <div class="col-12 col-xl-10">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-list me-2 text-danger"></i>
+                                Últimas Inscripciones
+                            </h5>
+                            <a href="../../inscripciones/inscripcion/inscripcion.php" class="btn btn-sm btn-outline-danger">
+                                Ver todas <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Código</th>
+                                            <th>Estudiante</th>
+                                            <th>Curso</th>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($ultimasInscripciones as $inscripcion): ?>
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    <?= htmlspecialchars($inscripcion['codigo_inscripcion']) ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <strong><?= htmlspecialchars($inscripcion['nombre_estudiante'] . ' ' . $inscripcion['apellido_estudiante']) ?></strong>
+                                            </td>
+                                            <td><?= htmlspecialchars($inscripcion['curso'] . ' - ' . $inscripcion['seccion']) ?></td>
+                                            <td><?= date('d/m/Y', strtotime($inscripcion['fecha_inscripcion'])) ?></td>
+                                            <td>
+                                                <?php
+                                                $badgeClass = match($inscripcion['IdStatus']) {
+                                                    11 => 'bg-success',      // Inscrito
+                                                    12 => 'bg-danger',       // Rechazada
+                                                    default => 'bg-warning text-dark'  // En proceso
+                                                };
+                                                ?>
+                                                <span class="badge <?= $badgeClass ?>">
+                                                    <?= htmlspecialchars($inscripcion['status']) ?>
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="../../inscripciones/inscripcion/ver_inscripcion.php?id=<?= $inscripcion['IdInscripcion'] ?>" 
+                                                   class="btn btn-sm btn-outline-primary" 
+                                                   title="Ver detalles de la inscripción">
+                                                    <i class="fas fa-eye me-1"></i>Ver Detalles
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
     </main>
 <?php endif; ?>
