@@ -308,9 +308,10 @@ if ($showDashboard) {
                                                 </td>
                                                 <td class="text-center">
                                                     <a href="../../inscripciones/inscripcion/ver_inscripcion.php?id=<?php echo $insc['IdInscripcion']; ?>" 
-                                                       class="btn btn-sm btn-outline-primary" 
-                                                       title="Ver detalles de la inscripción">
-                                                        <i class="fas fa-eye me-1"></i>Ver Detalles
+                                                       class="btn btn-sm btn-outline-primary rounded-circle p-0" 
+                                                       title="Ver detalles de la inscripción"
+                                                       style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;">
+                                                        <i class="fas fa-eye"></i>
                                                     </a>
                                                 </td>
                                             </tr>

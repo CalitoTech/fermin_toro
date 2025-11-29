@@ -218,7 +218,7 @@ html {
     border-radius: 8px;
     white-space: nowrap;
     padding: 8px 12px;
-    padding-right: 40px;
+    padding-right: 48px;
     transition: all var(--transition-normal);
     position: relative;
 }
@@ -467,7 +467,7 @@ html {
 /* Flecha de despliegue */
 .sidebar .nav-links .arrow {
     position: absolute;
-    right: 12px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 16px;
@@ -475,8 +475,8 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     color: var(--clr-white);
     z-index: 100;
     cursor: pointer;
