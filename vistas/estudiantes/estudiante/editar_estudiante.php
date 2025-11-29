@@ -66,6 +66,19 @@ require_once __DIR__ . '/../../../modelos/Telefono.php';
 $telefonoModel = new Telefono($conexion);
 $telefonos = $telefonoModel->obtenerPorPersona($id);
 
+// === HISTORIAL DE CAMBIOS ===
+require_once __DIR__ . '/../../../modelos/HistorialCambios.php';
+$historialModel = new HistorialCambios($conexion);
+$ultimoCambio = $historialModel->obtenerUltimoCambioPersona($id);
+
+if ($ultimoCambio) {
+    $nombreModificador = htmlspecialchars($ultimoCambio['usuario_nombre'] . ' ' . $ultimoCambio['usuario_apellido']);
+    $fechaModificacion = date('d/m/Y H:i', strtotime($ultimoCambio['fecha_cambio']));
+} else {
+    $nombreModificador = 'Sin cambios registrados';
+    $fechaModificacion = 'Sin cambios registrados';
+}
+
 // === ALERTAS ===
 $alert = $_SESSION['alert'] ?? null;
 unset($_SESSION['alert']);
@@ -304,6 +317,8 @@ function esc($v) { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
 
 <?php include '../../layouts/footer.php'; ?>
 
+<script src="../../../assets/js/validaciones_solicitud.js"></script>
+<script src="../../../assets/js/validaciones_estudiante.js"></script>
 <script>
 // --- Validación de cédula según edad ---
 document.addEventListener('DOMContentLoaded', () => {

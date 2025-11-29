@@ -125,7 +125,7 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                     formData.append('idInscripcion', idInscripcion);
                     formData.append('nuevoStatus', nuevoId);
 
-                    fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+                    fetch('/fermin_toro/controladores/InscripcionController.php', {
                         method: 'POST',
                         body: formData
                     })
@@ -368,7 +368,7 @@ function manejarRequisitos(idInscripcion) {
                 didOpen: () => Swal.showLoading()
             });
 
-            fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+            fetch('/fermin_toro/controladores/InscripcionController.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=toggleRequisito&idInscripcion=${idInscripcion}&idRequisito=${idRequisito}&cumplido=${cumplido}`
@@ -423,7 +423,7 @@ function manejarRequisitos(idInscripcion) {
 
         const formData = new FormData(this);
 
-        fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+        fetch('/fermin_toro/controladores/InscripcionController.php', {
             method: 'POST',
             body: formData
         })
@@ -552,7 +552,7 @@ function cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTe
     formData.append('idInscripcion', idInscripcion);
     formData.append('nuevaSeccion', nuevaSeccionId);
 
-    fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+    fetch('/fermin_toro/controladores/InscripcionController.php', {
         method: 'POST',
         body: formData
     })
@@ -661,7 +661,7 @@ function manejarValidacionPago(idInscripcion, idInscrito) {
 
         try {
             // Primero verificar si es repitiente
-            const responseRepitiente = await fetch(`/mis_apps/fermin_toro/controladores/InscripcionController.php?action=verificarRepitiente&idInscripcion=${idInscripcion}`);
+            const responseRepitiente = await fetch(`/fermin_toro/controladores/InscripcionController.php?action=verificarRepitiente&idInscripcion=${idInscripcion}`);
             const dataRepitiente = await responseRepitiente.json();
 
             if (dataRepitiente.success && dataRepitiente.esRepitiente) {
@@ -731,7 +731,7 @@ async function procesarInscripcionConRepitiente(idInscripcion, codigoPago, repit
         formDataPago.append('idInscripcion', idInscripcion);
         formDataPago.append('codigoPago', codigoPago);
 
-        const responsePago = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+        const responsePago = await fetch('/fermin_toro/controladores/InscripcionController.php', {
             method: 'POST',
             body: formDataPago
         });
@@ -758,7 +758,7 @@ async function procesarInscripcionConRepitiente(idInscripcion, codigoPago, repit
             formDataRepite.append('idInscripcion', idInscripcion);
             formDataRepite.append('repite', 'true');
 
-            const responseRepite = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+            const responseRepite = await fetch('/fermin_toro/controladores/InscripcionController.php', {
                 method: 'POST',
                 body: formDataRepite
             });
@@ -829,7 +829,7 @@ async function procesarInscripcionNormal(idInscripcion, codigoPago, modal, input
         formData.append('idInscripcion', idInscripcion);
         formData.append('codigoPago', codigoPago);
 
-        const response = await fetch('/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+        const response = await fetch('/fermin_toro/controladores/InscripcionController.php', {
             method: 'POST',
             body: formData
         });
@@ -912,7 +912,7 @@ function manejarHistorial(idInscripcion) {
             historialContent.innerHTML = '<div class="text-center py-3"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</div>';
 
             try {
-                const response = await fetch(`/mis_apps/fermin_toro/controladores/InscripcionController.php?action=obtenerHistorial&idInscripcion=${idInscripcion}`);
+                const response = await fetch(`/fermin_toro/controladores/InscripcionController.php?action=obtenerHistorial&idInscripcion=${idInscripcion}`);
                 const data = await response.json();
 
                 if (data.success && data.historial.length > 0) {

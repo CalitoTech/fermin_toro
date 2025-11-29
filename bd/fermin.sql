@@ -491,10 +491,12 @@ CREATE TABLE inscripcion (
     INDEX idx_codigo_pago (codigo_pago)
 );
 
--- Tabla para registrar el historial de cambios en las inscripciones
-CREATE TABLE inscripcion_historial (
+-- Tabla para registrar el historial de cambios en inscripciones y personas
+CREATE TABLE historial_cambios (
     IdHistorial int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    IdInscripcion int NOT NULL,
+    IdInscripcion int NULL COMMENT 'ID de la inscripción (NULL si el cambio es en persona)',
+    IdPersona int NULL COMMENT 'ID de la persona (NULL si el cambio es en inscripción)',
+    tipo_entidad ENUM('inscripcion', 'persona') NOT NULL DEFAULT 'inscripcion' COMMENT 'Tipo de entidad modificada',
     campo_modificado varchar(50) NOT NULL COMMENT 'Nombre del campo que fue modificado',
     valor_anterior varchar(255) DEFAULT NULL COMMENT 'Valor antes del cambio',
     valor_nuevo varchar(255) DEFAULT NULL COMMENT 'Valor después del cambio',
@@ -502,10 +504,16 @@ CREATE TABLE inscripcion_historial (
     fecha_cambio datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     IdUsuario int NOT NULL COMMENT 'IdPersona del usuario que realizó el cambio',
     FOREIGN KEY (IdInscripcion) REFERENCES inscripcion(IdInscripcion) ON DELETE CASCADE,
+    FOREIGN KEY (IdPersona) REFERENCES persona(IdPersona) ON DELETE CASCADE,
     FOREIGN KEY (IdUsuario) REFERENCES persona(IdPersona),
     INDEX idx_inscripcion (IdInscripcion),
-    INDEX idx_fecha (fecha_cambio)
-);
+    INDEX idx_persona (IdPersona),
+    INDEX idx_fecha (fecha_cambio),
+    CONSTRAINT chk_historial_tipo CHECK (
+        (IdInscripcion IS NOT NULL AND IdPersona IS NULL) OR
+        (IdInscripcion IS NULL AND IdPersona IS NOT NULL)
+    )
+) COMMENT = 'Historial de cambios para inscripciones y personas';
 
 CREATE TABLE inscripcion_requisito (
     IdInscripcionRequisito int NOT NULL AUTO_INCREMENT PRIMARY KEY,

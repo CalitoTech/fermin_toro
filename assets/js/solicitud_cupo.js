@@ -225,10 +225,10 @@ function abrirFormulario(idCurso, idNivel) {
                               .text().trim();
 
     if (cursoSeleccionado) {
-        $('#formularioModalLabel').html(`Formulario de Inscripción - ${cursoSeleccionado}`);
+        $('#formularioModalLabel').html(`Formulario de Solicitud de Cupo - ${cursoSeleccionado}`);
         $('#formularioModal').modal('show');
     } else {
-        $('#formularioModalLabel').html('Formulario de Inscripción');
+        $('#formularioModalLabel').html('Formulario de Solicitud de Cupo');
         $('#formularioModal').modal('show');
     }
 }
@@ -740,7 +740,7 @@ function enviarFormularioFinal(formData, btn) {
     formData.append('IdCurso', $('#idCursoSeleccionado').val());
 
     // Enviar formulario
-    fetch('http://localhost/mis_apps/fermin_toro/controladores/InscripcionController.php', {
+    fetch('http://localhost/fermin_toro/controladores/InscripcionController.php', {
         method: 'POST',
         body: formData
     })

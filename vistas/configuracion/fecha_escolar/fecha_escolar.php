@@ -145,7 +145,8 @@ if ($alert) {
                                         $conexion = $database->getConnection();
 
                                         $query = "SELECT IdFecha_Escolar, fecha_escolar,
-                                                  inscripcion_activa, fecha_activa, renovacion_activa
+                                                  inscripcion_activa, fecha_activa
+                                                --   , renovacion_activa
                                                   FROM fecha_escolar
                                                   ORDER BY fecha_escolar DESC";
                                         $stmt = $conexion->prepare($query);
@@ -289,35 +290,35 @@ if ($alert) {
     `;
 
         // === NUEVO: Toggle de renovación ===
-        const renovacionChecked = item.renovacion_activa == 1 ? 'checked' : '';
-        const renovacionTitle = toggleDisabled
-            ? 'Solo disponible si el año escolar está activo'
-            : 'Activar/desactivar renovaciones de cupo';
+    //     const renovacionChecked = item.renovacion_activa == 1 ? 'checked' : '';
+    //     const renovacionTitle = toggleDisabled
+    //         ? 'Solo disponible si el año escolar está activo'
+    //         : 'Activar/desactivar renovaciones de cupo';
 
-        const renovacionHTML = `
-        <div class="text-center">
-            <label class="toggle-label" title="${renovacionTitle}">
-                <span class="toggle-text">${item.renovacion_activa == 1 ? 'Sí' : 'No'}</span>
-                <div class="toggle-container">
-                    <input
-                        type="checkbox"
-                        class="toggle-input toggle-renovacion"
-                        data-id="${item.IdFecha_Escolar}"
-                        ${renovacionChecked}
-                        ${toggleDisabled ? 'disabled' : ''}
-                    >
-                    <span class="toggle-slider"></span>
-                </div>
-            </label>
-        </div>
-    `;
+    //     const renovacionHTML = `
+    //     <div class="text-center">
+    //         <label class="toggle-label" title="${renovacionTitle}">
+    //             <span class="toggle-text">${item.renovacion_activa == 1 ? 'Sí' : 'No'}</span>
+    //             <div class="toggle-container">
+    //                 <input
+    //                     type="checkbox"
+    //                     class="toggle-input toggle-renovacion"
+    //                     data-id="${item.IdFecha_Escolar}"
+    //                     ${renovacionChecked}
+    //                     ${toggleDisabled ? 'disabled' : ''}
+    //                 >
+    //                 <span class="toggle-slider"></span>
+    //             </div>
+    //         </label>
+    //     </div>
+    // `;
 
         return {
             ...item,
             // Texto plano para búsquedas
             fecha_activa_text: item.fecha_activa == 1 ? 'Activo' : 'Inactivo',
             inscripcion_activa_text: item.inscripcion_activa == 1 ? 'Sí' : 'No',
-            renovacion_activa_text: item.renovacion_activa == 1 ? 'Sí' : 'No',
+            // renovacion_activa_text: item.renovacion_activa == 1 ? 'Sí' : 'No',
 
             // Elementos HTML para renderizar
             fecha_activa: item.fecha_activa == 1
@@ -325,7 +326,7 @@ if ($alert) {
                 : '<span class="badge bg-secondary">Inactivo</span>',
 
             inscripcion_activa: inscripcionHTML,
-            renovacion_activa: renovacionHTML,
+            // renovacion_activa: renovacionHTML,
 
             // Acciones
             acciones: accionesHTML
@@ -347,7 +348,7 @@ if ($alert) {
                 { label: 'Año Escolar', key: 'fecha_escolar', searchKey: 'fecha_activa_text'},
                 { label: 'Estado', key: 'fecha_activa', searchKey: 'inscripcion_activa_text'},
                 { label: '¿Aceptar Inscripciones?', key: 'inscripcion_activa', searchKey: 'inscripcion_activa_text'},
-                { label: '¿Aceptar Renovaciones?', key: 'renovacion_activa', searchKey: 'renovacion_activa_text'},
+                // { label: '¿Aceptar Renovaciones?', key: 'renovacion_activa', searchKey: 'renovacion_activa_text'},
                 {
                     label: 'Acciones',
                     key: 'acciones',
@@ -367,7 +368,7 @@ if ($alert) {
 
 
         inicializarToggleInscripcion();
-        inicializarToggleRenovacion();
+        // inicializarToggleRenovacion();
     });
 
     // === FUNCIONES ===

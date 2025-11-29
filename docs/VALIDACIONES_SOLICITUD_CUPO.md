@@ -373,7 +373,7 @@ const camposTelefono = [
 1. Controlador existe: `controladores/TelefonoController.php`
 2. Endpoint responde: Abrir en navegador:
    ```
-   http://localhost/mis_apps/fermin_toro/controladores/TelefonoController.php?action=verificarTelefono&telefono=4121234567&prefijo=1
+   http://localhost/fermin_toro/controladores/TelefonoController.php?action=verificarTelefono&telefono=4121234567&prefijo=1
    ```
 3. Debe retornar JSON válido
 

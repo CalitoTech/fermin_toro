@@ -3,6 +3,7 @@
 session_start();
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/Persona.php';
+require_once __DIR__ . '/../utils/Validador.php';
 
 
 try {
@@ -30,9 +31,32 @@ try {
     $conn = $db->getConnection();
     $persona = new Persona($conn);
 
+    // === 🔒 VALIDACIONES DEL LADO DEL SERVIDOR ===
+
+    // Validar nombre (obligatorio)
+    Validador::nombreValido($_POST['nombre'] ?? '');
+
+    // Validar apellido (obligatorio)
+    Validador::apellidoValido($_POST['apellido'] ?? '');
+
+    // Validar cédula (obligatoria para representantes, siempre 7-8 dígitos)
+    Validador::validarCedula($_POST['cedula'] ?? '', true, false);
+
+    // Validar correo (opcional)
+    Validador::validarCorreo($_POST['correo'] ?? '', false);
+
+    // Validar dirección (opcional)
+    Validador::validarDireccion($_POST['direccion'] ?? '', false);
+
+    // Validar ocupación (opcional)
+    Validador::validarTexto($_POST['ocupacion'] ?? '', 'La ocupación', 3, 100, false);
+
+    // Validar lugar de trabajo (opcional)
+    Validador::validarTexto($_POST['lugar_trabajo'] ?? '', 'El lugar de trabajo', 3, 100, false);
+
     // Verificar duplicado de cédula (excepto él mismo)
     $stmtCheck = $conn->prepare("
-        SELECT IdPersona FROM persona 
+        SELECT IdPersona FROM persona
         WHERE cedula = :cedula AND IdPersona != :id
         LIMIT 1
     ");
@@ -48,26 +72,33 @@ try {
         exit();
     }
 
-    // Asignar valores al modelo Persona
+    // Asignar valores al modelo Persona (sanitizados)
     $persona->IdPersona = $idPersona;
-    $persona->cedula = $_POST['cedula'];
-    $persona->nombre = $_POST['nombre'];
-    $persona->apellido = $_POST['apellido'];
-    $persona->correo = $_POST['correo'];
-    $persona->direccion = $_POST['direccion'];
+    $persona->cedula = Validador::sanitizar($_POST['cedula']);
+    $persona->nombre = Validador::sanitizar($_POST['nombre']);
+    $persona->apellido = Validador::sanitizar($_POST['apellido']);
+    $persona->correo = !empty($_POST['correo']) ? Validador::sanitizar($_POST['correo']) : null;
+    $persona->direccion = !empty($_POST['direccion']) ? Validador::sanitizar($_POST['direccion']) : null;
     $persona->IdNacionalidad = $_POST['idNacionalidad'] ?? null;
     $persona->IdSexo = $_POST['idSexo'] ?? null;
     $persona->IdUrbanismo = $_POST['urbanismo'] ?? null;
-    $persona->IdEstadoAcceso = isset($_POST['idEstadoAcceso']) && $_POST['idEstadoAcceso'] !== '' 
-        ? (int)$_POST['idEstadoAcceso'] 
+    $persona->IdEstadoAcceso = isset($_POST['idEstadoAcceso']) && $_POST['idEstadoAcceso'] !== ''
+        ? (int)$_POST['idEstadoAcceso']
         : null;
 
-    $persona->IdEstadoInstitucional = isset($_POST['idEstadoInstitucional']) && $_POST['idEstadoInstitucional'] !== '' 
-        ? (int)$_POST['idEstadoInstitucional'] 
+    $persona->IdEstadoInstitucional = isset($_POST['idEstadoInstitucional']) && $_POST['idEstadoInstitucional'] !== ''
+        ? (int)$_POST['idEstadoInstitucional']
         : null;
 
     $telefonos = $_POST['telefono'] ?? [];
     $tipos = $_POST['tipo_telefono'] ?? [];
+
+    // Validar teléfonos
+    foreach ($telefonos as $telefono) {
+        if (!empty(trim($telefono))) {
+            Validador::validarTelefono($telefono, false);
+        }
+    }
 
     $conn->beginTransaction();
 

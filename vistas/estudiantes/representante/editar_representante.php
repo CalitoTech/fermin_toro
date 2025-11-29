@@ -260,7 +260,8 @@ function selected($a, $b) { return $a == $b ? 'selected' : ''; }
                                     <?php foreach ($telefonos as $t): ?>
                                         <div class="row g-2 mb-2 phone-group">
                                             <div class="col-md-6">
-                                                <input type="text" name="telefono[]" class="form-control" placeholder="Número" value="<?= htmlspecialchars($t['numero_telefono']) ?>">
+                                                <input type="text" name="telefono[]" class="form-control" placeholder="Número" value="<?= htmlspecialchars($t['numero_telefono']) ?>"
+                                                       pattern="[0-9]+" minlength="10" maxlength="10">
                                             </div>
                                             <div class="col-md-4">
                                                 <select name="tipo_telefono[]" class="form-select">
@@ -279,7 +280,8 @@ function selected($a, $b) { return $a == $b ? 'selected' : ''; }
                                 <?php else: ?>
                                     <div class="row g-2 mb-2 phone-group">
                                         <div class="col-md-6">
-                                            <input type="text" name="telefono[]" class="form-control" placeholder="Número">
+                                            <input type="text" name="telefono[]" class="form-control" placeholder="Número"
+                                                   pattern="[0-9]+" minlength="10" maxlength="10">
                                         </div>
                                         <div class="col-md-4">
                                             <select name="tipo_telefono[]" class="form-select">
@@ -313,13 +315,15 @@ function selected($a, $b) { return $a == $b ? 'selected' : ''; }
 
 <?php include '../../layouts/footer.php'; ?>
 
+<script src="../../../assets/js/validaciones_solicitud.js"></script>
+<script src="../../../assets/js/validaciones_representante.js"></script>
 <script>
 document.querySelector('.add-phone').addEventListener('click', () => {
     const container = document.getElementById('telefonos-container');
     const html = `
         <div class="row g-2 mb-2 phone-group">
             <div class="col-md-6">
-                <input type="text" name="telefono[]" class="form-control" placeholder="Número">
+                <input type="text" name="telefono[]" class="form-control" placeholder="Número" pattern="[0-9]+" minlength="10" maxlength="10">
             </div>
             <div class="col-md-4">
                 <select name="tipo_telefono[]" class="form-select">

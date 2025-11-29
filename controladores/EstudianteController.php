@@ -4,6 +4,7 @@ session_start();
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/Persona.php';
 require_once __DIR__ . '/../modelos/Telefono.php';
+require_once __DIR__ . '/../utils/Validador.php';
 
 try {
     // --- Validar sesión ---
@@ -34,10 +35,37 @@ try {
     $persona = new Persona($conn);
     $telefonoModel = new Telefono($conn);
 
+    // === 🔒 VALIDACIONES DEL LADO DEL SERVIDOR ===
+
+    // Validar nombre (obligatorio)
+    Validador::nombreValido($_POST['nombre'] ?? '');
+
+    // Validar apellido (obligatorio)
+    Validador::apellidoValido($_POST['apellido'] ?? '');
+
+    // Validar fecha de nacimiento (obligatorio) y determinar si es cédula escolar
+    $fechaNacimiento = $_POST['fecha_nacimiento'] ?? '';
+    Validador::validarFechaNacimiento($fechaNacimiento, 3, 25);
+
+    // Calcular edad para determinar tipo de cédula
+    $fecha = new DateTime($fechaNacimiento);
+    $hoy = new DateTime();
+    $edad = $hoy->diff($fecha)->y;
+    $esCedulaEscolar = ($edad >= 3 && $edad <= 9);
+
+    // Validar cédula (opcional, pero si se proporciona debe ser válida)
+    Validador::validarCedula($_POST['cedula'] ?? '', false, $esCedulaEscolar);
+
+    // Validar correo (opcional)
+    Validador::validarCorreo($_POST['correo'] ?? '', false);
+
+    // Validar dirección (opcional)
+    Validador::validarDireccion($_POST['direccion'] ?? '', false);
+
     // --- Verificar duplicado de cédula ---
     if (!empty($_POST['cedula'])) {
         $stmtCheck = $conn->prepare("
-            SELECT IdPersona FROM persona 
+            SELECT IdPersona FROM persona
             WHERE cedula = :cedula AND IdPersona != :id
             LIMIT 1
         ");
@@ -54,14 +82,14 @@ try {
         }
     }
 
-    // --- Asignar valores a Persona ---
+    // --- Asignar valores a Persona (sanitizados) ---
     $persona->IdPersona = $idPersona;
-    $persona->cedula = $_POST['cedula'] ?? null;
-    $persona->nombre = $_POST['nombre'] ?? null;
-    $persona->apellido = $_POST['apellido'] ?? null;
-    $persona->correo = $_POST['correo'] ?? null;
-    $persona->direccion = $_POST['direccion'] ?? null;
-    $persona->fecha_nacimiento = $_POST['fecha_nacimiento'] ?? null;
+    $persona->cedula = !empty($_POST['cedula']) ? Validador::sanitizar($_POST['cedula']) : null;
+    $persona->nombre = Validador::sanitizar($_POST['nombre']);
+    $persona->apellido = Validador::sanitizar($_POST['apellido']);
+    $persona->correo = !empty($_POST['correo']) ? Validador::sanitizar($_POST['correo']) : null;
+    $persona->direccion = !empty($_POST['direccion']) ? Validador::sanitizar($_POST['direccion']) : null;
+    $persona->fecha_nacimiento = $fechaNacimiento;
     $persona->IdNacionalidad = !empty($_POST['IdNacionalidad']) ? (int)$_POST['IdNacionalidad'] : null;
     $persona->IdSexo = !empty($_POST['IdSexo']) ? (int)$_POST['IdSexo'] : null;
     $persona->IdUrbanismo = !empty($_POST['IdUrbanismo']) ? (int)$_POST['IdUrbanismo'] : null;
@@ -69,6 +97,13 @@ try {
     // --- Datos de teléfonos ---
     $telefonos = $_POST['phone_numero'] ?? [];
     $tiposTelefono = $_POST['phone_tipo'] ?? [];
+
+    // Validar teléfonos
+    foreach ($telefonos as $telefono) {
+        if (!empty(trim($telefono))) {
+            Validador::validarTelefono($telefono, false);
+        }
+    }
 
     // --- Datos de discapacidades ---
     $tiposDiscapacidad = $_POST['disc_tipo'] ?? [];
