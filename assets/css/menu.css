@@ -467,17 +467,20 @@ html {
 /* Flecha de despliegue */
 .sidebar .nav-links .arrow {
     position: absolute;
-    right: 20px;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 16px;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    line-height: 40px;
+    width: 24px;
+    height: 24px;
     color: var(--clr-white);
     z-index: 100;
     cursor: pointer;
+    pointer-events: none;
 }
 
 /* Ocultar flechas cuando está cerrado */
@@ -487,7 +490,7 @@ html {
 
 /* Rotar flecha al desplegar */
 .sidebar .nav-links li.showMenu .arrow {
-    transform: rotate(-180deg);
+    transform: translateY(-50%) rotate(-180deg);
 }
 
 /* Home Section */

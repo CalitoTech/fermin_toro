@@ -150,7 +150,7 @@ if ($showDashboard) {
         $chartData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // 6. Últimas 5 Inscripciones
-        $stmt = $db->prepare("SELECT p.nombre, p.apellido, c.curso, i.fecha_inscripcion, s.status, s.IdStatus
+        $stmt = $db->prepare("SELECT i.IdInscripcion, p.nombre, p.apellido, c.curso, i.fecha_inscripcion, s.status, s.IdStatus
                              FROM inscripcion i
                              JOIN persona p ON i.IdEstudiante = p.IdPersona
                              JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
@@ -276,6 +276,7 @@ if ($showDashboard) {
                                         <th>Curso</th>
                                         <th>Fecha</th>
                                         <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -305,11 +306,18 @@ if ($showDashboard) {
                                                         <?php echo htmlspecialchars($insc['status']); ?>
                                                     </span>
                                                 </td>
+                                                <td class="text-center">
+                                                    <a href="../../inscripciones/inscripcion/ver_inscripcion.php?id=<?php echo $insc['IdInscripcion']; ?>" 
+                                                       class="btn btn-sm btn-outline-primary" 
+                                                       title="Ver detalles de la inscripción">
+                                                        <i class="fas fa-eye me-1"></i>Ver Detalles
+                                                    </a>
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted py-3">No hay inscripciones recientes</td>
+                                            <td colspan="5" class="text-center text-muted py-3">No hay inscripciones recientes</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
