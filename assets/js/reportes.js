@@ -23,7 +23,7 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
     // Obtener la tabla del DOM
     const tablaActual = document.querySelector(selectorTabla);
 
-    if(!tablaActual) {
+    if (!tablaActual) {
         console.error('No se encontró la tabla con el selector:', selectorTabla);
         return;
     }
@@ -213,10 +213,7 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
 
                 /* Footer */
                 .reporte-footer {
-                    position: fixed;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
+                    width: 100%;
                     background: white;
                     padding: 10px 30px;
                     border-top: 1px solid var(--border-color);
@@ -225,6 +222,7 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
+                    margin-top: 10px;
                 }
 
                 .footer-left {
@@ -239,7 +237,7 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
                 /* Ajustes de Impresión */
                 @media print {
                     @page {
-                        margin: 10mm 10mm 20mm 10mm;
+                        margin: 10mm 10mm 10mm 10mm;
                         size: auto;
                     }
 
@@ -259,8 +257,8 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
                     }
 
                     .reporte-footer {
-                        position: fixed;
-                        bottom: 0;
+                        position: relative;
+                        bottom: auto;
                     }
                     
                     .reporte-tabla {
@@ -318,92 +316,104 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
             </div>
             
             <script>
-                // Calcular total de páginas basado en el contenido
-                function calcularTotalPaginas() {
-                    const body = document.body;
-                    const html = document.documentElement;
-                    
-                    // Altura total del documento
-                    const alturaTotal = Math.max(
-                        body.scrollHeight,
-                        body.offsetHeight,
-                        html.clientHeight,
-                        html.scrollHeight,
-                        html.offsetHeight
-                    );
-                    
-                    // Altura de una página A4 en px (aproximadamente 1123px a 96dpi)
-                    const alturaPagina = 1047; // px de contenido útil por página
-                    
-                    // Calcular número de páginas
-                    const numPaginas = Math.max(1, Math.ceil(alturaTotal / alturaPagina));
-                    
-                    return numPaginas;
-                }
-                
-                // Crear footers dinámicos para cada página
+                // Reorganizar la tabla en páginas y agregar footers dinámicos
                 function crearFootersParaCadaPagina() {
-                    const totalPaginas = calcularTotalPaginas();
-                    const pageInfo = document.getElementById('pageInfo');
-                    
-                    if (!pageInfo) {
-                        return;
-                    }
-                    
-                    // Actualizar el footer original con el total
-                    pageInfo.textContent = '1 / ' + totalPaginas;
-                    
-                    // Si solo hay una página, no hacer nada más
-                    if (totalPaginas <= 1) {
-                        return;
-                    }
-                    
-                    // Clonar el footer original para cada página adicional
-                    const footerOriginal = document.querySelector('.reporte-footer');
-                    const tabla = document.querySelector('.reporte-tabla tbody');
-                    
-                    if (!footerOriginal || !tabla) {
-                        return;
-                    }
-                    
-                    // Altura de página
-                    const alturaPagina = 1047;
+                    const container = document.querySelector('.container');
+                    const originalTable = document.querySelector('.reporte-tabla');
+                    const footerTemplate = document.querySelector('.reporte-footer');
                     const header = document.querySelector('.reporte-header');
-                    const thead = document.querySelector('.reporte-tabla thead');
                     
-                    let alturaAcumulada = (header ? header.offsetHeight : 0) + (thead ? thead.offsetHeight : 0) + 40;
-                    let paginaActual = 1;
+                    if (!container || !originalTable || !footerTemplate) return;
                     
-                    const filas = Array.from(tabla.querySelectorAll('tr'));
+                    // 1. Medir filas antes de manipular el DOM
+                    const rows = Array.from(originalTable.querySelectorAll('tbody tr'));
+                    const rowHeights = rows.map(row => row.offsetHeight);
+                    const headerHeight = header ? header.offsetHeight : 0;
+                    const thead = originalTable.querySelector('thead');
+                    const theadHeight = thead ? thead.offsetHeight : 0;
+                    const footerHeight = footerTemplate ? footerTemplate.offsetHeight : 50;
                     
-                    filas.forEach((fila, index) => {
-                        const alturaFila = fila.offsetHeight;
-                        
-                        // Si excedemos el límite de la página
-                        if (alturaAcumulada + alturaFila > alturaPagina * paginaActual) {
-                            // Insertar salto de página
-                            const divSalto = document.createElement('div');
-                            divSalto.style.pageBreakBefore = 'always';
-                            divSalto.style.height = '0';
-                            fila.parentNode.insertBefore(divSalto, fila);
-                            
-                            // Crear y agregar footer para esta página
-                            paginaActual++;
-                            const nuevoFooter = footerOriginal.cloneNode(true);
-                            const pageInfoClone = nuevoFooter.querySelector('.footer-right');
-                            if (pageInfoClone) {
-                                pageInfoClone.textContent = paginaActual + ' / ' + totalPaginas;
-                            }
-                            
-                            // Insertar el footer después del salto
-                            divSalto.appendChild(nuevoFooter);
-                            
-                            // Resetear altura para la nueva página
-                            alturaAcumulada = (header ? header.offsetHeight : 0) + (thead ? thead.offsetHeight : 0) + alturaFila;
-                        } else {
-                            alturaAcumulada += alturaFila;
+                    // 2. Preparar reconstrucción
+                    const tableHeaderHTML = thead ? thead.outerHTML : '';
+                    originalTable.remove();
+                    footerTemplate.remove(); 
+                    
+                    // Altura segura para A4 (aprox 1123px total - 20mm márgenes verticales = ~1047px)
+                    // Dejamos un margen de seguridad
+                    const PAGE_HEIGHT = 1000; 
+                    
+                    let currentPageHeight = headerHeight + 40; // Altura inicial (header + márgenes)
+                    let pageIndex = 1;
+                    
+                    // Función auxiliar para crear tabla
+                    const createTable = () => {
+                        const table = document.createElement('table');
+                        table.className = 'reporte-tabla';
+                        table.innerHTML = tableHeaderHTML + '<tbody></tbody>';
+                        return table;
+                    };
+
+                    // Función auxiliar para agregar spacer y footer
+                    const appendFooter = (pIndex) => {
+                        // Calcular espacio restante para empujar el footer al final
+                        const remainingSpace = PAGE_HEIGHT - currentPageHeight - footerHeight;
+                        if (remainingSpace > 0) {
+                            const spacer = document.createElement('div');
+                            spacer.style.height = remainingSpace + 'px';
+                            container.appendChild(spacer);
                         }
+
+                        const footer = footerTemplate.cloneNode(true);
+                        const pageInfo = footer.querySelector('.footer-right');
+                        if (pageInfo) pageInfo.innerHTML = pIndex + ' / <span class="total-pages"></span>';
+                        container.appendChild(footer);
+                    };
+
+                    // Crear primera tabla
+                    let currentTable = createTable();
+                    let currentTbody = currentTable.querySelector('tbody');
+                    container.appendChild(currentTable);
+                    currentPageHeight += theadHeight;
+                    
+                    rows.forEach((row, index) => {
+                        const h = rowHeights[index];
+                        
+                        // Verificar desbordamiento
+                        // Usamos footerHeight + 20 de margen de seguridad
+                        if (currentPageHeight + h + footerHeight + 20 > PAGE_HEIGHT) {
+                            // Cerrar página actual
+                            appendFooter(pageIndex);
+                            
+                            // Agregar salto de página
+                            const breakDiv = document.createElement('div');
+                            breakDiv.style.pageBreakAfter = 'always';
+                            breakDiv.style.height = '1px';
+                            container.appendChild(breakDiv);
+                            
+                            // Iniciar nueva página
+                            pageIndex++;
+                            currentPageHeight = 40; // Margen superior nueva página
+                            
+                            // Crear nueva tabla
+                            currentTable = createTable();
+                            currentTbody = currentTable.querySelector('tbody');
+                            container.appendChild(currentTable);
+                            
+                            currentPageHeight += theadHeight;
+                        }
+                        
+                        currentTbody.appendChild(row);
+                        currentPageHeight += h;
                     });
+                    
+                    // Footer para la última página
+                    appendFooter(pageIndex);
+                    
+                    // Actualizar totales
+                    const totalSpans = document.querySelectorAll('.total-pages');
+                    for(let i=0; i<totalSpans.length; i++) {
+                        totalSpans[i].textContent = pageIndex;
+                    }
                 }
                 
                 // Ejecutar cuando la página esté lista
