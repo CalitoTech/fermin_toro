@@ -652,11 +652,14 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php endif; ?>
 
 <script src="../../../assets/js/buscador_generico.js"></script>
-<script src="../../../assets/js/validaciones_solicitud.js?v=6"></script>
-<script src="../../../assets/js/solicitud_cupo.js?v=16"></script>
+<script src="../../../assets/js/validaciones_solicitud.js?v=8"></script>
+<script src="../../../assets/js/solicitud_cupo.js?v=18"></script>
 <script src="../../../assets/js/validacion.js?v=4"></script>
 
 <script>
+// Variable global para el nivel seleccionado (necesaria para validaciones)
+let nivelSeleccionadoGlobal = 0;
+
 document.addEventListener('DOMContentLoaded', function () {
     // === Inicializar buscadores ===
 
@@ -761,6 +764,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Actualizar campo oculto de nivel
         document.getElementById('idNivelSeleccionado').value = nivelSeleccionado;
+
+        // Actualizar variable global para validaciones
+        nivelSeleccionadoGlobal = parseInt(nivelSeleccionado) || 0;
 
     });
 
@@ -1672,22 +1678,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // === INICIALIZAR VALIDACIONES DESDE solicitud_cupo.js ===
-    // Estas funciones están definidas en solicitud_cupo.js
-    if (typeof instalarHandlersCedula === 'function') {
-        instalarHandlersCedula();
-    }
-    if (typeof instalarValidacionCedulasDuplicadas === 'function') {
-        instalarValidacionCedulasDuplicadas();
-    }
-    if (typeof instalarValidacionTelefonosDuplicados === 'function') {
-        instalarValidacionTelefonosDuplicados();
-    }
-    if (typeof instalarValidacionLugarTrabajo === 'function') {
-        instalarValidacionLugarTrabajo();
-    }
-    if (typeof instalarCheckboxContactoEmergencia === 'function') {
-        instalarCheckboxContactoEmergencia();
-    }
+    // NOTA: NO es necesario llamar manualmente a las funciones de validación
+    // porque solicitud_cupo.js ya las ejecuta automáticamente en su $(document).ready()
 });
 </script>

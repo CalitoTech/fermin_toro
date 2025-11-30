@@ -269,21 +269,38 @@ class ValidadorFormulario {
             return false;
         }
 
-        // Validar que tenga prefijo seleccionado
-        if (prefijoHidden && !prefijoHidden.value) {
+        // Validar que tenga prefijo seleccionado (verificar el input visible)
+        const prefijoVisible = prefijoInput ? prefijoInput.value.trim() : '';
+        if (!prefijoVisible || prefijoVisible === '') {
             this.mostrarError(input, 'Debe seleccionar un prefijo para el teléfono');
-            if (prefijoInput) {
-                this.mostrarError(prefijoInput, 'Seleccione un prefijo');
-            }
             return false;
         }
 
+        // Obtener el ID del prefijo desde el campo hidden
+        const idPrefijo = prefijoHidden ? prefijoHidden.value : '';
+        if (!idPrefijo) {
+            console.warn('No se encontró el ID del prefijo en el campo hidden');
+            // Permitir continuar si no hay ID (el backend lo manejará)
+        }
+
         // Verificar teléfono duplicado en la base de datos
-        const prefijo = prefijoInput ? prefijoInput.value : '';
-        const telefonoCompleto = prefijo + numero;
+        const telefonoCompleto = prefijoVisible + numero;
+
+        // Detectar la ruta correcta según la ubicación del archivo
+        let baseUrl;
+        if (window.location.pathname.includes('/inscripciones/inscripcion/')) {
+            baseUrl = '../../../controladores/';
+        } else if (window.location.pathname.includes('/representantes/representados/')) {
+            baseUrl = '../../../controladores/';
+        } else if (window.location.pathname.includes('/homepage/')) {
+            baseUrl = '../../controladores/';
+        } else {
+            baseUrl = '../../controladores/';
+        }
 
         try {
-            const response = await fetch(`${this.basePath}controladores/TelefonoController.php?action=verificarTelefono&telefono=${encodeURIComponent(numero)}&prefijo=${encodeURIComponent(prefijoHidden ? prefijoHidden.value : '')}`);
+            // IMPORTANTE: Enviar el ID del prefijo (no el código visible)
+            const response = await fetch(`${baseUrl}TelefonoController.php?action=verificarTelefono&telefono=${encodeURIComponent(numero)}&prefijo=${encodeURIComponent(idPrefijo)}`);
             const data = await response.json();
 
             if (data.existe) {

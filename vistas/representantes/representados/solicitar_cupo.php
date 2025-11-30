@@ -1017,8 +1017,8 @@ unset($_SESSION['alert'], $_SESSION['message']);
 
 <!-- Incluir scripts de validación -->
 <script src="../../../assets/js/buscador_generico.js"></script>
-<script src="../../../assets/js/validaciones_solicitud.js?v=6"></script>
-<script src="../../../assets/js/solicitud_cupo.js?v=16"></script>
+<script src="../../../assets/js/validaciones_solicitud.js?v=8"></script>
+<script src="../../../assets/js/solicitud_cupo.js?v=18"></script>
 <script src="../../../assets/js/validacion.js?v=4"></script>
 
 <script>
@@ -1129,7 +1129,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const representanteOtroForm = document.getElementById('representanteOtroForm');
         if (tipo === 'otro') {
             representanteOtroForm.style.display = 'block';
+            // Habilitar todos los campos y restaurar required
             representanteOtroForm.querySelectorAll('input, select').forEach(el => {
+                el.disabled = false;
+                el.readOnly = false;
                 if (el.dataset.wasRequired !== undefined) {
                     el.required = el.dataset.wasRequired === 'true';
                 }
@@ -1139,6 +1142,7 @@ document.addEventListener('DOMContentLoaded', function () {
             representanteOtroForm.querySelectorAll('input, select').forEach(el => {
                 el.dataset.wasRequired = el.required;
                 el.required = false;
+                el.disabled = true;
             });
         }
     }
@@ -1258,16 +1262,57 @@ document.addEventListener('DOMContentLoaded', function () {
         const plantelInputVisible = document.getElementById('estudiantePlantel_input');
 
         if (parseInt(idCurso) === 1) {
-            cedulaContainer.style.display = 'none';
-            cedulaInput.required = false;
+            // Primer curso (Nivel Inicial): MOSTRAR cédula pero hacerla OPCIONAL
+            if (cedulaContainer) {
+                cedulaContainer.style.display = '';
+                const $cedulaFormGroup = cedulaContainer.querySelector('.form-group');
+                if ($cedulaFormGroup) {
+                    $cedulaFormGroup.classList.remove('required-field');
+                }
+
+                const $cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                if ($cedulaLabel && !$cedulaLabel.querySelector('.text-muted')) {
+                    $cedulaLabel.innerHTML = 'Cédula <small class="text-muted">(Opcional)</small>';
+                }
+
+                if (cedulaInput) {
+                    cedulaInput.setAttribute('data-opcional-nivel-inicial', 'true');
+                    cedulaInput.removeAttribute('required');
+                    cedulaInput.value = '';
+                    cedulaInput.setAttribute('readonly', true);
+                }
+            }
+
+            // Ocultar plantel para primer nivel
             plantelContainer.style.display = 'none';
             plantelInput.required = false;
             plantelInput.value = '1';
             plantelInputVisible.value = 'U.E.C "Fermín Toro"';
         } else if (idCurso) {
-            cedulaContainer.style.display = '';
-            cedulaInput.required = true;
-            cedulaInput.readOnly = true;
+            // Otros cursos: Mostrar cédula como requerida
+            if (cedulaContainer) {
+                cedulaContainer.style.display = '';
+                const $cedulaFormGroup = cedulaContainer.querySelector('.form-group');
+                if ($cedulaFormGroup) {
+                    $cedulaFormGroup.classList.add('required-field');
+                }
+
+                const $cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                if ($cedulaLabel) {
+                    const optionalText = $cedulaLabel.querySelector('.text-muted');
+                    if (optionalText) {
+                        optionalText.remove();
+                    }
+                    $cedulaLabel.childNodes[0].textContent = 'Cédula';
+                }
+
+                if (cedulaInput) {
+                    cedulaInput.removeAttribute('data-opcional-nivel-inicial');
+                    cedulaInput.setAttribute('required', 'required');
+                    cedulaInput.setAttribute('readonly', true);
+                }
+            }
+
             plantelContainer.style.display = '';
             plantelInput.required = true;
             plantelInput.value = '';
@@ -1299,19 +1344,46 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const cursoActual = parseInt(document.getElementById('curso')?.value || 0);
-            if (cursoActual !== 1) {
-                const cedulaInput = document.getElementById('estudianteCedula');
-                const cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
-                if (cedulaInput) {
-                    cedulaInput.readOnly = false;
-                    cedulaInput.nextElementSibling.style.display = 'none';
-                    if (cedulaLabel) {
-                        cedulaLabel.textContent = edad < 10 ? 'Cédula escolar' : 'Cédula';
-                        cedulaInput.maxLength = edad < 10 ? 11 : 8;
+            const esPrimerCurso = cursoActual === 1;
+
+            // Habilitar campo de cédula
+            const cedulaContainer = document.getElementById('estudianteCedulaContainer');
+            const cedulaInput = document.getElementById('estudianteCedula');
+            const cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+            const cedulaHelpText = cedulaInput?.nextElementSibling;
+
+            if (cedulaInput && cedulaContainer) {
+                cedulaContainer.style.display = '';
+                cedulaInput.readOnly = false;
+
+                // Ocultar el mensaje de ayuda
+                if (cedulaHelpText) {
+                    cedulaHelpText.style.display = 'none';
+                }
+
+                // Ajustar label y maxlength según la edad
+                if (cedulaLabel) {
+                    if (edad < 10) {
+                        cedulaLabel.textContent = 'Cédula escolar';
+                        cedulaInput.maxLength = 11;
+                        cedulaInput.minLength = 10;
+                    } else {
+                        cedulaLabel.textContent = 'Cédula';
+                        cedulaInput.maxLength = 8;
+                        cedulaInput.minLength = 7;
+                    }
+
+                    // IMPORTANTE: Si es primer curso, preservar el "(Opcional)"
+                    if (esPrimerCurso && !cedulaLabel.querySelector('.text-muted')) {
+                        cedulaLabel.innerHTML += ' <small class="text-muted">(Opcional)</small>';
                     }
                 }
-                const telContainer = document.getElementById('estudianteTelefonoContainer');
-                if (telContainer) telContainer.style.display = edad >= 10 ? 'block' : 'none';
+            }
+
+            // Manejar visibilidad del campo teléfono según edad SOLO si NO es primer curso
+            const telContainer = document.getElementById('estudianteTelefonoContainer');
+            if (!esPrimerCurso && telContainer) {
+                telContainer.style.display = edad >= 10 ? 'block' : 'none';
             }
         });
     }
@@ -1625,5 +1697,24 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+
+    // === INICIALIZAR VALIDACIONES DESDE solicitud_cupo.js ===
+    // Estas funciones están definidas en solicitud_cupo.js
+    // Las llamamos manualmente para asegurar que se ejecuten después de la inicialización del formulario
+    if (typeof instalarHandlersCedula === 'function') {
+        instalarHandlersCedula();
+    }
+    if (typeof instalarValidacionCedulasDuplicadas === 'function') {
+        instalarValidacionCedulasDuplicadas();
+    }
+    if (typeof instalarValidacionTelefonosDuplicados === 'function') {
+        instalarValidacionTelefonosDuplicados();
+    }
+    if (typeof instalarValidacionLugarTrabajo === 'function') {
+        instalarValidacionLugarTrabajo();
+    }
+    if (typeof instalarCheckboxContactoEmergencia === 'function') {
+        instalarCheckboxContactoEmergencia();
+    }
 });
 </script>

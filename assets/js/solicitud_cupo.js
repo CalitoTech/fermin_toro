@@ -971,9 +971,16 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function () {
 // Función para cargar tipos de discapacidad al iniciar
 function cargarTiposDiscapacidad() {
     // Detectar la ruta correcta según la ubicación del archivo
-    const baseUrl = window.location.pathname.includes('/inscripciones/inscripcion/')
-        ? '../../../controladores/'
-        : '../../controladores/';
+    let baseUrl;
+    if (window.location.pathname.includes('/inscripciones/inscripcion/')) {
+        baseUrl = '../../../controladores/';
+    } else if (window.location.pathname.includes('/representantes/representados/')) {
+        baseUrl = '../../../controladores/';
+    } else if (window.location.pathname.includes('/homepage/')) {
+        baseUrl = '../../controladores/';
+    } else {
+        baseUrl = '../../controladores/';
+    }
 
     fetch(baseUrl + 'TipoDiscapacidadController.php?action=obtenerTodos')
         .then(response => {
@@ -1106,7 +1113,19 @@ function verificarCedulaExistente(cedula, nacionalidad, callback) {
         return;
     }
 
-    const url = `../../controladores/PersonaController.php?action=verificarCedula&cedula=${encodeURIComponent(cedula)}&idNacionalidad=${encodeURIComponent(nacionalidad)}`;
+    // Detectar la ruta correcta según la ubicación del archivo
+    let baseUrl;
+    if (window.location.pathname.includes('/inscripciones/inscripcion/')) {
+        baseUrl = '../../../controladores/';
+    } else if (window.location.pathname.includes('/representantes/representados/')) {
+        baseUrl = '../../../controladores/';
+    } else if (window.location.pathname.includes('/homepage/')) {
+        baseUrl = '../../controladores/';
+    } else {
+        baseUrl = '../../controladores/';
+    }
+
+    const url = `${baseUrl}PersonaController.php?action=verificarCedula&cedula=${encodeURIComponent(cedula)}&idNacionalidad=${encodeURIComponent(nacionalidad)}`;
 
     fetch(url)
         .then(res => {
@@ -1887,15 +1906,30 @@ function autocompletarPersona(tipo, datosPersona) {
     }
     hiddenInput.val(datosPersona.idPersona);
 
+    // Agregar event listener para detectar cambios en la cédula
+    // Si el usuario cambia la cédula después de autocompletar, limpiar el autocompletado
+    $(`#${prefijo}Cedula`).off('input.limpiarAutocompletado').on('input.limpiarAutocompletado', function() {
+        const nuevaCedula = $(this).val().trim();
+        const cedulaOriginal = datosPersona.cedula;
+
+        // Si cambió la cédula, limpiar el autocompletado
+        if (nuevaCedula !== cedulaOriginal) {
+            console.log(`🔄 Cédula cambió de ${cedulaOriginal} a ${nuevaCedula}, limpiando autocompletado para ${tipo}`);
+            limpiarAutocompletado(tipo);
+            // Remover este event listener ya que se limpió el autocompletado
+            $(this).off('input.limpiarAutocompletado');
+        }
+    });
+
     // Ocultar TODOS los demás campos del formulario para este tipo de persona
     // Mapear el prefijo al ID de la sección correcta en el HTML
     const seccionesMap = {
-        'padre': '#datosPadre',
-        'madre': '#datosMadre',
-        'representante': '#seccionRepresentante'
+        'padre': '#datosPadre, #padreNuevoForm',
+        'madre': '#datosMadre, #madreNuevoForm',
+        'representante': '#seccionRepresentante, #representanteOtroForm'
     };
-    const seccionId = seccionesMap[prefijo] || `#seccion${prefijo.charAt(0).toUpperCase() + prefijo.slice(1)}`;
-    const $seccion = $(seccionId);
+    const seccionSelector = seccionesMap[prefijo] || `#seccion${prefijo.charAt(0).toUpperCase() + prefijo.slice(1)}`;
+    const $seccion = $(seccionSelector);
 
     if ($seccion.length) {
         // Ocultar todos los form-group EXCEPTO los de nombres, apellidos, nacionalidad y cédula
@@ -2100,9 +2134,16 @@ function validarCedulaRepresentanteExistente(cedulaId, nacionalidadId, nombrePer
     }
 
     // Detectar la ruta correcta según la ubicación del archivo
-    const baseUrl = window.location.pathname.includes('/inscripciones/inscripcion/')
-        ? '../../../controladores/'
-        : '../../controladores/';
+    let baseUrl;
+    if (window.location.pathname.includes('/inscripciones/inscripcion/')) {
+        baseUrl = '../../../controladores/';
+    } else if (window.location.pathname.includes('/representantes/representados/')) {
+        baseUrl = '../../../controladores/';
+    } else if (window.location.pathname.includes('/homepage/')) {
+        baseUrl = '../../controladores/';
+    } else {
+        baseUrl = '../../controladores/';
+    }
 
     // Llamar al endpoint para verificar si la cédula existe
     fetch(baseUrl + 'PersonaController.php?action=verificarCedulaRepresentante', {
