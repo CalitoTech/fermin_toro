@@ -51,7 +51,10 @@ $nacionalidades = $modeloNacionalidad->obtenerTodos();
         <div class="login-content">
             <!-- Formulario de inicio de sesión -->
             <form id="login-form" method="POST" action="../../controladores/login/iniciar_sesion.php">
-                <img src="img/avatar.svg">
+                <picture>
+                    <source srcset="../../assets/images/fermin.png" media="(max-width: 900px)">
+                    <img src="img/avatar.svg">
+                </picture>
                 <h2 class="title">BIENVENIDO/A</h2>              
                 <div class="input-div one">
                     <div class="i"><i class="fas fa-user"></i></div>
@@ -76,7 +79,10 @@ $nacionalidades = $modeloNacionalidad->obtenerTodos();
 
             <!-- FORMULARIO RECUPERACIÓN -->
             <form id="recover-form" class="hidden" method="POST" action="../../controladores/login/iniciar_sesion.php">
-                <img src="img/avatar.svg">
+                <picture>
+                    <source srcset="../../assets/images/fermin.png" media="(max-width: 900px)">
+                    <img src="img/avatar.svg">
+                </picture>
                 <h2 class="title">Recuperar Contraseña</h2>     
 
                 <!-- Documento (Nacionalidad + Cédula) -->
