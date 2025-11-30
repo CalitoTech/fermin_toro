@@ -361,7 +361,7 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
         ?>";
         
         generarReporteImprimible(
-            'REPORTE DE CURSO/SECCIÓN DEL SISTEMA',
+            'REPORTE DE SECCIONES DEL SISTEMA',
             '#tabla-curso_seccions',
             {
                 logoUrl: '../../../assets/images/fermin.png',

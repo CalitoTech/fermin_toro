@@ -1015,9 +1015,11 @@ unset($_SESSION['alert'], $_SESSION['message']);
 
 <?php include '../../layouts/footer.php'; ?>
 
-<!-- No incluir solicitud_cupo.js - este formulario tiene su propia lógica de validación -->
-<script src="../../../assets/js/validacion.js"></script>
+<!-- Incluir scripts de validación -->
 <script src="../../../assets/js/buscador_generico.js"></script>
+<script src="../../../assets/js/validaciones_solicitud.js?v=6"></script>
+<script src="../../../assets/js/solicitud_cupo.js?v=16"></script>
+<script src="../../../assets/js/validacion.js?v=4"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
