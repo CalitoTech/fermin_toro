@@ -487,8 +487,7 @@ CREATE TABLE inscripcion (
     FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
     FOREIGN KEY (responsable_inscripcion) REFERENCES representante(IdRepresentante),
     FOREIGN KEY (ultimo_plantel) REFERENCES plantel(IdPlantel),
-    FOREIGN KEY (validado_por) REFERENCES persona(IdPersona),
-    INDEX idx_codigo_pago (codigo_pago)
+    FOREIGN KEY (validado_por) REFERENCES persona(IdPersona)
 );
 
 -- Tabla para registrar el historial de cambios en inscripciones y personas
