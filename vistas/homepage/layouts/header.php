@@ -18,6 +18,8 @@
       <link rel="stylesheet" href="css/style.css">
       <!-- Responsive-->
       <link rel="stylesheet" href="css/responsive.css">
+      <!-- Modern Loader -->
+      <link rel="stylesheet" href="css/loader.css">
       <!-- fevicon -->
       <link rel="icon" href="images/fermin.png"/>
       <!-- Scrollbar Custom CSS -->
@@ -201,7 +203,13 @@
    <body class="main-layout">
       <!-- loader  -->
       <div class="loader_bg">
-         <div class="loader"><img src="images/loading.gif" alt="#" /></div>
+         <div class="loader-container">
+            <div class="spinner-ring"></div>
+            <div class="logo-pulse">
+               <img src="../../assets/images/fermin.png" alt="UECFT Araure">
+            </div>
+            <div class="loader-text">Cargando...</div>
+         </div>
       </div>
       <!-- end loader -->
       <!-- header -->

