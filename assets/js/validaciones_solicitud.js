@@ -62,12 +62,62 @@ class ValidadorFormulario {
                 e.target.value = valor;
             });
 
-            // NO validar al perder foco - dejar que solicitud_cupo.js maneje
-            // toda la validación de cédulas (incluyendo is-valid/is-invalid)
-            // para evitar conflictos con validaciones asíncronas
-            // input.addEventListener('blur', (e) => {
-            //     this.validarCedula(config);
-            // });
+            // Validar min-length al perder foco
+            // IMPORTANTE: Esto solo valida el formato (longitud, números)
+            // Las validaciones de duplicados y existencia las maneja solicitud_cupo.js
+            input.addEventListener('blur', (e) => {
+                const valor = e.target.value.trim();
+
+                // Si está vacío
+                if (!valor) {
+                    // Si es requerido, mostrar error
+                    if (input.hasAttribute('required')) {
+                        this.mostrarError(input, `${config.label} es requerida`);
+                        input.classList.remove('is-valid');
+                        input.classList.add('is-invalid');
+                    } else {
+                        // Si NO es requerido (ej: nivel inicial), limpiar clases
+                        input.classList.remove('is-invalid', 'is-valid');
+                        this.limpiarError(input);
+                    }
+                    return;
+                }
+
+                // Si tiene contenido, validar min-length
+                const minLength = parseInt(input.getAttribute('minlength')) || config.min;
+                const maxLength = parseInt(input.getAttribute('maxlength')) || config.max;
+                const esCedulaEscolar = maxLength === 11;
+                const tipoCedula = esCedulaEscolar ? 'Cédula escolar' : 'Cédula';
+
+                // Validar solo números
+                if (!/^[0-9]+$/.test(valor)) {
+                    this.mostrarError(input, 'La cédula debe contener solo números');
+                    input.classList.remove('is-valid');
+                    input.classList.add('is-invalid');
+                    return;
+                }
+
+                // Validar longitud mínima
+                if (valor.length < minLength) {
+                    this.mostrarError(input, `${tipoCedula} debe tener al menos ${minLength} dígitos`);
+                    input.classList.remove('is-valid');
+                    input.classList.add('is-invalid');
+                    return;
+                }
+
+                // Validar longitud máxima
+                if (valor.length > maxLength) {
+                    this.mostrarError(input, `${tipoCedula} no puede tener más de ${maxLength} dígitos`);
+                    input.classList.remove('is-valid');
+                    input.classList.add('is-invalid');
+                    return;
+                }
+
+                // Si pasó todas las validaciones de formato, limpiar error
+                // PERO NO marcar como válido - eso lo hace solicitud_cupo.js después
+                // de verificar duplicados y existencia
+                this.limpiarError(input);
+            });
         });
     }
 

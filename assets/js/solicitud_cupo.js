@@ -755,7 +755,12 @@ function enviarFormulario() {
 
     // Verificar acceso de representantes
     if (cedulasRepresentantes.length > 0) {
-        fetch('../../controladores/PersonaController.php?action=verificarAccesoRepresentantes', {
+        // Detectar la ruta correcta según la ubicación del archivo
+        const baseUrl = window.location.pathname.includes('/inscripciones/inscripcion/')
+            ? '../../../controladores/'
+            : '../../controladores/';
+
+        fetch(baseUrl + 'PersonaController.php?action=verificarAccesoRepresentantes', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -965,7 +970,12 @@ $(document).on('change', 'input[name="tipoRepresentante"]', function () {
 
 // Función para cargar tipos de discapacidad al iniciar
 function cargarTiposDiscapacidad() {
-    fetch('../../controladores/TipoDiscapacidadController.php?action=obtenerTodos')
+    // Detectar la ruta correcta según la ubicación del archivo
+    const baseUrl = window.location.pathname.includes('/inscripciones/inscripcion/')
+        ? '../../../controladores/'
+        : '../../controladores/';
+
+    fetch(baseUrl + 'TipoDiscapacidadController.php?action=obtenerTodos')
         .then(response => {
             if (!response.ok) throw new Error('Error al obtener tipos');
             return response.json();
@@ -1186,31 +1196,40 @@ function instalarHandlersCedula() {
             return;
         }
 
-        // Para nivel inicial: si escribió algo, validar que sea correcto
-        // Para otros niveles: validar normalmente (solo si no es nivel inicial)
-        if (cedula && nacionalidad) {
-            // Para nivel inicial, NO verificar si ya existe (permitir duplicados)
-            // Solo validar para otros niveles
-            if (idNivelSeleccionado !== 1) {
-                verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
-                    console.log('🔄 verificarCedulaExistente RESPUESTA - existe:', existe, 'cedula:', cedula);
-                    if (existe) {
-                        console.log('❌ ESTUDIANTE YA EXISTE - añadiendo is-invalid');
-                        mostrarAlertaCedulaExistente(estado);
-                        $input.removeClass('is-valid').addClass('is-invalid');
-                    } else {
-                        // No existe, marcar como válido
-                        console.log('✅ ESTUDIANTE NO EXISTE - añadiendo is-valid');
-                        $input.removeClass('is-invalid').addClass('is-valid');
-                    }
-                });
-            } else {
-                // Nivel inicial: solo marcar como válido si tiene el formato correcto
-                // (la validación de formato ya la hace validaciones_solicitud.js en el input event)
-                console.log('✅ NIVEL INICIAL - cédula opcional pero con formato válido');
-                $input.removeClass('is-invalid').addClass('is-valid');
+        // Esperar a que la validación de min-length se ejecute primero
+        setTimeout(() => {
+            // Solo validar existencia si NO hay errores de formato
+            if ($input.hasClass('is-invalid')) {
+                console.log('⚠️ ESTUDIANTE - Tiene errores de formato, no validar existencia');
+                return;
             }
-        }
+
+            // Para nivel inicial: si escribió algo, validar que sea correcto
+            // Para otros niveles: validar normalmente (solo si no es nivel inicial)
+            if (cedula && nacionalidad) {
+                // Para nivel inicial, NO verificar si ya existe (permitir duplicados)
+                // Solo validar para otros niveles
+                if (idNivelSeleccionado !== 1) {
+                    verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
+                        console.log('🔄 verificarCedulaExistente RESPUESTA - existe:', existe, 'cedula:', cedula);
+                        if (existe) {
+                            console.log('❌ ESTUDIANTE YA EXISTE - añadiendo is-invalid');
+                            mostrarAlertaCedulaExistente(estado);
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                        } else {
+                            // No existe, marcar como válido
+                            console.log('✅ ESTUDIANTE NO EXISTE - añadiendo is-valid');
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                        }
+                    });
+                } else {
+                    // Nivel inicial: solo marcar como válido si tiene el formato correcto
+                    // (la validación de formato ya la hace validaciones_solicitud.js en el input event)
+                    console.log('✅ NIVEL INICIAL - cédula opcional pero con formato válido');
+                    $input.removeClass('is-invalid').addClass('is-valid');
+                }
+            }
+        }, 100);
     });
 
     // si el usuario cambia la nacionalidad después de escribir la cédula, revalidamos
@@ -1223,15 +1242,20 @@ function instalarHandlersCedula() {
         if (idNivelSeleccionado === 1) return;
 
         if (cedula && nacionalidad) {
-            verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
-                if (existe) {
-                    mostrarAlertaCedulaExistente(estado);
-                    $cedulaInput.removeClass('is-valid').addClass('is-invalid');
-                } else {
-                    // No existe, marcar como válido
-                    $cedulaInput.removeClass('is-invalid').addClass('is-valid');
+            setTimeout(() => {
+                // Solo validar si NO hay errores de formato
+                if (!$cedulaInput.hasClass('is-invalid')) {
+                    verificarCedulaExistente(cedula, nacionalidad, function (existe, estado) {
+                        if (existe) {
+                            mostrarAlertaCedulaExistente(estado);
+                            $cedulaInput.removeClass('is-valid').addClass('is-invalid');
+                        } else {
+                            // No existe, marcar como válido
+                            $cedulaInput.removeClass('is-invalid').addClass('is-valid');
+                        }
+                    });
                 }
-            });
+            }, 100);
         }
     });
 }
@@ -1262,6 +1286,7 @@ function preservarLabelOpcionalCedula() {
 $(document).ready(function () {
     instalarHandlersCedula();
     instalarValidacionCedulasDuplicadas();
+    instalarValidacionTelefonosDuplicados();
     instalarValidacionLugarTrabajo();
     instalarCheckboxContactoEmergencia();
 
@@ -1430,25 +1455,36 @@ function instalarValidacionCedulasDuplicadas() {
 
             // Validar al perder el foco de la cédula
             cedulaInput.on('blur', function () {
-                // Primero validar duplicados en el formulario
-                validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
+                // Esperar un poco para que la validación de min-length se ejecute primero
+                setTimeout(() => {
+                    // Solo validar duplicados si NO hay errores de formato (is-invalid)
+                    if (!cedulaInput.hasClass('is-invalid')) {
+                        // Validar duplicados en el formulario
+                        validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
 
-                // Si es representante (padre, madre, representante legal o emergencia),
-                // también validar si ya existe en la base de datos
-                if (campo.esRepresentante) {
-                    validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
-                }
+                        // Si es representante (padre, madre, representante legal o emergencia),
+                        // también validar si ya existe en la base de datos
+                        if (campo.esRepresentante) {
+                            validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
+                        }
+                    }
+                }, 100);
             });
 
             // También validar al cambiar nacionalidad
             nacionalidadInput.on('change', function () {
                 const cedula = cedulaInput.val();
                 if (cedula) {
-                    validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
+                    setTimeout(() => {
+                        // Solo validar duplicados si NO hay errores de formato
+                        if (!cedulaInput.hasClass('is-invalid')) {
+                            validarCedulaDuplicadaEnFormulario(campo.cedula, campo.nacionalidad, campo.nombre);
 
-                    if (campo.esRepresentante) {
-                        validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
-                    }
+                            if (campo.esRepresentante) {
+                                validarCedulaRepresentanteExistente(campo.cedula, campo.nacionalidad, campo.nombre);
+                            }
+                        }
+                    }, 100);
                 }
             });
         }
@@ -1540,6 +1576,166 @@ function validarCedulaDuplicadaEnFormulario(cedulaId, nacionalidadId, nombrePers
         // No hay duplicado, marcar como válido
         console.log('✅ NO HAY DUPLICADO - añadiendo is-valid', cedulaId);
         $(`#${cedulaId}`).removeClass('is-invalid').addClass('is-valid');
+    }
+}
+
+// =====================================================
+// SISTEMA DE VALIDACIÓN DE TELÉFONOS DUPLICADOS
+// =====================================================
+
+function instalarValidacionTelefonosDuplicados() {
+    const campos = [
+        { telefono: 'padreTelefonoHabitacion', prefijo: 'padreTelefonoHabitacionPrefijo', nombre: 'Padre (Habitación)' },
+        { telefono: 'padreCelular', prefijo: 'padreCelularPrefijo', nombre: 'Padre (Celular)' },
+        { telefono: 'madreTelefonoHabitacion', prefijo: 'madreTelefonoHabitacionPrefijo', nombre: 'Madre (Habitación)' },
+        { telefono: 'madreCelular', prefijo: 'madreCelularPrefijo', nombre: 'Madre (Celular)' },
+        { telefono: 'representanteTelefonoHabitacion', prefijo: 'representanteTelefonoHabitacionPrefijo', nombre: 'Representante (Habitación)' },
+        { telefono: 'representanteCelular', prefijo: 'representanteCelularPrefijo', nombre: 'Representante (Celular)' },
+        { telefono: 'emergenciaCelular', prefijo: 'emergenciaCelularPrefijo', nombre: 'Emergencia (Celular)' },
+        { telefono: 'estudianteTelefono', prefijo: 'estudianteTelefonoPrefijo', nombre: 'Estudiante' }
+    ];
+
+    campos.forEach(campo => {
+        const telefonoInput = $(`#${campo.telefono}`);
+        const prefijoInput = $(`#${campo.prefijo}`);
+
+        if (telefonoInput.length) {
+            telefonoInput.on('blur', function() {
+                validarTelefonoDuplicadoEnFormulario(campo.telefono, campo.prefijo, campo.nombre);
+            });
+        }
+    });
+}
+
+function validarTelefonoDuplicadoEnFormulario(telefonoId, prefijoId, nombrePersona) {
+    const telefono = $(`#${telefonoId}`).val();
+    const prefijoHidden = $(`#${prefijoId}`).val(); // hidden que tiene el ID del prefijo
+
+    if (!telefono || telefono.length === 0) {
+        return; // Si está vacío, no validar
+    }
+
+    // Obtener el código del prefijo desde el input visible
+    const prefijoInputVisible = $(`#${prefijoId}_input`).val();
+
+    const tipoRep = $('input[name="tipoRepresentante"]:checked').val();
+
+    // Construir lista de teléfonos del formulario
+    const telefonosEnFormulario = [];
+
+    // Helper para agregar teléfonos
+    function agregarTelefono(telefono, prefijo, prefijoVisible, nombre, id) {
+        if (telefono && telefono.length > 0) {
+            // Usar el prefijo visible para comparar
+            const telefonoCompleto = (prefijoVisible || '+58') + telefono;
+            telefonosEnFormulario.push({
+                completo: telefonoCompleto,
+                nombre: nombre,
+                id: id
+            });
+        }
+    }
+
+    // Estudiante
+    agregarTelefono(
+        $('#estudianteTelefono').val(),
+        $('#estudianteTelefonoPrefijo').val(),
+        $('#estudianteTelefonoPrefijo_input').val(),
+        'Estudiante',
+        'estudianteTelefono'
+    );
+
+    // Padre - Habitación
+    agregarTelefono(
+        $('#padreTelefonoHabitacion').val(),
+        $('#padreTelefonoHabitacionPrefijo').val(),
+        $('#padreTelefonoHabitacionPrefijo_input').val(),
+        'Padre (Habitación)',
+        'padreTelefonoHabitacion'
+    );
+
+    // Padre - Celular
+    agregarTelefono(
+        $('#padreCelular').val(),
+        $('#padreCelularPrefijo').val(),
+        $('#padreCelularPrefijo_input').val(),
+        'Padre (Celular)',
+        'padreCelular'
+    );
+
+    // Madre - Habitación
+    agregarTelefono(
+        $('#madreTelefonoHabitacion').val(),
+        $('#madreTelefonoHabitacionPrefijo').val(),
+        $('#madreTelefonoHabitacionPrefijo_input').val(),
+        'Madre (Habitación)',
+        'madreTelefonoHabitacion'
+    );
+
+    // Madre - Celular
+    agregarTelefono(
+        $('#madreCelular').val(),
+        $('#madreCelularPrefijo').val(),
+        $('#madreCelularPrefijo_input').val(),
+        'Madre (Celular)',
+        'madreCelular'
+    );
+
+    // Representante (si es "otro")
+    if (tipoRep === 'otro') {
+        agregarTelefono(
+            $('#representanteTelefonoHabitacion').val(),
+            $('#representanteTelefonoHabitacionPrefijo').val(),
+            $('#representanteTelefonoHabitacionPrefijo_input').val(),
+            'Representante (Habitación)',
+            'representanteTelefonoHabitacion'
+        );
+
+        agregarTelefono(
+            $('#representanteCelular').val(),
+            $('#representanteCelularPrefijo').val(),
+            $('#representanteCelularPrefijo_input').val(),
+            'Representante (Celular)',
+            'representanteCelular'
+        );
+    }
+
+    // Emergencia
+    agregarTelefono(
+        $('#emergenciaCelular').val(),
+        $('#emergenciaCelularPrefijo').val(),
+        $('#emergenciaCelularPrefijo_input').val(),
+        'Emergencia (Celular)',
+        'emergenciaCelular'
+    );
+
+    // Buscar duplicados
+    const telefonoActual = (prefijoInputVisible || '+58') + telefono;
+    const duplicados = telefonosEnFormulario.filter(t => t.completo === telefonoActual);
+
+    if (duplicados.length > 1) {
+        // Hay duplicado
+        const nombres = duplicados.map(d => d.nombre).join(' y ');
+
+        Swal.fire({
+            icon: 'warning',
+            title: 'Teléfono duplicado',
+            html: `El teléfono <strong>${telefonoActual}</strong> está duplicado.<br><br>
+                   Ya fue ingresado para: <strong>${nombres}</strong><br><br>
+                   <small class="text-muted">Cada teléfono debe ser único en el formulario.</small>`,
+            confirmButtonColor: '#c90000',
+            confirmButtonText: 'Entendido'
+        });
+
+        console.log('❌ TELÉFONO DUPLICADO - añadiendo is-invalid', telefonoId);
+        $(`#${telefonoId}`).addClass('is-invalid').removeClass('is-valid');
+        $(`#${telefonoId}`).val('');
+        $(`#${telefonoId}`).focus();
+    } else {
+        // No hay duplicado
+        console.log('✅ TELÉFONO NO DUPLICADO', telefonoId);
+        // No marcar como válido automáticamente, solo quitar is-invalid si existe
+        $(`#${telefonoId}`).removeClass('is-invalid');
     }
 }
 
@@ -1656,10 +1852,15 @@ function autocompletarPersona(tipo, datosPersona) {
             }
         });
 
-        // Marcar campos visibles como válidos
+        // Marcar campos visibles como válidos y limpiar mensajes de error
         $('#emergenciaNombre').addClass('is-valid').removeClass('is-invalid');
+        $('#emergenciaNombre').parent().find('.invalid-feedback').hide();
+
         $('#emergenciaNacionalidad').addClass('is-valid').removeClass('is-invalid');
+        $('#emergenciaNacionalidad').parent().find('.invalid-feedback').hide();
+
         $('#emergenciaCedula').addClass('is-valid').removeClass('is-invalid');
+        $('#emergenciaCedula').parent().find('.invalid-feedback').hide();
 
         toastr.success(`Se usarán los datos de ${datosPersona.nombreCompleto} como contacto de emergencia`, 'Autocompletado', {
             timeOut: 3000,
@@ -1742,11 +1943,18 @@ function autocompletarPersona(tipo, datosPersona) {
         });
     }
 
-    // Marcar campos visibles como válidos
+    // Marcar campos visibles como válidos y limpiar mensajes de error
     $(`#${prefijo}Nombres`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Nombres`).parent().find('.invalid-feedback').hide();
+
     $(`#${prefijo}Apellidos`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Apellidos`).parent().find('.invalid-feedback').hide();
+
     $(`#${prefijo}Nacionalidad`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Nacionalidad`).parent().find('.invalid-feedback').hide();
+
     $(`#${prefijo}Cedula`).addClass('is-valid').removeClass('is-invalid');
+    $(`#${prefijo}Cedula`).parent().find('.invalid-feedback').hide();
 
     // Mostrar mensaje de confirmación
     toastr.success(`Se usarán los datos de ${datosPersona.nombreCompleto} para ${obtenerNombreRol(tipo)}`, 'Autocompletado', {
@@ -1891,8 +2099,13 @@ function validarCedulaRepresentanteExistente(cedulaId, nacionalidadId, nombrePer
         return;
     }
 
+    // Detectar la ruta correcta según la ubicación del archivo
+    const baseUrl = window.location.pathname.includes('/inscripciones/inscripcion/')
+        ? '../../../controladores/'
+        : '../../controladores/';
+
     // Llamar al endpoint para verificar si la cédula existe
-    fetch('../../controladores/PersonaController.php?action=verificarCedulaRepresentante', {
+    fetch(baseUrl + 'PersonaController.php?action=verificarCedulaRepresentante', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'

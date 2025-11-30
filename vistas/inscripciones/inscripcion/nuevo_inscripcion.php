@@ -353,29 +353,7 @@ $data_options = [
                     <i class="fas fa-asterisk"></i> Campos obligatorios
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group required-field">
-                            <label for="estudianteApellidos">Apellidos</label>
-                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
-                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                            minlength="3" maxlength="40"
-                            onkeypress="return onlyText(event)"
-                            oninput="formatearTexto2()" placeholder="Ej: Rodríguez Gómez" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group required-field">
-                            <label for="estudianteNombres">Nombres</label>
-                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
-                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
-                            minlength="3" maxlength="40"
-                            onkeypress="return onlyText(event)"
-                            oninput="formatearTexto1()" placeholder="Ej: Juan Carlos" required>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- PRIMERA FILA: Sexo, Fecha Nacimiento, Nacionalidad, Cédula -->
                 <div class="row">
                     <div class="col-md-3">
                         <div class="form-group required-field">
@@ -414,6 +392,30 @@ $data_options = [
                             <small class="form-text text-muted">
                                 <i class="fas fa-info-circle"></i> Primero ingrese la fecha de nacimiento
                             </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEGUNDA FILA: Apellidos, Nombres -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group required-field">
+                            <label for="estudianteApellidos">Apellidos</label>
+                            <input type="text" class="form-control" id="estudianteApellidos" name="estudianteApellidos"
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                            minlength="3" maxlength="40"
+                            onkeypress="return onlyText(event)"
+                            oninput="formatearTexto2(this)" placeholder="Ej: Rodríguez Gómez" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group required-field">
+                            <label for="estudianteNombres">Nombres</label>
+                            <input type="text" class="form-control" id="estudianteNombres" name="estudianteNombres"
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+"
+                            minlength="3" maxlength="40"
+                            onkeypress="return onlyText(event)"
+                            oninput="formatearTexto1(this)" placeholder="Ej: Juan Carlos" required>
                         </div>
                     </div>
                 </div>
@@ -650,9 +652,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php endif; ?>
 
 <script src="../../../assets/js/buscador_generico.js"></script>
-<script src="../../../assets/js/validaciones_solicitud.js"></script>
-<script src="../../../assets/js/solicitud_cupo.js"></script>
-<script src="../../../assets/js/validacion.js"></script>
+<script src="../../../assets/js/validaciones_solicitud.js?v=6"></script>
+<script src="../../../assets/js/solicitud_cupo.js?v=16"></script>
+<script src="../../../assets/js/validacion.js?v=4"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -774,14 +776,28 @@ document.addEventListener('DOMContentLoaded', function () {
         const plantelNombre = document.getElementById('estudiantePlantel_nombre');
 
         if (parseInt(idCurso) === 1) {
-            // Primer curso (Primer Nivel): Ocultar cédula, teléfono y plantel
+            // Primer curso (Primer Nivel): MOSTRAR cédula pero hacerla OPCIONAL
             if (cedulaContainer) {
-                cedulaContainer.style.display = 'none';
+                cedulaContainer.style.display = '';
+                const $cedulaFormGroup = cedulaContainer.querySelector('.form-group');
+                if ($cedulaFormGroup) {
+                    $cedulaFormGroup.classList.remove('required-field');
+                }
+
+                const $cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                if ($cedulaLabel && !$cedulaLabel.querySelector('.text-muted')) {
+                    $cedulaLabel.innerHTML += ' <small class="text-muted">(Opcional)</small>';
+                }
+
                 if (cedulaInput) {
+                    cedulaInput.setAttribute('data-opcional-nivel-inicial', 'true');
                     cedulaInput.removeAttribute('required');
                     cedulaInput.value = '';
+                    cedulaInput.setAttribute('readonly', true);
                 }
             }
+
+            // Ocultar teléfono para primer nivel
             if (telefonoContainer) {
                 telefonoContainer.style.display = 'none';
                 if (telefonoInput) {
@@ -789,6 +805,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     telefonoInput.value = '';
                 }
             }
+
+            // Ocultar plantel para primer nivel
             if (plantelContainer) {
                 plantelContainer.style.display = 'none';
                 if (plantelInput) {
@@ -802,7 +820,23 @@ document.addEventListener('DOMContentLoaded', function () {
             // Otros cursos: Mostrar cédula (readonly hasta fecha) y plantel
             if (cedulaContainer) {
                 cedulaContainer.style.display = '';
+                const $cedulaFormGroup = cedulaContainer.querySelector('.form-group');
+                if ($cedulaFormGroup) {
+                    $cedulaFormGroup.classList.add('required-field');
+                }
+
+                const $cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                if ($cedulaLabel) {
+                    const optionalText = $cedulaLabel.querySelector('.text-muted');
+                    if (optionalText) {
+                        optionalText.remove();
+                    }
+                    // Restaurar solo "Cédula" sin el opcional
+                    $cedulaLabel.childNodes[0].textContent = 'Cédula';
+                }
+
                 if (cedulaInput) {
+                    cedulaInput.removeAttribute('data-opcional-nivel-inicial');
                     cedulaInput.setAttribute('required', 'required');
                     cedulaInput.setAttribute('readonly', true);
                     // Restaurar mensaje de ayuda
@@ -924,13 +958,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 const cursoActual = parseInt(document.getElementById('curso')?.value || 0);
                 const esPrimerCurso = cursoActual === 1;
 
-                // Habilitar campo de cédula SOLO si NO es primer curso
+                // Habilitar campo de cédula
                 const cedulaContainer = document.getElementById('estudianteCedulaContainer');
                 const cedulaInput = document.getElementById('estudianteCedula');
                 const cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
                 const cedulaHelpText = cedulaInput?.nextElementSibling;
 
-                if (!esPrimerCurso && cedulaInput && cedulaContainer) {
+                if (cedulaInput && cedulaContainer) {
                     cedulaContainer.style.display = '';
                     cedulaInput.removeAttribute('readonly');
 
@@ -943,14 +977,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (cedulaLabel) {
                         if (edad < 10) {
                             // Menores de 10 años: Cédula escolar con maxlength 11, minlength 10
-                            cedulaLabel.textContent = 'Cédula escolar';
+                            const labelText = 'Cédula escolar';
+                            cedulaLabel.childNodes[0].textContent = labelText;
                             cedulaInput.setAttribute('maxlength', '11');
                             cedulaInput.setAttribute('minlength', '10');
                         } else {
                             // 10 años o más: Cédula normal con maxlength 8, minlength 7
-                            cedulaLabel.textContent = 'Cédula';
+                            const labelText = 'Cédula';
+                            cedulaLabel.childNodes[0].textContent = labelText;
                             cedulaInput.setAttribute('maxlength', '8');
                             cedulaInput.setAttribute('minlength', '7');
+                        }
+
+                        // IMPORTANTE: Si es primer curso, preservar el "(Opcional)"
+                        if (esPrimerCurso && !cedulaLabel.querySelector('.text-muted')) {
+                            cedulaLabel.innerHTML += ' <small class="text-muted">(Opcional)</small>';
                         }
                     }
                 }
@@ -979,6 +1020,48 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+
+        // === FUNCIÓN PARA PRESERVAR LABEL "(Opcional)" EN CÉDULA ===
+        function preservarLabelOpcionalCedula() {
+            const $cedula = document.getElementById('estudianteCedula');
+            if ($cedula && $cedula.getAttribute('data-opcional-nivel-inicial') === 'true') {
+                const $cedulaLabel = document.querySelector('label[for="estudianteCedula"]');
+                const $formGroup = document.getElementById('estudianteCedulaContainer')?.querySelector('.form-group');
+
+                if ($cedulaLabel && !$cedulaLabel.querySelector('.text-muted')) {
+                    $cedulaLabel.innerHTML += ' <small class="text-muted">(Opcional)</small>';
+                }
+                if ($formGroup) {
+                    $formGroup.classList.remove('required-field');
+                }
+                $cedula.removeAttribute('required');
+            }
+        }
+
+        // MutationObserver para detectar cambios en el DOM
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                    preservarLabelOpcionalCedula();
+                }
+            });
+        });
+
+        // Observar cambios en el label de cédula
+        const cedulaLabelElement = document.querySelector('label[for="estudianteCedula"]');
+        if (cedulaLabelElement) {
+            observer.observe(cedulaLabelElement, {
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+        }
+
+        // Event listeners para preservar el label cuando cambia la fecha
+        if (fechaNacimientoInput) {
+            fechaNacimientoInput.addEventListener('change', preservarLabelOpcionalCedula);
+            fechaNacimientoInput.addEventListener('focus', preservarLabelOpcionalCedula);
+        }
     }
 
     // === MANEJO DINÁMICO DEL TIPO DE INSCRIPCIÓN ===
@@ -1588,5 +1671,23 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+
+    // === INICIALIZAR VALIDACIONES DESDE solicitud_cupo.js ===
+    // Estas funciones están definidas en solicitud_cupo.js
+    if (typeof instalarHandlersCedula === 'function') {
+        instalarHandlersCedula();
+    }
+    if (typeof instalarValidacionCedulasDuplicadas === 'function') {
+        instalarValidacionCedulasDuplicadas();
+    }
+    if (typeof instalarValidacionTelefonosDuplicados === 'function') {
+        instalarValidacionTelefonosDuplicados();
+    }
+    if (typeof instalarValidacionLugarTrabajo === 'function') {
+        instalarValidacionLugarTrabajo();
+    }
+    if (typeof instalarCheckboxContactoEmergencia === 'function') {
+        instalarCheckboxContactoEmergencia();
+    }
 });
 </script>

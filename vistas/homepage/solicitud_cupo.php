@@ -652,8 +652,8 @@
 
     <!-- Tus scripts personalizados -->
     <script src="../../assets/js/buscador_generico.js"></script>
-    <script src="../../assets/js/validaciones_solicitud.js?v=5"></script>
-    <script src="../../assets/js/solicitud_cupo.js?v=13"></script>
+    <script src="../../assets/js/validaciones_solicitud.js?v=6"></script>
+    <script src="../../assets/js/solicitud_cupo.js?v=16"></script>
     <script src="../../assets/js/validacion.js?v=4"></script>
 
     <script>
