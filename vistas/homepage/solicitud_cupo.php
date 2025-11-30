@@ -120,31 +120,31 @@
                         }
                     }
                     ?>
-    <?php else: ?>
-        <!-- Mensaje cuando las inscripciones están cerradas -->
-        <div class="text-center py-5 my-4" style="background-color: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 800px; margin: 2rem auto; padding: 2rem;">
-            <i class="fas fa-lock" style="font-size: 3rem; color: #c90000; margin-bottom: 1rem;"></i>
-            <h4 style="color: #c90000; margin-bottom: 1rem;">Periodo de Inscripción Finalizado</h4>
-            <p style="color: #555; font-size: 1.1rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
-                El periodo de inscripción para el año escolar ha concluido. 
-                <strong>No se aceptan nuevas solicitudes de cupo en este momento.</strong>
-            </p>
-            <p style="color: #666; font-size: 0.95rem; margin-top: 1.5rem;">
-                Para más información, comuníquese con la oficina de administración al 
-                <strong>+58 414-5641168</strong>.
-            </p>
-            <div class="mt-4">
-                <i class="fas fa-info-circle" style="color: #c90000; margin-right: 8px;"></i>
-                <small style="color: #888;">
-                    Las inscripciones se reabrirán en el próximo periodo escolar.
-                </small>
-            </div>
-        </div>
-    <?php endif; ?>
-    </div> <!-- Cierre de col-md-12 -->
-    </div> <!-- Cierre de row -->
+                <?php else: ?>
+                    <!-- Mensaje cuando las inscripciones están cerradas -->
+                    <div class="text-center py-5 my-4" style="background-color: #fff; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 800px; margin: 2rem auto; padding: 2rem;">
+                        <i class="fas fa-lock" style="font-size: 3rem; color: #c90000; margin-bottom: 1rem;"></i>
+                        <h4 style="color: #c90000; margin-bottom: 1rem;">Periodo de Inscripción Finalizado</h4>
+                        <p style="color: #555; font-size: 1.1rem; line-height: 1.6; max-width: 600px; margin: 0 auto;">
+                            El periodo de inscripción para el año escolar ha concluido.
+                            <strong>No se aceptan nuevas solicitudes de cupo en este momento.</strong>
+                        </p>
+                        <p style="color: #666; font-size: 0.95rem; margin-top: 1.5rem;">
+                            Para más información, comuníquese con la oficina de administración al
+                            <strong>+58 414-5641168</strong>.
+                        </p>
+                        <div class="mt-4">
+                            <i class="fas fa-info-circle" style="color: #c90000; margin-right: 8px;"></i>
+                            <small style="color: #888;">
+                                Las inscripciones se reabrirán en el próximo periodo escolar.
+                            </small>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div> <!-- Cierre de col-md-12 -->
+        </div> <!-- Cierre de row -->
     </div> <!-- Cierre de container -->
-    </div> <!-- Cierre de section-container -->
+</div> <!-- Cierre de section-container -->
     
     <!-- Modal para mostrar requisitos -->
     <div class="modal fade modal-requisitos" id="requisitosModal" tabindex="-1" role="dialog" aria-labelledby="requisitosModalLabel" aria-hidden="true">
@@ -640,12 +640,13 @@
             </div>
         </div>
     </div>
+</div>
 
-    <?php include 'layouts/social_menu.php'; ?>
-    <?php include 'layouts/footer.php'; ?>
-    
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<?php include 'layouts/social_menu.php'; ?>
+<?php include 'layouts/footer.php'; ?>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Toastr JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>

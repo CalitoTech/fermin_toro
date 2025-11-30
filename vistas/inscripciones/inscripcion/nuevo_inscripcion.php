@@ -498,6 +498,8 @@ $data_options = [
                 </div>
             </div>
         </div>
+    </form>
+</div>
 
         <!-- ===================== DATOS DE LA MADRE (usando helper igual que solicitud_cupo.php) ===================== -->
         <div id="seccionMadreContainer" style="display: none;">
@@ -657,8 +659,6 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="../../../assets/js/validacion.js?v=4"></script>
 
 <script>
-// Variable global para el nivel seleccionado (necesaria para validaciones)
-let nivelSeleccionadoGlobal = 0;
 
 document.addEventListener('DOMContentLoaded', function () {
     // === Inicializar buscadores ===
