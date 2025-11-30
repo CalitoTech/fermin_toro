@@ -340,7 +340,7 @@ function generarReporteImprimible(titulo, selectorTabla, opciones = {}) {
                     
                     // Altura segura para A4 (aprox 1123px total - 20mm márgenes verticales = ~1047px)
                     // Dejamos un margen de seguridad
-                    const PAGE_HEIGHT = 1000; 
+                    const PAGE_HEIGHT = 1020; 
                     
                     let currentPageHeight = headerHeight + 40; // Altura inicial (header + márgenes)
                     let pageIndex = 1;

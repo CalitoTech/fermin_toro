@@ -56,6 +56,42 @@ $pdf->SetMargins(15, 15, 15);
 $pdf->SetAutoPageBreak(true, 15);
 $pdf->AddPage();
 
+// ===================== ENCABEZADO INSTITUCIONAL =====================
+$logoPath = __DIR__ . '/../../../assets/images/fermin.png';
+$fechaHora = date('d/m/Y h:i A');
+
+// Barra superior roja
+$pdf->SetFillColor(201, 0, 0);
+$pdf->Rect(15, 15, $pdf->getPageWidth() - 30, 2, 'F');
+$pdf->Ln(4);
+
+$headerHTML = '
+<table border="0" cellspacing="0" cellpadding="0" width="100%">
+    <tr>
+        <td width="12%" align="left" valign="top">
+            <img src="' . $logoPath . '" width="55" />
+        </td>
+        <td width="48%" align="left" valign="middle" style="font-size: 8pt; font-weight: bold; color: #000000; line-height: 1.3;">
+            REPÚBLICA BOLIVARIANA DE VENEZUELA<br/>
+            MINISTERIO DEL PODER POPULAR PARA LA EDUCACIÓN<br/>
+            UNIDAD EDUCATIVA COLEGIO FERMÍN TORO<br/>
+            INSCRITO EN EL MPPE BAJO EL NO. PD04281802
+        </td>
+        <td width="40%" align="right" valign="middle">
+            <span style="color: #c90000; font-size: 14pt; font-weight: bold; text-transform: uppercase;">' . htmlspecialchars($nivelNombre) . '</span><br/>
+            <span style="font-size: 8pt; color: #666666; line-height: 1.4;">
+                <strong>Generado por:</strong> Sistema<br/>
+                <strong>Fecha:</strong> ' . $fechaHora . '
+            </span>
+        </td>
+    </tr>
+</table>
+<hr style="color: #c90000; height: 1px;" />
+';
+
+$pdf->writeHTML($headerHTML, true, false, true, false, '');
+$pdf->Ln(-5);
+
 // ===================== CABECERAS =====================
 $pdf->SetFont('Helvetica', 'B', 11);
 $pdf->SetFillColor(201, 0, 0);
@@ -68,7 +104,7 @@ $pdf->Cell($colWidth, 8, 'REQUISITOS DE INSCRIPCIÓN (NUEVO INGRESO)', 0, 0, 'C'
 $pdf->Cell(6, 8, '', 0, 0); // espacio entre columnas
 $pdf->Cell($colWidth, 8, 'UNIFORME ESCOLAR', 0, 1, 'C', true);
 
-$pdf->Ln(5); // espacio entre encabezado y texto
+$pdf->Ln(-10); // espacio entre encabezado y texto
 
 $pdf->SetTextColor(0, 0, 0);
 $pdf->SetFont('Helvetica', '', 10);
