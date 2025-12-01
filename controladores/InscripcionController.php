@@ -197,7 +197,7 @@ function generarCedulaEscolar($conexion, $cedulaMadre, $anioNacimiento, $idNacio
     return false; // Si no se encontró una cédula disponible
 }
 
-function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSeccionActual) {
+function obtenerSeccionRecomendada($conexion, $idCurso, $idCursoSeccionActual) {
     try {
         // Primero verificar si hay aulas con cupo disponible
         $aulasConCupo = verificarCapacidadAulas($conexion, $idCurso);
@@ -211,19 +211,14 @@ function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSe
         }
         
         if ($hayAulasConCupo) {
-            // Buscar sección con cupo y mismo urbanismo
+            // Buscar sección con cupo y menor cantidad de estudiantes
             $query = "SELECT 
                     cs.IdCurso_Seccion,
                     s.seccion,
-                    COUNT(DISTINCT CASE WHEN e.IdUrbanismo = :id_urbanismo THEN i.IdInscripcion END) as mismos_urbanismo,
-                    COUNT(DISTINCT i2.IdInscripcion) as total_estudiantes,
+                    COUNT(DISTINCT i.IdInscripcion) as total_estudiantes,
                     a.capacidad,
                     CASE 
-                        WHEN COUNT(DISTINCT CASE WHEN e.IdUrbanismo = :id_urbanismo THEN i.IdInscripcion END) > 0 THEN 1
-                        ELSE 0 
-                    END as tiene_mismo_urbanismo,
-                    CASE 
-                        WHEN a.capacidad IS NULL OR COUNT(DISTINCT i2.IdInscripcion) < a.capacidad THEN 1
+                        WHEN a.capacidad IS NULL OR COUNT(DISTINCT i.IdInscripcion) < a.capacidad THEN 1
                         ELSE 0 
                     END as tiene_cupo
                 FROM curso_seccion cs
@@ -231,21 +226,16 @@ function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSe
                 LEFT JOIN aula a ON cs.IdAula = a.IdAula
                 LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
                     AND i.IdStatus = 11
-                LEFT JOIN persona e ON i.IdEstudiante = e.IdPersona
-                LEFT JOIN inscripcion i2 ON cs.IdCurso_Seccion = i2.IdCurso_Seccion 
-                    AND i2.IdStatus = 11
                 WHERE cs.IdCurso = :id_curso
                 AND s.seccion != 'Inscripción'
                 AND cs.IdCurso_Seccion != :id_curso_seccion_actual
                 GROUP BY cs.IdCurso_Seccion
                 HAVING tiene_cupo = 1  -- Solo secciones con cupo disponible
-                ORDER BY tiene_mismo_urbanismo DESC, mismos_urbanismo DESC, 
-                        total_estudiantes ASC, RAND()
+                ORDER BY total_estudiantes ASC, RAND()
                 LIMIT 1";
             
             $stmt = $conexion->prepare($query);
             $stmt->bindParam(':id_curso', $idCurso, PDO::PARAM_INT);
-            $stmt->bindParam(':id_urbanismo', $idUrbanismo, PDO::PARAM_INT);
             $stmt->bindParam(':id_curso_seccion_actual', $idCursoSeccionActual, PDO::PARAM_INT);
             $stmt->execute();
             
@@ -257,7 +247,7 @@ function obtenerSeccionRecomendada($conexion, $idCurso, $idUrbanismo, $idCursoSe
         }
         
         // Si no hay aulas con cupo, buscar la sección con menor cantidad de estudiantes
-        return obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idUrbanismo, $idCursoSeccionActual);
+        return obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idCursoSeccionActual);
         
     } catch (Exception $e) {
         error_log("Error al obtener sección recomendada: " . $e->getMessage());
@@ -1743,7 +1733,6 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
                 $seccionRecomendada = obtenerSeccionRecomendada(
                     $conexion,
                     $inscripcionData['IdCurso'],
-                    $inscripcionData['IdUrbanismo'],
                     $inscripcionData['IdCurso_Seccion']
                 );
 
