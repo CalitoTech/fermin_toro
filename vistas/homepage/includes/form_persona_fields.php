@@ -369,7 +369,7 @@ function renderizarBloquePersona($tipo, $titulo, $icono, $collapse_id, $parentes
         echo '</div>';
 
         // Contenedor de campos con transición suave
-        echo '<div id="camposContactoEmergencia" style="transition: opacity 0.3s ease, max-height 0.3s ease; overflow: hidden;">';
+        echo '<div id="camposContactoEmergencia" style="transition: opacity 0.3s ease, max-height 0.3s ease;">';
         echo '<div class="row">';
 
         // Nacionalidad y Cédula del contacto de emergencia (PRIMERO)

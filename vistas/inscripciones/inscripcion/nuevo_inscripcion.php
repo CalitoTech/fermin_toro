@@ -498,8 +498,6 @@ $data_options = [
                 </div>
             </div>
         </div>
-    </form>
-</div>
 
         <!-- ===================== DATOS DE LA MADRE (usando helper igual que solicitud_cupo.php) ===================== -->
         <div id="seccionMadreContainer" style="display: none;">
@@ -635,6 +633,7 @@ $data_options = [
             </button>
         </div>
     </form>
+</div>
 </div>
 
 <?php include '../../layouts/footer.php'; ?>
