@@ -159,7 +159,7 @@ foreach ($statuses as $st) {
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                 <!-- Botón Imprimir -->
                                 <div class="mb-2">
-                                    <button class="btn btn-imprimir d-flex align-items-center" id="btnImprimir">
+                                    <button class="btn btn-imprimir d-flex align-items-center" id="btnImprimir" onclick="imprimirLista()">
                                         <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
                                     </button>
                                 </div>
@@ -493,7 +493,7 @@ window.imprimirLista = function() {
     generarReporteImprimible(
         'REPORTE DE INSCRIPCIONES DEL SISTEMA',
         '#tabla-inscripciones',
-        { logoUrl: '../../../assets/images/fermin.png', colorPrincipal: '#c90000', inscripcion: nombreCompleto }
+        { logoUrl: '../../../assets/images/fermin.png', colorPrincipal: '#c90000', usuario: nombreCompleto }
     );
 };
 </script>
