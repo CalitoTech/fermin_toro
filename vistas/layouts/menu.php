@@ -318,14 +318,14 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                     </div>
                     <ul class="sub-menu">
                         <li><a href="../../inscripciones/inscripcion/inscripcion.php">Inscripciones</a></li>
-                    </ul><i class='bx bx-cog'></i>
+                    </ul>
                 </li>
 
                 <!-- Configuración -->
                 <li>
                     <div class="icon-link">
                         <a href="#">
-                            
+                            <i class='bx bx-cog'></i>
                             <span class="link_name">Configuración</span>
                         </a>
                         <i class='bx bxs-chevron-down arrow'></i>
@@ -375,7 +375,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                 <!-- Configuración -->
                 <li>
                     <a href="../../configuracion/contrasena/contrasena.php">
-                        <i class='bx bx-cog'></i>
+                        <i class='bx bx-lock-alt'></i>
                         <span class="link_name">Configuración</span>
                     </a>
                 </li>
