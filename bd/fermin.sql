@@ -676,12 +676,11 @@ CREATE TABLE grupo_interes (
     IdGrupo_Interes int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdTipo_Grupo int NOT NULL,
     IdProfesor int NOT NULL,
-    IdCurso_Seccion int NOT NULL,
+    IdCurso int NOT NULL,
     IdFecha_Escolar int NOT NULL,
-    cupos_disponibles int NOT NULL,
     FOREIGN KEY (IdTipo_Grupo) REFERENCES tipo_grupo_interes(IdTipo_Grupo),
     FOREIGN KEY (IdProfesor) REFERENCES persona(IdPersona),
-    FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
+    FOREIGN KEY (IdCurso) REFERENCES curso(IdCurso),
     FOREIGN KEY (IdFecha_Escolar) REFERENCES fecha_escolar(IdFecha_Escolar)
 );
 
@@ -689,9 +688,10 @@ CREATE TABLE inscripcion_grupo_interes (
     IdInscripcion_Grupo int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     IdGrupo_Interes int NOT NULL,
     IdEstudiante int NOT NULL,
-    fecha_ingreso_grupo datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    IdInscripcion int NOT NULL,
     FOREIGN KEY (IdGrupo_Interes) REFERENCES grupo_interes(IdGrupo_Interes),
-    FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona)
+    FOREIGN KEY (IdEstudiante) REFERENCES persona(IdPersona),
+    FOREIGN KEY (IdInscripcion) REFERENCES inscripcion(IdInscripcion)
 );
 
 CREATE TABLE notificaciones (

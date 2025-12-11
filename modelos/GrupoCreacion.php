@@ -8,7 +8,6 @@ class GrupoCreacion {
     public $IdProfesor;
     public $IdAula;
     public $IdFecha_Escolar;
-    public $cupos_disponibles;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -19,8 +18,7 @@ class GrupoCreacion {
             IdTipoGrupo = :IdTipoGrupo,
             IdProfesor = :IdProfesor,
             IdAula = :IdAula,
-            IdFecha_Escolar = :IdFecha_Escolar,
-            cupos_disponibles = :cupos_disponibles";
+            IdFecha_Escolar = :IdFecha_Escolar";
 
         $stmt = $this->conn->prepare($query);
 
@@ -29,14 +27,12 @@ class GrupoCreacion {
         $this->IdProfesor = htmlspecialchars(strip_tags($this->IdProfesor));
         $this->IdAula = htmlspecialchars(strip_tags($this->IdAula));
         $this->IdFecha_Escolar = htmlspecialchars(strip_tags($this->IdFecha_Escolar));
-        $this->cupos_disponibles = htmlspecialchars(strip_tags($this->cupos_disponibles));
 
         // Vincular valores
         $stmt->bindParam(":IdTipoGrupo", $this->IdTipoGrupo);
         $stmt->bindParam(":IdProfesor", $this->IdProfesor);
         $stmt->bindParam(":IdAula", $this->IdAula);
         $stmt->bindParam(":IdFecha_Escolar", $this->IdFecha_Escolar);
-        $stmt->bindParam(":cupos_disponibles", $this->cupos_disponibles);
 
         return $stmt->execute();
     }

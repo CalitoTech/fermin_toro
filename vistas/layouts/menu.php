@@ -283,7 +283,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                             <li><a href="../../registros/status/status.php">Status</a></li>
                             <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
                             <!-- <li><a href="../../registros/bloque/bloque.php">Bloques</a></li> -->
-                            <!-- <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li> -->
+                            <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
                         <?php endif; ?>
                     </ul>
                 </li>
@@ -317,7 +317,8 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                         <i class='bx bxs-chevron-down arrow'></i>
                     </div>
                     <ul class="sub-menu">
-                        <li><a href="../../inscripciones/inscripcion/inscripcion.php">Inscripciones</a></li>
+                        <li><a href="../../inscripciones/inscripcion/inscripcion.php">Insc. Académicas</a></li>
+                        <li><a href="../../inscripciones/inscripcion_gi/inscripcion_gi.php">Insc. Grupo Interés</a></li>
                     </ul>
                 </li>
 

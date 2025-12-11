@@ -5,7 +5,7 @@ class InscripcionGrupoCreacion {
     public $IdInscripcionGrupo;
     public $IdGrupoCreacion;
     public $IdEstudiante;
-    public $fecha_inscripcion;
+    public $IdInscripcion;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -14,17 +14,20 @@ class InscripcionGrupoCreacion {
     public function guardar() {
         $query = "INSERT INTO inscripcion_grupo_creacion SET 
             IdGrupoCreacion = :IdGrupoCreacion,
-            IdEstudiante = :IdEstudiante";
+            IdEstudiante = :IdEstudiante,
+            IdInscripcion = :IdInscripcion";
 
         $stmt = $this->conn->prepare($query);
 
         // Limpiar datos
         $this->IdGrupoCreacion = htmlspecialchars(strip_tags($this->IdGrupoCreacion));
         $this->IdEstudiante = htmlspecialchars(strip_tags($this->IdEstudiante));
+        $this->IdInscripcion = htmlspecialchars(strip_tags($this->IdInscripcion));
 
         // Vincular valores
         $stmt->bindParam(":IdGrupoCreacion", $this->IdGrupoCreacion);
         $stmt->bindParam(":IdEstudiante", $this->IdEstudiante);
+        $stmt->bindParam(":IdInscripcion", $this->IdInscripcion);
 
         return $stmt->execute();
     }
