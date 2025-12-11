@@ -77,8 +77,8 @@ $tiposDiscapacidad = $tipoDiscapacidadModel->obtenerTodos();
     </style>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 <?php
     $estudiantes = $personaModel->obtenerEstudiantes($idPerfil, $idPersona);
 ?>

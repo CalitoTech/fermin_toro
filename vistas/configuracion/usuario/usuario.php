@@ -96,8 +96,8 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <title>UECFT Araure - Usuarios</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <!-- Sección Principal -->
 <section class="home-section">

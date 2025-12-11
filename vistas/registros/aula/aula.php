@@ -79,8 +79,8 @@ if ($alert) {
     <title>UECFT Araure - Aulas</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Obtener aulas según permisos del usuario

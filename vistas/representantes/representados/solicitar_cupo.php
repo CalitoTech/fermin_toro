@@ -420,8 +420,8 @@ unset($_SESSION['alert'], $_SESSION['message']);
     </style>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <div class="container mt-4" style="min-height: 80vh;">
     <!-- Encabezado -->

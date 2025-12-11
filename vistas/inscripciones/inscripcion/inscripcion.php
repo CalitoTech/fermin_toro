@@ -105,8 +105,8 @@ $yearSelected = $añoActivo ? $añoActivo['IdFecha_Escolar'] : ($añosEscolares[
     </style>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Obtener datos con filtro por permisos

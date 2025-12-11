@@ -89,8 +89,8 @@ $cursoModel = new Curso($conexion);
     <title>UECFT Araure - Cursos</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 <?php
 // Obtener cursos según permisos del usuario
 $cursos = $cursoModel->obtenerCursos($idPersona);

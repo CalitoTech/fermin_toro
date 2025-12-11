@@ -80,8 +80,8 @@ $seccionesDisponibles = $cursoSiguiente['secciones'] ?? [];
 $seccionPorDefecto = $cursoSiguiente['seccionPorDefecto'] ?? null;
 ?>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Capturar mensajes de sesión

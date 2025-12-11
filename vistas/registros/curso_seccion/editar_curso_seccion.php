@@ -85,8 +85,8 @@ $curso_seccion['IdNivel'] = $curso['IdNivel'] ?? null;
     <title>UECFT Araure - Editar Aula</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Cargar datos con filtro por permisos

@@ -68,8 +68,8 @@ function calcularEdad($fechaNacimiento) {
 }
 ?>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <style>
     .profile-header {

@@ -76,8 +76,8 @@ if (!$aula) {
     <title>UECFT Araure - Editar Aula</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Cargar niveles con filtro por permisos

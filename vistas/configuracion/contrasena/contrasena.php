@@ -43,8 +43,8 @@ $usuario = $personaModel->obtenerPorId($_SESSION['idPersona']);
 </head>
 <body>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <style>
     .account-settings-header {

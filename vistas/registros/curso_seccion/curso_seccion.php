@@ -79,8 +79,8 @@ if ($alert) {
     <title>UECFT Araure - Curso/Seccion</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Obtener curso/sección según permisos del usuario

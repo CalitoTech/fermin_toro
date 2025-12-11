@@ -66,8 +66,8 @@ $parentescos = $parentescoModel->obtenerTodos();
     </style>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 $representantes = $representanteModel->obtenerTodos($idPerfil, $idPersona);

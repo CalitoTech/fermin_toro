@@ -89,8 +89,8 @@ function tieneInscripcionEnAnoActivo($estudiante) {
 }
 ?>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <style>
         .students-container {

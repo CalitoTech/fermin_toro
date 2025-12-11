@@ -60,8 +60,8 @@ function mostrar($valor, $porDefecto = 'No registrado') {
     <link rel="stylesheet" href="../../../assets/css/foto_perfil.css">
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <section class="home-section">
     <div class="main-content container">

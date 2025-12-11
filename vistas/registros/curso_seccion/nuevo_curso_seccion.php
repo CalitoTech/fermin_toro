@@ -65,8 +65,8 @@ try {
     <title>UECFT Araure - Nuevo Curso/Sección</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Cargar datos con filtro por permisos

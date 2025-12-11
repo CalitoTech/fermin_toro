@@ -79,8 +79,8 @@ if ($alert) {
     <title>UECFT Araure - Requisitos</title>
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <?php
 // Obtener requisitos según permisos del usuario

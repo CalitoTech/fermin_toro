@@ -316,8 +316,8 @@ $telefonos = separarTelefonosPorTipo($egreso['telefonos'] ?? '');
 
 </head>
 
-<?php include '../../layouts/menu.php'; ?>
 <?php include '../../layouts/header.php'; ?>
+<?php include '../../layouts/menu.php'; ?>
 
 <section class="home-section">
     <div class="main-content">
