@@ -33,90 +33,10 @@ $nacionalidades = $modeloNacionalidad->obtenerTodos();
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 </head>
 
-    <!-- CSS Crítico: Loader (Inline para evitar fOUC) -->
-    <style>
-        /* Contenedor principal del loader - CENTRADO */
-        .loader_bg {
-            position: fixed;
-            z-index: 9999999;
-            top: 0;
-            left: 0;
-            background: #fff;
-            width: 100%;
-            height: 100%;
-            display: flex !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-
-        .loader-container {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* Anillo giratorio rojo */
-        .spinner-ring {
-            position: absolute;
-            width: 150px;
-            height: 150px;
-            border: 4px solid rgba(201, 0, 0, 0.1);
-            border-top: 4px solid #c90000;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        /* Logo con efecto de pulso */
-        .logo-pulse {
-            width: 150px;
-            height: 150px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: pulse 1.5s ease-in-out infinite;
-            z-index: 1;
-            position: relative;
-            left: 3px; /* CENTRADO CORREGIDO: Ajuste fino para centrar visualmente */
-            top: 60px;
-        }
-
-        .logo-pulse img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-        }
-
-        /* Texto de carga */
-        .loader-text {
-            margin-top: 100px;
-            font-size: 16px;
-            font-weight: 600;
-            color: #c90000;
-            letter-spacing: 2px;
-            animation: fade 1.5s ease-in-out infinite;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } }
-        @keyframes fade { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    </style>
 </head>
 
 <body>
-    <!-- loader  -->
-    <div class="loader_bg">
-       <div class="loader-container">
-          <div class="spinner-ring"></div>
-          <div class="logo-pulse">
-             <img src="../../assets/images/fermin.png" alt="UECFT Araure">
-          </div>
-          <div class="loader-text">Cargando...</div>
-       </div>
-    </div>
-    <!-- end loader -->
+    <?php include '../layouts/loader.php'; ?>
     <img class="wave" src="img/wave2.png">
 
     <!-- Botón volver flotante -->
@@ -587,21 +507,5 @@ $nacionalidades = $modeloNacionalidad->obtenerTodos();
         }
     </script>
 
-    <script>
-        // Ocultar el loader cuando la página esté completamente cargada
-        window.addEventListener('load', function() {
-            var loader = document.querySelector('.loader_bg');
-            if (loader) {
-                // Simular el fadeOut de jQuery con CSS transition
-                loader.style.transition = 'opacity 0.5s ease';
-                loader.style.opacity = '0';
-                
-                // Remover del DOM después de la transición
-                setTimeout(function() {
-                    loader.remove();
-                }, 500);
-            }
-        });
-    </script>
 </body>
 </html>
