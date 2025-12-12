@@ -77,6 +77,11 @@ class Notificaciones {
             </script>";
         } else {
             // Para cualquier otra alerta (success, error, warning)
+            $tipo = json_encode($alerta['tipo']);
+            $titulo = json_encode($alerta['titulo']);
+            $texto = json_encode($alerta['texto']);
+            $color = json_encode($alerta['color']);
+            
             echo "<script>
                 document.addEventListener('DOMContentLoaded', function() {
                     if (typeof Swal === 'undefined') {
@@ -85,10 +90,10 @@ class Notificaciones {
                     }
 
                     Swal.fire({
-                        icon: '{$alerta['tipo']}',
-                        title: '{$alerta['titulo']}',
-                        text: '{$alerta['texto']}',
-                        confirmButtonColor: '{$alerta['color']}'
+                        icon: $tipo,
+                        title: $titulo,
+                        text: $texto,
+                        confirmButtonColor: $color
                     });
                 });
             </script>";

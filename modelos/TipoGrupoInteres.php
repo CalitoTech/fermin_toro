@@ -13,6 +13,13 @@ class TipoGrupoInteres {
         $this->conn = $db;
     }
 
+    public function obtenerTodos() {
+        $query = "SELECT * FROM tipo_grupo_interes";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function obtenerPorNivel($idNivel) {
         $query = "SELECT * FROM tipo_grupo_interes WHERE IdNivel = ?";
         $stmt = $this->conn->prepare($query);

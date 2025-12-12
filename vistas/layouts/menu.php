@@ -283,7 +283,8 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                             <li><a href="../../registros/status/status.php">Status</a></li>
                             <li><a href="../../registros/parentesco/parentesco.php">Parentescos</a></li>
                             <!-- <li><a href="../../registros/bloque/bloque.php">Bloques</a></li> -->
-                            <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Grupos de Interés</a></li>
+                            <li><a href="../../registros/tipo_grupo_interes/tipo_grupo_interes.php">Tipos Grupo Int</a></li>
+                            <li><a href="../../registros/grupo_interes/grupo_interes.php">Grupos de Interés</a></li>
                         <?php endif; ?>
                     </ul>
                 </li>

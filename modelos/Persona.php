@@ -726,4 +726,19 @@ class Persona {
             return null;
         }
     }
+    public function obtenerProfesores() {
+        try {
+            $query = "SELECT DISTINCT p.IdPersona, p.nombre, p.apellido 
+                      FROM persona p
+                      JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
+                      WHERE dp.IdPerfil = 2
+                      ORDER BY p.nombre, p.apellido";
+            $stmt = $this->conn->prepare($query);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en obtenerProfesores: " . $e->getMessage());
+            return [];
+        }
+    }
 }
