@@ -406,6 +406,37 @@ class Persona {
         return $stmt->execute();
     }
 
+    public function obtenerEstudiantesActivos($idFechaEscolar) {
+        try {
+            // Get students with active enrollment in the specified school year
+            // Also return their Course ID
+            $query = "
+                SELECT 
+                    p.IdPersona,
+                    p.cedula,
+                    p.nombre,
+                    p.apellido,
+                    c.IdCurso,
+                    c.curso
+                FROM persona AS p
+                INNER JOIN inscripcion AS i ON i.IdEstudiante = p.IdPersona
+                INNER JOIN curso_seccion AS cs ON cs.IdCurso_Seccion = i.IdCurso_Seccion
+                INNER JOIN curso AS c ON c.IdCurso = cs.IdCurso
+                WHERE i.IdFecha_Escolar = :idFechaEscolar
+                AND i.IdStatus = 11 -- 'Inscrito' status
+                ORDER BY p.apellido, p.nombre
+            ";
+
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':idFechaEscolar', $idFechaEscolar, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en obtenerEstudiantesActivos: " . $e->getMessage());
+            return [];
+        }
+    }
+
     public function obtenerEstudiantes($idPerfil, $idPersona) {
         // Obtener todos los perfiles del usuario
         $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";

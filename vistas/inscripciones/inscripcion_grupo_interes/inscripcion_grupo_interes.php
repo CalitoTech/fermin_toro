@@ -21,29 +21,29 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
     session_destroy();
     exit();
 }
-// Incluir Notificaciones
+
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
 
-// Manejo de alertas por GET (para redirigir limpiando la URL)
+// Manejo de alertas por GET
 if (isset($_GET['deleted'])) {
     $_SESSION['alert'] = 'deleted';
-    header("Location: grupo_interes.php");
+    header("Location: inscripcion_grupo_interes.php");
     exit();
 } elseif (isset($_GET['success'])) {
     $_SESSION['alert'] = 'success';
-    header("Location: grupo_interes.php");
+    header("Location: inscripcion_grupo_interes.php");
     exit();
 } elseif (isset($_GET['actualizar'])) {
     $_SESSION['alert'] = 'actualizar';
-    header("Location: grupo_interes.php");
+    header("Location: inscripcion_grupo_interes.php");
     exit();
 } elseif (isset($_GET['error'])) {
     $_SESSION['alert'] = 'error';
-    header("Location: grupo_interes.php");
+    header("Location: inscripcion_grupo_interes.php");
     exit();
 }
 
-// Obtener alerta
+// Obtener alerta de sesión
 $alert = $_SESSION['alert'] ?? null;
 unset($_SESSION['alert']);
 
@@ -51,49 +51,42 @@ unset($_SESSION['alert']);
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El grupo de interés se creó correctamente.");
+            $alerta = Notificaciones::exito("Inscripción realizada correctamente.");
             break;
         case 'actualizar':
-            $alerta = Notificaciones::exito("El grupo de interés se actualizó correctamente.");
+            $alerta = Notificaciones::exito("Inscripción actualizada correctamente.");
             break;
         case 'deleted':
-            $alerta = Notificaciones::exito("El grupo de interés se eliminó correctamente.");
-            break;
-        case 'dependency_error':
-            $alerta = Notificaciones::advertencia("No se puede eliminar el grupo porque está siendo utilizado.");
+            $alerta = Notificaciones::exito("Inscripción eliminada correctamente.");
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Ocurrió un error, verifique por favor.");
+            $alerta = Notificaciones::error($_SESSION['message'] ?? "Ocurrió un error.");
+            unset($_SESSION['message']);
             break;
         default:
             $alerta = null;
     }
-
-    if ($alerta) {
-        Notificaciones::mostrar($alerta);
-    }
+    if ($alerta) Notificaciones::mostrar($alerta);
 }
+
+// Obtener datos
+require_once __DIR__ . '/../../../config/conexion.php';
+require_once __DIR__ . '/../../../modelos/InscripcionGrupoInteres.php';
+
+$database = new Database();
+$db = $database->getConnection();
+$inscripcionModel = new InscripcionGrupoInteres($db);
+$inscripciones = $inscripcionModel->obtenerTodos(); // Trae nombre_grupo (Tipo), nivel, curso, etc.
 ?>
 
+<!DOCTYPE html>
+<html lang="es">
 <head>
-    <title>UECFT Araure - Grupo Interés</title>
+    <title>UECFT Araure - Inscripciones Grupos de Interés</title>
 </head>
-
 <?php include '../../layouts/header.php'; ?>
 <?php include '../../layouts/menu.php'; ?>
 
-<?php
-// Obtener grupo_interes
-require_once __DIR__ . '/../../../config/conexion.php';
-require_once __DIR__ . '/../../../modelos/GrupoInteres.php';
-
-$database = new Database();
-$conexion = $database->getConnection();
-$grupo_interesModel = new GrupoInteres($conexion);
-$grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
-?>
-
-<!-- Sección Principal -->
 <section class="home-section">
     <div class="main-content">
         <div class="container">
@@ -101,46 +94,49 @@ $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <i class='bx bxs-user-detail'></i> Gestión de Grupo Interés
+                            <i class='bx bxs-user-check'></i> Inscripciones de Grupos de Interés
                         </div>
                         <div class="card-body">
                             <!-- Botones de acción -->
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <!-- Imprimir Lista -->
                                 <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
                                     <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
                                 </button>
-                                <!-- Nuevo Grupo -->
-                                <a href="nuevo_grupo_interes.php" class="btn btn-danger d-flex align-items-center">
-                                    <i class='bx bx-plus-medical me-1'></i> Nuevo Grupo
+                                <a href="nuevo_inscripcion_gi.php" class="btn btn-danger d-flex align-items-center">
+                                    <i class='bx bx-plus-medical me-1'></i> Nueva Inscripción
                                 </a>
                             </div>
 
-                             <!-- Filtros -->
-                            <div class="d-flex flex-wrap align-items-center mb-3 gap-3 p-3 bg-light rounded shadow-sm">
-                                <span class="fw-bold text-secondary text-uppercase" style="font-size: 0.85rem;">
-                                    <i class='bx bx-filter-alt'></i> Filtros:
-                                </span>
+                            <!-- Filtros -->
+                            <div class="d-flex flex-wrap align-items-center mb-3 gap-3 p-3 bg-light rounded">
+                                <span class="fw-bold text-secondary"><i class='bx bx-filter-alt'></i> Filtros:</span>
                                 
                                 <div class="d-flex align-items-center gap-2">
-                                    <label for="filtroFecha" class="mb-0 fw-semibold text-muted" style="font-size: 0.9rem;">Año Escolar:</label>
-                                    <select id="filtroFecha" class="form-select form-select-sm border-secondary-subtle" style="width:160px;">
+                                    <label for="filtroNivel" class="mb-0 fw-semibold">Nivel:</label>
+                                    <select id="filtroNivel" class="form-select form-select-sm" style="width:150px;">
                                         <option value="">Todos</option>
                                     </select>
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2">
-                                    <label for="filtroCurso" class="mb-0 fw-semibold text-muted" style="font-size: 0.9rem;">Curso:</label>
-                                    <select id="filtroCurso" class="form-select form-select-sm border-secondary-subtle" style="width:160px;">
+                                    <label for="filtroCurso" class="mb-0 fw-semibold">Curso:</label>
+                                    <select id="filtroCurso" class="form-select form-select-sm" style="width:150px;">
+                                        <option value="">Todos</option>
+                                    </select>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="filtroTipo" class="mb-0 fw-semibold">Tipo Grupo:</label>
+                                    <select id="filtroTipo" class="form-select form-select-sm" style="width:200px;">
                                         <option value="">Todos</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <!-- Búsqueda y Entradas por página -->
+                            <!-- Búsqueda y Paginación -->
                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
                                 <div class="flex-grow-1" style="max-width: 300px;">
-                                    <input type="text" class="search-input" id="buscar" placeholder="Buscar...">
+                                    <input type="text" class="search-input" id="buscar" placeholder="Buscar estudiante, cédula...">
                                 </div>
                                 <div class="d-flex align-items-center">
                                     <label for="entries" class="me-2">Entradas por página:</label>
@@ -154,20 +150,20 @@ $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
 
                             <!-- Tabla -->
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle" id="tabla-grupo_interes">
+                                <table class="table table-hover align-middle" id="tabla-inscripciones">
                                     <thead class="table-light">
                                         <tr>
                                             <th>ID</th>
-                                            <th>Grupo</th>
-                                            <th>Profesor</th>
+                                            <th>Estudiante</th>
+                                            <th>Cédula</th>
+                                            <th>Tipo Grupo</th>
+                                            <th>Nivel</th>
                                             <th>Curso</th>
-                                            <th>Año Escolar</th>
-                                            <th class="text-center">Total Est.</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="table-body">
-                                        <!-- Content filled by JS -->
+                                        <!-- Se llena vía JS -->
                                     </tbody>
                                 </table>
                             </div>
@@ -187,46 +183,44 @@ $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
 <?php include '../../layouts/footer.php'; ?>
 <script src="../../../assets/js/tablas.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Reportes Script (ajustar path si necesario, en aula es assets/js/reportes.js) -->
 <script src="../../../assets/js/reportes.js"></script>
+
 <script>
     // === DATOS GLOBALES ===
-    let allData = <?= json_encode($grupo_interes) ?>;
-    let filteredData = [...allData];
-    let currentPage = 1;
-    let entriesPerPage = parseInt(document.getElementById('entries').value) || 10;
+    let allData = <?= json_encode($inscripciones) ?>;
+    
+    // Preparar datos (concatenar nombre completo para facilidad)
+    allData = allData.map(item => ({
+        ...item,
+        nombreCompleto: `${item.nombre} ${item.apellido}`,
+        // Normalizar valores nulos
+        nivel: item.nivel || 'Sin Nivel',
+        curso: item.curso || 'Sin Curso',
+        nombre_grupo: item.nombre_grupo || 'Sin Tipo'
+    }));
 
-    // Inicialización de TablaDinamica
+    // Inicialización
     document.addEventListener('DOMContentLoaded', function() {
-        // Mapear datos para búsqueda fácil
-         allData = allData.map(item => ({
-            ...item,
-            profesor: `${item.nombre} ${item.apellido}`,
-            total_estudiantes: item.total_estudiantes || 0 // Asegurar que exista
-        }));
-
         const config = {
-            tablaId: 'tabla-grupo_interes',
+            tablaId: 'tabla-inscripciones',
             tbodyId: 'table-body',
             buscarId: 'buscar',
             entriesId: 'entries',
             paginationId: 'pagination',
             data: allData,
-            idField: 'IdGrupo_Interes',
+            idField: 'IdInscripcion_Grupo',
             columns: [
-                { label: 'ID', key: 'IdGrupo_Interes' },
-                { label: 'Grupo', key: 'nombre_grupo' },
-                { label: 'Profesor', key: 'profesor' },
-                { label: 'Curso', key: 'curso' },
-                { label: 'Año Escolar', key: 'fecha_escolar' },
-                { 
-                    label: 'Total Est.', 
-                    key: 'total_estudiantes',
-                    render: (item) => `<div class="text-center"><span class="badge bg-secondary rounded-pill">${item.total_estudiantes}</span></div>`
-                }
+                { label: 'ID', key: 'IdInscripcion_Grupo' },
+                { label: 'Estudiante', key: 'nombreCompleto' },
+                { label: 'Cédula', key: 'cedula' },
+                { label: 'Tipo Grupo', key: 'nombre_grupo' },
+                { label: 'Nivel', key: 'nivel' },
+                { label: 'Curso', key: 'curso' }
             ],
             acciones: [
                 {
-                    url: 'editar_grupo_interes.php?id={id}',
+                    url: 'editar_inscripcion_gi.php?id={id}',
                     class: 'btn-outline-primary',
                     icon: '<i class="bx bxs-edit"></i>'
                 },
@@ -238,84 +232,89 @@ $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
             ]
         };
 
-        window.tablaGrupoInteres = new TablaDinamica(config);
+        window.tablaInscripciones = new TablaDinamica(config);
 
         // === POBLAR FILTROS ===
-        const filtroFecha = document.getElementById('filtroFecha');
+        const filtroNivel = document.getElementById('filtroNivel');
         const filtroCurso = document.getElementById('filtroCurso');
+        const filtroTipo = document.getElementById('filtroTipo');
 
-        // Valores Únicos para Fecha
-        const fechasUnicas = [...new Set(allData.map(item => item.fecha_escolar).filter(Boolean))];
-        fechasUnicas.sort().reverse().forEach(fecha => {
-            const opt = document.createElement('option');
-            opt.value = fecha;
-            opt.textContent = fecha;
-            filtroFecha.appendChild(opt);
-        });
-
-        // Valores Únicos para Curso
-        const cursosUnicos = [...new Set(allData.map(item => item.curso).filter(Boolean))];
-        cursosUnicos.sort().forEach(curso => {
-            const opt = document.createElement('option');
-            opt.value = curso;
-            opt.textContent = curso;
-            filtroCurso.appendChild(opt);
-        });
-
-        // === FUNCIÓN DE FILTROS ===
-        function aplicarFiltros() {
-            const fechaVal = filtroFecha.value;
-            const cursoVal = filtroCurso.value;
-
-            const filtered = allData.filter(item => {
-                const matchFecha = !fechaVal || item.fecha_escolar === fechaVal;
-                const matchCurso = !cursoVal || item.curso === cursoVal;
-                return matchFecha && matchCurso;
+        // Función helper para poblar selects
+        function poblarSelect(selectElement, key) {
+            const values = [...new Set(allData.map(item => item[key]).filter(val => val && val !== 'Sin Nivel' && val !== 'Sin Curso' && val !== 'Sin Tipo'))];
+            values.sort().forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.textContent = val;
+                selectElement.appendChild(opt);
             });
-
-            window.tablaGrupoInteres.updateData(filtered);
         }
 
-        filtroFecha.addEventListener('change', aplicarFiltros);
-        filtroCurso.addEventListener('change', aplicarFiltros);
+        poblarSelect(filtroNivel, 'nivel');
+        poblarSelect(filtroCurso, 'curso');
+        poblarSelect(filtroTipo, 'nombre_grupo');
 
+        // === LÓGICA DE FILTRADO ===
+        function aplicarFiltros() {
+            const nivelVal = filtroNivel.value;
+            const cursoVal = filtroCurso.value;
+            const tipoVal = filtroTipo.value;
+
+            const filtered = allData.filter(item => {
+                const matchNivel = !nivelVal || item.nivel === nivelVal;
+                const matchCurso = !cursoVal || item.curso === cursoVal;
+                const matchTipo = !tipoVal || item.nombre_grupo === tipoVal;
+                
+                return matchNivel && matchCurso && matchTipo;
+            });
+
+            window.tablaInscripciones.updateData(filtered);
+        }
+
+        filtroNivel.addEventListener('change', aplicarFiltros);
+        filtroCurso.addEventListener('change', aplicarFiltros);
+        filtroTipo.addEventListener('change', aplicarFiltros);
     });
 
-    // === FUNCIONES ===
+    // === ELIMINAR ===
     function confirmDelete(id) {
         Swal.fire({
-            title: "¿Está seguro que desea eliminar este grupo?",
+            title: "¿Está seguro de eliminar esta inscripción?",
+            text: "Esta acción liberará al estudiante del grupo.",
             showDenyButton: true,
-            showCancelButton: false,
             confirmButtonText: "Sí, Eliminar",
-            denyButtonText: "No, Volver"
+            denyButtonText: "Cancelar",
+            confirmButtonColor: "#c90000",
+            denyButtonColor: "#6c757d"
         }).then((result) => {
             if (result.isConfirmed) {
-                window.location.href = '../../../controladores/GrupoInteresController.php?action=eliminar&id=' + id;
+                window.location.href = '../../../controladores/InscripcionGrupoInteresController.php?action=eliminar&id=' + id;
             }
         });
     }
 
+    // === IMPRIMIR ===
     window.imprimirLista = function() {
-        const nombreCompleto = "<?php 
+        const usuarioNombre = "<?php 
             echo htmlspecialchars(
                 $_SESSION['nombre_completo'] ?? 
-                ($_SESSION['nombre'] ?? '') . ' ' . ($_SESSION['apellido'] ?? '') ??
-                $_SESSION['usuario'] ?? 
-                'Sistema'
-            );
+                ($_SESSION['nombre'] . ' ' . $_SESSION['apellido']) ?? 
+                'Usuario'
+            ); 
         ?>";
         
         generarReporteImprimible(
-            'REPORTE DE GRUPOS DE INTERÉS',
-            '#tabla-grupo_interes',
+            'LISTADO DE INSCRIPCIONES - GRUPOS DE INTERÉS',
+            '#tabla-inscripciones',
             {
                 logoUrl: '../../../assets/images/fermin.png',
                 colorPrincipal: '#c90000',
-                usuario: nombreCompleto
+                usuario: usuarioNombre,
+                subtitulo: 'Año Escolar Activo'
             }
         );
     };
 </script>
+
 </body>
 </html>

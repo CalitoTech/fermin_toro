@@ -39,22 +39,25 @@ class GrupoInteres {
 
     public function obtenerGrupoInteres() {
         $query = "SELECT gc.*, tg.nombre_grupo, tg.descripcion, p.nombre, p.apellido,
-                gc.IdCurso, c.curso, gc.IdFecha_Escolar, fe.fecha_escolar
+                gc.IdCurso, c.curso, gc.IdFecha_Escolar, fe.fecha_escolar,
+                (SELECT COUNT(*) FROM inscripcion_grupo_interes admin WHERE admin.IdGrupo_Interes = gc.IdGrupo_Interes) as total_estudiantes
                  FROM grupo_interes gc
                  JOIN tipo_grupo_interes tg ON gc.IdTipo_Grupo = tg.IdTipo_Grupo
                  JOIN persona p ON gc.IdProfesor = p.IdPersona
-                 JOin curso c ON gc.IdCurso = c.IdCurso
-                 JOIN fecha_escolar fe ON gc.IdFecha_Escolar = fe.IdFecha_Escolar";
+                 JOIN curso c ON gc.IdCurso = c.IdCurso
+                 JOIN fecha_escolar fe ON gc.IdFecha_Escolar = fe.IdFecha_Escolar
+                 ORDER BY gc.IdGrupo_Interes DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function obtenerPorFechaEscolar($idFechaEscolar) {
-        $query = "SELECT gc.*, tg.nombre_grupo, tg.descripcion, p.nombre, p.apellido
+        $query = "SELECT gc.*, tg.nombre_grupo, tg.descripcion, p.nombre, p.apellido, c.curso
                  FROM grupo_interes gc
                  JOIN tipo_grupo_interes tg ON gc.IdTipo_Grupo = tg.IdTipo_Grupo
                  JOIN persona p ON gc.IdProfesor = p.IdPersona
+                 JOIN curso c ON gc.IdCurso = c.IdCurso
                  WHERE gc.IdFecha_Escolar = ?";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(1, $idFechaEscolar);

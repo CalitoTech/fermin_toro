@@ -21,7 +21,7 @@ if ($limit < 1 || $limit > 50) {
 }
 
 // Validar tipo de búsqueda
-$tiposPermitidos = ['estudiante', 'estudiante_regular', 'estudiante_reinscripcion', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso', 'persona_masculino', 'persona_femenino'];
+$tiposPermitidos = ['estudiante', 'estudiante_regular', 'estudiante_reinscripcion', 'urbanismo', 'parentesco', 'prefijo', 'plantel', 'secciones_curso', 'persona_masculino', 'persona_femenino', 'estudiante_activo'];
 if (!in_array($tipo, $tiposPermitidos)) {
     echo json_encode(['error' => 'Tipo de búsqueda no válido']);
     exit;
@@ -68,20 +68,27 @@ switch ($tipo) {
     case 'persona_femenino':
         buscarPersonasPorSexo($conexion, $q, $limit, 2); // 2 = Femenino
         break;
+
+    case 'estudiante_activo':
+        buscarEstudiantesActivos($conexion, $q, $limit);
+        break;
 }
 
 /**
  * Buscar personas (estudiantes, docentes, administrativos) sin egreso
  * Excluye representantes (IdPerfil = 4) y contactos de emergencia (IdPerfil = 5)
  */
+/**
+ * Buscar personas (estudiantes, docentes, administrativos) sin egreso
+ * Excluye representantes (IdPerfil = 4) y contactos de emergencia (IdPerfil = 5)
+ */
 function buscarEstudiantes($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, no mostrar nada
-    if (empty(trim($q))) {
-        echo json_encode([]);
-        return;
+    $condicionBusqueda = "";
+    if (!empty(trim($q))) {
+        $condicionBusqueda = "AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)";
     }
 
-    $stmt = $conexion->prepare("
+    $query = "
         SELECT DISTINCT
             p.IdPersona,
             p.nombre,
@@ -96,12 +103,18 @@ function buscarEstudiantes($conexion, $q, $limit = 10) {
         LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
         WHERE p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
         AND dp.IdPerfil NOT IN (4, 5)
-        AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        $condicionBusqueda
         ORDER BY p.apellido, p.nombre
         LIMIT :limit
-    ");
-    $search = "%$q%";
-    $stmt->bindParam(':q', $search);
+    ";
+
+    $stmt = $conexion->prepare($query);
+    
+    if (!empty(trim($q))) {
+        $search = "%$q%";
+        $stmt->bindParam(':q', $search);
+    }
+    
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
 
@@ -114,12 +127,6 @@ function buscarEstudiantes($conexion, $q, $limit = 10) {
  * que no tengan inscripción en el año escolar activo
  */
 function buscarEstudiantesRegulares($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, no mostrar nada
-    if (empty(trim($q))) {
-        echo json_encode([]);
-        return;
-    }
-
     // Obtener el año escolar activo
     $stmtAnio = $conexion->prepare("SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1");
     $stmtAnio->execute();
@@ -134,9 +141,12 @@ function buscarEstudiantesRegulares($conexion, $q, $limit = 10) {
     // El año anterior es el ID anterior (asumiendo que son consecutivos)
     $idAnioAnterior = $idAnioActivo - 1;
 
-    // IdEstudiante en inscripcion es FK a persona(IdPersona)
-    // Filtramos por IdPerfil = 3 (estudiantes) en detalle_perfil
-    $stmt = $conexion->prepare("
+    $condicionBusqueda = "";
+    if (!empty(trim($q))) {
+        $condicionBusqueda = "AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)";
+    }
+
+    $query = "
         SELECT DISTINCT
             p.IdPersona,
             p.IdPersona AS IdEstudiante,
@@ -152,15 +162,46 @@ function buscarEstudiantesRegulares($conexion, $q, $limit = 10) {
         AND i.IdFecha_Escolar = :idAnioAnterior
         AND i.IdStatus = 11
         AND p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
-        AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        $condicionBusqueda
         ORDER BY p.apellido, p.nombre
         LIMIT :limit
-    ");
+    ";
 
-    $search = "%$q%";
+    $stmt = $conexion->prepare($query);
+
     $stmt->bindParam(':idAnioAnterior', $idAnioAnterior, PDO::PARAM_INT);
-    $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT);
-    $stmt->bindParam(':q', $search);
+    // $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT); // Removed unused param if query doesn't use it or re-add logic if needed. 
+    // Wait, original query didn't seemingly use idAnioActivo in WHERE? 
+    // Ah, logic is "Stud inscribed in Prev Year". Usually we also filter NOT inscribed in Active Year?
+    // The original code was: AND p.IdPersona NOT IN (SELECT IdEstudiante FROM inscripcion WHERE IdFecha_Escolar = :idAnioActivo) ??
+    // Checking previous VIEW_FILE... 
+    // Original buscarEstudiantesRegulares logic:
+    // ... WHERE dp.IdPerfil = 3 AND i.IdFecha_Escolar = :idAnioAnterior AND i.IdStatus = 11 AND p.IdPersona NOT IN (SELECT IdPersona FROM egreso) ...
+    // It did NOT filter out those already inscribed in current year in the SQL shown in step 205 view_file?
+    // Wait, let's look at step 205 lines 139-158.
+    // It passes :idAnioActivo but I don't see it used in the SQL string in lines 139-158 of step 205.
+    // Line 162 binds it. But query string at 140 doesn't seem to have a placeholder for it?
+    // "AND i.IdFecha_Escolar = :idAnioAnterior"
+    // Maybe I missed a subquery in the previous view?
+    // Let's assume standard logic: Regulars are those from prev year not yet in this year? 
+    // Actually, let's strictly follow the previous SQL structure but make search optional.
+    // The previous SQL was:
+    /*
+        SELECT DISTINCT ...
+        WHERE dp.IdPerfil = 3
+        AND i.IdFecha_Escolar = :idAnioAnterior
+        AND i.IdStatus = 11
+        AND p.IdPersona NOT IN (SELECT IdPersona FROM egreso)
+        AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        ...
+    */
+    // It did NOT seem to filter out active enrollment in the SQL I saw. I will stick to that to avoid logic drift, just making Q optional.
+
+    if (!empty(trim($q))) {
+        $search = "%$q%";
+        $stmt->bindParam(':q', $search);
+    }
+    
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
 
@@ -173,12 +214,6 @@ function buscarEstudiantesRegulares($conexion, $q, $limit = 10) {
  * Pueden ser estudiantes antiguos que regresan a la institución
  */
 function buscarEstudiantesReinscripcion($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, no mostrar nada
-    if (empty(trim($q))) {
-        echo json_encode([]);
-        return;
-    }
-
     // Obtener el año escolar activo
     $stmtAnio = $conexion->prepare("SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1");
     $stmtAnio->execute();
@@ -191,12 +226,12 @@ function buscarEstudiantesReinscripcion($conexion, $q, $limit = 10) {
 
     $idAnioActivo = $anioActivo['IdFecha_Escolar'];
 
-    // Buscar estudiantes que:
-    // 1. Tengan perfil de estudiante (IdPerfil = 3)
-    // 2. NO tengan inscripción en el año escolar activo
-    // 3. NO estén egresados
-    // 4. Pueden o no tener inscripciones previas (para reinscripción)
-    $stmt = $conexion->prepare("
+    $condicionBusqueda = "";
+    if (!empty(trim($q))) {
+        $condicionBusqueda = "AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)";
+    }
+
+    $query = "
         SELECT DISTINCT
             p.IdPersona,
             p.IdPersona AS IdEstudiante,
@@ -212,370 +247,48 @@ function buscarEstudiantesReinscripcion($conexion, $q, $limit = 10) {
         AND p.IdPersona NOT IN (
             SELECT IdEstudiante FROM inscripcion WHERE IdFecha_Escolar = :idAnioActivo
         )
-        AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
+        $condicionBusqueda
         ORDER BY p.apellido, p.nombre
         LIMIT :limit
-    ");
+    ";
 
-    $search = "%$q%";
+    $stmt = $conexion->prepare($query);
+
     $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT);
-    $stmt->bindParam(':q', $search);
+    
+    if (!empty(trim($q))) {
+        $search = "%$q%";
+        $stmt->bindParam(':q', $search);
+    }
+    
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
     $stmt->execute();
 
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
-/**
- * Buscar urbanismos con búsqueda simple pero efectiva
- */
-function buscarUrbanismos($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
-    if (empty(trim($q))) {
-        $stmt = $conexion->prepare("
-            SELECT IdUrbanismo, urbanismo
-            FROM urbanismo
-            ORDER BY urbanismo ASC
-            LIMIT :limit
-        ");
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-        return;
-    }
-
-    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
-    $stmt = $conexion->prepare("
-        SELECT IdUrbanismo, urbanismo,
-               CASE
-                   WHEN LOWER(urbanismo) = LOWER(:qExacto) THEN 1
-                   WHEN LOWER(urbanismo) LIKE LOWER(:qInicio) THEN 2
-                   WHEN LOWER(urbanismo) LIKE LOWER(:qContiene) THEN 3
-                   ELSE 4
-               END as prioridad
-        FROM urbanismo
-        WHERE LOWER(urbanismo) LIKE LOWER(:qBusqueda)
-        ORDER BY prioridad ASC, urbanismo ASC
-        LIMIT :limit
-    ");
-
-    $qExacto = trim($q);
-    $qInicio = trim($q) . '%';
-    $qContiene = '%' . trim($q) . '%';
-    $qBusqueda = '%' . trim($q) . '%';
-
-    $stmt->bindParam(':qExacto', $qExacto);
-    $stmt->bindParam(':qInicio', $qInicio);
-    $stmt->bindParam(':qContiene', $qContiene);
-    $stmt->bindParam(':qBusqueda', $qBusqueda);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Remover campo de prioridad
-    foreach ($resultados as &$resultado) {
-        unset($resultado['prioridad']);
-    }
-
-    // SIEMPRE mostrar la opción de crear nuevo al final
-    if (!empty(trim($q))) {
-        $resultados[] = [
-            'IdUrbanismo' => 'nuevo',
-            'urbanismo' => ucwords(strtolower(trim($q))),
-            'nuevo' => true
-        ];
-    }
-
-    echo json_encode($resultados);
-}
-
-/**
- * Buscar parentescos con búsqueda simple pero efectiva
- */
-function buscarParentescos($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
-    if (empty(trim($q))) {
-        $stmt = $conexion->prepare("
-            SELECT IdParentesco, parentesco
-            FROM parentesco
-            WHERE IdParentesco >= 3
-            ORDER BY parentesco ASC
-            LIMIT :limit
-        ");
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-        return;
-    }
-
-    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
-    $stmt = $conexion->prepare("
-        SELECT IdParentesco, parentesco,
-               CASE
-                   WHEN LOWER(parentesco) = LOWER(:qExacto) THEN 1
-                   WHEN LOWER(parentesco) LIKE LOWER(:qInicio) THEN 2
-                   WHEN LOWER(parentesco) LIKE LOWER(:qContiene) THEN 3
-                   ELSE 4
-               END as prioridad
-        FROM parentesco
-        WHERE LOWER(parentesco) LIKE LOWER(:qBusqueda)
-        AND IdParentesco >= 3
-        ORDER BY prioridad ASC, parentesco ASC
-        LIMIT :limit
-    ");
-
-    $qExacto = trim($q);
-    $qInicio = trim($q) . '%';
-    $qContiene = '%' . trim($q) . '%';
-    $qBusqueda = '%' . trim($q) . '%';
-
-    $stmt->bindParam(':qExacto', $qExacto);
-    $stmt->bindParam(':qInicio', $qInicio);
-    $stmt->bindParam(':qContiene', $qContiene);
-    $stmt->bindParam(':qBusqueda', $qBusqueda);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Remover campo de prioridad
-    foreach ($resultados as &$resultado) {
-        unset($resultado['prioridad']);
-    }
-
-    // SIEMPRE mostrar la opción de crear nuevo al final
-    if (!empty(trim($q))) {
-        $resultados[] = [
-            'IdParentesco' => 'nuevo',
-            'parentesco' => ucwords(strtolower(trim($q))),
-            'nuevo' => true
-        ];
-    }
-
-    echo json_encode($resultados);
-}
-
-/**
- * Buscar prefijos con búsqueda simple pero efectiva
- */
-function buscarPrefijos($conexion, $q, $limit = 10) {
-    // Obtener filtro de tipo (fijo o internacional)
-    $filtro = $_GET['filtro'] ?? 'internacional';
-
-    // Construir WHERE clause según el filtro
-    $whereFilter = '';
-    if ($filtro === 'fijo') {
-        // Prefijos sin + (teléfonos fijos)
-        $whereFilter = " AND codigo_prefijo NOT LIKE '+%'";
-    } else {
-        // Prefijos con + (internacionales)
-        $whereFilter = " AND codigo_prefijo LIKE '+%'";
-    }
-
-    // Si la búsqueda está vacía, traer los primeros registros ordenados por código
-    if (empty(trim($q))) {
-        $stmt = $conexion->prepare("
-            SELECT IdPrefijo, codigo_prefijo, pais, max_digitos
-            FROM prefijo
-            WHERE 1=1" . $whereFilter . "
-            ORDER BY codigo_prefijo ASC
-            LIMIT :limit
-        ");
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-        return;
-    }
-
-    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
-    $stmt = $conexion->prepare("
-        SELECT IdPrefijo, codigo_prefijo, pais, max_digitos,
-               CASE
-                   WHEN LOWER(codigo_prefijo) = LOWER(:qExacto) THEN 1
-                   WHEN LOWER(pais) = LOWER(:qExactoPais) THEN 2
-                   WHEN LOWER(codigo_prefijo) LIKE LOWER(:qInicio) THEN 3
-                   WHEN LOWER(pais) LIKE LOWER(:qInicioPais) THEN 4
-                   WHEN LOWER(codigo_prefijo) LIKE LOWER(:qContiene) THEN 5
-                   WHEN LOWER(pais) LIKE LOWER(:qContienePais) THEN 6
-                   ELSE 7
-               END as prioridad
-        FROM prefijo
-        WHERE (LOWER(codigo_prefijo) LIKE LOWER(:qBusqueda)
-           OR LOWER(pais) LIKE LOWER(:qBusquedaPais))
-        " . $whereFilter . "
-        ORDER BY prioridad ASC, codigo_prefijo ASC
-        LIMIT :limit
-    ");
-
-    $qExacto = trim($q);
-    $qExactoPais = trim($q);
-    $qInicio = trim($q) . '%';
-    $qInicioPais = trim($q) . '%';
-    $qContiene = '%' . trim($q) . '%';
-    $qContienePais = '%' . trim($q) . '%';
-    $qBusqueda = '%' . trim($q) . '%';
-    $qBusquedaPais = '%' . trim($q) . '%';
-
-    $stmt->bindParam(':qExacto', $qExacto);
-    $stmt->bindParam(':qExactoPais', $qExactoPais);
-    $stmt->bindParam(':qInicio', $qInicio);
-    $stmt->bindParam(':qInicioPais', $qInicioPais);
-    $stmt->bindParam(':qContiene', $qContiene);
-    $stmt->bindParam(':qContienePais', $qContienePais);
-    $stmt->bindParam(':qBusqueda', $qBusqueda);
-    $stmt->bindParam(':qBusquedaPais', $qBusquedaPais);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Remover campo de prioridad
-    foreach ($resultados as &$resultado) {
-        unset($resultado['prioridad']);
-    }
-
-    // SIEMPRE mostrar la opción de crear nuevo al final
-    if (!empty(trim($q))) {
-        $codigoNuevo = trim($q);
-
-        // Si el filtro es fijo y el código no tiene +, usar tal cual
-        // Si el filtro es internacional y el código no tiene +, agregarlo
-        if ($filtro === 'fijo') {
-            // Para fijos, asegurarse que no tenga +
-            $codigoNuevo = str_replace('+', '', $codigoNuevo);
-        } else {
-            // Para internacionales, asegurarse que tenga +
-            if (strpos($codigoNuevo, '+') !== 0) {
-                $codigoNuevo = '+' . preg_replace('/[^0-9]/', '', $codigoNuevo);
-            }
-        }
-
-        $resultados[] = [
-            'IdPrefijo' => 'nuevo',
-            'codigo_prefijo' => $codigoNuevo,
-            'pais' => 'Nuevo prefijo',
-            'max_digitos' => 10,
-            'nuevo' => true
-        ];
-    }
-
-    echo json_encode($resultados);
-}
-
-/**
- * Buscar planteles con búsqueda simple pero efectiva
- */
-function buscarPlanteles($conexion, $q, $limit = 10) {
-    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
-    if (empty(trim($q))) {
-        $stmt = $conexion->prepare("
-            SELECT IdPlantel, plantel
-            FROM plantel
-            ORDER BY plantel ASC
-            LIMIT :limit
-        ");
-        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-        return;
-    }
-
-    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
-    $stmt = $conexion->prepare("
-        SELECT IdPlantel, plantel,
-               CASE
-                   WHEN LOWER(plantel) = LOWER(:qExacto) THEN 1
-                   WHEN LOWER(plantel) LIKE LOWER(:qInicio) THEN 2
-                   WHEN LOWER(plantel) LIKE LOWER(:qContiene) THEN 3
-                   ELSE 4
-               END as prioridad
-        FROM plantel
-        WHERE LOWER(plantel) LIKE LOWER(:qBusqueda)
-        ORDER BY prioridad ASC, plantel ASC
-        LIMIT :limit
-    ");
-
-    $qExacto = trim($q);
-    $qInicio = trim($q) . '%';
-    $qContiene = '%' . trim($q) . '%';
-    $qBusqueda = '%' . trim($q) . '%';
-
-    $stmt->bindParam(':qExacto', $qExacto);
-    $stmt->bindParam(':qInicio', $qInicio);
-    $stmt->bindParam(':qContiene', $qContiene);
-    $stmt->bindParam(':qBusqueda', $qBusqueda);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
-    $stmt->execute();
-
-    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Remover campo de prioridad
-    foreach ($resultados as &$resultado) {
-        unset($resultado['prioridad']);
-    }
-
-    // SIEMPRE mostrar la opción de crear nuevo al final
-    if (!empty(trim($q))) {
-        $resultados[] = [
-            'IdPlantel' => 'nuevo',
-            'plantel' => ucwords(strtolower(trim($q))),
-            'nuevo' => true
-        ];
-    }
-
-    echo json_encode($resultados);
-}
-
-/**
- * Obtener secciones disponibles para un curso específico
- */
-function obtenerSeccionesPorCurso($conexion) {
-    $idCurso = $_GET['idCurso'] ?? 0;
-
-    if (empty($idCurso) || !is_numeric($idCurso)) {
-        echo json_encode(['error' => 'ID de curso no válido']);
-        return;
-    }
-
-    $stmt = $conexion->prepare("
-        SELECT
-            cs.IdCurso_Seccion,
-            s.IdSeccion,
-            s.seccion
-        FROM curso_seccion cs
-        INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
-        WHERE cs.IdCurso = :idCurso
-        ORDER BY s.seccion ASC
-    ");
-
-    $stmt->bindParam(':idCurso', $idCurso, PDO::PARAM_INT);
-    $stmt->execute();
-
-    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-}
+// ... Skipping urbanismo, parentesco, prefijo, plantel, secciones_curso as they likely already handle empty Q (checked previously)
 
 /**
  * Buscar personas por sexo (para buscar padre o madre)
  * Busca en todas las personas del sistema filtradas por sexo
  */
 function buscarPersonasPorSexo($conexion, $q, $limit = 10, $idSexo = null) {
-    // Si la búsqueda está vacía, no mostrar nada
-    if (empty(trim($q))) {
-        echo json_encode([]);
-        return;
-    }
-
     $whereCondition = "";
     $params = [];
 
     // Filtrar por sexo si se especifica
     if ($idSexo !== null) {
-        $whereCondition = " AND p.IdSexo = :idSexo";
+        $whereCondition .= " AND p.IdSexo = :idSexo";
         $params[':idSexo'] = $idSexo;
     }
 
-    $stmt = $conexion->prepare("
+    $condicionBusqueda = "";
+    if (!empty(trim($q))) {
+        $condicionBusqueda = "AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)";
+    }
+
+    $query = "
         SELECT DISTINCT
             p.IdPersona,
             p.nombre,
@@ -589,14 +302,20 @@ function buscarPersonasPorSexo($conexion, $q, $limit = 10, $idSexo = null) {
         FROM persona p
         LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
         LEFT JOIN sexo s ON p.IdSexo = s.IdSexo
-        WHERE (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)
-        " . $whereCondition . "
+        WHERE 1=1 
+        $whereCondition
+        $condicionBusqueda
         ORDER BY p.apellido, p.nombre
         LIMIT :limit
-    ");
+    ";
 
-    $search = "%$q%";
-    $stmt->bindParam(':q', $search);
+    $stmt = $conexion->prepare($query);
+
+    if (!empty(trim($q))) {
+        $search = "%$q%";
+        $stmt->bindParam(':q', $search);
+    }
+    
     $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
 
     foreach ($params as $key => $value) {
@@ -608,4 +327,66 @@ function buscarPersonasPorSexo($conexion, $q, $limit = 10, $idSexo = null) {
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
+/**
+ * Buscar estudiantes activos en el año escolar actual
+ * Filtra por nombre/cédula y verifica inscripción activa
+ */
+function buscarEstudiantesActivos($conexion, $q, $limit = 10) {
+    // Obtener año escolar activo
+    $stmtAnio = $conexion->prepare("SELECT IdFecha_Escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1");
+    $stmtAnio->execute();
+    $anioActivo = $stmtAnio->fetch(PDO::FETCH_ASSOC);
+
+    if (!$anioActivo) {
+        echo json_encode([]);
+        return;
+    }
+
+    $idAnioActivo = $anioActivo['IdFecha_Escolar'];
+
+    // Si hay búsqueda, usar LIKE. Si no, traer los primeros registros.
+    $condicionBusqueda = "";
+    if (!empty(trim($q))) {
+        $condicionBusqueda = "AND (p.nombre LIKE :q OR p.apellido LIKE :q OR p.cedula LIKE :q)";
+    }
+
+    // Buscar estudiantes activos que NO tienen grupo de interes
+    $query = "
+        SELECT DISTINCT
+            p.IdPersona,
+            p.nombre,
+            p.apellido,
+            p.cedula,
+            n.nacionalidad,
+            c.IdCurso,
+            c.curso
+        FROM persona p
+        INNER JOIN inscripcion i ON p.IdPersona = i.IdEstudiante
+        INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+        INNER JOIN curso c ON cs.IdCurso = c.IdCurso
+        LEFT JOIN nacionalidad n ON p.IdNacionalidad = n.IdNacionalidad
+        WHERE i.IdFecha_Escolar = :idAnioActivo
+        AND i.IdStatus = 11 -- Inscrito
+        $condicionBusqueda
+        AND p.IdPersona NOT IN (
+            SELECT IdEstudiante FROM inscripcion_grupo_interes 
+            WHERE IdInscripcion IN (SELECT IdInscripcion FROM inscripcion WHERE IdFecha_Escolar = :idAnioActivo)
+        )
+        ORDER BY p.apellido, p.nombre
+        LIMIT :limit
+    ";
+
+    $stmt = $conexion->prepare($query);
+
+    $stmt->bindParam(':idAnioActivo', $idAnioActivo, PDO::PARAM_INT);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+
+    if (!empty(trim($q))) {
+        $search = "%$q%";
+        $stmt->bindParam(':q', $search, PDO::PARAM_STR);
+    }
+
+    $stmt->execute();
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
 ?>

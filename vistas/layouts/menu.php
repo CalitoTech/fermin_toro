@@ -319,7 +319,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                     </div>
                     <ul class="sub-menu">
                         <li><a href="../../inscripciones/inscripcion/inscripcion.php">Insc. Académicas</a></li>
-                        <li><a href="../../inscripciones/inscripcion_gi/inscripcion_gi.php">Insc. Grupo Interés</a></li>
+                        <li><a href="../../inscripciones/inscripcion_grupo_interes/inscripcion_grupo_interes.php">Insc. Grupo Interés</a></li>
                     </ul>
                 </li>
 
