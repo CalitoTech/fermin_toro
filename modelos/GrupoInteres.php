@@ -53,7 +53,8 @@ class GrupoInteres {
     }
 
     public function obtenerPorFechaEscolar($idFechaEscolar) {
-        $query = "SELECT gc.*, tg.nombre_grupo, tg.descripcion, p.nombre, p.apellido, c.curso
+        $query = "SELECT gc.*, tg.nombre_grupo, tg.descripcion, p.nombre, p.apellido, c.curso,
+                (SELECT COUNT(*) FROM inscripcion_grupo_interes admin WHERE admin.IdGrupo_Interes = gc.IdGrupo_Interes) as total_estudiantes
                  FROM grupo_interes gc
                  JOIN tipo_grupo_interes tg ON gc.IdTipo_Grupo = tg.IdTipo_Grupo
                  JOIN persona p ON gc.IdProfesor = p.IdPersona
@@ -131,6 +132,29 @@ class GrupoInteres {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total'] > 0;
+    }
+
+    public function contarPorFechaEscolar($idFechaEscolar) {
+        $query = "SELECT COUNT(*) as total FROM grupo_interes WHERE IdFecha_Escolar = :idFechaEscolar";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':idFechaEscolar', $idFechaEscolar);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['total'];
+    }
+
+    public function duplicarGrupos($idAnioOrigen, $idAnioDestino) {
+        // Insertar grupos basándose en el año anterior
+        // Se asume que los IdCurso, IdProfesor e IdTipo_Grupo siguen siendo válidos
+        $query = "INSERT INTO grupo_interes (IdTipo_Grupo, IdProfesor, IdCurso, IdFecha_Escolar)
+                  SELECT IdTipo_Grupo, IdProfesor, IdCurso, :anioDestino 
+                  FROM grupo_interes 
+                  WHERE IdFecha_Escolar = :anioOrigen";
+                  
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':anioDestino', $idAnioDestino);
+        $stmt->bindParam(':anioOrigen', $idAnioOrigen);
+        return $stmt->execute();
     }
 }
 ?>

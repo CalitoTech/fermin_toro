@@ -103,9 +103,12 @@ if ($idFechaEscolar) {
                                         <span class="input-group-text"><i class='bx bxs-group'></i></span>
                                         <select class="form-select" name="IdGrupo_Interes" id="IdGrupo_Interes" required disabled>
                                             <option value="">Seleccione primero un estudiante...</option>
-                                            <?php foreach ($grupos as $grupo): ?>
+                                            <?php foreach ($grupos as $grupo): 
+                                                $inscritos = $grupo['total_estudiantes'] ?? 0;
+                                                $capacidad = 35; // Capacidad ficticia/fija por ahora
+                                            ?>
                                                 <option value="<?= $grupo['IdGrupo_Interes'] ?>" data-curso="<?= $grupo['IdCurso'] ?>">
-                                                    <?= htmlspecialchars($grupo['nombre_grupo'] . ' - ' . $grupo['curso']) ?>
+                                                    <?= htmlspecialchars($grupo['nombre_grupo'] . ' - ' . $grupo['curso'] . " ($inscritos/$capacidad)") ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>

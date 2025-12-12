@@ -51,7 +51,7 @@ unset($_SESSION['alert']);
 if ($alert) {
     switch ($alert) {
         case 'success':
-            $alerta = Notificaciones::exito("El grupo de interés se creó correctamente.");
+            $alerta = Notificaciones::exito($_SESSION['message'] ?? "Operación exitosa.");
             break;
         case 'actualizar':
             $alerta = Notificaciones::exito("El grupo de interés se actualizó correctamente.");
@@ -63,11 +63,12 @@ if ($alert) {
             $alerta = Notificaciones::advertencia("No se puede eliminar el grupo porque está siendo utilizado.");
             break;
         case 'error':
-            $alerta = Notificaciones::advertencia("Ocurrió un error, verifique por favor.");
+            $alerta = Notificaciones::advertencia($_SESSION['message'] ?? "Ocurrió un error.");
             break;
         default:
             $alerta = null;
     }
+    unset($_SESSION['message']); // Limpiar mensaje después de usarlo
 
     if ($alerta) {
         Notificaciones::mostrar($alerta);
@@ -86,11 +87,35 @@ if ($alert) {
 // Obtener grupo_interes
 require_once __DIR__ . '/../../../config/conexion.php';
 require_once __DIR__ . '/../../../modelos/GrupoInteres.php';
+require_once __DIR__ . '/../../../modelos/FechaEscolar.php';
 
 $database = new Database();
 $conexion = $database->getConnection();
 $grupo_interesModel = new GrupoInteres($conexion);
 $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
+
+// Verificar estado de grupos para el año activo
+$fechaEscolarModel = new FechaEscolar($conexion);
+$fechaActiva = $fechaEscolarModel->obtenerActivo();
+
+$mostrarBotonDuplicar = false;
+$idAnioActivo = 0;
+if ($fechaActiva) {
+    $idAnioActivo = $fechaActiva['IdFecha_Escolar'];
+    
+    // Contar grupos del año activo
+    $cantidadActivos = $grupo_interesModel->contarPorFechaEscolar($idAnioActivo);
+    
+    if ($cantidadActivos == 0) {
+        // Verificar si hay grupos en el año anterior
+        $idAnioAnterior = $idAnioActivo - 1;
+        $cantidadAnteriores = $grupo_interesModel->contarPorFechaEscolar($idAnioAnterior);
+        
+        if ($cantidadAnteriores > 0) {
+            $mostrarBotonDuplicar = true;
+        }
+    }
+}
 ?>
 
 <!-- Sección Principal -->
@@ -106,10 +131,20 @@ $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
                         <div class="card-body">
                             <!-- Botones de acción -->
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <!-- Imprimir Lista -->
-                                <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
-                                    <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
-                                </button>
+                                <div class="d-flex gap-2">
+                                     <!-- Imprimir Lista -->
+                                    <button class="btn btn-imprimir d-flex align-items-center" onclick="imprimirLista()">
+                                        <i class='bx bxs-file-pdf me-1'></i> Imprimir Lista
+                                    </button>
+                                    
+                                    <?php if ($mostrarBotonDuplicar): ?>
+                                    <!-- Duplicar Año Anterior -->
+                                    <button class="btn btn-warning text-white d-flex align-items-center" onclick="confirmarDuplicacion()">
+                                        <i class='bx bx-copy me-1'></i> Duplicar Grupos Año Anterior
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                               
                                 <!-- Nuevo Grupo -->
                                 <a href="nuevo_grupo_interes.php" class="btn btn-danger d-flex align-items-center">
                                     <i class='bx bx-plus-medical me-1'></i> Nuevo Grupo
@@ -292,6 +327,23 @@ $grupo_interes = $grupo_interesModel->obtenerGrupoInteres();
         }).then((result) => {
             if (result.isConfirmed) {
                 window.location.href = '../../../controladores/GrupoInteresController.php?action=eliminar&id=' + id;
+            }
+        });
+    }
+
+    function confirmarDuplicacion() {
+        Swal.fire({
+            title: "¿Duplicar grupos del año anterior?",
+            text: "Se copiarán todos los grupos del año escolar pasado al año escolar actual. Esta acción es útil para iniciar el nuevo año rápidamente.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, duplicar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#ffc107", // Warning color
+            cancelButtonColor: "#6c757d"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = '../../../controladores/GrupoInteresController.php?action=duplicar_anterior';
             }
         });
     }

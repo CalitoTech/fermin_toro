@@ -23,8 +23,54 @@ switch ($action) {
     case 'eliminar':
         eliminarGrupoInteres();
         break;
+    case 'duplicar_anterior':
+        duplicarGruposAnteriores();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/registros/grupo_interes/grupo_interes.php');
+}
+
+function duplicarGruposAnteriores() {
+    try {
+        $database = new Database();
+        $conexion = $database->getConnection();
+
+        // Obtener año escolar activo
+        $fechaEscolarModel = new FechaEscolar($conexion);
+        $fechaActiva = $fechaEscolarModel->obtenerActivo();
+
+        if (!$fechaActiva) {
+            manejarError('No hay un año escolar activo. Contacte al administrador.', '../vistas/registros/grupo_interes/grupo_interes.php');
+        }
+
+        $idAnioActivo = $fechaActiva['IdFecha_Escolar'];
+        $idAnioAnterior = $idAnioActivo - 1; // Asumiendo ID secuencial
+
+        $grupoModel = new GrupoInteres($conexion);
+
+        // Validar que el año activo esté vacío de grupos
+        if ($grupoModel->contarPorFechaEscolar($idAnioActivo) > 0) {
+            manejarError('Ya existen grupos creados para el año escolar actual. No se puede duplicar.', '../vistas/registros/grupo_interes/grupo_interes.php');
+        }
+
+        // Validar que el año anterior tenga grupos
+        if ($grupoModel->contarPorFechaEscolar($idAnioAnterior) == 0) {
+            manejarError('No existen grupos en el año escolar anterior para duplicar.', '../vistas/registros/grupo_interes/grupo_interes.php');
+        }
+
+        // Duplicar
+        if ($grupoModel->duplicarGrupos($idAnioAnterior, $idAnioActivo)) {
+            $_SESSION['alert'] = 'success';
+            $_SESSION['message'] = 'Grupos duplicados exitosamente desde el año anterior.';
+            header("Location: ../vistas/registros/grupo_interes/grupo_interes.php");
+            exit();
+        } else {
+            throw new Exception("Error al duplicar registros en la base de datos.");
+        }
+
+    } catch (Exception $e) {
+        manejarError('Error: ' . $e->getMessage(), '../vistas/registros/grupo_interes/grupo_interes.php');
+    }
 }
 
 function crearGrupoInteres() {

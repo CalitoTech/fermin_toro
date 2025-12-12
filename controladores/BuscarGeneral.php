@@ -369,8 +369,10 @@ function buscarEstudiantesActivos($conexion, $q, $limit = 10) {
         AND i.IdStatus = 11 -- Inscrito
         $condicionBusqueda
         AND p.IdPersona NOT IN (
-            SELECT IdEstudiante FROM inscripcion_grupo_interes 
-            WHERE IdInscripcion IN (SELECT IdInscripcion FROM inscripcion WHERE IdFecha_Escolar = :idAnioActivo)
+            SELECT igi.IdEstudiante 
+            FROM inscripcion_grupo_interes igi
+            INNER JOIN grupo_interes gi ON igi.IdGrupo_Interes = gi.IdGrupo_Interes
+            WHERE gi.IdFecha_Escolar = :idAnioActivo
         )
         ORDER BY p.apellido, p.nombre
         LIMIT :limit
@@ -387,6 +389,336 @@ function buscarEstudiantesActivos($conexion, $q, $limit = 10) {
     }
 
     $stmt->execute();
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+}
+
+
+/**
+ * Buscar urbanismos con búsqueda simple pero efectiva
+ */
+function buscarUrbanismos($conexion, $q, $limit = 10) {
+    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
+    if (empty(trim($q))) {
+        $stmt = $conexion->prepare("
+            SELECT IdUrbanismo, urbanismo
+            FROM urbanismo
+            ORDER BY urbanismo ASC
+            LIMIT :limit
+        ");
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return;
+    }
+
+    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
+    $stmt = $conexion->prepare("
+        SELECT IdUrbanismo, urbanismo,
+               CASE
+                   WHEN LOWER(urbanismo) = LOWER(:qExacto) THEN 1
+                   WHEN LOWER(urbanismo) LIKE LOWER(:qInicio) THEN 2
+                   WHEN LOWER(urbanismo) LIKE LOWER(:qContiene) THEN 3
+                   ELSE 4
+               END as prioridad
+        FROM urbanismo
+        WHERE LOWER(urbanismo) LIKE LOWER(:qBusqueda)
+        ORDER BY prioridad ASC, urbanismo ASC
+        LIMIT :limit
+    ");
+
+    $qExacto = trim($q);
+    $qInicio = trim($q) . '%';
+    $qContiene = '%' . trim($q) . '%';
+    $qBusqueda = '%' . trim($q) . '%';
+
+    $stmt->bindParam(':qExacto', $qExacto);
+    $stmt->bindParam(':qInicio', $qInicio);
+    $stmt->bindParam(':qContiene', $qContiene);
+    $stmt->bindParam(':qBusqueda', $qBusqueda);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Remover campo de prioridad
+    foreach ($resultados as &$resultado) {
+        unset($resultado['prioridad']);
+    }
+
+    // SIEMPRE mostrar la opción de crear nuevo al final
+    if (!empty(trim($q))) {
+        $resultados[] = [
+            'IdUrbanismo' => 'nuevo',
+            'urbanismo' => ucwords(strtolower(trim($q))),
+            'nuevo' => true
+        ];
+    }
+
+    echo json_encode($resultados);
+}
+
+/**
+ * Buscar parentescos con búsqueda simple pero efectiva
+ */
+function buscarParentescos($conexion, $q, $limit = 10) {
+    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
+    if (empty(trim($q))) {
+        $stmt = $conexion->prepare("
+            SELECT IdParentesco, parentesco
+            FROM parentesco
+            WHERE IdParentesco >= 3
+            ORDER BY parentesco ASC
+            LIMIT :limit
+        ");
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return;
+    }
+
+    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
+    $stmt = $conexion->prepare("
+        SELECT IdParentesco, parentesco,
+               CASE
+                   WHEN LOWER(parentesco) = LOWER(:qExacto) THEN 1
+                   WHEN LOWER(parentesco) LIKE LOWER(:qInicio) THEN 2
+                   WHEN LOWER(parentesco) LIKE LOWER(:qContiene) THEN 3
+                   ELSE 4
+               END as prioridad
+        FROM parentesco
+        WHERE LOWER(parentesco) LIKE LOWER(:qBusqueda)
+        AND IdParentesco >= 3
+        ORDER BY prioridad ASC, parentesco ASC
+        LIMIT :limit
+    ");
+
+    $qExacto = trim($q);
+    $qInicio = trim($q) . '%';
+    $qContiene = '%' . trim($q) . '%';
+    $qBusqueda = '%' . trim($q) . '%';
+
+    $stmt->bindParam(':qExacto', $qExacto);
+    $stmt->bindParam(':qInicio', $qInicio);
+    $stmt->bindParam(':qContiene', $qContiene);
+    $stmt->bindParam(':qBusqueda', $qBusqueda);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Remover campo de prioridad
+    foreach ($resultados as &$resultado) {
+        unset($resultado['prioridad']);
+    }
+
+    // SIEMPRE mostrar la opción de crear nuevo al final
+    if (!empty(trim($q))) {
+        $resultados[] = [
+            'IdParentesco' => 'nuevo',
+            'parentesco' => ucwords(strtolower(trim($q))),
+            'nuevo' => true
+        ];
+    }
+
+    echo json_encode($resultados);
+}
+
+/**
+ * Buscar prefijos con búsqueda simple pero efectiva
+ */
+function buscarPrefijos($conexion, $q, $limit = 10) {
+    // Obtener filtro de tipo (fijo o internacional)
+    $filtro = $_GET['filtro'] ?? 'internacional';
+
+    // Construir WHERE clause según el filtro
+    $whereFilter = '';
+    if ($filtro === 'fijo') {
+        // Prefijos sin + (teléfonos fijos)
+        $whereFilter = " AND codigo_prefijo NOT LIKE '+%'";
+    } else {
+        // Prefijos con + (internacionales)
+        $whereFilter = " AND codigo_prefijo LIKE '+%'";
+    }
+
+    // Si la búsqueda está vacía, traer los primeros registros ordenados por código
+    if (empty(trim($q))) {
+        $stmt = $conexion->prepare("
+            SELECT IdPrefijo, codigo_prefijo, pais, max_digitos
+            FROM prefijo
+            WHERE 1=1" . $whereFilter . "
+            ORDER BY codigo_prefijo ASC
+            LIMIT :limit
+        ");
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return;
+    }
+
+    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
+    $stmt = $conexion->prepare("
+        SELECT IdPrefijo, codigo_prefijo, pais, max_digitos,
+               CASE
+                   WHEN LOWER(codigo_prefijo) = LOWER(:qExacto) THEN 1
+                   WHEN LOWER(pais) = LOWER(:qExactoPais) THEN 2
+                   WHEN LOWER(codigo_prefijo) LIKE LOWER(:qInicio) THEN 3
+                   WHEN LOWER(pais) LIKE LOWER(:qInicioPais) THEN 4
+                   WHEN LOWER(codigo_prefijo) LIKE LOWER(:qContiene) THEN 5
+                   WHEN LOWER(pais) LIKE LOWER(:qContienePais) THEN 6
+                   ELSE 7
+               END as prioridad
+        FROM prefijo
+        WHERE (LOWER(codigo_prefijo) LIKE LOWER(:qBusqueda)
+           OR LOWER(pais) LIKE LOWER(:qBusquedaPais))
+        " . $whereFilter . "
+        ORDER BY prioridad ASC, codigo_prefijo ASC
+        LIMIT :limit
+    ");
+
+    $qExacto = trim($q);
+    $qExactoPais = trim($q);
+    $qInicio = trim($q) . '%';
+    $qInicioPais = trim($q) . '%';
+    $qContiene = '%' . trim($q) . '%';
+    $qContienePais = '%' . trim($q) . '%';
+    $qBusqueda = '%' . trim($q) . '%';
+    $qBusquedaPais = '%' . trim($q) . '%';
+
+    $stmt->bindParam(':qExacto', $qExacto);
+    $stmt->bindParam(':qExactoPais', $qExactoPais);
+    $stmt->bindParam(':qInicio', $qInicio);
+    $stmt->bindParam(':qInicioPais', $qInicioPais);
+    $stmt->bindParam(':qContiene', $qContiene);
+    $stmt->bindParam(':qContienePais', $qContienePais);
+    $stmt->bindParam(':qBusqueda', $qBusqueda);
+    $stmt->bindParam(':qBusquedaPais', $qBusquedaPais);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Remover campo de prioridad
+    foreach ($resultados as &$resultado) {
+        unset($resultado['prioridad']);
+    }
+
+    // SIEMPRE mostrar la opción de crear nuevo al final
+    if (!empty(trim($q))) {
+        $codigoNuevo = trim($q);
+
+        // Si el filtro es fijo y el código no tiene +, usar tal cual
+        // Si el filtro es internacional y el código no tiene +, agregarlo
+        if ($filtro === 'fijo') {
+            // Para fijos, asegurarse que no tenga +
+            $codigoNuevo = str_replace('+', '', $codigoNuevo);
+        } else {
+            // Para internacionales, asegurarse que tenga +
+            if (strpos($codigoNuevo, '+') !== 0) {
+                $codigoNuevo = '+' . preg_replace('/[^0-9]/', '', $codigoNuevo);
+            }
+        }
+
+        $resultados[] = [
+            'IdPrefijo' => 'nuevo',
+            'codigo_prefijo' => $codigoNuevo,
+            'pais' => 'Nuevo prefijo',
+            'max_digitos' => 10,
+            'nuevo' => true
+        ];
+    }
+
+    echo json_encode($resultados);
+}
+
+/**
+ * Buscar planteles con búsqueda simple pero efectiva
+ */
+function buscarPlanteles($conexion, $q, $limit = 10) {
+    // Si la búsqueda está vacía, traer los primeros registros ordenados alfabéticamente
+    if (empty(trim($q))) {
+        $stmt = $conexion->prepare("
+            SELECT IdPlantel, plantel
+            FROM plantel
+            ORDER BY plantel ASC
+            LIMIT :limit
+        ");
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        return;
+    }
+
+    // Búsqueda simple con LIKE (case-insensitive y con prioridades)
+    $stmt = $conexion->prepare("
+        SELECT IdPlantel, plantel,
+               CASE
+                   WHEN LOWER(plantel) = LOWER(:qExacto) THEN 1
+                   WHEN LOWER(plantel) LIKE LOWER(:qInicio) THEN 2
+                   WHEN LOWER(plantel) LIKE LOWER(:qContiene) THEN 3
+                   ELSE 4
+               END as prioridad
+        FROM plantel
+        WHERE LOWER(plantel) LIKE LOWER(:qBusqueda)
+        ORDER BY prioridad ASC, plantel ASC
+        LIMIT :limit
+    ");
+
+    $qExacto = trim($q);
+    $qInicio = trim($q) . '%';
+    $qContiene = '%' . trim($q) . '%';
+    $qBusqueda = '%' . trim($q) . '%';
+
+    $stmt->bindParam(':qExacto', $qExacto);
+    $stmt->bindParam(':qInicio', $qInicio);
+    $stmt->bindParam(':qContiene', $qContiene);
+    $stmt->bindParam(':qBusqueda', $qBusqueda);
+    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Remover campo de prioridad
+    foreach ($resultados as &$resultado) {
+        unset($resultado['prioridad']);
+    }
+
+    // SIEMPRE mostrar la opción de crear nuevo al final
+    if (!empty(trim($q))) {
+        $resultados[] = [
+            'IdPlantel' => 'nuevo',
+            'plantel' => ucwords(strtolower(trim($q))),
+            'nuevo' => true
+        ];
+    }
+
+    echo json_encode($resultados);
+}
+
+/**
+ * Obtener secciones disponibles para un curso específico
+ */
+function obtenerSeccionesPorCurso($conexion) {
+    $idCurso = $_GET['idCurso'] ?? 0;
+
+    if (empty($idCurso) || !is_numeric($idCurso)) {
+        echo json_encode(['error' => 'ID de curso no válido']);
+        return;
+    }
+
+    $stmt = $conexion->prepare("
+        SELECT
+            cs.IdCurso_Seccion,
+            s.IdSeccion,
+            s.seccion
+        FROM curso_seccion cs
+        INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+        WHERE cs.IdCurso = :idCurso
+        ORDER BY s.seccion ASC
+    ");
+
+    $stmt->bindParam(':idCurso', $idCurso, PDO::PARAM_INT);
+    $stmt->execute();
+
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 ?>
