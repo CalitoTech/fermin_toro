@@ -6,9 +6,17 @@ session_start();
 require_once __DIR__ . '/../../../config/conexion.php';
 require_once __DIR__ . '/../../../modelos/Representante.php';
 require_once __DIR__ . '/../../../controladores/Notificaciones.php';
+require_once __DIR__ . '/../../../modelos/TipoGrupoInteres.php';
 
 $database = new Database();
 $conexion = $database->getConnection();
+
+// Verificar si hay grupos de interés activos para inscripción
+$queryGruposActivos = "SELECT COUNT(*) as total FROM tipo_grupo_interes WHERE inscripcion_activa = 1";
+$stmtGrupos = $conexion->prepare($queryGruposActivos);
+$stmtGrupos->execute();
+$hayGruposActivos = $stmtGrupos->fetch(PDO::FETCH_ASSOC)['total'] > 0;
+// $hayGruposActivos = true; // Descomentar para probar si la base de datos está vacía
 
 // === VERIFICACIÓN DE SESIÓN ===
 if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
@@ -86,6 +94,21 @@ $idAnoEscolarActivo = $añoEscolar ? $añoEscolar['IdFecha_Escolar'] ?? 0 : 0;
 // Función para verificar si el estudiante tiene inscripción en el año activo
 function tieneInscripcionEnAnoActivo($estudiante) {
     return !empty($estudiante['IdInscripcion']);
+}
+
+// Función helper para verificar si un estudiante tiene un grupo de interés activo
+function tieneGrupoInteresActivo($idEstudiante, $idFechaEscolar, $conn) {
+    $query = "SELECT COUNT(*) as total 
+              FROM inscripcion_grupo_interes igi
+              INNER JOIN grupo_interes gi ON igi.IdGrupo_Interes = gi.IdGrupo_Interes
+              WHERE igi.IdEstudiante = :idEstudiante 
+              AND gi.IdFecha_Escolar = :idFecha";
+    $stmt = $conn->prepare($query);
+    $stmt->bindParam(':idEstudiante', $idEstudiante);
+    $stmt->bindParam(':idFecha', $idFechaEscolar);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row['total'] > 0;
 }
 ?>
 
@@ -419,6 +442,19 @@ function tieneInscripcionEnAnoActivo($estudiante) {
                 font-size: 1.5rem;
             }
         }
+
+        /* Botón Inscribir Grupo Custom */
+        .btn-group-enroll {
+            border: 2px solid #c90000;
+            color: #c90000;
+            transition: all 0.3s ease;
+        }
+        .btn-group-enroll:hover {
+            background-color: #c90000;
+            color: #ffffff !important;
+            border-color: #c90000;
+            transform: scale(1.02);
+        }
 </style>
 
 <section class="home-section">
@@ -575,30 +611,46 @@ function tieneInscripcionEnAnoActivo($estudiante) {
                                             </button>
                                         <?php endif; ?>
 
+                                        <!-- Botón de Inscripción a Grupo de Interés -->
                                         <?php
-                                        // Comentado: Opción de renovar cupo (no se usa actualmente)
-                                        // $tienePendiente = tieneCupoPendiente($estudiante['IdEstudiante'], $conexion);
-                                        // if ($tienePendiente):
-                                        //     // Si ya tiene una renovación pendiente
-                                        // ?>
-                                        <!--     <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;">
-                                                <i class='bx bx-check-circle'></i>
-                                                Cupo Renovado Exitosamente
+                                        // Verificar si hay grupos activos (variable global $hayGruposActivos)
+                                        // Y verificar si el estudiante YA tiene un grupo en el año activo
+                                        // Necesitamos checkear esto por cada estudiante. 
+                                        // Podemos usar una función helper pequeña o query ad-hoc.
+                                        // Usaremos la función auxiliar que definiremos al inicio o una query directa.
+                                        // Para mantenerlo limpio, agregaremos una función helper 'tieneGrupoInteresActivo($estudianteId, $idAnoActivo, $conexion)' al inicio del archivo.
+                                        
+                                        if ($hayGruposActivos) {
+                                            $tieneGrupo = tieneGrupoInteresActivo($estudiante['IdEstudiante'], $idAnoEscolarActivo, $conexion);
+                                            
+                                            if ($tieneGrupo) {
+                                                // Estudiante YA tiene grupo -> Botón verde o diferente
+                                                ?>
+                                                <a href="inscripcion_grupo.php?id=<?= $estudiante['IdEstudiante'] ?>" class="btn btn-success d-flex align-items-center justify-content-center gap-2 fw-semibold btn-group-manage" style="background-color: #198754; border: none;">
+                                                    <i class='bx bx-check-circle'></i>
+                                                    Gestionar Grupo de Interés
+                                                </a>
+                                                <?php
+                                            } else {
+                                                // Estudiante NO tiene grupo -> Botón rojo normal de inscripción
+                                                ?>
+                                                <a href="inscripcion_grupo.php?id=<?= $estudiante['IdEstudiante'] ?>" class="btn btn-outline-danger d-flex align-items-center justify-content-center gap-2 fw-semibold btn-group-enroll">
+                                                    <i class='bx bx-group'></i>
+                                                    Inscribir en Grupo de Interés
+                                                </a>
+                                                <?php
+                                            }
+
+                                        } else {
+                                            // Si no hay grupos activos, mostrar botón deshabilitado/informativo
+                                            ?>
+                                            <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2 fw-semibold" disabled style="border: 2px solid #6c757d; color: #6c757d; cursor: not-allowed;" title="No hay grupos de interés habilitados para inscripción en este momento">
+                                                <i class='bx bx-lock-alt'></i>
+                                                Grupos de Interés Cerrados
                                             </button>
-                                        <?php // elseif (!$renovacionActiva): ?>
-                                            <!-- Si las renovaciones están desactivadas -->
-                                        <!--    <button class="btn btn-renew-quota" disabled style="opacity: 0.6; cursor: not-allowed;" title="Las renovaciones de cupo están cerradas actualmente">
-                                                <i class='bx bx-lock'></i>
-                                                Renovaciones Cerradas
-                                            </button>
-                                        <?php // else: ?>
-                                            <!-- Si puede renovar -->
-                                        <!--    <a href="renovar_cupo.php?id=<?php // echo $estudiante['IdEstudiante'] ?>" class="btn btn-renew-quota">
-                                                <i class='bx bx-refresh'></i>
-                                                Renovar Cupo
-                                            </a>
-                                        <?php // endif; ?>
-                                        -->
+                                            <?php
+                                        }
+                                        ?>
                                     </div>
                                 </div>
                             </div>

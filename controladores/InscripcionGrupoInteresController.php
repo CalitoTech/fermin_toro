@@ -1,11 +1,6 @@
 <?php
 session_start();
 
-// Verificación de sesión
-if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
-    manejarError('Debe iniciar sesión para acceder', '../vistas/login/login.php');
-}
-
 require_once __DIR__ . '/../config/conexion.php';
 require_once __DIR__ . '/../modelos/InscripcionGrupoInteres.php';
 require_once __DIR__ . '/../modelos/FechaEscolar.php';
@@ -14,6 +9,16 @@ require_once __DIR__ . '/../modelos/GrupoInteres.php';
 
 // Determinar acción
 $action = $_GET['action'] ?? ($_POST['action'] ?? '');
+
+// Acciones que NO requieren verificación de sesión (API pública)
+$accionesPublicas = ['obtener_ocupacion'];
+
+// Verificación de sesión (excepto para acciones públicas)
+if (!in_array($action, $accionesPublicas)) {
+    if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
+        manejarError('Debe iniciar sesión para acceder', '../vistas/login/login.php');
+    }
+}
 
 switch ($action) {
     case 'crear':
@@ -24,6 +29,12 @@ switch ($action) {
         break;
     case 'eliminar':
         eliminarInscripcion();
+        break;
+    case 'procesar_inscripcion_representante':
+        procesarInscripcionRepresentante();
+        break;
+    case 'obtener_ocupacion':
+        obtenerOcupacion();
         break;
     default:
         manejarError('Acción no válida', '../vistas/inscripciones/inscripcion_grupo_interes/inscripcion_grupo_interes.php');
@@ -189,6 +200,170 @@ function eliminarInscripcion() {
     } catch (Exception $e) {
         manejarError('Error: ' . $e->getMessage(), '../vistas/inscripciones/inscripcion_grupo_interes/inscripcion_grupo_interes.php');
     }
+}
+
+/**
+ * Procesar inscripción desde el portal de representantes
+ * Maneja tanto inscripciones nuevas como cambios de grupo
+ */
+function procesarInscripcionRepresentante() {
+    // --- VALIDACIÓN DE PARÁMETROS ---
+    if (!isset($_GET['idGrupo']) || !isset($_GET['idEstudiante'])) {
+        $_SESSION['alerta_error'] = "Faltan parámetros para procesar la inscripción.";
+        header("Location: ../vistas/representantes/representados/representado.php");
+        exit();
+    }
+
+    $idGrupo = intval($_GET['idGrupo']);
+    $idEstudiante = intval($_GET['idEstudiante']);
+
+    $database = new Database();
+    $db = $database->getConnection();
+
+    try {
+        $db->beginTransaction();
+
+        // 1. OBTENER AÑO ESCOLAR ACTIVO
+        $fechaModel = new FechaEscolar($db);
+        $fechaActiva = $fechaModel->obtenerActivo();
+        
+        if (!$fechaActiva) {
+            throw new Exception("No hay un año escolar activo configurado.");
+        }
+        $idFechaEscolar = $fechaActiva['IdFecha_Escolar'];
+
+        // 2. OBTENER INSCRIPCIÓN ACADÉMICA VIGENTE
+        $sqlInscripcion = "SELECT IdInscripcion, IdCurso_Seccion FROM inscripcion WHERE IdEstudiante = :idEstudiante AND IdFecha_Escolar = :idFecha AND IdStatus IN (11, 8) LIMIT 1";
+        $stmtInsc = $db->prepare($sqlInscripcion);
+        $stmtInsc->bindParam(':idEstudiante', $idEstudiante);
+        $stmtInsc->bindParam(':idFecha', $idFechaEscolar);
+        $stmtInsc->execute();
+        $inscripcionAcademica = $stmtInsc->fetch(PDO::FETCH_ASSOC);
+
+        if (!$inscripcionAcademica) {
+            throw new Exception("El estudiante no tiene una inscripción académica válida para el año escolar activo.");
+        }
+        $idInscripcionGeneral = $inscripcionAcademica['IdInscripcion'];
+
+        // 3. BUSCAR SI YA TIENE GRUPO DE INTERÉS (Para eliminar el anterior si es cambio)
+        $sqlPrevio = "SELECT igi.IdInscripcion_Grupo 
+                      FROM inscripcion_grupo_interes igi
+                      INNER JOIN grupo_interes gi ON igi.IdGrupo_Interes = gi.IdGrupo_Interes
+                      WHERE igi.IdEstudiante = :idEstudiante AND gi.IdFecha_Escolar = :idFecha";
+        $stmtPrevio = $db->prepare($sqlPrevio);
+        $stmtPrevio->bindParam(':idEstudiante', $idEstudiante);
+        $stmtPrevio->bindParam(':idFecha', $idFechaEscolar);
+        $stmtPrevio->execute();
+        $inscripcionPrevia = $stmtPrevio->fetch(PDO::FETCH_ASSOC);
+
+        if ($inscripcionPrevia) {
+            // Eliminar la inscripción anterior
+            $inscripcionGIModel = new InscripcionGrupoInteres($db);
+            $inscripcionGIModel->IdInscripcion_Grupo = $inscripcionPrevia['IdInscripcion_Grupo'];
+            if (!$inscripcionGIModel->eliminar()) {
+                throw new Exception("No se pudo eliminar la inscripción al grupo anterior.");
+            }
+        }
+
+        // 4. CREAR NUEVA INSCRIPCIÓN
+        $nuevaInscripcion = new InscripcionGrupoInteres($db);
+        $nuevaInscripcion->IdGrupo_Interes = $idGrupo;
+        $nuevaInscripcion->IdEstudiante = $idEstudiante;
+        $nuevaInscripcion->IdInscripcion = $idInscripcionGeneral;
+
+        if ($nuevaInscripcion->guardar()) {
+            $db->commit();
+            // Éxito
+            $_SESSION['swal_success'] = isset($inscripcionPrevia) 
+                ? "Se ha realizado el cambio de grupo de interés correctamente." 
+                : "Estudiante inscrito en el grupo de interés exitosamente.";
+        } else {
+            throw new Exception("Error al guardar la nueva inscripción.");
+        }
+
+    } catch (Exception $e) {
+        $db->rollBack();
+        $_SESSION['swal_error'] = "Error: " . $e->getMessage();
+    }
+
+    // Redireccionar
+    header("Location: ../vistas/representantes/representados/inscripcion_grupo.php?id=" . $idEstudiante);
+    exit();
+}
+
+/**
+ * Endpoint API para obtener ocupación de grupos en tiempo real
+ * Retorna JSON con información actualizada de inscritos y capacidad
+ */
+function obtenerOcupacion() {
+    header('Content-Type: application/json');
+    
+    // Validar solicitud
+    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+        http_response_code(405);
+        echo json_encode(['error' => 'Método no permitido']);
+        exit;
+    }
+
+    $database = new Database();
+    $db = $database->getConnection();
+
+    // Obtener ID del año escolar activo
+    $fechaModel = new FechaEscolar($db);
+    $fechaActiva = $fechaModel->obtenerActivo();
+    $idFechaEscolar = $fechaActiva ? $fechaActiva['IdFecha_Escolar'] : 0;
+
+    if ($idFechaEscolar == 0) {
+        echo json_encode([]);
+        exit;
+    }
+
+    // IDs de los grupos de interés a consultar (opcional, para optimizar)
+    $idsGrupos = isset($_GET['ids']) ? explode(',', $_GET['ids']) : [];
+
+    try {
+        // Consulta optimizada para contar inscritos por grupo para el año activo
+        $sql = "SELECT 
+                    gi.IdGrupo_Interes,
+                    (SELECT COUNT(*) FROM inscripcion_grupo_interes admin WHERE admin.IdGrupo_Interes = gi.IdGrupo_Interes) as total_estudiantes,
+                    tgi.capacidad_maxima
+                FROM grupo_interes gi
+                JOIN tipo_grupo_interes tgi ON gi.IdTipo_Grupo = tgi.IdTipo_Grupo
+                WHERE gi.IdFecha_Escolar = :idFecha";
+
+        // Filtrar por IDs específicos si se proporcionan
+        if (!empty($idsGrupos)) {
+            // Sanitizar array de enteros para la cláusula IN
+            $idsSafe = array_map('intval', $idsGrupos);
+            // Evitar array vacío generando error SQL
+            if(count($idsSafe) > 0){
+                $inQuery = implode(',', $idsSafe);
+                $sql .= " AND gi.IdGrupo_Interes IN ($inQuery)";
+            }
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':idFecha', $idFechaEscolar);
+        $stmt->execute();
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Formatear respuesta
+        $data = [];
+        foreach ($resultados as $row) {
+            $data[] = [
+                'id' => $row['IdGrupo_Interes'],
+                'inscritos' => (int)$row['total_estudiantes'],
+                'capacidad' => (int)$row['capacidad_maxima']
+            ];
+        }
+
+        echo json_encode($data);
+
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Error de base de datos']);
+    }
+    exit;
 }
 
 function manejarError($mensaje, $urlRedireccion = '../vistas/inscripciones/inscripcion_grupo_interes/inscripcion_grupo_interes.php') {
