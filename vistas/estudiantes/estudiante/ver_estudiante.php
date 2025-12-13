@@ -49,6 +49,35 @@ $seccionActual = $personaModel->obtenerSeccionActualEstudiante($idPersona);
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idPersona);
 $representantes = $representanteModel->obtenerPorEstudiante($idPersona);
 
+// Obtener el año escolar activo
+$queryAnoActivo = "SELECT IdFecha_Escolar, fecha_escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
+$stmtAnoActivo = $conexion->prepare($queryAnoActivo);
+$stmtAnoActivo->execute();
+$anoEscolarActivo = $stmtAnoActivo->fetch(PDO::FETCH_ASSOC);
+$idAnoActivo = $anoEscolarActivo ? $anoEscolarActivo['IdFecha_Escolar'] : null;
+$nombreAnoActivo = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Sin año activo';
+
+// Obtener grupo de interés del estudiante para el año escolar activo
+$grupoInteres = null;
+if ($idAnoActivo) {
+    $queryGrupo = "SELECT 
+                        tgi.nombre_grupo,
+                        tgi.descripcion,
+                        gi.IdGrupo_Interes
+                   FROM inscripcion_grupo_interes igi
+                   INNER JOIN grupo_interes gi ON igi.IdGrupo_Interes = gi.IdGrupo_Interes
+                   INNER JOIN tipo_grupo_interes tgi ON gi.IdTipo_Grupo = tgi.IdTipo_Grupo
+                   INNER JOIN inscripcion i ON igi.IdInscripcion = i.IdInscripcion
+                   WHERE igi.IdEstudiante = :idEstudiante 
+                   AND i.IdFecha_Escolar = :idFecha
+                   LIMIT 1";
+    $stmtGrupo = $conexion->prepare($queryGrupo);
+    $stmtGrupo->bindParam(':idEstudiante', $idPersona);
+    $stmtGrupo->bindParam(':idFecha', $idAnoActivo);
+    $stmtGrupo->execute();
+    $grupoInteres = $stmtGrupo->fetch(PDO::FETCH_ASSOC);
+}
+
 // Obtener información de hermanos
 $queryHermanos = "
     SELECT
@@ -152,6 +181,15 @@ function mostrar($valor, $texto = 'No registrado') {
                                     }
                                 ?>
                             </div>
+                            
+                            <!-- Botón Imprimir Carnet -->
+                            <?php if ($grupoInteres): ?>
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-danger" onclick="imprimirCarnet()">
+                                        <i class='bx bx-printer me-2'></i> Imprimir Carnet de Grupo de Interés
+                                    </button>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -262,6 +300,34 @@ function mostrar($valor, $texto = 'No registrado') {
                         </div>
                     </div>
 
+                    <!-- GRUPO DE INTERÉS -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-danger text-white d-flex align-items-center">
+                            <i class='bx bx-star me-2'></i> Grupo de Interés - <?= htmlspecialchars($nombreAnoActivo) ?>
+                        </div>
+                        <div class="card-body">
+                            <?php if ($grupoInteres): ?>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <strong><i class='bx bx-group me-1'></i> Grupo:</strong>
+                                        <span><?= htmlspecialchars($grupoInteres['nombre_grupo']) ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <strong><i class='bx bx-info-circle me-1'></i> Descripción:</strong>
+                                        <span><?= htmlspecialchars($grupoInteres['descripcion']) ?></span>
+                                    </div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-info mb-0">
+                                    <i class='bx bx-info-circle me-2'></i>
+                                    <strong>Sin grupo de interés asignado</strong><br>
+                                    El estudiante no está inscrito en ningún grupo de interés para el año escolar <?= htmlspecialchars($nombreAnoActivo) ?>.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
                     <!-- DISCAPACIDADES (tarjeta aparte) -->
                     <div class="card shadow-sm mb-4">
                         <div class="card-header bg-danger text-white d-flex align-items-center">
@@ -350,5 +416,55 @@ function mostrar($valor, $texto = 'No registrado') {
     </div>
 </section>
 
+<script>
+// Función para imprimir carnet del grupo de interés
+function imprimirCarnet() {
+    // Validar si tiene foto de perfil
+    const tieneFoto = <?= (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])) ? 'true' : 'false' ?>;
+    
+    if (!tieneFoto) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Foto de perfil requerida',
+            text: 'Para imprimir el carnet del grupo de interés, el estudiante debe tener una foto de perfil guardada.',
+            confirmButtonColor: '#c90000',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Abrir el PDF en una nueva ventana
+    const idEstudiante = <?= $idPersona ?>;
+    const url = '../../../vistas/reportes/carnet_grupo_interes.php?id=' + idEstudiante;
+    
+    // Verificar si hay errores antes de abrir
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    // Si hay información de debug, mostrarla en consola
+                    if (data.debug) {
+                        console.error('Debug info:', data.debug);
+                    }
+                    throw new Error(data.error || 'Error al generar el carnet');
+                });
+            }
+            // Si todo está bien, abrir en nueva ventana
+            window.open(url, '_blank');
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message,
+                confirmButtonColor: '#c90000',
+                confirmButtonText: 'Entendido',
+                footer: 'Revisa la consola del navegador (F12) para más detalles'
+            });
+        });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <?php include '../../layouts/footer.php'; ?>
 <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>

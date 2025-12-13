@@ -77,6 +77,27 @@ $seccionActual = $personaModel->obtenerSeccionActualEstudiante($idEstudiante, $i
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idEstudiante);
 $telefonos = $telefonoModel->obtenerPorPersona($idEstudiante);
 
+// Obtener grupo de interés del estudiante para el año escolar activo
+$grupoInteres = null;
+if ($idAnoActivo) {
+    $queryGrupo = "SELECT 
+                        tgi.nombre_grupo,
+                        tgi.descripcion,
+                        gi.IdGrupo_Interes
+                   FROM inscripcion_grupo_interes igi
+                   INNER JOIN grupo_interes gi ON igi.IdGrupo_Interes = gi.IdGrupo_Interes
+                   INNER JOIN tipo_grupo_interes tgi ON gi.IdTipo_Grupo = tgi.IdTipo_Grupo
+                   INNER JOIN inscripcion i ON igi.IdInscripcion = i.IdInscripcion
+                   WHERE igi.IdEstudiante = :idEstudiante 
+                   AND i.IdFecha_Escolar = :idFecha
+                   LIMIT 1";
+    $stmtGrupo = $conexion->prepare($queryGrupo);
+    $stmtGrupo->bindParam(':idEstudiante', $idEstudiante);
+    $stmtGrupo->bindParam(':idFecha', $idAnoActivo);
+    $stmtGrupo->execute();
+    $grupoInteres = $stmtGrupo->fetch(PDO::FETCH_ASSOC);
+}
+
 // Obtener todos los representantes del estudiante
 $todosRepresentantes = $representanteModel->obtenerPorEstudiante($idEstudiante);
 // Filtrar para excluir al usuario actual
@@ -356,6 +377,15 @@ function calcularEdad($fechaNacimiento) {
                                     }
                                 ?>
                             </div>
+                            
+                            <!-- Botón Imprimir Carnet -->
+                            <?php if ($grupoInteres): ?>
+                                <div class="text-center mt-3">
+                                    <button class="btn btn-danger" onclick="imprimirCarnet()">
+                                        <i class='bx bx-printer me-2'></i> Imprimir Carnet de Grupo de Interés
+                                    </button>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -495,6 +525,34 @@ function calcularEdad($fechaNacimiento) {
                                     <i class='bx bx-info-circle me-2'></i>
                                     <strong>Sin inscripción para el año escolar <?= htmlspecialchars($nombreAnoActivo) ?></strong><br>
                                     El estudiante no tiene una inscripción registrada para el año escolar activo.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- GRUPO DE INTERÉS -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-danger text-white d-flex align-items-center">
+                            <i class='bx bx-star me-2'></i> Grupo de Interés - <?= htmlspecialchars($nombreAnoActivo) ?>
+                        </div>
+                        <div class="card-body">
+                            <?php if ($grupoInteres): ?>
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <strong><i class='bx bx-group me-1'></i> Grupo:</strong>
+                                        <span><?= htmlspecialchars($grupoInteres['nombre_grupo']) ?></span>
+                                    </div>
+                                    <div class="info-item">
+                                        <strong><i class='bx bx-info-circle me-1'></i> Descripción:</strong>
+                                        <span><?= htmlspecialchars($grupoInteres['descripcion']) ?></span>
+                                    </div>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="alert alert-info mb-0">
+                                    <i class='bx bx-info-circle me-2'></i>
+                                    <strong>Sin grupo de interés asignado</strong><br>
+                                    El estudiante no está inscrito en ningún grupo de interés para el año escolar <?= htmlspecialchars($nombreAnoActivo) ?>.
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -745,6 +803,48 @@ document.getElementById('modalFotoPerfil').addEventListener('hidden.bs.modal', f
     document.getElementById('btnGuardarFoto').disabled = false;
     document.getElementById('btnGuardarFoto').innerHTML = '<i class="bx bx-save me-1"></i>Guardar Foto';
 });
+
+// Función para imprimir carnet del grupo de interés
+function imprimirCarnet() {
+    // Validar si tiene foto de perfil
+    const tieneFoto = <?= (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])) ? 'true' : 'false' ?>;
+    
+    if (!tieneFoto) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Foto de perfil requerida',
+            text: 'Para imprimir el carnet del grupo de interés, el estudiante debe tener una foto de perfil guardada.',
+            confirmButtonColor: '#c90000',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Abrir el PDF en una nueva ventana
+    const idEstudiante = <?= $idEstudiante ?>;
+    const url = '../../../vistas/reportes/carnet_grupo_interes.php?id=' + idEstudiante;
+    
+    // Verificar si hay errores antes de abrir
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Error al generar el carnet');
+                });
+            }
+            // Si todo está bien, abrir en nueva ventana
+            window.open(url, '_blank');
+        })
+        .catch(error => {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message,
+                confirmButtonColor: '#c90000',
+                confirmButtonText: 'Entendido'
+            });
+        });
+}
 </script>
 
 <?php include '../../layouts/footer.php'; ?>
