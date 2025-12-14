@@ -134,7 +134,7 @@ if ($showDashboard) {
         $stats['pendientes'] = $stmt->fetchColumn();
 
         // 4. Inscripciones Aprobadas/Inscritos (IdStatus = 11)
-        $stmt = $db->prepare("SELECT COUNT(*) FROM inscripcion WHERE IdStatus = 11");
+        $stmt = $db->prepare("SELECT COUNT(DISTINCT IdEstudiante) FROM inscripcion WHERE IdStatus = 11");
         $stmt->execute();
         $stats['inscritos'] = $stmt->fetchColumn();
 
