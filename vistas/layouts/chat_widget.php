@@ -34,4 +34,48 @@ $assetsUrl = $baseUrl . '/assets';
     </form>
   </div>
 </div>
+<?php
+// Preparar datos de usuario para JS
+if (session_status() === PHP_SESSION_NONE) {
+  session_start();
+}
+$ft_user = [
+  'has_session' => false,
+  'idPersona' => null,
+  'nombre' => null,
+  'perfiles' => []
+];
+if (!empty($_SESSION['idPersona'])){
+  $ft_user['has_session'] = true;
+  $ft_user['idPersona'] = $_SESSION['idPersona'];
+  // nombre completo puede estar en session
+  if (!empty($_SESSION['nombre_completo'])) {
+    $ft_user['nombre'] = $_SESSION['nombre_completo'];
+  } else {
+    $ft_user['nombre'] = trim((!empty($_SESSION['nombre'])?$_SESSION['nombre']:'') . ' ' . (!empty($_SESSION['apellido'])?$_SESSION['apellido']:''));
+  }
+  // intentar obtener todos los perfiles desde la BD si no están en session
+  if (!empty($_SESSION['perfiles']) && is_array($_SESSION['perfiles'])){
+    $ft_user['perfiles'] = $_SESSION['perfiles'];
+  } else {
+    // consultar detalle_perfil para obtener nombres de perfil
+    try{
+      require_once __DIR__ . '/../../config/conexion.php';
+      $db = new Database();
+      $conn = $db->getConnection();
+      $sql = "SELECT pr.nombre_perfil FROM detalle_perfil dp INNER JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil WHERE dp.IdPersona = :idPersona";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(':idPersona', $_SESSION['idPersona'], PDO::PARAM_INT);
+      $stmt->execute();
+      $rows = $stmt->fetchAll(PDO::FETCH_COLUMN);
+      if ($rows) $ft_user['perfiles'] = array_values($rows);
+    }catch(Exception $e){
+      // ignore DB errors here
+    }
+  }
+}
+?>
+<script>
+  window.FT_CHAT_USER = <?php echo json_encode($ft_user, JSON_UNESCAPED_UNICODE); ?>;
+</script>
 <script src="<?php echo $assetsUrl; ?>/js/chat_widget.js"></script>

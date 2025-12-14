@@ -63,18 +63,101 @@
     if(btn) btn.classList.remove('hidden');
   }
 
-  function sendMessage(text){
+  async function sendMessage(text){
     if(!text || !text.trim()) return;
     const msgs = loadMessages();
     const m = {from:'me', text: text.trim(), time: Date.now()};
     msgs.push(m); saveMessages(msgs); renderMessages();
 
-    // Simular respuesta del bot
-    setTimeout(()=>{
+    // Enviar al webhook (n8n) y usar su respuesta como reply si es posible
+    const webhookUrl = 'http://localhost:5678/webhook/prueba-n8n';
+
+    // Obtener info de sesión expuesta por el partial PHP (si existe)
+    const ftUser = (window.FT_CHAT_USER && typeof window.FT_CHAT_USER === 'object') ? window.FT_CHAT_USER : { has_session: false, idPersona: null, nombre: null, perfiles: [] };
+
+    // Si no hay sesión, usar/crear un guest id persistente en localStorage
+    let personaId = ftUser.idPersona || null;
+    if (!ftUser.has_session){
+      const GKEY = 'ft_chat_guest_id_v1';
+      personaId = localStorage.getItem(GKEY);
+      if (!personaId){
+        personaId = 'guest_' + Date.now() + '_' + Math.floor(Math.random()*9000+1000);
+        localStorage.setItem(GKEY, personaId);
+      }
+    }
+
+    const payload = {
+      instance: 'web',
+      has_session: !!ftUser.has_session,
+      idPersona: personaId,
+      nombre: ftUser.nombre || null,
+      perfiles: Array.isArray(ftUser.perfiles) ? ftUser.perfiles : [],
+      text: m.text,
+      time: m.time
+    };
+
+    // mostrar indicador de "escribiendo..."
+    function showTyping(){
+      const container = $('.ft-chat-messages');
+      if(!container) return;
+      if(container.querySelector('.ft-typing')) return;
+      const el = document.createElement('div');
+      el.className = 'ft-msg bot ft-typing';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = '<span class="ft-typing-dots">&nbsp;</span>';
+      el.appendChild(bubble);
+      container.appendChild(el);
+      container.scrollTop = container.scrollHeight;
+    }
+    function hideTyping(){
+      const container = $('.ft-chat-messages');
+      if(!container) return;
+      const t = container.querySelector('.ft-typing');
+      if(t) t.remove();
+    }
+
+    try{
+      showTyping();
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let botReply = 'Gracias por tu mensaje. Pronto un agente te responderá.';
+
+      if(res.ok){
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        if(ct.includes('application/json')){
+          const data = await res.json();
+          if(data){
+            // prefer common fields
+            botReply = data.reply || data.text || data.message || JSON.stringify(data);
+          }
+        } else {
+          const txt = await res.text();
+          if(txt) botReply = txt;
+        }
+      } else {
+        botReply = 'No fue posible conectar con el servidor (error ' + res.status + ').';
+      }
+
+      hideTyping();
       const msgs2 = loadMessages();
-      msgs2.push({from:'bot', text: 'Gracias por tu mensaje. Pronto un agente te responderá.', time: Date.now()});
+      msgs2.push({from:'bot', text: botReply, time: Date.now()});
       saveMessages(msgs2); renderMessages();
-    }, 900);
+
+    }catch(err){
+      console.error('Error enviando webhook:', err);
+      hideTyping();
+      // si falla, mantener comportamiento simulado
+      setTimeout(()=>{
+        const msgs2 = loadMessages();
+        msgs2.push({from:'bot', text: 'Gracias por tu mensaje. Pronto un agente te responderá.', time: Date.now()});
+        saveMessages(msgs2); renderMessages();
+      }, 900);
+    }
   }
 
   // Inicializar eventos

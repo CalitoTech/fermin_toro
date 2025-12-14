@@ -66,6 +66,19 @@
 .bubble i.bx.bx-bot { margin-right:8px; font-size:16px; vertical-align:middle; }
 .bubble .ft-text { vertical-align:middle; }
 
+/* estilos para indicador de escribiendo */
+.ft-typing .bubble { opacity: 0.95; }
+.ft-typing-dots{ display:inline-block; width:36px; height:12px; }
+.ft-typing-dots::before, .ft-typing-dots::after, .ft-typing-dots span{ content:''; display:inline-block; width:6px; height:6px; margin:0 3px; background: #fff; border-radius:50%; vertical-align:middle; animation: typingDots 1s infinite; }
+.ft-typing-dots::before{ animation-delay: 0s; }
+.ft-typing-dots::after{ animation-delay: .2s; }
+.ft-typing-dots span{ animation-delay: .4s; }
+@keyframes typingDots{
+  0% { transform: translateY(0); opacity: .2 }
+  50% { transform: translateY(-4px); opacity: 1 }
+  100% { transform: translateY(0); opacity: .2 }
+}
+
 .ft-chat-input { padding: 10px; border-top: 1px solid #eee; display:flex; gap:8px; align-items:center; }
 .ft-chat-input textarea { resize:none; height:40px; border-radius:8px; border:1px solid #e6e9ef; padding:8px; flex:1; min-width:0; box-sizing:border-box; }
 .ft-chat-input .ft-send-btn { background:#c90000; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
