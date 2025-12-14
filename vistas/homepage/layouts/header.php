@@ -30,8 +30,10 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
       <link rel="stylesheet" href="../../assets/css/solicitud_cupo.css">
+      <!-- Boxicons -->
+      <link href='https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
       <style>
-         /* Estilos generales */
          .navbar-custom {
             background-color: #c90000;; /* Rojo intenso */
             padding: 0.5rem 1rem; /* Espaciado interno del navbar */
@@ -260,5 +262,8 @@
             </div>
          </div>
       </header>
+      <?php // Incluir widget de chat reutilizable (aparece en todas las vistas que cargan este menú)
+         include __DIR__ . '/../../layouts/chat_widget.php';
+      ?>
       <!-- end header inner -->
       <!-- end header -->

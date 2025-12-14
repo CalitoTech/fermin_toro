@@ -1,19 +1,23 @@
 <?php
-// Widget de chat reutilizable - insertar donde se incluya el menú
+// Widget de chat reutilizable - rutas de assets calculadas para ser compatibles
+// cuando se incluye desde diferentes niveles (`header.php`, `menu.php`, vistas)
+$baseUrl = preg_replace('#/vistas/.*$#', '', $_SERVER['SCRIPT_NAME']);
+if ($baseUrl === '/') $baseUrl = '';
+$assetsUrl = $baseUrl . '/assets';
 ?>
 <!-- Chat Button -->
-<link rel="stylesheet" href="../../../assets/css/chat_widget.css">
+<link rel="stylesheet" href="<?php echo $assetsUrl; ?>/css/chat_widget.css">
 <div id="ft-chat-root">
   <div id="ft-chat-btn" class="ft-chat-btn" title="Fermin Bot">
     <!-- Robot icon using Boxicons class -->
-    <i class="bx bx-bot" style="color:#fff;font-size:22px;"></i>
+    <i class='bx bxs-bot' style="color:#c90000;font-size:35px;"></i>
   </div>
 
   <div id="ft-chat-panel" class="ft-chat-panel">
     <div class="ft-chat-header">
       <div class="title">
         <!-- Mostrar logo Fermín en el header -->
-        <img src="../../../assets/images/fermin.png" alt="Fermin" style="width:32px;height:32px;border-radius:4px;object-fit:contain;background:transparent;" />
+        <img src="<?php echo $assetsUrl; ?>/images/fermin.png" alt="Fermin" style="width:32px;height:32px;border-radius:4px;object-fit:contain;background:transparent;" />
         Fermin Bot
       </div>
       <button id="ft-chat-close" class="ft-chat-close">✕</button>
@@ -30,4 +34,4 @@
     </form>
   </div>
 </div>
-<script src="../../../assets/js/chat_widget.js"></script>
+<script src="<?php echo $assetsUrl; ?>/js/chat_widget.js"></script>
