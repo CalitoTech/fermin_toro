@@ -1,0 +1,126 @@
+/* Chat widget styles - reusable */
+.ft-chat-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1200;
+  border: 2px solid #f0bfbf;
+}
+.ft-chat-btn img { width: 36px; height: 36px; border-radius: 50%; }
+
+.ft-chat-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px; /* mismo nivel que el botón */
+  width: 340px;
+  max-height: 480px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1200;
+}
+.ft-chat-panel.open { display: flex; }
+
+.ft-chat-header {
+  background: linear-gradient(90deg,#c90000,#e53939); /* tonos rojos */
+  color: #fff;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ft-chat-header .title { display:flex; align-items:center; gap:8px; font-weight:600; }
+.ft-chat-header img { width:32px; height:32px; border-radius:50%; }
+.ft-chat-close { background: transparent; border: none; color: #fff; font-size:18px; cursor:pointer; }
+
+.ft-chat-messages { padding: 12px; overflow-y: auto; flex:1; background: #f6f8fb; }
+.ft-msg { margin-bottom: 10px; display: flex; gap:8px; align-items:flex-start; }
+.ft-msg.me { margin-left: auto; justify-content: flex-end; align-items:flex-end; }
+.ft-msg .bubble { padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height:1.2; box-shadow: 0 1px 0 rgba(0,0,0,0.04); max-width: calc(100% - 48px); word-break: break-word; }
+.ft-msg.me .bubble { background: #fff; color: #222; border: 1px solid #e6e9ef; border-bottom-right-radius: 4px; }
+.ft-msg.bot .bubble { background: #c90000; color: #fff; border: none; border-bottom-left-radius: 4px; margin-left: 8px; }
+
+/* animación de entrada para mensajes del bot */
+.ft-incoming {
+  animation: fadeInUp .28s ease both;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* icon inside bubble */
+.bubble i.bx.bx-bot { margin-right:8px; font-size:16px; vertical-align:middle; }
+.bubble .ft-text { vertical-align:middle; }
+
+.ft-chat-input { padding: 10px; border-top: 1px solid #eee; display:flex; gap:8px; align-items:center; }
+.ft-chat-input textarea { resize:none; height:40px; border-radius:8px; border:1px solid #e6e9ef; padding:8px; flex:1; min-width:0; box-sizing:border-box; }
+.ft-chat-input .ft-send-btn { background:#c90000; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.ft-chat-input .ft-send-btn svg { width:18px; height:18px; transform: rotate(45deg); color: #fff; }
+
+.ft-chat-input .ft-send-btn:active { transform: translateY(1px); }
+
+.ft-chat-btn.hidden { display: none !important; }
+
+/* Mejor diseño del botón flotante */
+.ft-chat-btn {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #c90000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1300;
+  border: 3px solid rgba(255,255,255,0.12);
+  box-shadow: 0 10px 30px rgba(201,9,9,0.22), inset 0 -6px 12px rgba(255,255,255,0.06);
+  transition: transform .16s ease, box-shadow .18s ease;
+}
+.ft-chat-btn i { font-size: 22px; color: #fff; display: inline-block; }
+
+/* Avatar icon dentro del círculo rojo */
+/* avatar styles removed (not used) */
+.ft-chat-btn:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 18px 40px rgba(201,9,9,0.28); }
+.ft-chat-btn:active { transform: translateY(-2px) scale(.995); }
+
+/* pulso sutil */
+.ft-chat-btn::before{
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  left: 0; top: 0;
+  box-shadow: 0 0 0 0 rgba(201,9,9,0.12);
+  animation: pulse 2.8s infinite;
+  z-index: 1200;
+}
+@keyframes pulse{
+  0% { box-shadow: 0 0 0 0 rgba(201,9,9,0.12); }
+  70% { box-shadow: 0 0 0 12px rgba(201,9,9,0.02); }
+  100% { box-shadow: 0 0 0 12px rgba(201,9,9,0); }
+}
+.ft-chat-small { font-size:12px; color:#888; }
+
+/* small screens */
+@media (max-width:480px){
+  .ft-chat-panel { right: 12px; left:12px; width: auto; bottom: 84px; }
+  .ft-chat-btn { right: 12px; bottom: 12px; }
+}

@@ -468,3 +468,6 @@ function cambiarModoMenu(esRepresentante) {
     window.location.href = window.location.pathname + '?cambiar_menu=' + nuevoModo;
 }
 </script>
+<?php // Incluir widget de chat reutilizable (aparece en todas las vistas que cargan este menú)
+include __DIR__ . '/chat_widget.php';
+?>
