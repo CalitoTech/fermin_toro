@@ -97,8 +97,10 @@ $niveles = $nivelModel->obtenerNiveles($idPersona);
                         </div>
                         <div class="card-body p-4">
 
-                            <form action="../../../controladores/CursoController.php?action=editar" method="POST" id="editar">
+                            <form action="../../../controladores/CursoController.php" method="POST" id="form-curso">
+                                <input type="hidden" name="action" value="editar">
                                 <input type="hidden" name="id" value="<?= $idCurso ?>">
+                                <input type="hidden" name="reorganizar" id="input-reorganizar" value="false">
                                 
                                 <div class="row">
                                     <!-- Columna Izquierda -->
@@ -190,5 +192,78 @@ $niveles = $nivelModel->obtenerNiveles($idPersona);
 <script src="../../../assets/js/validacion.js"></script>
 <script src="../../../assets/js/formulario.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById('form-curso').addEventListener('submit', function(e) {
+    // Si ya confirmamos la reorganización, o no requerimos chequeo, permitimos el submit normalmente
+    if (document.getElementById('input-reorganizar').value === 'chequeado') return;
+
+    e.preventDefault();
+    const form = this;
+    const idCurso = form.querySelector('[name="id"]').value;
+    const nuevaCantidad = parseInt(document.getElementById('cantidad_secciones').value);
+
+    // Verificar impacto
+    fetch('../../../controladores/CursoController.php?action=verificar_impacto_reduccion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            idCurso: idCurso,
+            cantidadObjetivo: nuevaCantidad
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            Swal.fire('Error', data.error, 'error');
+            return;
+        }
+
+        if (data.afectadas && data.afectadas.length > 0) {
+            const seccionesStr = data.afectadas.map(s => `Sección ${s.seccion}`).join(', ');
+            
+            Swal.fire({
+                title: '¡Atención!',
+                html: `Estás a punto de desactivar las siguientes secciones que tienen <b>${data.total_estudiantes} estudiantes inscritos</b>:<br><br>
+                       <b>${seccionesStr}</b><br><br>
+                       ¿Deseas desactivarlas y reorganizar a los estudiantes en el resto de secciones activas?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, reorganizar y desactivar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('input-reorganizar').value = 'true';
+                    form.submit();
+                } else {
+                    // Si cancela, no hacemos nada (se mantiene en la página)
+                }
+            });
+        } else {
+            // Sin impacto, marcamos como chequeado y enviamos
+            document.getElementById('input-reorganizar').value = 'chequeado';
+            form.submit();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // En caso de error de red, preguntamos si continuar igual
+        Swal.fire({
+             title: 'Error de verificación',
+             text: 'No se pudo verificar el impacto de la reducción. ¿Desea continuar de todos modos?',
+             icon: 'error',
+             showCancelButton: true,
+             confirmButtonText: 'Sí, continuar'
+        }).then((result) => {
+             if (result.isConfirmed) {
+                 document.getElementById('input-reorganizar').value = 'chequeado';
+                 form.submit();
+             }
+        });
+    });
+});
+</script>
 </body>
 </html>

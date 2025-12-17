@@ -18,6 +18,7 @@ switch ($action) {
     case 'crear': crearCursoSeccion(); break;
     case 'editar': editarCursoSeccion(); break;
     case 'eliminar': eliminarCursoSeccion(); break;
+    case 'verificar_impacto': verificarImpactoDesactivacion(); break;
     default: manejarError('Acción no válida', '../vistas/registros/curso_seccion/curso_seccion.php');
 }
 
@@ -69,7 +70,15 @@ function crearCursoSeccion() {
         $cursoSeccionModel->IdSeccion = $idSeccion;
         $cursoSeccionModel->IdAula = empty($idAula) ? null : $idAula;
         $cursoSeccionModel->cantidad_estudiantes = empty($cantidadEstudiantes) ? 0 : (int)$cantidadEstudiantes;
-        $cursoSeccionModel->activo = $activo;
+        // Validar que no se active la sección "Inscripción"
+        if ($activo == 1) {
+            require_once __DIR__ . '/../modelos/Seccion.php';
+            $seccionModel = new Seccion($conexion);
+            $seccionDatos = $seccionModel->obtenerPorId($idSeccion);
+            if ($seccionDatos && $seccionDatos['seccion'] === 'Inscripción') {
+                throw new Exception("La sección 'Inscripción' está reservada para procesar solicitudes de nuevo ingreso (estudiantes sin asignación académica) y no debe activarse.");
+            }
+        }
 
         if (!$cursoSeccionModel->guardar()) {
             throw new Exception("Error al guardar el curso/sección");
@@ -87,6 +96,58 @@ function crearCursoSeccion() {
     } catch (Exception $e) {
         manejarError('Error al crear el curso/sección: ' . $e->getMessage());
     }
+}
+
+function verificarImpactoDesactivacion() {
+    // Solo permitir JSON
+    header('Content-Type: application/json');
+    
+    // Obtener datos
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id = $input['id'] ?? 0;
+    
+    if (!$id) {
+        echo json_encode(['error' => 'ID requerido']);
+        exit;
+    }
+
+    require_once __DIR__ . '/../modelos/CursoSeccion.php';
+    require_once __DIR__ . '/../config/conexion.php';
+    
+    $database = new Database();
+    $conn = $database->getConnection();
+    $model = new CursoSeccion($conn);
+    
+    // Obtener estudiantes y IdCurso para validación
+    $query = "SELECT COUNT(*) as total, IdCurso FROM inscripcion WHERE IdCurso_Seccion = :id AND IdStatus = 11";
+    // Check if we need to join because inscripcion might not have IdCurso directly if design is normalized? 
+    // Actually curso_seccion has IdCurso. Let's query from curso_seccion directly or join.
+    // Wait, the previous query was on `inscripcion`. Does `inscripcion` have `IdCurso`? Usually it has `IdCurso_Seccion`.
+    // Let's verify schema if possible, or join `curso_seccion`.
+    
+    // Better query:
+    $queryInfo = "SELECT cs.IdCurso, (SELECT COUNT(*) FROM inscripcion i WHERE i.IdCurso_Seccion = cs.IdCurso_Seccion AND i.IdStatus = 11) as total 
+                  FROM curso_seccion cs WHERE cs.IdCurso_Seccion = :id";
+    
+    $stmt = $conn->prepare($queryInfo);
+    $stmt->bindParam(':id', $id);
+    $stmt->execute();
+    $data = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$data) {
+        echo json_encode(['error' => 'Sección no encontrada']);
+        exit;
+    }
+    
+    // Validar orden de desactivación
+    $validacion = $model->verificarOrdenDesactivacion($data['IdCurso'], $id);
+    if (!$validacion['valido']) {
+         echo json_encode(['error' => $validacion['mensaje']]);
+         exit;
+    }
+    
+    echo json_encode(['estudiantes' => $data['total']]);
+    exit;
 }
 
 function editarCursoSeccion() {
@@ -144,6 +205,9 @@ function editarCursoSeccion() {
             }
         }
 
+        // Validar si es una desactivación y requiere reubicación
+        $reorganizar = isset($_POST['reorganizar']) && $_POST['reorganizar'] === 'true';
+
         // Configurar y actualizar
         $cursoSeccionModel->IdCurso_Seccion = $id;
         $cursoSeccionModel->IdCurso = $idCurso;
@@ -151,6 +215,32 @@ function editarCursoSeccion() {
         $cursoSeccionModel->IdAula = empty($idAula) ? null : $idAula;
         $cursoSeccionModel->cantidad_estudiantes = empty($cantidadEstudiantes) ? 0 : (int)$cantidadEstudiantes;
         $cursoSeccionModel->activo = $activo;
+
+        if ($activo == 1) {
+            require_once __DIR__ . '/../modelos/Seccion.php';
+            $seccionModel = new Seccion($conexion);
+            $seccionDatos = $seccionModel->obtenerPorId($idSeccion);
+            if ($seccionDatos && $seccionDatos['seccion'] === 'Inscripción') {
+                throw new Exception("La sección 'Inscripción' está reservada para procesar solicitudes de nuevo ingreso (estudiantes sin asignación académica) y no debe activarse.");
+            }
+        }
+
+        if ($activo == 0) {
+             // Validar orden antes de proceder
+             $validacion = $cursoSeccionModel->verificarOrdenDesactivacion($idCurso, $id);
+             if (!$validacion['valido']) {
+                  throw new Exception($validacion['mensaje']);
+             }
+        }
+
+        if ($activo == 0 && $reorganizar) {
+             // Realizar reubicación ANTES de desactivar (aunque el status se actualiza con actualizar())
+             // Solo necesitamos saber que el ID actual va a "desactivarse".
+             // La función reubicarEstudiantes excluye el ID pasado como "desactivar" y busca otros destinos.
+             if (!$cursoSeccionModel->reubicarEstudiantes($idCurso, [$id])) {
+                 throw new Exception("No se pudieron reubicar los estudiantes. Verifique que existan otras secciones activas.");
+             }
+        }
 
         if (!$cursoSeccionModel->actualizar()) {
             throw new Exception("Error al actualizar datos del curso/sección");

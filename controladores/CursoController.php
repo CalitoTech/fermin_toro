@@ -26,6 +26,9 @@ switch ($action) {
     case 'getByNivel':
         obtenerCursosPorNivel();
         break;
+    case 'verificar_impacto_reduccion':
+        verificarImpactoReduccion();
+        break;
     default:
         manejarError('Acción no válida', '../vistas/registros/curso/curso.php');
 }
@@ -188,9 +191,24 @@ function editarCurso() {
             throw new Exception("Error al actualizar datos del curso");
         }
 
-        // Sincronizar secciones
+        // Sincronizar secciones (y manejar reubicación si es necesaria)
         require_once __DIR__ . '/../modelos/CursoSeccion.php';
         $cursoSeccionModel = new CursoSeccion($conexion);
+        
+        $reorganizar = isset($_POST['reorganizar']) && $_POST['reorganizar'] === 'true';
+        
+        if ($reorganizar) {
+             // Identificar qué secciones se van a desactivar basado en el nuevo conteo
+             $excedentesToKill = $cursoSeccionModel->obtenerSeccionesExcedentes($id, $cursoModel->cantidad_secciones);
+             $idsToKill = array_column($excedentesToKill, 'IdCurso_Seccion');
+             
+             if (!empty($idsToKill)) {
+                 if (!$cursoSeccionModel->reubicarEstudiantes($id, $idsToKill)) {
+                     throw new Exception("No se pudieron reubicar todos los estudiantes. Intente nuevamente.");
+                 }
+             }
+        }
+
         $cursoSeccionModel->sincronizarSecciones($id, $cursoModel->cantidad_secciones);
 
         $_SESSION['alert'] = 'success';
@@ -259,4 +277,39 @@ function manejarError(string $mensaje, string $urlRedireccion = '../vistas/regis
     $_SESSION['message'] = $mensaje;
     header("Location: $urlRedireccion");
     exit();
+}
+
+function verificarImpactoReduccion() {
+    // Solo permitir JSON
+    header('Content-Type: application/json');
+    
+    // Obtener datos
+    $input = json_decode(file_get_contents('php://input'), true);
+    $idCurso = $input['idCurso'] ?? 0;
+    $cantidadObjetivo = $input['cantidadObjetivo'] ?? 0;
+    
+    if (!$idCurso || !$cantidadObjetivo) {
+        echo json_encode(['error' => 'Datos incompletos']);
+        exit;
+    }
+
+    require_once __DIR__ . '/../modelos/CursoSeccion.php';
+    require_once __DIR__ . '/../config/conexion.php';
+    
+    $database = new Database();
+    $conn = $database->getConnection();
+    $csModel = new CursoSeccion($conn);
+    
+    $excedentes = $csModel->obtenerSeccionesExcedentes($idCurso, $cantidadObjetivo);
+    
+    // Filtrar solo las que tienen estudiantes
+    $afectadas = array_filter($excedentes, function($sac) {
+        return $sac['num_estudiantes'] > 0;
+    });
+
+    echo json_encode([
+        'afectadas' => array_values($afectadas),
+        'total_estudiantes' => array_reduce($afectadas, fn($carry, $item) => $carry + $item['num_estudiantes'], 0)
+    ]);
+    exit;
 }

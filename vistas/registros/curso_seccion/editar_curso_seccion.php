@@ -114,105 +114,54 @@ $aulas = $aulaModel->obtenerAulas($idPersona);
                         </div>
                         <div class="card-body p-4">
 
-                            <form action="../../../controladores/CursoSeccionController.php?action=editar" method="POST" id="editar">
+                            <form action="../../../controladores/CursoSeccionController.php" method="POST" id="form-curso-seccion">
+                                <input type="hidden" name="action" value="editar">
                                 <input type="hidden" name="id" value="<?= $idCursoSeccion ?>">
-                                
+                                <input type="hidden" name="reorganizar" id="input-reorganizar" value="false">
+
                                 <div class="row">
-                                    <div class="col-md-6">
-
-                                        <!-- Nivel -->
-                                        <div class="añadir__grupo" id="grupo__nivel">
-                                            <label for="nivel" class="form-label">Nivel *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="nivel" 
-                                                    id="nivel" 
-                                                    required>
-                                                   <?php foreach ($niveles as $nivel): ?>
-                                                        <option value="<?= $nivel['IdNivel'] ?>" 
-                                                            <?= $nivel['IdNivel'] == $curso_seccion['IdNivel'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($nivel['nivel']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">Debe seleccionar un nivel.</p>
-                                        </div>
-
-                                        <!-- Curso -->
-                                        <div class="añadir__grupo" id="grupo__curso">
-                                            <label for="curso" class="form-label">Curso *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="curso" 
-                                                    id="curso" 
-                                                    required>
-                                                   <?php foreach ($cursos as $curso): ?>
-                                                        <option value="<?= $curso['IdCurso'] ?>" 
-                                                            <?= $curso['IdCurso'] == $curso_seccion['IdCurso'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($curso['curso']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">Debe seleccionar un curso.</p>
-                                        </div>
-
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Nivel</label>
+                                        <!-- Mostramos el nivel pero enviamos su ID si fuera necesario (aunque ya no se edita aquí, es informativo) -->
+                                        <input type="text" class="form-control" value="<?= htmlspecialchars($niveles[array_search($curso_seccion['IdNivel'], array_column($niveles, 'IdNivel'))]['nivel'] ?? 'Desconocido') ?>" disabled>
                                     </div>
-
-                                    <div class="col-md-6">
-                                        
-                                        <!-- Seccion -->
-                                        <div class="añadir__grupo" id="grupo__seccion">
-                                            <label for="seccion" class="form-label">Sección *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="seccion" 
-                                                    id="seccion" 
-                                                    required>
-                                                   <?php foreach ($secciones as $seccion): ?>
-                                                        <option value="<?= $seccion['IdSeccion'] ?>" 
-                                                            <?= $seccion['IdSeccion'] == $curso_seccion['IdSeccion'] ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($seccion['seccion']) ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
-                                            </div>
-                                            <p class="añadir__input-error">Debe seleccionar una sección.</p>
-                                        </div>
-
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Curso</label>
+                                        <input type="text" class="form-control" value="<?= htmlspecialchars($curso['curso']) ?>" disabled>
+                                        <input type="hidden" name="curso" value="<?= $curso_seccion['IdCurso'] ?>">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Sección</label>
+                                         <!-- Se muestra la sección actual, no editable para mantener consistencia con el curso -->
+                                        <input type="text" class="form-control" id="input-nombre-seccion" value="<?= htmlspecialchars($curso_seccion['seccion'] ?? '') ?>" disabled>
+                                        <input type="hidden" name="seccion" value="<?= $curso_seccion['IdSeccion'] ?>">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="cantidad_estudiantes" class="form-label">Cantidad de Estudiantes (Informativo)</label>
+                                        <input type="number" class="form-control" name="cantidad_estudiantes" id="cantidad_estudiantes" 
+                                               value="<?= $curso_seccion['cantidad_estudiantes'] ?? 0 ?>" disabled>
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
                                         <!-- Aula -->
                                         <div class="añadir__grupo" id="grupo__aula">
-                                            <label for="aula" class="form-label">Aula *</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text"><i class='bx bxs-star'></i></span>
-                                                <select 
-                                                    class="form-control añadir__input" 
-                                                    name="aula" 
-                                                    id="aula" 
-                                                    required>
-                                                   <option value="" selected>Sin aula asignada</option>
-                                                   <?php foreach ($aulas as $aula): ?>
-                                                        <option value="<?= $aula['IdAula'] ?>" 
-                                                            <?= ($aula['IdAula'] == ($curso_seccion['IdAula'] ?? null)) ? 'selected' : '' ?>>
-                                                            <?= htmlspecialchars($aula['aula']) ?>
+                                            <label for="aula" class="form-label">Aula (Opcional)</label>
+                                                <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bxs-school'></i></span>
+                                                <select class="form-select añadir__input" name="aula" id="aula">
+                                                    <option value="">Sin Asignar</option>
+                                                    <?php foreach ($aulas as $aula): ?>
+                                                        <option value="<?= $aula['IdAula'] ?>" <?= $aula['IdAula'] == $curso_seccion['IdAula'] ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($aula['aula']) ?> (Cap: <?= $aula['capacidad'] ?>)
                                                         </option>
                                                     <?php endforeach; ?>
                                                 </select>
                                                 <i class="añadir__validacion-estado fas fa-times-circle"></i>
                                             </div>
-                                            <p class="añadir__input-error">Debe seleccionar una Aula.</p>
                                         </div>
+                                    </div>
 
+                                    <div class="col-md-6 mb-3">
                                         <!-- Activo -->
                                         <div class="añadir__grupo mt-3" id="grupo__activo">
                                             <label class="form-label d-block">¿Activo?</label>
@@ -234,15 +183,9 @@ $aulas = $aulaModel->obtenerAulas($idPersona);
                                     </div>
                                 </div>
 
-
-                                <!-- Botones para Volver y Actualizar -->
-                                <div class="d-flex justify-content-between mt-4">
-                                    <a href="curso_seccion.php" class="btn btn-outline-danger btn-lg">
-                                        <i class='bx bx-arrow-back'></i> Volver a Curso/Sección
-                                    </a>
-                                    <button type="submit" class="btn btn-danger btn-lg">
-                                        <i class='bx bxs-save'></i> Actualizar Curso/Sección
-                                    </button>
+                                <div class="d-flex justify-content-end gap-2 mt-4">
+                                    <a href="curso_seccion.php" class="btn btn-secondary">Cancelar</a>
+                                    <button type="submit" class="btn btn-danger">Actualizar</button>
                                 </div>
                             </form>
                         </div>
@@ -259,5 +202,82 @@ $aulas = $aulaModel->obtenerAulas($idPersona);
 <script src="../../../assets/js/validacion.js"></script>
 <script src="../../../assets/js/formulario.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.getElementById('form-curso-seccion').addEventListener('submit', function(e) {
+    if (document.getElementById('input-reorganizar').value === 'chequeado') return;
+
+    // Solo chequeamos si se está desactivando
+    const isChecked = document.getElementById('activo').checked;
+
+    // Validar activación de Inscripción
+    const nombreSeccion = document.getElementById('input-nombre-seccion').value;
+    if (isChecked && nombreSeccion === 'Inscripción') {
+         e.preventDefault();
+         Swal.fire({
+            title: 'Acción no permitida',
+            text: "La sección 'Inscripción' está reservada para procesar solicitudes de nuevo ingreso (estudiantes sin asignación académica) y no debe activarse.",
+            icon: 'warning',
+            confirmButtonColor: '#d33'
+        });
+        return;
+    }
+
+    if (isChecked) {
+        // Se está activando o manteniendo activo, no hay problema
+        return;
+    }
+
+    e.preventDefault();
+    const form = this;
+    const id = form.querySelector('[name="id"]').value;
+
+    fetch('../../../controladores/CursoSeccionController.php?action=verificar_impacto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            Swal.fire('Error', data.error, 'error');
+            // Restore previous state
+            document.getElementById('activo').checked = true;
+            document.getElementById('toggle-text-activo').textContent = 'Sí';
+            return;
+        }
+
+        if (data.estudiantes > 0) {
+            Swal.fire({
+                title: '¡Atención!',
+                html: `Esta sección tiene <b>${data.estudiantes} estudiantes inscritos</b> y estás a punto de desactivarla en el año escolar actual.<br><br>
+                       ¿Deseas desactivarla y reorganizar a los estudiantes en el resto de secciones activas?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, reorganizar y desactivar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('input-reorganizar').value = 'true';
+                    form.submit();
+                } else {
+                    // Cancelar: volvemos a marcar el checkbox como activo visualmente para que se entienda que no se guardó el cambio
+                    document.getElementById('activo').checked = true;
+                    document.getElementById('toggle-text-activo').textContent = 'Sí';
+                }
+            });
+        } else {
+            document.getElementById('input-reorganizar').value = 'chequeado';
+            form.submit();
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        form.submit();
+    });
+});
+</script>
 </body>
 </html>

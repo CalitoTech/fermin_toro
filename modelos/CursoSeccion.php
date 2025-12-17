@@ -206,7 +206,109 @@ class CursoSeccion {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    public function obtenerSeccionesExcedentes($idCurso, $cantidadObjetivo) {
+        // Obtener todas las secciones activas alfabéticas ordenadas descendente (Z -> A)
+        $query = "SELECT cs.IdCurso_Seccion, cs.activo, s.seccion,
+                  (SELECT COUNT(*) FROM inscripcion i WHERE i.IdCurso_Seccion = cs.IdCurso_Seccion AND i.IdStatus = 11) as num_estudiantes
+                  FROM curso_seccion cs 
+                  JOIN seccion s ON cs.IdSeccion = s.IdSeccion 
+                  WHERE cs.IdCurso = :idCurso 
+                  AND cs.activo = 1
+                  AND s.seccion != 'Inscripción'
+                  ORDER BY s.seccion DESC"; // Las últimas del alfabeto primero
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':idCurso', $idCurso);
+        $stmt->execute();
+        $activas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $totalActivas = count($activas);
+        
+        if ($cantidadObjetivo >= $totalActivas) {
+            return []; // No hay que reducir nada
+        }
+
+        $aEliminar = array_slice($activas, 0, $totalActivas - $cantidadObjetivo);
+        return $aEliminar;
+    }
+
+    public function reubicarEstudiantes($idCurso, $idsSeccionesDesactivar) {
+        if (empty($idsSeccionesDesactivar)) return true;
+
+        // 1. Obtener estudiantes afectados
+        $placeholders = implode(',', array_fill(0, count($idsSeccionesDesactivar), '?'));
+        $queryEst = "SELECT IdInscripcion FROM inscripcion WHERE IdCurso_Seccion IN ($placeholders) AND IdStatus = 11";
+        $stmtEst = $this->conn->prepare($queryEst);
+        $stmtEst->execute($idsSeccionesDesactivar);
+        //$estudiantes = $stmtEst->fetchAll(PDO::FETCH_ASSOC); // Trae arrays
+        $estudiantesIds = $stmtEst->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($estudiantesIds)) return true; // Nada que reubicar
+
+        // 2. Obtener secciones destino (Activas y NO incluídas en las desactivar)
+        // Nota: Si estamos en "editar curso", las "desactivar" son las que sobran. Las otras se quedan.
+        // Si estamos en "editar seccion", la "desactivar" es la actual. Las otras activas son destino.
+        
+        $queryDest = "SELECT IdCurso_Seccion FROM curso_seccion cs
+                      JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                      WHERE cs.IdCurso = ? 
+                      AND cs.activo = 1 
+                      AND s.seccion != 'Inscripción'
+                      AND cs.IdCurso_Seccion NOT IN ($placeholders)";
+        
+        // params: idCurso + idsSeccionesDesactivar
+        $params = array_merge([$idCurso], $idsSeccionesDesactivar);
+        $stmtDest = $this->conn->prepare($queryDest);
+        $stmtDest->execute($params);
+        $destinos = $stmtDest->fetchAll(PDO::FETCH_COLUMN);
+
+        if (empty($destinos)) {
+            // No hay dónde moverlos. (Caso extremo: desactivando la última sección con alumnos)
+            // Podríamos crear una excepción o moverlos a "Inscripción" temporalmente?
+            // Por ahora retornamos false
+            return false;
+        }
+
+        // 3. Distribución equitativa (Round Robin)
+        // Mezclar estudiantes para aleatoriedad
+        shuffle($estudiantesIds);
+        
+        $countDest = count($destinos);
+        $updates = [];
+        
+        foreach ($estudiantesIds as $index => $idInscripcion) {
+            $destinoId = $destinos[$index % $countDest];
+            // Preparar update
+            $updates[] = "UPDATE inscripcion SET IdCurso_Seccion = $destinoId WHERE IdInscripcion = $idInscripcion";
+        }
+
+        // Ejecutar updates (idealmente en transacción, pero vamos simple por now)
+        try {
+            $this->conn->beginTransaction();
+            foreach ($updates as $sql) {
+                $this->conn->exec($sql);
+            }
+            $this->conn->commit();
+            return true;
+        } catch (Exception $e) {
+            $this->conn->rollBack();
+            return false;
+        }
+    }
+
+    public function obtenerEstudiantesPorSeccion($idCursoSeccion) {
+        $query = "SELECT p.nombre, p.apellido, c.curso, s.seccion 
+                  FROM inscripcion i
+                  JOIN persona p ON i.IdEstudiante = p.IdPersona
+                  JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
+                  JOIN curso c ON cs.IdCurso = c.IdCurso
+                  JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                  WHERE i.IdCurso_Seccion = :id AND i.IdStatus = 11";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $idCursoSeccion);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     public function sincronizarSecciones($idCurso, $cantidadObjetivo) {
         require_once __DIR__ . '/Seccion.php';
         $seccionModel = new Seccion($this->conn);
@@ -306,5 +408,63 @@ class CursoSeccion {
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row['total'];
+    }
+
+    public function verificarOrdenDesactivacion($idCurso, $idCursoSeccion) {
+        // 1. Verificar si es la sección "Inscripción"
+        $queryInsc = "SELECT s.seccion FROM curso_seccion cs 
+                      JOIN seccion s ON cs.IdSeccion = s.IdSeccion 
+                      WHERE cs.IdCurso_Seccion = :id";
+        $stmtInsc = $this->conn->prepare($queryInsc);
+        $stmtInsc->bindParam(':id', $idCursoSeccion);
+        $stmtInsc->execute();
+        $seccionActual = $stmtInsc->fetch(PDO::FETCH_ASSOC);
+
+        if ($seccionActual && $seccionActual['seccion'] === 'Inscripción') {
+            return ['valido' => false, 'mensaje' => 'No se puede modificar manualmente el estado de la sección "Inscripción".'];
+        }
+
+        // 2. Obtener todas las secciones activas alfabéticas (A, B, C...)
+        $query = "SELECT cs.IdCurso_Seccion, s.seccion 
+                  FROM curso_seccion cs 
+                  JOIN seccion s ON cs.IdSeccion = s.IdSeccion 
+                  WHERE cs.IdCurso = :idCurso 
+                  AND cs.activo = 1 
+                  AND s.seccion != 'Inscripción'
+                  ORDER BY s.seccion DESC"; // Z -> A
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':idCurso', $idCurso);
+        $stmt->execute();
+        $activas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($activas)) {
+            // No hay secciones activas (raro si estamos intentando desactivar una que supuestamente está activa)
+            return ['valido' => true]; 
+        }
+
+        // La primera en la lista es la mayor alfabéticamente (Z, Y, X...)
+        $ultimaSeccion = $activas[0];
+
+        // Si la sección que queremos desactivar NO es la última
+        $ultimaId = $ultimaSeccion['IdCurso_Seccion'];
+        
+        // Verifica si la sección a desactivar está en la lista de activas y no es la última
+        $esActiva = false;
+        foreach ($activas as $activa) {
+            if ($activa['IdCurso_Seccion'] == $idCursoSeccion) {
+                $esActiva = true;
+                break;
+            }
+        }
+
+        if ($esActiva && $ultimaId != $idCursoSeccion) {
+             return [
+                'valido' => false, 
+                'mensaje' => "No se puede desactivar esta sección. Debe mantener el orden alfabético y desactivar primero la sección '{$ultimaSeccion['seccion']}'."
+            ];
+        }
+
+        return ['valido' => true];
     }
 }
