@@ -519,7 +519,7 @@ function uploadPhotoEdit() {
     btnGuardar.disabled = true;
     btnGuardar.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Guardando...';
 
-    fetch('../../../controladores/estudiante/actualizar_foto.php', {
+    fetch('../../../controladores/usuario/actualizar_foto.php', {
         method: 'POST',
         body: formData
     })

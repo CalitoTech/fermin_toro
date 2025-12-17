@@ -584,7 +584,7 @@ function uploadPhotoModal() {
     btnGuardar.disabled = true;
     btnGuardar.innerHTML = '<i class="bx bx-loader-alt bx-spin me-1"></i>Guardando...';
 
-    fetch('../../../controladores/usuario/actualizar_foto_propia.php', {
+    fetch('../../../controladores/usuario/actualizar_foto.php', {
         method: 'POST',
         body: formData
     })

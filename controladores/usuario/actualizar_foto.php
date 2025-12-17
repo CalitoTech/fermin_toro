@@ -22,19 +22,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-$idPersona = $_SESSION['idPersona'];
-
 try {
     $database = new Database();
     $conexion = $database->getConnection();
 
+    // === DETERMINAR ID DE PERSONA A ACTUALIZAR ===
+    $idPersona = 0;
+    $prefijo = 'usuario_';
+
+    if (isset($_POST['idEstudiante']) && !empty($_POST['idEstudiante'])) {
+        $idPersona = intval($_POST['idEstudiante']);
+        $prefijo = 'estudiante_';
+    } elseif (isset($_POST['idRepresentante']) && !empty($_POST['idRepresentante'])) {
+        $idPersona = intval($_POST['idRepresentante']);
+        $prefijo = 'representante_';
+    } elseif (isset($_POST['idPersona']) && !empty($_POST['idPersona'])) {
+        $idPersona = intval($_POST['idPersona']);
+    } else {
+        $idPersona = $_SESSION['idPersona'];
+    }
+
     // === VALIDAR ARCHIVO ===
     if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'No se recibió ninguna imagen o hubo un error en la carga'
-        ]);
-        exit();
+        throw new Exception('No se recibió ninguna imagen o hubo un error en la carga');
     }
 
     $archivo = $_FILES['foto'];
@@ -46,32 +56,26 @@ try {
     // Validar tipo de archivo
     $tiposPermitidos = ['image/jpeg', 'image/jpg', 'image/png'];
     if (!in_array($tipoArchivo, $tiposPermitidos)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Tipo de archivo no permitido. Solo se aceptan JPG, JPEG y PNG'
-        ]);
-        exit();
+        throw new Exception('Tipo de archivo no permitido. Solo se aceptan JPG, JPEG y PNG');
     }
 
     // Validar tamaño (2MB máximo)
     $tamanoMaximo = 2 * 1024 * 1024; // 2MB
     if ($tamanoArchivo > $tamanoMaximo) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'El archivo es demasiado grande. Tamaño máximo: 2MB'
-        ]);
-        exit();
+        throw new Exception('El archivo es demasiado grande. Tamaño máximo: 2MB');
     }
 
     // === CREAR DIRECTORIO SI NO EXISTE ===
     $directorioBase = __DIR__ . '/../../uploads/fotos_perfil';
     if (!file_exists($directorioBase)) {
-        mkdir($directorioBase, 0755, true);
+        if (!mkdir($directorioBase, 0755, true)) {
+            throw new Exception('No se pudo crear el directorio de uploads');
+        }
     }
 
     // === GENERAR NOMBRE ÚNICO PARA EL ARCHIVO ===
     $extension = pathinfo($nombreArchivo, PATHINFO_EXTENSION);
-    $nuevoNombre = 'usuario_' . $idPersona . '_' . time() . '.' . $extension;
+    $nuevoNombre = $prefijo . $idPersona . '_' . time() . '.' . $extension;
     $rutaDestino = $directorioBase . '/' . $nuevoNombre;
     $rutaRelativa = 'uploads/fotos_perfil/' . $nuevoNombre;
 
@@ -84,11 +88,7 @@ try {
 
     // === MOVER ARCHIVO ===
     if (!move_uploaded_file($tmpArchivo, $rutaDestino)) {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Error al guardar el archivo'
-        ]);
-        exit();
+        throw new Exception('Error al guardar el archivo en el servidor');
     }
 
     // === ACTUALIZAR BASE DE DATOS ===
@@ -102,30 +102,27 @@ try {
         if (!empty($fotoActual)) {
             $rutaAnterior = __DIR__ . '/../../' . $fotoActual;
             if (file_exists($rutaAnterior)) {
-                unlink($rutaAnterior);
+                unlink($rutaAnterior); // Ignorar errores de eliminación
             }
         }
 
         echo json_encode([
             'success' => true,
-            'message' => 'Foto de perfil actualizada correctamente',
-            'ruta' => $rutaRelativa
+            'message' => 'Foto actualizada correctamente',
+            'ruta' => $rutaRelativa,
+            'idPersona' => $idPersona
         ]);
     } else {
         // Si falla la actualización, eliminar el archivo subido
         if (file_exists($rutaDestino)) {
             unlink($rutaDestino);
         }
-
-        echo json_encode([
-            'success' => false,
-            'message' => 'Error al actualizar la base de datos'
-        ]);
+        throw new Exception('Error al actualizar la base de datos');
     }
 
 } catch (Exception $e) {
     echo json_encode([
         'success' => false,
-        'message' => 'Error del servidor: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }
