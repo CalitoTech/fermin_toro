@@ -113,6 +113,11 @@ function crearCurso() {
             throw new Exception("Error al guardar el curso");
         }
 
+        // Sincronizar secciones
+        require_once __DIR__ . '/../modelos/CursoSeccion.php';
+        $cursoSeccionModel = new CursoSeccion($conexion);
+        $cursoSeccionModel->sincronizarSecciones($cursoModel->IdCurso, $cursoModel->cantidad_secciones);
+
         $_SESSION['alert'] = 'success';
         $_SESSION['message'] = 'Curso creado exitosamente';
         header("Location: ../vistas/registros/curso/curso.php");
@@ -182,6 +187,11 @@ function editarCurso() {
         if (!$cursoModel->actualizar()) {
             throw new Exception("Error al actualizar datos del curso");
         }
+
+        // Sincronizar secciones
+        require_once __DIR__ . '/../modelos/CursoSeccion.php';
+        $cursoSeccionModel = new CursoSeccion($conexion);
+        $cursoSeccionModel->sincronizarSecciones($id, $cursoModel->cantidad_secciones);
 
         $_SESSION['alert'] = 'success';
         $_SESSION['message'] = 'Curso actualizado correctamente';

@@ -129,5 +129,26 @@ class Seccion {
         ];
     }
 
+    public function obtenerOcrearPorNombre($nombre) {
+        // Buscar si existe
+        $query = "SELECT IdSeccion FROM seccion WHERE seccion = :nombre LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':nombre', $nombre);
+        $stmt->execute();
+        
+        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            return $row['IdSeccion'];
+        }
+
+        // Si no existe, crear
+        $query = "INSERT INTO seccion (seccion) VALUES (:nombre)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':nombre', $nombre);
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        
+        return false;
+    }
 }
 ?>

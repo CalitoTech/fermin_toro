@@ -206,4 +206,105 @@ class CursoSeccion {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function sincronizarSecciones($idCurso, $cantidadObjetivo) {
+        require_once __DIR__ . '/Seccion.php';
+        $seccionModel = new Seccion($this->conn);
+
+        // 1. Asegurar sección "Inscripción" (Activo = 0 por defecto si no existe)
+        $idInscripcion = $seccionModel->obtenerOcrearPorNombre('Inscripción');
+        $this->asegurarCursoSeccion($idCurso, $idInscripcion, 0);
+
+        // 2. Lógica para secciones alfabéticas (A, B, C...)
+        $alfabeto = range('A', 'Z');
+        
+        // Obtener estado actual de todas las secciones del curso
+        $query = "SELECT cs.IdCurso_Seccion, cs.activo, s.seccion 
+                  FROM curso_seccion cs 
+                  JOIN seccion s ON cs.IdSeccion = s.IdSeccion 
+                  WHERE cs.IdCurso = :idCurso";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':idCurso', $idCurso);
+        $stmt->execute();
+        $actuales = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $mapaActuales = []; 
+        foreach ($actuales as $row) {
+            $mapaActuales[$row['seccion']] = $row;
+        }
+
+        // Activar o Crear secciones necesarias
+        for ($i = 0; $i < $cantidadObjetivo; $i++) {
+            $letra = $alfabeto[$i];
+            
+            if (isset($mapaActuales[$letra])) {
+                // Existe, verificar si está activa
+                if ($mapaActuales[$letra]['activo'] == 0) {
+                    $this->actualizarEstado($mapaActuales[$letra]['IdCurso_Seccion'], 1);
+                }
+            } else {
+                // No existe, crearla activa
+                $idSeccionLetra = $seccionModel->obtenerOcrearPorNombre($letra);
+                $this->crearCursoSeccionRapido($idCurso, $idSeccionLetra, 1);
+            }
+        }
+
+        // Desactivar excedentes
+        foreach ($mapaActuales as $sec => $data) {
+             if ($sec == 'Inscripción') continue;
+             
+             // Si es una letra mayúscula simple
+             if (strlen($sec) == 1 && ctype_upper($sec)) {
+                 $index = ord($sec) - ord('A');
+                 if ($index >= $cantidadObjetivo) {
+                     // Es excedente, desactivar si está activa
+                     if ($data['activo'] == 1) {
+                         $this->actualizarEstado($data['IdCurso_Seccion'], 0);
+                     }
+                 }
+             }
+        }
+    }
+
+    private function asegurarCursoSeccion($idCurso, $idSeccion, $activo) {
+        $query = "SELECT IdCurso_Seccion FROM curso_seccion WHERE IdCurso = :c AND IdSeccion = :s";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':c', $idCurso);
+        $stmt->bindParam(':s', $idSeccion);
+        $stmt->execute();
+        if (!$stmt->fetch()) {
+            $this->crearCursoSeccionRapido($idCurso, $idSeccion, $activo);
+        }
+    }
+
+    private function crearCursoSeccionRapido($idCurso, $idSeccion, $activo) {
+        $query = "INSERT INTO curso_seccion (IdCurso, IdSeccion, activo) VALUES (:c, :s, :a)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':c', $idCurso);
+        $stmt->bindParam(':s', $idSeccion);
+        $stmt->bindParam(':a', $activo, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
+    private function actualizarEstado($id, $activo) {
+         $query = "UPDATE curso_seccion SET activo = :a WHERE IdCurso_Seccion = :id";
+         $stmt = $this->conn->prepare($query);
+         $stmt->bindParam(':a', $activo, PDO::PARAM_INT);
+         $stmt->bindParam(':id', $id);
+         $stmt->execute();
+    }
+
+    public function contarSeccionesActivas($idCurso) {
+        $query = "SELECT COUNT(*) as total 
+                  FROM curso_seccion cs
+                  JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                  WHERE cs.IdCurso = :idCurso 
+                  AND cs.activo = 1 
+                  AND s.seccion != 'Inscripción'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':idCurso', $idCurso);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row['total'];
+    }
 }

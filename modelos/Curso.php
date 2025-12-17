@@ -159,4 +159,24 @@ class Curso {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+    public function actualizarCantidadSecciones($idCurso) {
+        $query = "SELECT COUNT(*) as total 
+                  FROM curso_seccion cs 
+                  JOIN seccion s ON cs.IdSeccion = s.IdSeccion
+                  WHERE cs.IdCurso = :id 
+                  AND cs.activo = 1 
+                  AND s.seccion != 'Inscripción'";
+
+        $stmt = $this->conexion->prepare($query);
+        $stmt->bindParam(':id', $idCurso);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total = $row['total'];
+
+        $update = "UPDATE curso SET cantidad_secciones = :total WHERE IdCurso = :id";
+        $stmtUpdate = $this->conexion->prepare($update);
+        $stmtUpdate->bindParam(':total', $total);
+        $stmtUpdate->bindParam(':id', $idCurso);
+        return $stmtUpdate->execute();
+    }
 }

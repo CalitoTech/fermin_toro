@@ -75,6 +75,10 @@ function crearCursoSeccion() {
             throw new Exception("Error al guardar el curso/sección");
         }
 
+        // Actualizar contador en curso
+        $cursoModel = new Curso($conexion);
+        $cursoModel->actualizarCantidadSecciones($idCurso);
+
         $_SESSION['alert'] = 'success';
         $_SESSION['message'] = 'Curso/Sección creado exitosamente';
         header("Location: ../vistas/registros/curso_seccion/curso_seccion.php");
@@ -151,6 +155,10 @@ function editarCursoSeccion() {
         if (!$cursoSeccionModel->actualizar()) {
             throw new Exception("Error al actualizar datos del curso/sección");
         }
+
+        // Actualizar contador en curso
+        $cursoModel = new Curso($conexion);
+        $cursoModel->actualizarCantidadSecciones($idCurso);
 
         $_SESSION['alert'] = 'success';
         $_SESSION['message'] = 'Curso/Sección actualizado correctamente';
