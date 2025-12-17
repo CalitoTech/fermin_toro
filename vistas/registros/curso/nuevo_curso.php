@@ -141,6 +141,25 @@ try {
                                             </div>
                                             <p class="añadir__input-error">El curso debe tener entre 3 y 10 letras.</p>
                                         </div>
+
+                                        <!-- Cantidad de Secciones -->
+                                        <div class="añadir__grupo mt-3" id="grupo__cantidad_secciones">
+                                            <label for="cantidad_secciones" class="form-label">Cantidad de Secciones *</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class='bx bx-list-ol'></i></span>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control añadir__input" 
+                                                    name="cantidad_secciones" 
+                                                    id="cantidad_secciones" 
+                                                    required 
+                                                    min="1" 
+                                                    max="20"
+                                                    value="3">
+                                                <i class="añadir__validacion-estado fas fa-times-circle"></i>
+                                            </div>
+                                            <p class="añadir__input-error">Debe ser un número entre 1 y 20.</p>
+                                        </div>
                                     </div>
 
                                 <!-- Botones para Volver y Guardar -->

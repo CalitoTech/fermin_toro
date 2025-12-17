@@ -204,6 +204,25 @@ try {
                                             </div>
                                             <p class="añadir__input-error">Debe seleccionar un aula.</p>
                                         </div>
+
+                                        <!-- Activo -->
+                                        <div class="añadir__grupo mt-3" id="grupo__activo">
+                                            <label class="form-label d-block">¿Activo?</label>
+                                            <label class="toggle-label">
+                                                <span class="toggle-text" id="toggle-text-activo">Sí</span>
+                                                <div class="toggle-container">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="toggle-input" 
+                                                        id="activo" 
+                                                        name="activo" 
+                                                        value="1" 
+                                                        checked 
+                                                        onchange="document.getElementById('toggle-text-activo').textContent = this.checked ? 'Sí' : 'No'">
+                                                    <span class="toggle-slider"></span>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
 
                                 <!-- Botones para Volver y Guardar -->

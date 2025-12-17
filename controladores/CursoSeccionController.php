@@ -30,6 +30,7 @@ function crearCursoSeccion() {
     $idSeccion = trim($_POST['seccion'] ?? '');
     $idAula = trim($_POST['aula'] ?? '');
     $cantidadEstudiantes = trim($_POST['cantidad_estudiantes'] ?? '');
+    $activo = isset($_POST['activo']) ? 1 : 0;
 
     // Validaciones básicas
     if (empty($idCurso)) manejarError('El campo curso es requerido');
@@ -68,6 +69,7 @@ function crearCursoSeccion() {
         $cursoSeccionModel->IdSeccion = $idSeccion;
         $cursoSeccionModel->IdAula = empty($idAula) ? null : $idAula;
         $cursoSeccionModel->cantidad_estudiantes = empty($cantidadEstudiantes) ? 0 : (int)$cantidadEstudiantes;
+        $cursoSeccionModel->activo = $activo;
 
         if (!$cursoSeccionModel->guardar()) {
             throw new Exception("Error al guardar el curso/sección");
@@ -97,6 +99,7 @@ function editarCursoSeccion() {
     $idSeccion = trim($_POST['seccion'] ?? '');
     $idAula = trim($_POST['aula'] ?? '');
     $cantidadEstudiantes = trim($_POST['cantidad_estudiantes'] ?? '');
+    $activo = isset($_POST['activo']) ? 1 : 0;
     
     if (empty($idCurso)) manejarError("El campo curso es requerido", "../vistas/registros/curso_seccion/editar_curso_seccion.php?id=$id");
     if (empty($idSeccion)) manejarError("El campo sección es requerido", "../vistas/registros/curso_seccion/editar_curso_seccion.php?id=$id");
@@ -143,6 +146,7 @@ function editarCursoSeccion() {
         $cursoSeccionModel->IdSeccion = $idSeccion;
         $cursoSeccionModel->IdAula = empty($idAula) ? null : $idAula;
         $cursoSeccionModel->cantidad_estudiantes = empty($cantidadEstudiantes) ? 0 : (int)$cantidadEstudiantes;
+        $cursoSeccionModel->activo = $activo;
 
         if (!$cursoSeccionModel->actualizar()) {
             throw new Exception("Error al actualizar datos del curso/sección");

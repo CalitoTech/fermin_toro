@@ -5,6 +5,7 @@ class Curso {
     private $conexion;
     public $IdCurso;
     public $curso;
+    public $cantidad_secciones;
     public $IdNivel;
 
     public function __construct($conexionPDO) {
@@ -12,9 +13,10 @@ class Curso {
     }
 
     public function guardar() {
-        $query = "INSERT INTO curso (curso, IdNivel) VALUES (:curso, :nivel)";
+        $query = "INSERT INTO curso (curso, cantidad_secciones, IdNivel) VALUES (:curso, :cantidad_secciones, :nivel)";
         $stmt = $this->conexion->prepare($query);
         $stmt->bindParam(':curso', $this->curso);
+        $stmt->bindParam(':cantidad_secciones', $this->cantidad_secciones);
         $stmt->bindParam(':nivel', $this->IdNivel);
         
         if ($stmt->execute()) {
@@ -25,9 +27,10 @@ class Curso {
     }
     
     public function actualizar() {
-        $query = "UPDATE curso SET curso = :curso, IdNivel = :nivel WHERE IdCurso = :id";
+        $query = "UPDATE curso SET curso = :curso, cantidad_secciones = :cantidad_secciones, IdNivel = :nivel WHERE IdCurso = :id";
         $stmt = $this->conexion->prepare($query);
         $stmt->bindParam(':curso', $this->curso);
+        $stmt->bindParam(':cantidad_secciones', $this->cantidad_secciones);
         $stmt->bindParam(':nivel', $this->IdNivel);
         $stmt->bindParam(':id', $this->IdCurso);
         return $stmt->execute();
@@ -67,6 +70,7 @@ class Curso {
         if ($row) {
             $this->IdCurso = $row['IdCurso'];
             $this->curso = $row['curso'];
+            $this->cantidad_secciones = $row['cantidad_secciones'];
             return $row;
         }
         
@@ -74,7 +78,7 @@ class Curso {
     }
 
     public function obtenerTodos() {
-        $consulta = "SELECT c.IdCurso, c.curso, n.IdNivel, n.nivel as nombre_nivel
+        $consulta = "SELECT c.IdCurso, c.curso, c.cantidad_secciones, n.IdNivel, n.nivel as nombre_nivel
                      FROM curso c
                      JOIN nivel n ON c.IdNivel = n.IdNivel
                      ORDER BY n.IdNivel, c.curso";
@@ -84,7 +88,7 @@ class Curso {
     }
 
     public function obtenerPorNivel($idNivel) {
-        $consulta = "SELECT c.IdCurso, c.curso, n.nivel as nombre_nivel
+        $consulta = "SELECT c.IdCurso, c.curso, c.cantidad_secciones, n.nivel as nombre_nivel
                      FROM curso c
                      JOIN nivel n ON c.IdNivel = n.IdNivel
                      WHERE c.IdNivel = :idNivel";
@@ -142,6 +146,7 @@ class Curso {
             SELECT
                 c.IdCurso,
                 c.curso,
+                c.cantidad_secciones,
                 n.IdNivel,
                 n.nivel as nombre_nivel
             FROM curso c

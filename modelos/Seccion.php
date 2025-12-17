@@ -94,6 +94,7 @@ class Seccion {
                 INNER JOIN seccion s ON cs.IdSeccion = s.IdSeccion
                 LEFT JOIN aula a ON cs.IdAula = a.IdAula
                 WHERE cs.IdCurso = :id_curso
+                AND cs.activo = 1
                 AND s.seccion != 'Inscripción'
                 " . ($idCursoSeccionActual ? "AND cs.IdCurso_Seccion != :id_curso_seccion_actual" : "") . "
                 ORDER BY s.seccion";

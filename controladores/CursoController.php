@@ -77,8 +77,14 @@ function crearCurso() {
     if (empty($curso)) {
         manejarError('El campo curso es requerido');
     }
+    $cantidad_secciones = trim($_POST['cantidad_secciones'] ?? '');
+
+    // Validar campos requeridos
     if (empty($nivel)) {
         manejarError('El campo nivel es requerido');
+    }
+    if (empty($cantidad_secciones) || !is_numeric($cantidad_secciones)) {
+        manejarError('El campo cantidad de secciones es requerido y debe ser numérico');
     }
 
     try {
@@ -100,6 +106,7 @@ function crearCurso() {
         // Configurar datos del curso
         $cursoModel->curso = $curso;
         $cursoModel->IdNivel = $nivel;
+        $cursoModel->cantidad_secciones = (int)$cantidad_secciones;
 
         // Guardar curso
         if (!$cursoModel->guardar()) {
@@ -131,12 +138,16 @@ function editarCurso() {
     // Validar campos requeridos
     $curso = trim($_POST['curso'] ?? '');
     $nivel = trim($_POST['nivel'] ?? '');
+    $cantidad_secciones = trim($_POST['cantidad_secciones'] ?? '');
     
     if (empty($curso)) {
         manejarError("El campo curso es requerido", "../vistas/registros/curso/editar_curso.php?id=$id");
     }
     if (empty($nivel)) {
         manejarError("El campo nivel es requerido", "../vistas/registros/curso/editar_curso.php?id=$id");
+    }
+    if (empty($cantidad_secciones) || !is_numeric($cantidad_secciones)) {
+        manejarError("El campo cantidad de secciones es requerido y debe ser numérico", "../vistas/registros/curso/editar_curso.php?id=$id");
     }
 
     try {
@@ -165,6 +176,7 @@ function editarCurso() {
         $cursoModel->IdCurso = $id;
         $cursoModel->curso = $curso;
         $cursoModel->IdNivel = $nivel;
+        $cursoModel->cantidad_secciones = (int)$cantidad_secciones;
 
         // Actualizar datos
         if (!$cursoModel->actualizar()) {

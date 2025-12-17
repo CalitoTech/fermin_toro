@@ -227,6 +227,7 @@ function obtenerSeccionRecomendada($conexion, $idCurso, $idCursoSeccionActual) {
                 LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
                     AND i.IdStatus = 11
                 WHERE cs.IdCurso = :id_curso
+                AND cs.activo = 1
                 AND s.seccion != 'Inscripción'
                 AND cs.IdCurso_Seccion != :id_curso_seccion_actual
                 GROUP BY cs.IdCurso_Seccion
@@ -273,6 +274,7 @@ function verificarCapacidadAulas($conexion, $idCurso) {
             LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
                 AND i.IdStatus = 11
             WHERE cs.IdCurso = :id_curso
+            AND cs.activo = 1
             AND s.seccion != 'Inscripción'
             GROUP BY cs.IdCurso_Seccion
             ORDER BY tiene_cupo DESC, total_estudiantes ASC";
@@ -302,6 +304,7 @@ function obtenerSeccionConMenosEstudiantes($conexion, $idCurso, $idCursoSeccionA
             LEFT JOIN inscripcion i ON cs.IdCurso_Seccion = i.IdCurso_Seccion 
                 AND i.IdStatus = 11
             WHERE cs.IdCurso = :id_curso
+            AND cs.activo = 1
             AND s.seccion != 'Inscripción'
             AND cs.IdCurso_Seccion != :id_curso_seccion_actual
             GROUP BY cs.IdCurso_Seccion

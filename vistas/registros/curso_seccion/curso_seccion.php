@@ -161,6 +161,7 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
                                             <th>Sección</th>
                                             <th>Estudiantes</th>
                                             <th>Aula</th>
+                                            <th>Estado</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -173,6 +174,13 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
                                                 <td><?= htmlspecialchars($user['seccion']) ?></td>
                                                 <td><?= ($user['cantidad_estudiantes'] === 0) ? '0' : htmlspecialchars($user['cantidad_estudiantes']) ?></td>
                                                 <td><?= htmlspecialchars($user['aula']) ?></td>
+                                                <td>
+                                                    <?php if ($user['activo']): ?>
+                                                        <span class="badge bg-success">Activo</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-secondary">Inactivo</span>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td>
                                                     <a href="editar_curso_seccion.php?id=<?= $user['IdCurso_Seccion'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
@@ -206,6 +214,15 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
 <script>
     // === DATOS GLOBALES ===
     let allData = <?= json_encode($curso_seccions) ?>;
+
+    // Pre-procesar datos para incluir HTML de estado
+    allData = allData.map(item => ({
+        ...item,
+        activo_display: item.activo == 1 
+            ? '<span class="badge bg-success">Activo</span>' 
+            : '<span class="badge bg-secondary">Inactivo</span>'
+    }));
+
     let filteredData = [...allData];
     let currentPage = 1;
     let entriesPerPage = parseInt(document.getElementById('entries').value) || 10;
@@ -227,6 +244,7 @@ $curso_seccions = $cursoSeccionModel->obtenerCursosSecciones($idPersona);
                 { label: 'Sección', key: 'seccion' },
                 { label: 'Estudiantes', key: 'cantidad_estudiantes' },
                 { label: 'Aula', key: 'aula' },
+                { label: 'Estado', key: 'activo_display' }
             ],
             acciones: [
                 {

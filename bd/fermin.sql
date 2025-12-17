@@ -190,25 +190,26 @@ INSERT INTO `aula` (`IdAula`, `IdNivel`, `aula`, `capacidad`) VALUES
 CREATE TABLE curso (
     IdCurso int NOT NULL AUTO_INCREMENT PRIMARY KEY,
     curso varchar(50) NOT NULL,
+    cantidad_secciones INT NOT NULL,
     IdNivel int NOT NULL,
     FOREIGN KEY (IdNivel) REFERENCES nivel(IdNivel)
 );
 
-INSERT INTO `curso` (`IdCurso`, `curso`, `IdNivel`) VALUES
-(1, '1er Nivel', 1),
-(2, '2do Nivel', 1),
-(3, '3er Nivel', 1),
-(4, '1er Grado', 2),
-(5, '2do Grado', 2),
-(6, '3er Grado', 2),
-(7, '4to Grado', 2),
-(8, '5to Grado', 2),
-(9, '6to Grado', 2),
-(10, '1er Año', 3),
-(11, '2do Año', 3),
-(12, '3er Año', 3),
-(13, '4to Año', 3),
-(14, '5to Año', 3);
+INSERT INTO `curso` (`IdCurso`, `curso`, `cantidad_secciones`, `IdNivel`) VALUES
+(1, '1er Nivel', 3, 1),
+(2, '2do Nivel', 3, 1),
+(3, '3er Nivel', 3, 1),
+(4, '1er Grado', 3, 2),
+(5, '2do Grado', 3, 2),
+(6, '3er Grado', 3, 2),
+(7, '4to Grado', 3, 2),
+(8, '5to Grado', 3, 2),
+(9, '6to Grado', 3, 2),
+(10, '1er Año', 3, 3),
+(11, '2do Año', 3, 3),
+(12, '3er Año', 3, 3),
+(13, '4to Año', 3, 3),
+(14, '5to Año', 3, 3);
 
 CREATE TABLE seccion (
     IdSeccion int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -223,72 +224,73 @@ CREATE TABLE curso_seccion (
     IdCurso int NOT NULL,
     IdSeccion int NOT NULL,
     IdAula int NULL,
+    activo BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (IdAula) REFERENCES aula(IdAula),
     FOREIGN KEY (IdCurso) REFERENCES curso(IdCurso),
     FOREIGN KEY (IdSeccion) REFERENCES seccion(IdSeccion)
 );
 
-INSERT INTO `curso_seccion` (`IdCurso_Seccion`, `IdCurso`, `IdSeccion`, `IdAula`) VALUES
+INSERT INTO `curso_seccion` (`IdCurso_Seccion`, `IdCurso`, `IdSeccion`, `IdAula`, `activo`) VALUES
 -- Sección Inscripción (sin aula asignada)
-(1, 1, 1, NULL),
-(2, 2, 1, NULL),
-(3, 3, 1, NULL),
-(4, 4, 1, NULL),
-(5, 5, 1, NULL),
-(6, 6, 1, NULL),
-(7, 7, 1, NULL),
-(8, 8, 1, NULL),
-(9, 9, 1, NULL),
-(10, 10, 1, NULL),
-(11, 11, 1, NULL),
-(12, 12, 1, NULL),
-(13, 13, 1, NULL),
-(14, 14, 1, NULL),
+(1, 1, 1, NULL, TRUE),
+(2, 2, 1, NULL, TRUE),
+(3, 3, 1, NULL, TRUE),
+(4, 4, 1, NULL, TRUE),
+(5, 5, 1, NULL, TRUE),
+(6, 6, 1, NULL, TRUE),
+(7, 7, 1, NULL, TRUE),
+(8, 8, 1, NULL, TRUE),
+(9, 9, 1, NULL, TRUE),
+(10, 10, 1, NULL, TRUE),
+(11, 11, 1, NULL, TRUE),
+(12, 12, 1, NULL, TRUE),
+(13, 13, 1, NULL, TRUE),
+(14, 14, 1, NULL, TRUE),
 -- Sección A
-(15, 1, 2, 1),   -- 1er Nivel A -> Aula 1
-(16, 2, 2, 2),   -- 2do Nivel A -> Aula 2
-(17, 3, 2, 3),   -- 3er Nivel A -> Aula 3
-(18, 4, 2, 13),  -- 1er Grado A -> Aula 13
-(19, 5, 2, 14),  -- 2do Grado A -> Aula 14
-(20, 6, 2, 15),  -- 3er Grado A -> Aula 15
-(21, 7, 2, 16),  -- 4to Grado A -> Aula 16
-(22, 8, 2, 17),  -- 5to Grado A -> Aula 17
-(23, 9, 2, 18),  -- 6to Grado A -> Aula 18
-(24, 10, 2, 37), -- 1er Año A -> Aula 37
-(25, 11, 2, 38), -- 2do Año A -> Aula 38
-(26, 12, 2, 39), -- 3er Año A -> Aula 39
-(27, 13, 2, 40), -- 4to Año A -> Aula 40
-(28, 14, 2, 41), -- 5to Año A -> Aula 41
+(15, 1, 2, 1, TRUE),   -- 1er Nivel A -> Aula 1
+(16, 2, 2, 2, TRUE),   -- 2do Nivel A -> Aula 2
+(17, 3, 2, 3, TRUE),   -- 3er Nivel A -> Aula 3
+(18, 4, 2, 13, TRUE),  -- 1er Grado A -> Aula 13
+(19, 5, 2, 14, TRUE),  -- 2do Grado A -> Aula 14
+(20, 6, 2, 15, TRUE),  -- 3er Grado A -> Aula 15
+(21, 7, 2, 16, TRUE),  -- 4to Grado A -> Aula 16
+(22, 8, 2, 17, TRUE),  -- 5to Grado A -> Aula 17
+(23, 9, 2, 18, TRUE),  -- 6to Grado A -> Aula 18
+(24, 10, 2, 37, TRUE), -- 1er Año A -> Aula 37
+(25, 11, 2, 38, TRUE), -- 2do Año A -> Aula 38
+(26, 12, 2, 39, TRUE), -- 3er Año A -> Aula 39
+(27, 13, 2, 40, TRUE), -- 4to Año A -> Aula 40
+(28, 14, 2, 41, TRUE), -- 5to Año A -> Aula 41
 -- Sección B
-(29, 1, 3, 4),   -- 1er Nivel B -> Aula 4
-(30, 2, 3, 5),   -- 2do Nivel B -> Aula 5
-(31, 3, 3, 6),   -- 3er Nivel B -> Aula 6
-(32, 4, 3, 19),  -- 1er Grado B -> Aula 19
-(33, 5, 3, 20),  -- 2do Grado B -> Aula 20
-(34, 6, 3, 21),  -- 3er Grado B -> Aula 21
-(35, 7, 3, 22),  -- 4to Grado B -> Aula 22
-(36, 8, 3, 23),  -- 5to Grado B -> Aula 23
-(37, 9, 3, 24),  -- 6to Grado B -> Aula 24
-(38, 10, 3, 42), -- 1er Año B -> Aula 42
-(39, 11, 3, 43), -- 2do Año B -> Aula 43
-(40, 12, 3, 44), -- 3er Año B -> Aula 44
-(41, 13, 3, 45), -- 4to Año B -> Aula 45
-(42, 14, 3, 46), -- 5to Año B -> Aula 46
+(29, 1, 3, 4, TRUE),   -- 1er Nivel B -> Aula 4
+(30, 2, 3, 5, TRUE),   -- 2do Nivel B -> Aula 5
+(31, 3, 3, 6, TRUE),   -- 3er Nivel B -> Aula 6
+(32, 4, 3, 19, TRUE),  -- 1er Grado B -> Aula 19
+(33, 5, 3, 20, TRUE),  -- 2do Grado B -> Aula 20
+(34, 6, 3, 21, TRUE),  -- 3er Grado B -> Aula 21
+(35, 7, 3, 22, TRUE),  -- 4to Grado B -> Aula 22
+(36, 8, 3, 23, TRUE),  -- 5to Grado B -> Aula 23
+(37, 9, 3, 24, TRUE),  -- 6to Grado B -> Aula 24
+(38, 10, 3, 42, TRUE), -- 1er Año B -> Aula 42
+(39, 11, 3, 43, TRUE), -- 2do Año B -> Aula 43
+(40, 12, 3, 44, TRUE), -- 3er Año B -> Aula 44
+(41, 13, 3, 45, TRUE), -- 4to Año B -> Aula 45
+(42, 14, 3, 46, TRUE), -- 5to Año B -> Aula 46
 -- Sección C
-(43, 1, 4, 7),   -- 1er Nivel C -> Aula 7
-(44, 2, 4, 8),   -- 2do Nivel C -> Aula 8
-(45, 3, 4, 9),   -- 3er Nivel C -> Aula 9
-(46, 4, 4, 25),  -- 1er Grado C -> Aula 25
-(47, 5, 4, 26),  -- 2do Grado C -> Aula 26
-(48, 6, 4, 27),  -- 3er Grado C -> Aula 27
-(49, 7, 4, 28),  -- 4to Grado C -> Aula 28
-(50, 8, 4, 29),  -- 5to Grado C -> Aula 29
-(51, 9, 4, 30),  -- 6to Grado C -> Aula 30
-(52, 10, 4, 47), -- 1er Año C -> Aula 47
-(53, 11, 4, 48), -- 2do Año C -> Aula 48
-(54, 12, 4, 49), -- 3er Año C -> Aula 49
-(55, 13, 4, 50), -- 4to Año C -> Aula 50
-(56, 14, 4, 51); -- 5to Año C -> Aula 51
+(43, 1, 4, 7, TRUE),   -- 1er Nivel C -> Aula 7
+(44, 2, 4, 8, TRUE),   -- 2do Nivel C -> Aula 8
+(45, 3, 4, 9, TRUE),   -- 3er Nivel C -> Aula 9
+(46, 4, 4, 25, TRUE),  -- 1er Grado C -> Aula 25
+(47, 5, 4, 26, TRUE),  -- 2do Grado C -> Aula 26
+(48, 6, 4, 27, TRUE),  -- 3er Grado C -> Aula 27
+(49, 7, 4, 28, TRUE),  -- 4to Grado C -> Aula 28
+(50, 8, 4, 29, TRUE),  -- 5to Grado C -> Aula 29
+(51, 9, 4, 30, TRUE),  -- 6to Grado C -> Aula 30
+(52, 10, 4, 47, TRUE), -- 1er Año C -> Aula 47
+(53, 11, 4, 48, TRUE), -- 2do Año C -> Aula 48
+(54, 12, 4, 49, TRUE), -- 3er Año C -> Aula 49
+(55, 13, 4, 50, TRUE), -- 4to Año C -> Aula 50
+(56, 14, 4, 51, TRUE); -- 5to Año C -> Aula 51
 
 CREATE TABLE sexo (
     IdSexo int NOT NULL AUTO_INCREMENT PRIMARY KEY,

@@ -148,6 +148,7 @@ $cursos = $cursoModel->obtenerCursos($idPersona);
                                             <th>ID</th>
                                             <th>Nivel</th>
                                             <th>Curso</th>
+                                            <th>Cant. Secciones</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -157,6 +158,7 @@ $cursos = $cursoModel->obtenerCursos($idPersona);
                                                 <td><?= htmlspecialchars($curso['IdCurso']) ?></td>
                                                 <td><?= htmlspecialchars($curso['nombre_nivel']) ?></td>
                                                 <td><?= htmlspecialchars($curso['curso']) ?></td>
+                                                <td><?= htmlspecialchars($curso['cantidad_secciones']) ?></td>
                                                 <td>
                                                     <a href="editar_curso.php?id=<?= $curso['IdCurso'] ?>" class="btn btn-sm btn-outline-primary me-1">
                                                         <i class='bx bxs-edit'></i>
@@ -208,7 +210,8 @@ $cursos = $cursoModel->obtenerCursos($idPersona);
             columns: [
                 { label: 'ID', key: 'IdCurso' },
                 { label: 'Nivel', key: 'nombre_nivel' },
-                { label: 'Curso', key: 'curso' }
+                { label: 'Curso', key: 'curso' },
+                { label: 'Secciones', key: 'cantidad_secciones' }
             ],
             acciones: [
                 {

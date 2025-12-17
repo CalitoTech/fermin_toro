@@ -212,6 +212,25 @@ $aulas = $aulaModel->obtenerAulas($idPersona);
                                             </div>
                                             <p class="añadir__input-error">Debe seleccionar una Aula.</p>
                                         </div>
+
+                                        <!-- Activo -->
+                                        <div class="añadir__grupo mt-3" id="grupo__activo">
+                                            <label class="form-label d-block">¿Activo?</label>
+                                            <label class="toggle-label">
+                                                <span class="toggle-text" id="toggle-text-activo"><?= ($curso_seccion['activo'] ?? 0) == 1 ? 'Sí' : 'No' ?></span>
+                                                <div class="toggle-container">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        class="toggle-input" 
+                                                        id="activo" 
+                                                        name="activo" 
+                                                        value="1" 
+                                                        <?= ($curso_seccion['activo'] ?? 0) == 1 ? 'checked' : '' ?>
+                                                        onchange="document.getElementById('toggle-text-activo').textContent = this.checked ? 'Sí' : 'No'">
+                                                    <span class="toggle-slider"></span>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 

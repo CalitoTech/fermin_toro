@@ -7,20 +7,23 @@ class CursoSeccion {
     public $cantidad_estudiantes;
     public $IdCurso;
     public $IdSeccion;
+
     public $IdAula;
+    public $activo;
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
     public function guardar() {
-        $query = "INSERT INTO curso_seccion (IdCurso, IdSeccion, IdAula)
-                 VALUES (:IdCurso, :IdSeccion, :IdAula)";
+        $query = "INSERT INTO curso_seccion (IdCurso, IdSeccion, IdAula, activo)
+                 VALUES (:IdCurso, :IdSeccion, :IdAula, :activo)";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':IdCurso', $this->IdCurso);
         $stmt->bindParam(':IdSeccion', $this->IdSeccion);
         $stmt->bindParam(':IdAula', $this->IdAula, PDO::PARAM_INT);
+        $stmt->bindParam(':activo', $this->activo, PDO::PARAM_BOOL);
 
         if ($stmt->execute()) {
             $this->IdCurso_Seccion = $this->conn->lastInsertId();
@@ -33,13 +36,15 @@ class CursoSeccion {
         $query = "UPDATE curso_seccion SET
                  IdCurso = :IdCurso,
                  IdSeccion = :IdSeccion,
-                 IdAula = :IdAula
+                 IdAula = :IdAula,
+                 activo = :activo
                  WHERE IdCurso_Seccion = :IdCurso_Seccion";
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':IdCurso', $this->IdCurso);
         $stmt->bindParam(':IdSeccion', $this->IdSeccion);
         $stmt->bindParam(':IdAula', $this->IdAula, PDO::PARAM_INT);
+        $stmt->bindParam(':activo', $this->activo, PDO::PARAM_BOOL);
         $stmt->bindParam(':IdCurso_Seccion', $this->IdCurso_Seccion);
 
         return $stmt->execute();
@@ -86,6 +91,7 @@ class CursoSeccion {
             $this->IdCurso = $row['IdCurso'];
             $this->IdSeccion = $row['IdSeccion'];
             $this->IdAula = $row['IdAula'];
+            $this->activo = $row['activo'];
             return $row;
         }
 
@@ -171,7 +177,10 @@ class CursoSeccion {
                 cs.IdCurso_Seccion,
                 cs.IdCurso,
                 cs.IdSeccion,
+                cs.IdCurso,
+                cs.IdSeccion,
                 cs.IdAula,
+                cs.activo,
                 c.curso,
                 s.seccion,
                 COALESCE(a.aula, 'Sin Asignar') AS aula,
