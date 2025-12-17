@@ -388,7 +388,7 @@ CREATE TABLE persona (
     codigo_temporal varchar (1000) NULL,
     codigo_expiracion datetime NULL,
     direccion varchar(555) NULL,
-    foto_perfil varchar(255) NULL COMMENT 'Ruta de la foto de perfil del usuario',
+    foto_perfil LONGBLOB DEFAULT NULL,
     IdSexo int NULL,
     IdUrbanismo int NULL,
     IdTipoTrabajador int NULL,

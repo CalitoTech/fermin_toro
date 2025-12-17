@@ -28,27 +28,23 @@ try {
 
     // === DETERMINAR ID DE PERSONA A ACTUALIZAR ===
     $idPersona = 0;
-    $prefijo = 'usuario_';
-
+    
     if (isset($_POST['idEstudiante']) && !empty($_POST['idEstudiante'])) {
         $idPersona = intval($_POST['idEstudiante']);
-        $prefijo = 'estudiante_';
     } elseif (isset($_POST['idRepresentante']) && !empty($_POST['idRepresentante'])) {
         $idPersona = intval($_POST['idRepresentante']);
-        $prefijo = 'representante_';
     } elseif (isset($_POST['idPersona']) && !empty($_POST['idPersona'])) {
         $idPersona = intval($_POST['idPersona']);
     } else {
-        $idPersona = $_SESSION['idPersona'];
+        $idPersona = $_SESSION['idPersona']; // Fallback a usuario actual
     }
 
     // === VALIDAR ARCHIVO ===
     if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
-        throw new Exception('No se recibió ninguna imagen o hubo un error en la carga');
+        throw new Exception('No se recibió ninguna imagen o hubo un error en la carga (Error Code: ' . $_FILES['foto']['error'] . ')');
     }
 
     $archivo = $_FILES['foto'];
-    $nombreArchivo = $archivo['name'];
     $tipoArchivo = $archivo['type'];
     $tamanoArchivo = $archivo['size'];
     $tmpArchivo = $archivo['tmp_name'];
@@ -65,58 +61,26 @@ try {
         throw new Exception('El archivo es demasiado grande. Tamaño máximo: 2MB');
     }
 
-    // === CREAR DIRECTORIO SI NO EXISTE ===
-    $directorioBase = __DIR__ . '/../../uploads/fotos_perfil';
-    if (!file_exists($directorioBase)) {
-        if (!mkdir($directorioBase, 0755, true)) {
-            throw new Exception('No se pudo crear el directorio de uploads');
-        }
-    }
-
-    // === GENERAR NOMBRE ÚNICO PARA EL ARCHIVO ===
-    $extension = pathinfo($nombreArchivo, PATHINFO_EXTENSION);
-    $nuevoNombre = $prefijo . $idPersona . '_' . time() . '.' . $extension;
-    $rutaDestino = $directorioBase . '/' . $nuevoNombre;
-    $rutaRelativa = 'uploads/fotos_perfil/' . $nuevoNombre;
-
-    // === OBTENER FOTO ACTUAL PARA ELIMINARLA ===
-    $queryFotoActual = "SELECT foto_perfil FROM persona WHERE IdPersona = :idPersona";
-    $stmtFotoActual = $conexion->prepare($queryFotoActual);
-    $stmtFotoActual->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
-    $stmtFotoActual->execute();
-    $fotoActual = $stmtFotoActual->fetchColumn();
-
-    // === MOVER ARCHIVO ===
-    if (!move_uploaded_file($tmpArchivo, $rutaDestino)) {
-        throw new Exception('Error al guardar el archivo en el servidor');
+    // === LEER CONTENIDO DEL ARCHIVO (BINARIO) ===
+    $contenidoImagen = file_get_contents($tmpArchivo);
+    if ($contenidoImagen === false) {
+        throw new Exception('Error al leer el contenido de la imagen temporal');
     }
 
     // === ACTUALIZAR BASE DE DATOS ===
+    // Nota: Usamos bindParam con PDO::PARAM_LOB para datos binarios grandes
     $queryActualizar = "UPDATE persona SET foto_perfil = :foto WHERE IdPersona = :idPersona";
     $stmtActualizar = $conexion->prepare($queryActualizar);
-    $stmtActualizar->bindParam(':foto', $rutaRelativa, PDO::PARAM_STR);
+    $stmtActualizar->bindParam(':foto', $contenidoImagen, PDO::PARAM_LOB);
     $stmtActualizar->bindParam(':idPersona', $idPersona, PDO::PARAM_INT);
 
     if ($stmtActualizar->execute()) {
-        // === ELIMINAR FOTO ANTERIOR SI EXISTE ===
-        if (!empty($fotoActual)) {
-            $rutaAnterior = __DIR__ . '/../../' . $fotoActual;
-            if (file_exists($rutaAnterior)) {
-                unlink($rutaAnterior); // Ignorar errores de eliminación
-            }
-        }
-
         echo json_encode([
             'success' => true,
-            'message' => 'Foto actualizada correctamente',
-            'ruta' => $rutaRelativa,
+            'message' => 'Foto actualizada correctamente en base de datos',
             'idPersona' => $idPersona
         ]);
     } else {
-        // Si falla la actualización, eliminar el archivo subido
-        if (file_exists($rutaDestino)) {
-            unlink($rutaDestino);
-        }
         throw new Exception('Error al actualizar la base de datos');
     }
 

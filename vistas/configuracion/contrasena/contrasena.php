@@ -36,6 +36,12 @@ $database = new Database();
 $conexion = $database->getConnection();
 $personaModel = new Persona($conexion);
 $usuario = $personaModel->obtenerPorId($_SESSION['idPersona']);
+
+// Preparar fuente de la foto
+$srcFoto = '';
+if (!empty($usuario['foto_perfil'])) {
+    $srcFoto = 'data:image/jpeg;base64,' . base64_encode($usuario['foto_perfil']);
+}
 ?>
 
 <head>
@@ -324,8 +330,8 @@ $usuario = $personaModel->obtenerPorId($_SESSION['idPersona']);
                     <div class="profile-photo-section">
                         <div class="profile-photo-preview">
                             <div class="profile-photo-wrapper">
-                                <?php if (!empty($usuario['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $usuario['foto_perfil'])): ?>
-                                    <img src="<?= htmlspecialchars('../../../' . $usuario['foto_perfil']) ?>"
+                                <?php if (!empty($srcFoto)): ?>
+                                    <img src="<?= $srcFoto ?>"
                                          alt="Foto de perfil"
                                          class="profile-photo-img"
                                          id="currentProfilePhoto">
@@ -471,7 +477,7 @@ $usuario = $personaModel->obtenerPorId($_SESSION['idPersona']);
                 <form id="formFotoPerfil" enctype="multipart/form-data">
                     <!-- Vista previa -->
                     <div style="width: 200px; height: 200px; margin: 1.5rem auto; border-radius: 50%; overflow: hidden; border: 4px solid #e9ecef;">
-                        <img src="<?= !empty($usuario['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $usuario['foto_perfil']) ? htmlspecialchars('../../../' . $usuario['foto_perfil']) : 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect fill=\'%23667eea\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'white\' font-size=\'80\' font-family=\'Arial\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3E%3F%3C/text%3E%3C/svg%3E' ?>"
+                        <img src="<?= !empty($srcFoto) ? $srcFoto : 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect fill=\'%23667eea\' width=\'200\' height=\'200\'/%3E%3Ctext fill=\'white\' font-size=\'80\' font-family=\'Arial\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\'%3E%3F%3C/text%3E%3C/svg%3E' ?>"
                              alt="Vista previa"
                              id="photoPreviewModal"
                              style="width: 100%; height: 100%; object-fit: cover;">

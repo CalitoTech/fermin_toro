@@ -98,8 +98,7 @@ try {
     $fotoPerfil = '../../../assets/images/perfil.png'; // Imagen por defecto si sexo es null
 
     if (!empty($userData['foto_perfil'])) {
-        // Si tiene foto personalizada, usarla
-        $fotoPerfil = '../../../' . $userData['foto_perfil'];
+        $fotoPerfil = 'data:image/jpeg;base64,' . base64_encode($userData['foto_perfil']);
     } else {
         // Si no tiene foto, determinar según sexo
         if ($userData['IdSexo'] == 1) {
@@ -109,7 +108,6 @@ try {
             // Femenino
             $fotoPerfil = '../../../assets/images/avatar_fem.png';
         }
-        // Si IdSexo es null, mantiene el valor por defecto (perfil.png)
     }
 
 } catch (PDOException $e) {

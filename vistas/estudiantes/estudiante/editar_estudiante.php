@@ -53,6 +53,11 @@ if (!$estudiante) {
     exit();
 }
 
+$srcFoto = '';
+if (!empty($estudiante['foto_perfil'])) {
+    $srcFoto = 'data:image/jpeg;base64,' . base64_encode($estudiante['foto_perfil']);
+}
+
 $seccionActual = $personaModel->obtenerSeccionActualEstudiante($id);
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($id);
 $nacionalidades = $nacionalidadModel->obtenerTodos();
@@ -129,8 +134,8 @@ function esc($v) { return htmlspecialchars($v ?? '', ENT_QUOTES, 'UTF-8'); }
                     <div class="card-body text-center py-4">
                         <div class="profile-photo-container">
                             <div class="profile-photo-wrapper">
-                                <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
-                                    <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                                <?php if (!empty($srcFoto)): ?>
+                                    <img src="<?= $srcFoto ?>"
                                          alt="Foto de perfil"
                                          class="profile-photo">
                                 <?php else: ?>
@@ -416,8 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Vista previa -->
                     <div class="photo-preview-container" id="photoPreviewContainer">
-                        <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
-                            <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                        <?php if (!empty($srcFoto)): ?>
+                            <img src="<?= $srcFoto ?>"
                                  alt="Vista previa"
                                  id="photoPreview">
                         <?php else: ?>

@@ -64,6 +64,12 @@ if (!$estudiante) {
     exit();
 }
 
+// Preparar foto
+$srcFoto = '';
+if (!empty($estudiante['foto_perfil'])) {
+    $srcFoto = 'data:image/jpeg;base64,' . base64_encode($estudiante['foto_perfil']);
+}
+
 // Obtener el año escolar activo
 $queryAnoActivo = "SELECT IdFecha_Escolar, fecha_escolar FROM fecha_escolar WHERE fecha_activa = 1 LIMIT 1";
 $stmtAnoActivo = $conexion->prepare($queryAnoActivo);
@@ -350,8 +356,8 @@ function calcularEdad($fechaNacimiento) {
                         <div class="card-body text-center py-4">
                             <div class="profile-photo-container">
                                 <div class="profile-photo-wrapper">
-                                    <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
-                                        <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                                    <?php if (!empty($srcFoto)): ?>
+                                        <img src="<?= $srcFoto ?>"
                                              alt="Foto de perfil"
                                              class="profile-photo">
                                     <?php else: ?>
@@ -661,8 +667,8 @@ function calcularEdad($fechaNacimiento) {
 
                     <!-- Vista previa -->
                     <div class="photo-preview-container" id="photoPreviewContainer">
-                        <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
-                            <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                        <?php if (!empty($srcFoto)): ?>
+                            <img src="<?= $srcFoto ?>"
                                  alt="Vista previa"
                                  id="photoPreview">
                         <?php else: ?>

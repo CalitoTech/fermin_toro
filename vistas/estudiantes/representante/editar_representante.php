@@ -60,6 +60,10 @@ $parentescoModel = new Parentesco($conexion);
 $representante = $representanteModel->obtenerPorIdPersona($id);
 $persona = $personaModel->obtenerPorId($id);
 $telefonos = $telefonoModel->obtenerPorPersona($id); // 🔹 TELÉFONOS ASOCIADOS
+$srcFoto = '';
+if (!empty($persona['foto_perfil'])) {
+    $srcFoto = 'data:image/jpeg;base64,' . base64_encode($persona['foto_perfil']);
+}
 
 if (!$representante || !$persona) {
     header("Location: representante.php");
@@ -121,8 +125,8 @@ function selected($a, $b) { return $a == $b ? 'selected' : ''; }
                     <div class="card-body text-center py-4">
                         <div class="profile-photo-container">
                             <div class="profile-photo-wrapper">
-                                <?php if (!empty($persona['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $persona['foto_perfil'])): ?>
-                                    <img src="<?= htmlspecialchars('../../../' . $persona['foto_perfil']) ?>"
+                                <?php if (!empty($srcFoto)): ?>
+                                    <img src="<?= $srcFoto ?>"
                                          alt="Foto de perfil"
                                          class="profile-photo">
                                 <?php else: ?>
@@ -363,8 +367,8 @@ document.addEventListener('click', (e) => {
 
                     <!-- Vista previa -->
                     <div class="photo-preview-container" id="photoPreviewContainer">
-                        <?php if (!empty($persona['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $persona['foto_perfil'])): ?>
-                            <img src="<?= htmlspecialchars('../../../' . $persona['foto_perfil']) ?>"
+                        <?php if (!empty($srcFoto)): ?>
+                            <img src="<?= $srcFoto ?>"
                                  alt="Vista previa"
                                  id="photoPreview">
                         <?php else: ?>
