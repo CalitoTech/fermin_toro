@@ -36,7 +36,7 @@ $assetsUrl = $baseUrl . '/assets';
 </div>
 <?php
 // Preparar datos de usuario para JS
-if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
   session_start();
 }
 $ft_user = [
