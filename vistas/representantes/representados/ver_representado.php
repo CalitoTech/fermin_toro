@@ -813,7 +813,7 @@ document.getElementById('modalFotoPerfil').addEventListener('hidden.bs.modal', f
 // Función para imprimir carnet del grupo de interés
 function imprimirCarnet() {
     // Validar si tiene foto de perfil
-    const tieneFoto = <?= (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])) ? 'true' : 'false' ?>;
+    const tieneFoto = <?= (!empty($estudiante['foto_perfil'])) ? 'true' : 'false' ?>;
     
     if (!tieneFoto) {
         Swal.fire({

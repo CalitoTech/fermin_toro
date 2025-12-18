@@ -45,6 +45,11 @@ if (!$estudiante) {
     exit();
 }
 
+$srcFoto = '';
+if (!empty($estudiante['foto_perfil'])) {
+    $srcFoto = 'data:image/jpeg;base64,' . base64_encode($estudiante['foto_perfil']);
+}
+
 $seccionActual = $personaModel->obtenerSeccionActualEstudiante($idPersona);
 $discapacidades = $personaModel->obtenerDiscapacidadesEstudiante($idPersona);
 $representantes = $representanteModel->obtenerPorEstudiante($idPersona);
@@ -156,8 +161,8 @@ function mostrar($valor, $texto = 'No registrado') {
                         <div class="card-body text-center py-4">
                             <div class="profile-photo-container">
                                 <div class="profile-photo-wrapper">
-                                    <?php if (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])): ?>
-                                        <img src="<?= htmlspecialchars('../../../' . $estudiante['foto_perfil']) ?>"
+                                    <?php if (!empty($srcFoto)): ?>
+                                        <img src="<?= $srcFoto ?>"
                                              alt="Foto de perfil"
                                              class="profile-photo">
                                     <?php else: ?>
@@ -420,7 +425,7 @@ function mostrar($valor, $texto = 'No registrado') {
 // Función para imprimir carnet del grupo de interés
 function imprimirCarnet() {
     // Validar si tiene foto de perfil
-    const tieneFoto = <?= (!empty($estudiante['foto_perfil']) && file_exists(__DIR__ . '/../../../' . $estudiante['foto_perfil'])) ? 'true' : 'false' ?>;
+    const tieneFoto = <?= (!empty($estudiante['foto_perfil'])) ? 'true' : 'false' ?>;
     
     if (!tieneFoto) {
         Swal.fire({

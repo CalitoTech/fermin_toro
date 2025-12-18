@@ -41,15 +41,9 @@ if (!$estudiante) {
 }
 
 // Validar que tenga foto de perfil
-$fotoPath = __DIR__ .'/../../' . $estudiante['foto_perfil'];
-$fotoPathAbs = realpath($fotoPath);
-
 // Debug: registrar información
 error_log("Carnet - ID Estudiante: " . $idEstudiante);
-error_log("Carnet - Foto perfil DB: " . ($estudiante['foto_perfil'] ?? 'NULL'));
-error_log("Carnet - Ruta relativa: " . $fotoPath);
-error_log("Carnet - Ruta absoluta: " . ($fotoPathAbs ?: 'NO EXISTE'));
-error_log("Carnet - File exists: " . (file_exists($fotoPath) ? 'SI' : 'NO'));
+error_log("Carnet - Foto perfil DB size: " . (strlen($estudiante['foto_perfil'] ?? '')));
 
 // Verificar si el campo foto_perfil está vacío o es NULL
 if (empty($estudiante['foto_perfil']) || is_null($estudiante['foto_perfil'])) {
@@ -59,22 +53,7 @@ if (empty($estudiante['foto_perfil']) || is_null($estudiante['foto_perfil'])) {
         'error' => 'El estudiante no tiene una foto de perfil registrada. Por favor, sube una foto de perfil antes de imprimir el carnet.',
         'debug' => [
             'id_estudiante' => $idEstudiante,
-            'foto_perfil_db' => $estudiante['foto_perfil'] ?? 'NULL'
-        ]
-    ]);
-    exit;
-}
-
-// Verificar si el archivo existe físicamente
-if (!file_exists($fotoPath)) {
-    header('Content-Type: application/json');
-    http_response_code(400);
-    echo json_encode([
-        'error' => 'El archivo de foto de perfil no existe en el servidor. Por favor, vuelve a subir la foto.',
-        'debug' => [
-            'ruta_db' => $estudiante['foto_perfil'],
-            'ruta_buscada' => $fotoPath,
-            'ruta_absoluta' => $fotoPathAbs
+            'foto_perfil_exists' => !empty($estudiante['foto_perfil'])
         ]
     ]);
     exit;
@@ -180,8 +159,8 @@ $pdf->SetMargins(15, 35, 15);
 $pdf->SetAutoPageBreak(true, 25);
 $pdf->AddPage();
 
-// Ruta de la foto
-$fotoPath = __DIR__ .'/../../' . $estudiante['foto_perfil'];
+// Foto ya obtenida de DB
+// $fotoPath = __DIR__ .'/../../' . $estudiante['foto_perfil'];
 
 // Logo institucional (si existe)
 $logo = __DIR__ . '/../../assets/images/fermin.png';
@@ -246,8 +225,9 @@ $pdf->SetLineWidth(0.5);
 $pdf->Rect($fotoX - 1, $fotoY - 1, $fotoSize + 2, $fotoSize + 2, 'D');
 
 // Foto del estudiante
-if (file_exists($fotoPath)) {
-    $pdf->Image($fotoPath, $fotoX, $fotoY, $fotoSize, $fotoSize, '', '', '', true, 300, '', false, false, 0, false, false, false);
+if (!empty($estudiante['foto_perfil'])) {
+    // Usamos @ para indicar a TCPDF que es data cruda (blob), no un path
+    $pdf->Image('@' . $estudiante['foto_perfil'], $fotoX, $fotoY, $fotoSize, $fotoSize, '', '', '', true, 300, '', false, false, 0, false, false, false);
 }
 
 // Información del estudiante (debajo de la foto)

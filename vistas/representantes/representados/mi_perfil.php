@@ -40,6 +40,11 @@ if (!$representante) {
     exit();
 }
 
+$srcFoto = '';
+if (!empty($representante['foto_perfil'])) {
+    $srcFoto = 'data:image/jpeg;base64,' . base64_encode($representante['foto_perfil']);
+}
+
 // Obtener teléfonos
 $telefonos = $telefonoModel->obtenerPorPersona($idPersona);
 
@@ -221,10 +226,10 @@ function calcularEdad($fechaNacimiento) {
                     <div class="profile-header">
                         <div class="profile-photo-container">
                             <div class="profile-photo-wrapper">
-                                <?php if (!empty($representante['foto_perfil']) && file_exists(__DIR__ . '/../../' . $representante['foto_perfil'])): ?>
-                                    <img src="<?= htmlspecialchars('../../' . $representante['foto_perfil']) ?>"
-                                         alt="Foto de perfil"
-                                         class="profile-photo">
+                                <?php if (!empty($srcFoto)): ?>
+                                    <img src="<?= $srcFoto ?>"
+                                        alt="Foto de perfil"
+                                        class="profile-photo">
                                 <?php else: ?>
                                     <div class="profile-photo-default">
                                         <i class='bx bx-user'></i>

@@ -776,9 +776,9 @@ function obtenerInformacionPlantel($conexion) {
         'success' => true,
         'plantel' => [
             'nombre' => 'U.E.C "Fermín Toro"',
-            'direccion' => 'Avenida Principal, Guanare, Estado Portuguesa',
-            'telefono' => '+58 257-251-XXXX',
-            'email' => 'contacto@fermintoro.edu.ve',
+            'direccion' => 'Avenida Eduardo Chollet, Calle 5, Araure, Estado Portuguesa',
+            'telefono' => '+58 414-5641168',
+            'email' => 'fermin.toro.araure@gmail.com',
             'horario_atencion' => 'Lunes a Viernes: 7:00 AM - 3:00 PM',
             'niveles_educativos' => [
                 'Inicial (Preescolar)',
