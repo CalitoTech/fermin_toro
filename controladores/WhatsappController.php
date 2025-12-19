@@ -14,7 +14,7 @@ class WhatsAppController {
 
     // ========== CONFIGURACIÓN DE PRUEBAS ==========
     // Cambiar a TRUE para usar número real de la BD, FALSE para usar número de pruebas
-    private const USAR_TELEFONO_REAL = true;
+    private const USAR_TELEFONO_REAL = false;
     private const TELEFONO_PRUEBAS = '584263519830';
     // ==============================================
 
@@ -133,6 +133,7 @@ class WhatsAppController {
 
         // --- 📦 Construir payload WhatsApp ---
         $payload = [
+            // "number"     => $telefono."@s.whatsapp.net",
             "number"     => $telefono,
             "title"      => $title,
             "description"=> $description,
@@ -161,6 +162,12 @@ class WhatsAppController {
             ]
         ];
 
+        $this->logPayload(
+            'SEND TEXT WHATSAPP',
+            $endpoint,
+            $payload
+        );
+
         // --- 🚀 Enviar mensaje WhatsApp ---
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -177,7 +184,7 @@ class WhatsAppController {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        error_log("📤 WhatsApp ($tipoAviso) enviado a {$persona['numero_telefono']} -> HTTP $httpCode -> Respuesta: $response");
+        error_log("📤 WhatsApp ($tipoAviso) enviado a $telefono -> HTTP $httpCode -> Respuesta: $response");
 
         // 🧩 Analizar la respuesta JSON de Evolution API (si existe)
         $responseData = json_decode($response, true);
@@ -426,6 +433,12 @@ class WhatsAppController {
             ]
         ];
 
+        $this->logPayload(
+            'SEND TEXT WHATSAPP',
+            $endpoint,
+            $payload
+        );
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $endpoint,
@@ -485,4 +498,20 @@ class WhatsAppController {
         // Concatenar prefijo + número
         return $prefijoLimpio . $numeroTelefono;
     }
+
+    /**
+     * Loggea payloads JSON de forma legible y segura
+     */
+    private function logPayload($titulo, $endpoint, array $payload) {
+        $json = json_encode(
+            $payload,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+        );
+
+        error_log("🧪 $titulo");
+        error_log("➡️ Endpoint: $endpoint");
+        error_log("📦 Payload enviado:");
+        error_log($json);
+    }
+
 }

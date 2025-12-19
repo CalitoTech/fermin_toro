@@ -732,7 +732,7 @@ CREATE TABLE config_whatsapp (
 
 -- Insertar configuración inicial (api_key vacía, se configura desde la interfaz)
 INSERT INTO config_whatsapp (api_url, api_key, nombre_instancia, login_url, activo) VALUES
-('http://localhost:8080', 'elVL1RV5vaF8LN2cMsXNVVQ2VExPTG8zNXJkbkhLcHZGa3VhVmN4dkxJVVREZTVqbm55QjFmbGxEOUt5L1Z0dTJxU1hkei9xUFRKK1BoN1I=', 'Test', NULL, TRUE);
+('http://localhost:8080', '04E444271B95-471D-8CFA-47254AC4208C', 'Test', NULL, TRUE);
 
 -- Tabla para mensajes parametrizables de WhatsApp por status de inscripción
 CREATE TABLE mensaje_whatsapp (
