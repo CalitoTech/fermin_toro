@@ -20,6 +20,14 @@ $conexion = $database->getConnection();
 // Obtener acción solicitada
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+$idPersona = $_GET['IdPersona'] 
+    ?? $_POST['IdPersona'] 
+    ?? null;
+
+$telefono = $_GET['telefono'] 
+    ?? $_POST['telefono'] 
+    ?? null;
+
 // Enrutador de acciones
 try {
     switch ($action) {
@@ -54,18 +62,18 @@ try {
             obtenerRequisitosInscripcion($conexion);
             break;
 
-        // ========== ESTADÍSTICAS ==========
+        // ========== ESTADÍSTICAS (REQUIEREN AUTENTICACIÓN) ==========
         case 'estadisticas_inscripciones':
-            obtenerEstadisticasInscripciones($conexion);
+            obtenerEstadisticasInscripciones($conexion, $idPersona, $telefono);
             break;
             
         case 'distribucion_estudiantes':
-            obtenerDistribucionEstudiantes($conexion);
+            obtenerDistribucionEstudiantes($conexion, $idPersona, $telefono);
             break;
 
-        // ========== CONSULTAS DE ESTADO ==========
+        // ========== CONSULTAS DE ESTADO (REQUIEREN AUTENTICACIÓN) ==========
         case 'estado_inscripcion':
-            consultarEstadoInscripcion($conexion);
+            consultarEstadoInscripcion($conexion, $idPersona, $telefono);
             break;
             
         case 'inscripciones_activas':
@@ -110,6 +118,135 @@ try {
 // ============================================================
 
 /**
+ * Verifica si la persona tiene permisos para acceder a información sensible
+ * @return array ['tiene_acceso' => bool, 'tipo_usuario' => string, 'mensaje' => string]
+ */
+function verificarPermisos($conexion, $idPersona = null, $telefono = null) {
+    // Si no se proporciona identificación, acceso denegado
+    if (empty($idPersona) && empty($telefono)) {
+        return [
+            'tiene_acceso' => false,
+            'tipo_usuario' => 'anonimo',
+            'mensaje' => 'Necesito verificar tu identidad para darte esa información. Por favor, identifícate primero.'
+        ];
+    }
+    
+    try {
+        $query = "
+            SELECT 
+                p.IdPersona,
+                p.nombre,
+                p.apellido,
+                GROUP_CONCAT(DISTINCT pr.nombre_perfil) as perfiles,
+                CASE 
+                    WHEN MAX(pr.IdPerfil) IN (1, 6, 7, 8, 9, 10) THEN 'staff'
+                    WHEN MAX(pr.IdPerfil) = 4 THEN 'representante'
+                    ELSE 'otro'
+                END as tipo_usuario
+            FROM persona p
+            INNER JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
+            INNER JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil
+            LEFT JOIN telefono t ON p.IdPersona = t.IdPersona
+            WHERE p.IdEstadoAcceso = 1
+        ";
+        
+        $params = [];
+        
+        if (!empty($idPersona)) {
+            $query .= " AND p.IdPersona = :idPersona";
+            $params[':idPersona'] = $idPersona;
+        } elseif (!empty($telefono)) {
+            // Limpiar el teléfono de caracteres especiales
+            $telefonoLimpio = preg_replace('/[^0-9]/', '', $telefono);
+            $query .= " AND REPLACE(REPLACE(REPLACE(t.numero_telefono, '-', ''), ' ', ''), '+', '') LIKE :telefono";
+            $params[':telefono'] = "%{$telefonoLimpio}%";
+        }
+        
+        $query .= " GROUP BY p.IdPersona, p.nombre, p.apellido LIMIT 1";
+        
+        $stmt = $conexion->prepare($query);
+        $stmt->execute($params);
+        $persona = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$persona) {
+            return [
+                'tiene_acceso' => false,
+                'tipo_usuario' => 'desconocido',
+                'mensaje' => 'No encontré tu información en el sistema. ¿Estás registrado en la institución?'
+            ];
+        }
+        
+        return [
+            'tiene_acceso' => true,
+            'tipo_usuario' => $persona['tipo_usuario'],
+            'id_persona' => $persona['IdPersona'],
+            'nombre_completo' => $persona['nombre'] . ' ' . $persona['apellido'],
+            'perfiles' => $persona['perfiles']
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error verificando permisos: " . $e->getMessage());
+        return [
+            'tiene_acceso' => false,
+            'tipo_usuario' => 'error',
+            'mensaje' => 'Ocurrió un problema al verificar tu identidad. Por favor intenta más tarde.'
+        ];
+    }
+}
+
+/**
+ * Verifica si un representante tiene acceso a información de un estudiante específico
+ */
+function verificarAccesoEstudiante($conexion, $idPersona, $cedulaEstudiante = null, $nombreEstudiante = null) {
+    try {
+        // Verificar primero si es staff (tienen acceso a todo)
+        $stmtStaff = $conexion->prepare("
+            SELECT COUNT(*) 
+            FROM detalle_perfil 
+            WHERE IdPersona = :idPersona 
+            AND IdPerfil IN (1, 6, 7, 8, 9, 10)
+        ");
+        $stmtStaff->execute([':idPersona' => $idPersona]);
+        if ($stmtStaff->fetchColumn() > 0) {
+            return ['tiene_acceso' => true, 'es_staff' => true];
+        }
+        
+        // Si no es staff, verificar si es representante del estudiante
+        $query = "
+            SELECT COUNT(*) as tiene_acceso
+            FROM representante r
+            INNER JOIN persona e ON r.IdEstudiante = e.IdPersona
+            WHERE r.IdPersona = :idPersona
+        ";
+        
+        $params = [':idPersona' => $idPersona];
+        
+        if (!empty($cedulaEstudiante)) {
+            $query .= " AND e.cedula = :cedula";
+            $params[':cedula'] = $cedulaEstudiante;
+        } elseif (!empty($nombreEstudiante)) {
+            $query .= " AND (LOWER(e.nombre) LIKE LOWER(:nombre) 
+                            OR LOWER(e.apellido) LIKE LOWER(:nombre)
+                            OR LOWER(CONCAT(e.nombre, ' ', e.apellido)) LIKE LOWER(:nombre))";
+            $params[':nombre'] = "%{$nombreEstudiante}%";
+        }
+        
+        $stmt = $conexion->prepare($query);
+        $stmt->execute($params);
+        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return [
+            'tiene_acceso' => $resultado['tiene_acceso'] > 0,
+            'es_staff' => false
+        ];
+        
+    } catch (Exception $e) {
+        error_log("Error verificando acceso a estudiante: " . $e->getMessage());
+        return ['tiene_acceso' => false, 'es_staff' => false];
+    }
+}
+
+/**
  * Consulta cupos disponibles por nivel o curso
  * GET params: nivel (nombre) o curso (nombre)
  */
@@ -128,18 +265,13 @@ function consultarCuposDisponibles($conexion) {
                 COUNT(DISTINCT CASE WHEN i.IdStatus = 11 THEN i.IdInscripcion END) as estudiantes_inscritos,
                 SUM(CASE WHEN a.capacidad IS NULL THEN 99999 ELSE a.capacidad END) - 
                 COUNT(DISTINCT CASE WHEN i.IdStatus = 11 THEN i.IdInscripcion END) as cupos_disponibles,
-                MAX(
-                    CASE 
-                        WHEN (a.capacidad IS NULL OR a.capacidad > 
-                            (SELECT COUNT(*) 
-                            FROM inscripcion i2 
-                            WHERE i2.IdCurso_Seccion = cs.IdCurso_Seccion
-                            AND i2.IdStatus = 11)
-                        ) 
-                        THEN 1 
-                        ELSE 0 
-                    END
-                ) AS hay_cupos
+                CASE 
+                    WHEN COUNT(DISTINCT CASE 
+                        WHEN (a.capacidad IS NULL OR COUNT(DISTINCT i.IdInscripcion) < a.capacidad) 
+                        THEN cs.IdCurso_Seccion 
+                    END) > 0 THEN 'SI'
+                    ELSE 'NO'
+                END as hay_cupos
             FROM curso c
             INNER JOIN nivel n ON c.IdNivel = n.IdNivel
             INNER JOIN curso_seccion cs ON c.IdCurso = cs.IdCurso
@@ -514,8 +646,31 @@ function obtenerRequisitosInscripcion($conexion) {
 
 /**
  * Obtiene estadísticas generales de inscripciones
+ * REQUIERE AUTENTICACIÓN
  */
-function obtenerEstadisticasInscripciones($conexion) {
+function obtenerEstadisticasInscripciones($conexion, $idPersona = null, $telefono = null) {
+    // Verificar permisos
+    $permisos = verificarPermisos($conexion, $idPersona, $telefono);
+    
+    if (!$permisos['tiene_acceso']) {
+        echo json_encode([
+            'success' => false,
+            'acceso_denegado' => true,
+            'message' => $permisos['mensaje']
+        ], JSON_PRETTY_PRINT);
+        return;
+    }
+    
+    // Solo staff puede ver estadísticas generales
+    if ($permisos['tipo_usuario'] !== 'staff') {
+        echo json_encode([
+            'success' => false,
+            'acceso_denegado' => true,
+            'message' => 'Esta información solo está disponible para el personal de la institución.'
+        ], JSON_PRETTY_PRINT);
+        return;
+    }
+    
     try {
         // Total de inscripciones por estado
         $queryEstados = "
@@ -567,8 +722,31 @@ function obtenerEstadisticasInscripciones($conexion) {
 
 /**
  * Obtiene la distribución de estudiantes por curso y sección
+ * REQUIERE AUTENTICACIÓN
  */
-function obtenerDistribucionEstudiantes($conexion) {
+function obtenerDistribucionEstudiantes($conexion, $idPersona = null, $telefono = null) {
+    // Verificar permisos
+    $permisos = verificarPermisos($conexion, $idPersona, $telefono);
+    
+    if (!$permisos['tiene_acceso']) {
+        echo json_encode([
+            'success' => false,
+            'acceso_denegado' => true,
+            'message' => $permisos['mensaje']
+        ], JSON_PRETTY_PRINT);
+        return;
+    }
+    
+    // Solo staff puede ver distribución completa
+    if ($permisos['tipo_usuario'] !== 'staff') {
+        echo json_encode([
+            'success' => false,
+            'acceso_denegado' => true,
+            'message' => 'Esta información solo está disponible para el personal de la institución.'
+        ], JSON_PRETTY_PRINT);
+        return;
+    }
+    
     try {
         $query = "
             SELECT 
@@ -606,10 +784,11 @@ function obtenerDistribucionEstudiantes($conexion) {
 /**
  * Consulta el estado de una inscripción
  * GET params: codigo_inscripcion (string) o cedula (string) o nombre_estudiante (string)
+ * REQUIERE AUTENTICACIÓN para búsquedas específicas
  */
-function consultarEstadoInscripcion($conexion) {
+function consultarEstadoInscripcion($conexion, $idPersona = null, $telefono = null) {
     $codigoInscripcion = $_GET['codigo_inscripcion'] ?? '';
-    $cedula = $_GET['cedula'] ?? '';
+    $cedula = $_GET['cedula_estudiante'] ?? '';
     $nombreEstudiante = $_GET['nombre_estudiante'] ?? '';
     
     if (empty($codigoInscripcion) && empty($cedula) && empty($nombreEstudiante)) {
@@ -617,6 +796,18 @@ function consultarEstadoInscripcion($conexion) {
             'success' => false,
             'message' => 'Debe proporcionar el código de inscripción, la cédula del estudiante o el nombre del estudiante'
         ]);
+        return;
+    }
+    
+    // Verificar permisos
+    $permisos = verificarPermisos($conexion, $idPersona, $telefono);
+    
+    if (!$permisos['tiene_acceso']) {
+        echo json_encode([
+            'success' => false,
+            'acceso_denegado' => true,
+            'message' => $permisos['mensaje']
+        ], JSON_PRETTY_PRINT);
         return;
     }
     
@@ -676,12 +867,38 @@ function consultarEstadoInscripcion($conexion) {
             return;
         }
         
+        // Verificar acceso a cada inscripción encontrada
+        $inscripcionesPermitidas = [];
+        foreach ($inscripciones as $insc) {
+            $accesoEstudiante = verificarAccesoEstudiante(
+                $conexion, 
+                $permisos['id_persona'], 
+                $insc['cedula'], 
+                null
+            );
+            
+            if ($accesoEstudiante['tiene_acceso']) {
+                $inscripcionesPermitidas[] = $insc;
+            }
+        }
+        
+        if (empty($inscripcionesPermitidas)) {
+            echo json_encode([
+                'success' => false,
+                'acceso_denegado' => true,
+                'message' => $permisos['tipo_usuario'] === 'staff' 
+                    ? 'No se encontró ninguna inscripción con esos datos'
+                    : 'No tienes permiso para ver información de ese estudiante. Solo puedes consultar información de tus hijos o representados.'
+            ], JSON_PRETTY_PRINT);
+            return;
+        }
+        
         // Si hay múltiples resultados (búsqueda por nombre), devolver lista
-        if (count($inscripciones) > 1) {
+        if (count($inscripcionesPermitidas) > 1) {
             echo json_encode([
                 'success' => true,
                 'multiple' => true,
-                'total_encontrados' => count($inscripciones),
+                'total_encontrados' => count($inscripcionesPermitidas),
                 'mensaje' => 'Se encontraron múltiples inscripciones. Por favor sea más específico o use la cédula.',
                 'inscripciones' => array_map(function($i) {
                     return [
@@ -691,13 +908,13 @@ function consultarEstadoInscripcion($conexion) {
                         'curso' => $i['curso'],
                         'status' => $i['status']
                     ];
-                }, $inscripciones)
+                }, $inscripcionesPermitidas)
             ], JSON_PRETTY_PRINT);
             return;
         }
         
         // Un solo resultado
-        $inscripcion = $inscripciones[0];
+        $inscripcion = $inscripcionesPermitidas[0];
         
         echo json_encode([
             'success' => true,
