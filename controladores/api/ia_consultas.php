@@ -147,6 +147,7 @@ function verificarPermisos($conexion, $idPersona = null, $telefono = null) {
             INNER JOIN detalle_perfil dp ON p.IdPersona = dp.IdPersona
             INNER JOIN perfil pr ON dp.IdPerfil = pr.IdPerfil
             LEFT JOIN telefono t ON p.IdPersona = t.IdPersona
+            LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
             WHERE p.IdEstadoAcceso = 1
         ";
         
@@ -156,10 +157,11 @@ function verificarPermisos($conexion, $idPersona = null, $telefono = null) {
             $query .= " AND p.IdPersona = :idPersona";
             $params[':idPersona'] = $idPersona;
         } elseif (!empty($telefono)) {
-            // Limpiar el teléfono de caracteres especiales
-            $telefonoLimpio = preg_replace('/[^0-9]/', '', $telefono);
-            $query .= " AND REPLACE(REPLACE(REPLACE(t.numero_telefono, '-', ''), ' ', ''), '+', '') LIKE :telefono";
-            $params[':telefono'] = "%{$telefonoLimpio}%";
+            // En PHP/HTTP, el signo '+' se convierte a espacio. 
+            // Lo restauramos para que coincida con el prefijo en la BD (ej: +58)
+            $telefonoBusqueda = str_replace(' ', '+', $telefono);
+            $query .= " AND CONCAT(IFNULL(pref.codigo_prefijo, ''), t.numero_telefono) LIKE :telefono";
+            $params[':telefono'] = "%{$telefonoBusqueda}%";
         }
         
         $query .= " GROUP BY p.IdPersona, p.nombre, p.apellido LIMIT 1";

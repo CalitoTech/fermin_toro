@@ -94,14 +94,14 @@ class WhatsAppController {
     }
 
     public function enviarAvisoBloqueo($idPersona, $tipoAviso = 'bloqueo') {
-        // 1. Buscar datos de la persona y su teléfono con prefijo
+        // 1. Buscar datos de la persona y su teléfono
         $query = "SELECT p.usuario, p.nombre, p.apellido,
-                         t.numero_telefono, pref.codigo_prefijo
-                  FROM persona p
-                  LEFT JOIN telefono t ON t.IdPersona = p.IdPersona
-                  LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
-                  WHERE p.IdPersona = :id
-                  LIMIT 1";
+                        t.numero_telefono, pref.codigo_prefijo
+                FROM persona p
+                LEFT JOIN telefono t ON t.IdPersona = p.IdPersona
+                LEFT JOIN prefijo pref ON t.IdPrefijo = pref.IdPrefijo
+                WHERE p.IdPersona = :id
+                LIMIT 1";
         $stmt = $this->conexion->prepare($query);
         $stmt->bindParam(":id", $idPersona, PDO::PARAM_INT);
         $stmt->execute();
@@ -114,61 +114,40 @@ class WhatsAppController {
 
         $telefono = $this->obtenerTelefonoParaEnvio($persona['codigo_prefijo'], $persona['numero_telefono']);
         $usuario  = $persona['usuario'];
-        $nombre   = "{$persona['nombre']} {$persona['apellido']}";
-        $endpoint = $this->evolutionApiUrl . '/message/sendList/' . $this->nombreInstancia;
+        $nombre   = "{$persona['nombre']}";
+        
+        // --- 🎯 Cambio de Endpoint a sendPoll ---
+        $endpoint = $this->evolutionApiUrl . '/message/sendPoll/' . $this->nombreInstancia;
 
         // --- 🧠 Definir el contenido según el tipo de aviso ---
         if ($tipoAviso === 'bloqueo') {
-            $title = "🔒 Bloqueo de cuenta";
-            $description = "Hola *$nombre*, tu cuenta fue bloqueada debido a que realizó 3 intentos fallidos de inicio de sesión.\n¿Fuiste tú?";
-            $footer = "Confirma para continuar";
+            $pollName = "🔒 *Bloqueo de cuenta*\n\nHola *$nombre*, tu cuenta fue bloqueada por 3 intentos fallidos.\n\n¿Fuiste tú?";
+            $optionSi = "✅ Sí, fui yo";
+            $optionNo = "❌ No, no fui yo";
         } else if ($tipoAviso === 'recuperacion') {
-            $title = "🔐 Recuperación de acceso";
-            $description = "Hola *$nombre*, recibimos una solicitud para recuperar el acceso a tu cuenta.\n¿Fuiste tú quien la realizó?";
-            $footer = "Confirma para proceder con la recuperación";
+            $pollName = "🔐 *Recuperación de acceso*\n\nHola *$nombre*, recibimos una solicitud de acceso.\n\n¿La realizaste tú?";
+            $optionSi = "✅ Sí, continuar";
+            $optionNo = "❌ No, cancelar";
         } else {
             error_log("⚠️ Tipo de aviso desconocido: $tipoAviso");
             return false;
         }
 
-        // --- 📦 Construir payload WhatsApp ---
+        // --- 📦 Construir payload para Encuesta ---
+        // Nota: Evolution API v2 usa una estructura simple para Polls
         $payload = [
-            // "number"     => $telefono."@s.whatsapp.net",
-            "number"     => $telefono,
-            "title"      => $title,
-            "description"=> $description,
-            "buttonText" => "Responder",
-            "footerText" => $footer,
-            "sections"   => [
-                [
-                    "title" => "Confirma tu respuesta",
-                    "rows"  => [
-                        [
-                            "rowId"      => "bloqueo_si_{$usuario}",
-                            "title"      => "✅ Sí, fui yo",
-                            "description"=> ($tipoAviso === 'bloqueo')
-                                ? "Recuperar cuenta"
-                                : "Continuar con la recuperación"
-                        ],
-                        [
-                            "rowId"      => "bloqueo_no_{$usuario}",
-                            "title"      => "❌ No, no fui yo",
-                            "description"=> ($tipoAviso === 'bloqueo')
-                                ? "Marcar actividad sospechosa"
-                                : "Cancelar la recuperación"
-                        ]
-                    ]
-                ]
-            ]
+            "number" => $telefono,
+            "name" => $pollName,
+            "values" => [
+                $optionSi,
+                $optionNo
+            ],
+            "selectableCount" => 1
         ];
 
-        $this->logPayload(
-            'SEND TEXT WHATSAPP',
-            $endpoint,
-            $payload
-        );
+        $this->logPayload('SEND POLL WHATSAPP', $endpoint, $payload);
 
-        // --- 🚀 Enviar mensaje WhatsApp ---
+        // --- 🚀 Enviar mensaje ---
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $endpoint,
@@ -180,34 +159,20 @@ class WhatsAppController {
                 'apikey: ' . $this->evolutionApiKey
             ],
         ]);
+        
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        error_log("📤 WhatsApp ($tipoAviso) enviado a $telefono -> HTTP $httpCode -> Respuesta: $response");
-
-        // 🧩 Analizar la respuesta JSON de Evolution API (si existe)
         $responseData = json_decode($response, true);
+        $exito = ($httpCode >= 200 && $httpCode < 300);
 
-        // ✅ Determinar si el envío fue exitoso según el código o el cuerpo
-        $exito = false;
-
-        if ($httpCode >= 200 && $httpCode < 300) {
-            $exito = true;
-        } elseif (isset($responseData['status']) && in_array(strtolower($responseData['status']), ['success', 'ok', 'sent'])) {
-            $exito = true;
-        } elseif (isset($responseData['message']) && stripos($responseData['message'], 'success') !== false) {
-            $exito = true;
-        }
-
-        // 💬 Log más informativo
         if ($exito) {
-            error_log("✅ Mensaje de tipo '$tipoAviso' enviado correctamente a $telefono");
+            error_log("✅ Encuesta de '$tipoAviso' enviada correctamente a $telefono");
         } else {
-            error_log("❌ Falló el envío del mensaje ($tipoAviso) a $telefono - HTTP: $httpCode - Respuesta: " . print_r($responseData, true));
+            error_log("❌ Falló el envío de encuesta a $telefono - HTTP: $httpCode - Respuesta: $response");
         }
 
-        // 📦 Retornar datos útiles al controlador
         return [
             'success'  => $exito,
             'httpCode' => $httpCode,
