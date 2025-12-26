@@ -645,17 +645,6 @@
 <?php include 'layouts/social_menu.php'; ?>
 <?php include 'layouts/footer.php'; ?>
 
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Toastr JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-    <!-- Tus scripts personalizados -->
-    <script src="../../assets/js/buscador_generico.js"></script>
-    <script src="../../assets/js/validaciones_solicitud.js?v=8"></script>
-    <script src="../../assets/js/solicitud_cupo.js?v=18"></script>
-    <script src="../../assets/js/validacion.js?v=4"></script>
 
     <script>
         // Configuración global de Toastr
@@ -693,15 +682,15 @@
                 "estudianteTelefonoPrefijo_nombre"
             );
 
-            // Configurar restricciones de fecha de nacimiento (6-18 años)
+            // Configurar restricciones de fecha de nacimiento (mínimo 3 años este año, máximo 18 años)
             const fechaNacimientoInput = document.getElementById('estudianteFechaNacimiento');
             if (fechaNacimientoInput) {
                 const hoy = new Date();
 
-                // Fecha máxima: hace 6 años
-                const fechaMax = new Date(hoy.getFullYear() - 6, hoy.getMonth(), hoy.getDate());
+                // Fecha máxima: que cumpla 3 años este año (31 de diciembre del año que cumple 3)
+                const fechaMax = new Date(hoy.getFullYear() - 3, 11, 31);
 
-                // Fecha mínima: hace 18 años
+                // Fecha mínima: hace 18 años (Límite máximo de edad)
                 const fechaMin = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
 
                 // Formatear fechas a YYYY-MM-DD
@@ -746,22 +735,25 @@
                     const fechaSeleccionada = new Date(valorSeleccionado + 'T00:00:00');
                     const hoy = new Date();
 
-                    // Calcular edad
-                    let edad = hoy.getFullYear() - fechaSeleccionada.getFullYear();
+                    // Calcular edad exacta
+                    let edadExacta = hoy.getFullYear() - fechaSeleccionada.getFullYear();
                     const mes = hoy.getMonth() - fechaSeleccionada.getMonth();
 
                     if (mes < 0 || (mes === 0 && hoy.getDate() < fechaSeleccionada.getDate())) {
-                        edad--;
+                        edadExacta--;
                     }
 
-                    // Validar rango de edad
-                    if (edad < 6 || edad > 18) {
+                    // Determinar si cumple 3 años este año
+                    const cumpleTresEsteAnio = (hoy.getFullYear() - fechaSeleccionada.getFullYear()) >= 3;
+
+                    // Validar rango de edad (mínimo 3 este año, máximo 18 exactos)
+                    if (!cumpleTresEsteAnio || edadExacta > 18) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Edad no válida',
                             html: `La fecha de nacimiento seleccionada no es válida.<br><br>
-                                   <strong>El estudiante debe tener entre 6 y 18 años.</strong><br>
-                                   <small class="text-muted">Edad calculada: ${edad} años</small>`,
+                                   <strong>El estudiante debe cumplir al menos 3 años este año y tener máximo 18 años.</strong><br>
+                                   <small class="text-muted">Edad calculada: ${edadExacta} años</small>`,
                             confirmButtonColor: '#c90000',
                             confirmButtonText: 'Entendido'
                         });
@@ -803,7 +795,7 @@
 
                             // Ajustar label y maxlength según la edad
                             if (cedulaLabel) {
-                                if (edad < 10) {
+                                if (edadExacta < 10) {
                                     // Menores de 10 años: Cédula escolar con maxlength 11, minlength 10
                                     cedulaLabel.textContent = 'Cédula escolar';
                                     cedulaInput.setAttribute('maxlength', '11');
@@ -822,7 +814,7 @@
                         const telefonoInput = document.getElementById('estudianteTelefono');
 
                         if (telefonoContainer && telefonoInput) {
-                            if (edad < 10) {
+                            if (edadExacta < 10) {
                                 // Menores de 10 años: ocultar teléfono
                                 telefonoContainer.style.display = 'none';
                                 telefonoInput.value = '';
@@ -870,5 +862,3 @@
             }
         });
     </script>
-</body>
-</html>

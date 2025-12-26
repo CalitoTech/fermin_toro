@@ -1017,9 +1017,9 @@ unset($_SESSION['alert'], $_SESSION['message']);
 
 <!-- Incluir scripts de validación -->
 <script src="../../../assets/js/buscador_generico.js"></script>
-<script src="../../../assets/js/validaciones_solicitud.js?v=8"></script>
-<script src="../../../assets/js/solicitud_cupo.js?v=18"></script>
-<script src="../../../assets/js/validacion.js?v=4"></script>
+<script src="../../../assets/js/validaciones_solicitud.js?v=9"></script>
+<script src="../../../assets/js/solicitud_cupo.js?v=19"></script>
+<script src="../../../assets/js/validacion.js?v=5"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -1324,8 +1324,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const fechaNacInput = document.getElementById('estudianteFechaNacimiento');
     if (fechaNacInput) {
         const hoy = new Date();
-        const fechaMax = new Date(hoy.getFullYear() - 6, hoy.getMonth(), hoy.getDate());
+
+        // Fecha máxima: que cumpla 3 años este año (31 de diciembre del año que cumple 3)
+        const fechaMax = new Date(hoy.getFullYear() - 3, 11, 31);
+
+        // Fecha mínima: hace 18 años (Límite máximo de edad)
         const fechaMin = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+
+        // Formatear fechas a YYYY-MM-DD
         const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         fechaNacInput.min = fmt(fechaMin);
         fechaNacInput.max = fmt(fechaMax);
@@ -1333,12 +1339,30 @@ document.addEventListener('DOMContentLoaded', function () {
         fechaNacInput.addEventListener('blur', function() {
             if (!this.value) return;
             const fecha = new Date(this.value + 'T00:00:00');
-            let edad = hoy.getFullYear() - fecha.getFullYear();
-            const m = hoy.getMonth() - fecha.getMonth();
-            if (m < 0 || (m === 0 && hoy.getDate() < fecha.getDate())) edad--;
+            const hoy = new Date();
 
-            if (edad < 6 || edad > 18) {
-                Swal.fire({icon:'warning', title:'Edad no válida', text:`El estudiante debe tener entre 6 y 18 años (edad: ${edad})`, confirmButtonColor:'#c90000'});
+            // Calcular edad exacta
+            let edadExacta = hoy.getFullYear() - fecha.getFullYear();
+            const m = hoy.getMonth() - fecha.getMonth();
+
+            if (m < 0 || (m === 0 && hoy.getDate() < fecha.getDate())) {
+                edadExacta--;
+            }
+
+            // Determinar si cumple 3 años este año
+            const cumpleTresEsteAnio = (hoy.getFullYear() - fecha.getFullYear()) >= 3;
+
+            // Validar rango de edad (mínimo 3 este año, máximo 18 exactos)
+            if (!cumpleTresEsteAnio || edadExacta > 18) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Edad no válida',
+                    html: `La fecha de nacimiento seleccionada no es válida.<br><br>
+                           <strong>El estudiante debe cumplir al menos 3 años este año y tener máximo 18 años.</strong><br>
+                           <small class="text-muted">Edad calculada: ${edadExacta} años</small>`,
+                    confirmButtonColor: '#c90000',
+                    confirmButtonText: 'Entendido'
+                });
                 this.value = '';
                 return;
             }
@@ -1363,7 +1387,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Ajustar label y maxlength según la edad
                 if (cedulaLabel) {
-                    if (edad < 10) {
+                    if (edadExacta < 10) {
                         cedulaLabel.textContent = 'Cédula escolar';
                         cedulaInput.maxLength = 11;
                         cedulaInput.minLength = 10;
@@ -1383,7 +1407,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Manejar visibilidad del campo teléfono según edad SOLO si NO es primer curso
             const telContainer = document.getElementById('estudianteTelefonoContainer');
             if (!esPrimerCurso && telContainer) {
-                telContainer.style.display = edad >= 10 ? 'block' : 'none';
+                telContainer.style.display = edadExacta >= 10 ? 'block' : 'none';
             }
         });
     }

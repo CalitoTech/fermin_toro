@@ -480,7 +480,7 @@ class ValidadorFormulario {
         const validador = this;
 
         // Interceptar el cierre del modal
-        modal.on('hide.bs.modal', function(e) {
+        modal.on('hide.bs.modal', function (e) {
             // Si el formulario se envió exitosamente, permitir cerrar sin alerta
             if (validador.formularioEnviado) {
                 return;
@@ -526,7 +526,7 @@ class ValidadorFormulario {
         });
 
         // Limpiar al cerrar completamente
-        modal.on('hidden.bs.modal', function() {
+        modal.on('hidden.bs.modal', function () {
             validador.camposEditados.clear();
             validador.erroresActivos.clear();
             validador.formularioEnviado = false; // Resetear bandera
@@ -582,6 +582,39 @@ class ValidadorFormulario {
         if (feedbackDiv) {
             feedbackDiv.style.display = 'none';
         }
+    }
+
+    /**
+     * Validar edad del estudiante (mínimo que cumpla 3 años este año, máximo 18 años)
+     */
+    validarEdadEstudiante() {
+        const input = document.getElementById('estudianteFechaNacimiento');
+        if (!input || !input.value) return true;
+
+        const fechaNacimiento = input.value;
+        const hoy = new Date();
+        const fechaNac = new Date(fechaNacimiento + 'T00:00:00');
+
+        // Edad exacta
+        let edadExacta = hoy.getFullYear() - fechaNac.getFullYear();
+        const mes = hoy.getMonth() - fechaNac.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
+            edadExacta--;
+        }
+
+        // Diferencia de años para el mínimo (debe cumplir 3 este año)
+        const cumpleTresEsteAnio = (hoy.getFullYear() - fechaNac.getFullYear()) >= 3;
+
+        if (!cumpleTresEsteAnio || edadExacta > 18) {
+            this.mostrarError(input, 'El estudiante debe cumplir al menos 3 años este año y tener máximo 18 años');
+            return {
+                valido: false,
+                mensaje: 'El estudiante debe cumplir al menos 3 años este año y tener máximo 18 años'
+            };
+        }
+
+        this.marcarValido(input);
+        return { valido: true };
     }
 
     /**
@@ -870,6 +903,13 @@ class ValidadorFormulario {
             }
         });
 
+        // 6. Validar edad del estudiante
+        const resultadoEdad = this.validarEdadEstudiante();
+        if (!resultadoEdad.valido) {
+            erroresEncontrados.push(resultadoEdad.mensaje);
+            hayErrores = true;
+        }
+
         return {
             valido: !hayErrores,
             errores: erroresEncontrados
@@ -880,7 +920,7 @@ class ValidadorFormulario {
 // Inicializar validador cuando el DOM esté listo
 let validadorSolicitud = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Detectar la ruta base según la ubicación del HTML
     const currentPath = window.location.pathname;
     let basePath = '../../';

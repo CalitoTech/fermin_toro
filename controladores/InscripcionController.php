@@ -429,6 +429,25 @@ function procesarInscripcion($conexion) {
                 'estudianteCorreo' => 'Correo electrónico del estudiante'
             ];
 
+            // === Validación de edad del estudiante (Servidor) ===
+            if (!empty($_POST['estudianteFechaNacimiento'])) {
+                $fechaNacimiento = $_POST['estudianteFechaNacimiento'];
+                $hoy = new DateTime();
+                $fechaNac = new DateTime($fechaNacimiento);
+                
+                // Calcular edad exacta
+                $edadExacta = $hoy->diff($fechaNac)->y;
+                
+                // Determinar si cumple 3 años este año
+                $anioActual = (int)$hoy->format('Y');
+                $anioNacimiento = (int)$fechaNac->format('Y');
+                $cumpleTresEsteAnio = ($anioActual - $anioNacimiento) >= 3;
+
+                if (!$cumpleTresEsteAnio || $edadExacta > 18) {
+                    throw new Exception("La edad del estudiante no es válida. Debe cumplir al menos 3 años este año y tener máximo 18 años.");
+                }
+            }
+
             // Agregar cédula y plantel solo si NO es el primer curso (teléfono es siempre opcional)
             if (!$esPrimerCurso) {
                 $camposEstudiante['estudianteCedula'] = 'Cédula del estudiante';

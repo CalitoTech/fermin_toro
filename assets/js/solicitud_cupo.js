@@ -667,20 +667,24 @@ function enviarFormulario() {
         }
     });
 
-    // 7. Validación de fecha de nacimiento del estudiante (6-18 años)
+    // 7. Validación de fecha de nacimiento del estudiante (mínimo que cumpla 3 años este año, máximo 18 años)
     const fechaNacimiento = $('#estudianteFechaNacimiento').val();
     if (fechaNacimiento) {
         const hoy = new Date();
-        const fechaNac = new Date(fechaNacimiento);
-        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const fechaNac = new Date(fechaNacimiento + 'T00:00:00'); // Usar T00:00:00 para evitar problemas de zona horaria
+        
+        // Edad exacta
+        let edadExacta = hoy.getFullYear() - fechaNac.getFullYear();
         const mes = hoy.getMonth() - fechaNac.getMonth();
-
         if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) {
-            edad--;
+            edadExacta--;
         }
 
-        if (edad < 6 || edad > 18) {
-            camposFaltantes.push('La edad del estudiante debe estar entre 6 y 18 años');
+        // Diferencia de años para el mínimo (debe cumplir 3 este año)
+        const cumpleTresEsteAnio = (hoy.getFullYear() - fechaNac.getFullYear()) >= 3;
+
+        if (!cumpleTresEsteAnio || edadExacta > 18) {
+            camposFaltantes.push('El estudiante debe cumplir al menos 3 años este año y tener máximo 18 años');
             $('#estudianteFechaNacimiento').addClass('is-invalid');
         }
     }

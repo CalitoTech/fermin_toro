@@ -127,5 +127,17 @@
 <!-- Tu script personalizado -->
 <script src="js/custom.js"></script>
 
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Toastr JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+<!-- Tus scripts personalizados -->
+<script src="../../assets/js/buscador_generico.js"></script>
+<script src="../../assets/js/validaciones_solicitud.js?v=9"></script>
+<script src="../../assets/js/solicitud_cupo.js?v=19"></script>
+<script src="../../assets/js/validacion.js?v=5"></script>
+
 </body>
 </html>
