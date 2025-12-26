@@ -139,7 +139,7 @@ function verificarPermisos($conexion, $idPersona = null, $telefono = null) {
                 p.apellido,
                 GROUP_CONCAT(DISTINCT pr.nombre_perfil) as perfiles,
                 CASE 
-                    WHEN MAX(pr.IdPerfil) IN (1, 6, 7, 8, 9, 10) THEN 'staff'
+                    WHEN MAX(pr.IdPerfil) IN (1, 6, 7, 8, 9, 10, 11, 12, 13) THEN 'staff'
                     WHEN MAX(pr.IdPerfil) = 4 THEN 'representante'
                     ELSE 'otro'
                 END as tipo_usuario
@@ -206,7 +206,7 @@ function verificarAccesoEstudiante($conexion, $idPersona, $cedulaEstudiante = nu
             SELECT COUNT(*) 
             FROM detalle_perfil 
             WHERE IdPersona = :idPersona 
-            AND IdPerfil IN (1, 6, 7, 8, 9, 10)
+            AND IdPerfil IN (1, 6, 7, 8, 9, 10, 11, 12, 13)
         ");
         $stmtStaff->execute([':idPersona' => $idPersona]);
         if ($stmtStaff->fetchColumn() > 0) {

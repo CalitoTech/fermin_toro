@@ -139,9 +139,9 @@ try {
 // 6=Director, 7=Control de estudios, 8=Coordinador Inicial, 9=Coordinador Primaria, 10=Coordinador Media General
 
 $perfilesExternos = [3, 4, 5]; // Estudiante, Representante, Contacto de Emergencia
-$perfilesInternos = [1, 2, 6, 7, 8, 9, 10]; // Todos los trabajadores
+$perfilesInternos = [1, 2, 6, 7, 8, 9, 10, 11, 12, 13]; // Todos los trabajadores
 $perfilesSinAcceso = [2, 3]; // Docente y Estudiante - sin acceso al menú completo
-$perfiles_autorizados = [1, 6, 7]; // Administrador, Director, Control de Estudios
+$perfiles_autorizados = [1, 6, 7, 11, 12]; // Administrador, Director, Control de Estudios, Sub-director, Dirección
 
 // Obtener TODOS los perfiles del usuario
 $sqlPerfiles = "SELECT IdPerfil FROM detalle_perfil WHERE IdPersona = :idPersona";
@@ -156,7 +156,7 @@ $tienePerfilExterno = !empty(array_intersect($todosLosPerfiles, $perfilesExterno
 $esSinAcceso = in_array($idPerfil, $perfilesSinAcceso); // Solo el perfil activo actual
 
 // Perfiles que pueden ver notificaciones (internos excepto docentes)
-$perfilesConNotificaciones = [1, 6, 7, 8, 9, 10];
+$perfilesConNotificaciones = [1, 6, 7, 8, 9, 10, 11, 12, 13];
 $tienePerfilConNotificaciones = !empty(array_intersect($todosLosPerfiles, $perfilesConNotificaciones));
 
 // === LÓGICA DEL SWITCH DE MENÚ ===
@@ -255,6 +255,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                 </li>
 
                 <!-- Registro -->
+                <?php if ($idPerfil != 13): ?>
                 <li>
                     <div class="icon-link">
                         <a href="#">
@@ -286,8 +287,10 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                         <?php endif; ?>
                     </ul>
                 </li>
+                <?php endif; ?>
 
                 <!-- Estudiantes -->
+                <?php if ($idPerfil != 13): ?>
                 <li>
                     <div class="icon-link">
                         <a href="#">
@@ -305,6 +308,7 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                         <?php endif; ?>
                     </ul>
                 </li>
+                <?php endif; ?>
 
                 <!-- Inscripciones -->
                 <li>
@@ -317,7 +321,9 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                     </div>
                     <ul class="sub-menu">
                         <li><a href="../../inscripciones/inscripcion/inscripcion.php">Insc. Académicas</a></li>
-                        <li><a href="../../inscripciones/inscripcion_grupo_interes/inscripcion_grupo_interes.php">Insc. Grupo Interés</a></li>
+                        <?php if ($idPerfil != 13): ?>
+                            <li><a href="../../inscripciones/inscripcion_grupo_interes/inscripcion_grupo_interes.php">Insc. Grupo Interés</a></li>
+                        <?php endif; ?>
                     </ul>
                 </li>
 
@@ -332,15 +338,17 @@ $nombreAnoEscolar = $anoEscolarActivo ? $anoEscolarActivo['fecha_escolar'] : 'Si
                     </div>
                     <ul class="sub-menu">
                         <li><a href="../../configuracion/contrasena/contrasena.php">Mi Cuenta</a></li>
-                        <!-- Solo para Administrador, Director y Control de Estudios -->
-                        <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
-                            <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
-                            <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
-                        <?php endif; ?>
-                        <!-- Configuración API WhatsApp: solo administrador -->
-                        <?php if ($idPerfil == 1): ?>
-                            <li><a href="../../configuracion/whatsapp/mensajes.php">Mensajes WhatsApp</a></li>
-                            <li><a href="../../configuracion/whatsapp/whatsapp.php">Config. WhatsApp API</a></li>
+                        <?php if ($idPerfil != 13): ?>
+                            <!-- Solo para Administrador, Director y Control de Estudios -->
+                            <?php if (in_array($idPerfil, $perfiles_autorizados)): ?>
+                                <li><a href="../../configuracion/usuario/usuario.php">Usuarios</a></li>
+                                <li><a href="../../configuracion/fecha_escolar/fecha_escolar.php">Año Escolar</a></li>
+                            <?php endif; ?>
+                            <!-- Configuración API WhatsApp: solo administrador -->
+                            <?php if ($idPerfil == 1): ?>
+                                <li><a href="../../configuracion/whatsapp/mensajes.php">Mensajes WhatsApp</a></li>
+                                <li><a href="../../configuracion/whatsapp/whatsapp.php">Config. WhatsApp API</a></li>
+                            <?php endif; ?>
                         <?php endif; ?>
                     </ul>
                 </li>

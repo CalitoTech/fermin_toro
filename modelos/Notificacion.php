@@ -35,7 +35,7 @@ class Notificacion {
         $sqlFecha = "SELECT MIN(fecha_asignacion) as fecha_inicio 
                      FROM detalle_perfil 
                      WHERE IdPersona = :idPersona 
-                     AND IdPerfil IN (1, 6, 7, 8, 9, 10)";
+                     AND IdPerfil IN (1, 6, 7, 8, 9, 10, 11, 12, 13)";
         $stmtFecha = $this->conn->prepare($sqlFecha);
         $stmtFecha->bindParam(":idPersona", $idPersona, PDO::PARAM_INT);
         $stmtFecha->execute();
@@ -103,7 +103,7 @@ class Notificacion {
         $sqlFecha = "SELECT MIN(fecha_asignacion) as fecha_inicio 
                      FROM detalle_perfil 
                      WHERE IdPersona = :idPersona 
-                     AND IdPerfil IN (1, 6, 7, 8, 9, 10)";
+                     AND IdPerfil IN (1, 6, 7, 8, 9, 10, 11, 12, 13)";
         $stmtFecha = $this->conn->prepare($sqlFecha);
         $stmtFecha->bindParam(":idPersona", $idPersona, PDO::PARAM_INT);
         $stmtFecha->execute();

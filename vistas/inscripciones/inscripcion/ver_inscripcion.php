@@ -15,6 +15,30 @@ require_once __DIR__ . '/../../../modelos/Seccion.php';
 require_once __DIR__ . '/../../../modelos/Discapacidad.php';
 require_once __DIR__ . '/../../../modelos/FechaEscolar.php';
 
+// 🔹 Lógica de Permisos Detallada
+$idPerfil = $_SESSION['idPerfil'] ?? 0;
+// Director (6), Sub-director (11), Administrador (1) pueden hacerlo todo
+$esSuperAdmin = in_array($idPerfil, [1, 6, 11]);
+
+// Dirección (12)
+$esDireccion = ($idPerfil == 12);
+// Coordinadores (8, 9, 10)
+$esCoordinador = in_array($idPerfil, [8, 9, 10]);
+// Psicólogo (13)
+$esPsicologo = ($idPerfil == 13);
+// Control de estudios (7)
+$esControlEstudio = ($idPerfil == 7);
+
+// Definición de permisos por acción
+$puedeAprobarReunion = $esSuperAdmin || $esDireccion;
+$puedePonerEnEsperaPago = $esSuperAdmin || $esPsicologo || $esCoordinador;
+$puedeMarcarInscrito = $esSuperAdmin || $esCoordinador;
+$puedeGestionarRequisitos = $esSuperAdmin || $esControlEstudio;
+// Cualquiera menos control de estudio puede rechazar (y perfiles externos 2-5)
+$perfilesInternos = [1, 6, 8, 9, 10, 11, 12, 13];
+$puedeRechazar = $esSuperAdmin || in_array($idPerfil, [8, 9, 10, 12, 13]);
+$puedeCambiarSeccion = $esSuperAdmin || $esDireccion || $esCoordinador;
+
 // 🔹 Manejo de alertas
 $alert = $_SESSION['alert'] ?? null;
 $message = $_SESSION['message'] ?? '';
@@ -230,9 +254,26 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                     $mostrarRechazado = false;
                                     continue;
                                 }
-                            ?>
+
+                                // 🔹 Determinar si el usuario puede interactuar con este paso
+                                $idStatusPaso = $status['IdStatus'];
+                                $permisoPaso = false;
+                                
+                                if ($esSuperAdmin) {
+                                    $permisoPaso = true;
+                                } else {
+                                    $permisoPaso = match ($idStatusPaso) {
+                                        9 => $puedeAprobarReunion,
+                                        10 => $puedePonerEnEsperaPago,
+                                        11 => $puedeMarcarInscrito,
+                                        12 => $puedeRechazar,
+                                        default => true // Otros estados de revisión inicial
+                                    };
+                                }
+                                ?>
                                 <div class="status-step <?= $status['IdStatus'] == $inscripcion['IdStatus'] ? 'active' : '' ?> 
-                                    <?= $status['IdStatus'] < $inscripcion['IdStatus'] ? 'completed' : '' ?>"
+                                    <?= $status['IdStatus'] < $inscripcion['IdStatus'] ? 'completed' : '' ?>
+                                    <?= !$permisoPaso ? 'disabled' : '' ?>"
                                     data-id="<?= $status['IdStatus'] ?>" 
                                     data-nombre="<?= htmlspecialchars($status['status']) ?>">
                                     <span class="status-icon">
@@ -325,7 +366,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                             <div class="card">
                                 <div class="card-header d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información General</h5>
-                                    <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles)): ?>
+                                    <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles) && $puedeCambiarSeccion): ?>
                                     <button type="button" class="btn btn-sm btn-outline-primary text-light" id="btn-cambiar-seccion">
                                         <i class="fas fa-exchange-alt me-1"></i> Cambiar Sección
                                     </button>
@@ -354,7 +395,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <div class="mb-2">
                                             <strong>Sección:</strong> 
                                             <span id="texto-seccion-actual"><?= htmlspecialchars($inscripcion['seccion']) ?></span>
-                                            <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles)): ?>
+                                            <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles) && $puedeCambiarSeccion): ?>
                                             <small class="text-muted ms-1">(Click en "Cambiar Sección")</small>
                                             <?php endif; ?>
                                         </div>
@@ -366,7 +407,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         </div>
 
                                         <!-- Selector de sección (oculto inicialmente) -->
-                                        <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles)): ?>
+                                        <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles) && $puedeCambiarSeccion): ?>
                                         <div id="selector-seccion" class="mt-3 p-3 border rounded" style="display: none;">
                                             <h6 class="section-title mb-3">Cambiar Sección</h6>
                                             
@@ -801,6 +842,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                                                 value="1" 
                                                                 id="req-<?= $requisito['IdRequisito'] ?>"
                                                                 <?= $requisito['cumplido'] ? 'checked' : '' ?>
+                                                                <?= !$puedeGestionarRequisitos ? 'disabled' : '' ?>
                                                             >
                                                             <label class="form-check-label" for="req-<?= $requisito['IdRequisito'] ?>"></label>
                                                         </div>
@@ -821,6 +863,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                                         </span>
                                                     </td>
                                                     <td>
+                                                        <?php if ($puedeGestionarRequisitos): ?>
                                                         <button 
                                                             type="button" 
                                                             class="btn btn-sm btn-outline-primary guardar-individual" 
@@ -829,6 +872,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                                             <i class="fas <?= $requisito['cumplido'] ? 'fa-times' : 'fa-check' ?> me-1"></i>
                                                             <?= $requisito['cumplido'] ? 'Desmarcar' : 'Marcar' ?>
                                                         </button>
+                                                        <?php endif; ?>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -836,6 +880,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                     </table>
                                 </div>
                                 
+                                <?php if ($puedeGestionarRequisitos): ?>
                                 <div class="guardar-cambios" id="guardar-cambios-container">
                                     <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded shadow-sm">
                                         <div>
@@ -851,6 +896,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         </div>
                                     </div>
                                 </div>
+                                <?php endif; ?>
                             </form>
                         </div>
                     </div>

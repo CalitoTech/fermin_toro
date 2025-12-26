@@ -356,7 +356,7 @@ class Representante {
         $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
 
         // === 2. Determinar si tiene acceso total ===
-        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $perfilesAutorizadosTotales = [1, 6, 7, 11, 12]; // Administrador, Director, Control de Estudios, Sub-director, Dirección
         $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
 
         // === 3. Determinar niveles que puede ver ===

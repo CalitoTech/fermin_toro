@@ -74,7 +74,7 @@ $esAdmin = ($_SESSION['idPerfil'] == 1);
 
 <?php
 // Verificar perfiles internos (usa $todosLosPerfiles del menu.php)
-$perfilesPermitidos = [1, 6, 7, 8, 9, 10];
+$perfilesPermitidos = [1, 6, 7, 8, 9, 10, 11, 12];
 if (empty(array_intersect($todosLosPerfiles, $perfilesPermitidos))) {
     echo '
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

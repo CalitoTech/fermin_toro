@@ -16,7 +16,10 @@ INSERT INTO `perfil` (`IdPerfil`, `nombre_perfil`) VALUES
 (7, 'Control de estudios'),
 (8, 'Coordinador Inicial'),
 (9, 'Coordinador Primaria'),
-(10, 'Coordinador Media General');
+(10, 'Coordinador Media General'),
+(11, 'Sub-director'),
+(12, 'Dirección'),
+(13, 'Psicólogo');
 
 CREATE TABLE nivel (
     IdNivel int NOT NULL AUTO_INCREMENT PRIMARY KEY,

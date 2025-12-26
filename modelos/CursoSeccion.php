@@ -153,7 +153,7 @@ class CursoSeccion {
         $perfilesUsuario = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
 
         // Determinar si tiene algún perfil con acceso total
-        $perfilesAutorizadosTotales = [1, 6, 7]; // Administrador, Director, Control de Estudios
+        $perfilesAutorizadosTotales = [1, 6, 7, 11, 12]; // Administrador, Director, Control de Estudios, Sub-director, Dirección
         $tieneAccesoTotal = !empty(array_intersect($perfilesUsuario, $perfilesAutorizadosTotales));
 
         // Determinar qué niveles puede ver (por IdNivel)

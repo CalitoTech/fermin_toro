@@ -7,7 +7,7 @@ if (!isset($_SESSION['usuario']) || !isset($_SESSION['idPersona'])) {
 }
 
 // Verificar perfiles internos (1=Admin, 6=Director, 7=Control de Estudios, 8,9,10=Coordinadores)
-$perfilesPermitidos = [1, 6, 7, 8, 9, 10];
+$perfilesPermitidos = [1, 6, 7, 8, 9, 10, 11, 12];
 if (!isset($_SESSION['idPerfil']) || !in_array($_SESSION['idPerfil'], $perfilesPermitidos)) {
     manejarError('No tiene permisos para acceder a esta sección', '../vistas/inicio/inicio/inicio.php');
 }

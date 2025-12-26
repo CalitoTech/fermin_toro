@@ -178,12 +178,14 @@ foreach ($statuses as $st) {
                                     </select>
                                 </div>
 
-                                <!-- Botón Nueva Inscripción -->
-                                <div class="mb-2">
-                                    <a href="nuevo_inscripcion.php" id="btnNuevoRegistro" class="btn btn-danger d-flex align-items-center">
-                                        <i class='bx bx-plus-medical me-1'></i> Nueva Inscripción
-                                    </a>
-                                </div>
+                                 <!-- Botón Nueva Inscripción -->
+                                 <div class="mb-2">
+                                     <?php if ($_SESSION['idPerfil'] != 13): ?>
+                                         <a href="nuevo_inscripcion.php" id="btnNuevoRegistro" class="btn btn-danger d-flex align-items-center">
+                                             <i class='bx bx-plus-medical me-1'></i> Nueva Inscripción
+                                         </a>
+                                     <?php endif; ?>
+                                 </div>
                             </div>
 
                             <!-- 🔹 Línea inferior: Buscador, filtros (nivel/curso/sección) y entradas -->

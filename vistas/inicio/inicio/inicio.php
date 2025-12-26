@@ -62,14 +62,17 @@ $todosLosPerfiles = $stmtPerfiles->fetchAll(PDO::FETCH_COLUMN);
 $prioridades = [
     1 => 1,  // Administrador
     6 => 2,  // Director
+    11 => 2, // Sub-director
     7 => 3,  // Control de Estudios
+    12 => 3, // Dirección
     8 => 4,  // Coordinador Inicial
     9 => 4,  // Coordinador Primaria
     10 => 4, // Coordinador Media General
-    2 => 5,  // Docente
-    4 => 6,  // Representante
-    5 => 7,  // Contacto de Emergencia
-    3 => 8   // Estudiante
+    13 => 5, // Psicólogo
+    2 => 6,  // Docente
+    4 => 7,  // Representante
+    5 => 8,  // Contacto de Emergencia
+    3 => 9   // Estudiante
 ];
 
 // Encontrar el perfil con mayor prioridad
@@ -86,7 +89,7 @@ foreach ($todosLosPerfiles as $perfil) {
 // === DETERMINAR MODO DE VISTA SEGÚN SESIÓN ===
 // Si menu_modo está en sesión (establecido por menu.php), usarlo
 // Si no, usar el perfil prioritario para determinarlo
-$perfilesInternos = [1, 2, 6, 7, 8, 9, 10];
+$perfilesInternos = [1, 2, 6, 7, 8, 9, 10, 11, 12, 13];
 $perfilesRepresentante = [4, 5];
 $tienePerfilInterno = !empty(array_intersect($todosLosPerfiles, $perfilesInternos));
 $tienePerfilRepresentante = !empty(array_intersect($todosLosPerfiles, $perfilesRepresentante));
@@ -98,8 +101,8 @@ if (!isset($_SESSION['menu_modo'])) {
 
 $menuModo = $_SESSION['menu_modo'];
 
-// Lógica del Dashboard (Admin, Director) - Solo si está en modo admin
-$perfilesConDashboard = [1, 6];
+// Lógica del Dashboard (Admin, Director, Sub-director) - Solo si está en modo admin
+$perfilesConDashboard = [1, 6, 11];
 $showDashboard = ($menuModo === 'admin') && in_array($perfilPrioritario, $perfilesConDashboard);
 
 // Mostrar interfaz de representante si está en modo representante
@@ -385,9 +388,11 @@ if ($showDashboard) {
                 <a href="../../inscripciones/inscripcion/inscripcion.php" class="btn btn-lg btn-danger px-4 shadow-sm">
                     <i class="fas fa-edit me-2"></i>Insc. Pendientes
                 </a>
-                <a href="../../estudiantes/estudiante/estudiante.php" class="btn btn-lg btn-outline-secondary px-4 shadow-sm">
-                    <i class="fas fa-users me-2"></i>Estudiantes
-                </a>
+                <?php if ($perfilId != 13): ?>
+                    <a href="../../estudiantes/estudiante/estudiante.php" class="btn btn-lg btn-outline-secondary px-4 shadow-sm">
+                        <i class="fas fa-users me-2"></i>Estudiantes
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </main>
