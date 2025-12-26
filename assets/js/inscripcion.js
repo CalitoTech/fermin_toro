@@ -129,57 +129,57 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                         method: 'POST',
                         body: formData
                     })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.success) {
-                            let mensaje = data.message || 'Estado actualizado correctamente';
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.success) {
+                                let mensaje = data.message || 'Estado actualizado correctamente';
 
-                            if (data.cambioAutomatico) {
-                                mensaje += '\nSe asignó automáticamente a la sección recomendada';
+                                if (data.cambioAutomatico) {
+                                    mensaje += '\nSe asignó automáticamente a la sección recomendada';
+                                }
+
+                                if (data.alertaCapacidad && data.alertaCapacidad.trim() !== '') {
+                                    mensaje += '\n\n⚠️ ' + data.alertaCapacidad;
+                                }
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: '¡Hecho!',
+                                    text: mensaje,
+                                    timer: 2000,
+                                    showConfirmButton: true
+                                });
+
+                                actualizarBarraStatus(nuevoId);
+
+                                if (nuevoNombre.toLowerCase().includes('rechazado')) {
+                                    setTimeout(() => {
+                                        transformarAModoRechazado();
+                                    }, 100);
+                                }
+
+                                const cambiosMayores = nuevoNombre.toLowerCase().includes('rechazado');
+
+                                if (cambiosMayores) {
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 2000);
+                                }
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: data.message
+                                });
                             }
-
-                            if (data.alertaCapacidad && data.alertaCapacidad.trim() !== '') {
-                                mensaje += '\n\n⚠️ ' + data.alertaCapacidad;
-                            }
-
-                            Swal.fire({
-                                icon: 'success',
-                                title: '¡Hecho!',
-                                text: mensaje,
-                                timer: 2000,
-                                showConfirmButton: true
-                            });
-
-                            actualizarBarraStatus(nuevoId);
-
-                            if (nuevoNombre.toLowerCase().includes('rechazado')) {
-                                setTimeout(() => {
-                                    transformarAModoRechazado();
-                                }, 100);
-                            }
-
-                            const cambiosMayores = nuevoNombre.toLowerCase().includes('rechazado');
-
-                            if (cambiosMayores) {
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 2000);
-                            }
-                        } else {
+                        })
+                        .catch(() => {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
-                                text: data.message
+                                text: 'No se pudo conectar con el servidor'
                             });
-                        }
-                    })
-                    .catch(() => {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'No se pudo conectar con el servidor'
                         });
-                    });
                 }
             });
         });
@@ -189,7 +189,7 @@ function manejarStatusBar(idInscripcion, idInscrito) {
     if (estaEnModoRechazado) {
         const rejectedStep = document.querySelector('.status-step.rejected-mode');
         rejectedStep.style.cursor = 'default';
-        rejectedStep.addEventListener('click', function(e) {
+        rejectedStep.addEventListener('click', function (e) {
             e.preventDefault();
             e.stopPropagation();
 
@@ -209,21 +209,21 @@ function transformarAModoRechazado() {
     const statusBar = document.querySelector('.status-bar');
     const todosStatus = document.querySelectorAll('.status-step');
     const lineas = document.querySelectorAll('.status-line');
-    
+
     // Ocultar todos los elementos
     todosStatus.forEach(step => {
         if (!step.classList.contains('rejected-mode')) {
             step.style.display = 'none';
         }
     });
-    
+
     lineas.forEach(linea => {
         linea.style.display = 'none';
     });
-    
+
     // Crear o mostrar el modo rechazado
     let rejectedStep = document.querySelector('.status-step.rejected-mode');
-    
+
     if (!rejectedStep) {
         rejectedStep = document.createElement('div');
         rejectedStep.className = 'status-step rejected-mode active';
@@ -243,11 +243,11 @@ function transformarAModoRechazado() {
     } else {
         rejectedStep.style.display = 'flex';
     }
-    
+
     // Centrar y ajustar estilos
     statusBar.style.justifyContent = 'center';
     statusBar.classList.add('rejected-mode-active');
-    
+
     // Deshabilitar futuros clics
     statusBar.style.pointerEvents = 'none';
 }
@@ -257,14 +257,14 @@ function actualizarBarraStatus(nuevoId) {
     document.querySelectorAll('.status-step').forEach(step => {
         // Saltar si es modo rechazado
         if (step.classList.contains('rejected-mode')) return;
-        
+
         const stepId = parseInt(step.dataset.id);
         const icon = step.querySelector('.status-icon i');
-        
+
         // Resetear
         step.classList.remove('active', 'completed');
         if (icon) icon.style.color = '';
-        
+
         // Aplicar nuevo estado
         if (stepId === nuevoId) {
             step.classList.add('active');
@@ -273,12 +273,12 @@ function actualizarBarraStatus(nuevoId) {
             step.classList.add('completed');
             if (icon) icon.style.color = '#28a745';
         }
-        
+
         // Actualizar iconos
         if (icon) {
             icon.className = stepId <= nuevoId ? 'fas fa-check-circle' : 'fas fa-circle';
         }
-        
+
         // Ocultar rechazado si ahora está inscrito
         if (nuevoId === 11) { // ID_INSCRITO
             const rechazadoStep = document.querySelector('.status-step[data-id="12"]');
@@ -291,7 +291,7 @@ function actualizarBarraStatus(nuevoId) {
             }
         }
     });
-    
+
     // Forzar repaint para asegurar las transiciones
     document.body.offsetHeight;
 }
@@ -307,12 +307,15 @@ function manejarRequisitos(idInscripcion) {
     const botonesIndividuales = document.querySelectorAll('.guardar-individual');
 
     function actualizarContador() {
+        if (!contador || !checkboxes.length) return;
         const seleccionados = document.querySelectorAll('.requisito-checkbox:checked').length;
         const total = checkboxes.length;
         contador.textContent = `${seleccionados}/${total} seleccionados`;
     }
 
     function verificarCambios() {
+        if (!guardarCambios) return;
+
         let hayCambios = false;
         checkboxes.forEach(checkbox => {
             const estadoOriginal = parseInt(checkbox.getAttribute('data-original'));
@@ -333,31 +336,34 @@ function manejarRequisitos(idInscripcion) {
     });
 
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
+        checkbox.addEventListener('change', function () {
             actualizarContador();
             verificarCambios();
         });
     });
 
-    document.getElementById('descartar-cambios').addEventListener('click', function() {
-        checkboxes.forEach(checkbox => {
-            const estadoOriginal = parseInt(checkbox.getAttribute('data-original'));
-            checkbox.checked = estadoOriginal === 1;
-        });
-        actualizarContador();
-        verificarCambios();
+    const btnDescartar = document.getElementById('descartar-cambios');
+    if (btnDescartar) {
+        btnDescartar.addEventListener('click', function () {
+            checkboxes.forEach(checkbox => {
+                const estadoOriginal = parseInt(checkbox.getAttribute('data-original'));
+                checkbox.checked = estadoOriginal === 1;
+            });
+            actualizarContador();
+            verificarCambios();
 
-        Swal.fire({
-            icon: 'info',
-            title: 'Cambios descartados',
-            text: 'Se han restaurado los valores originales',
-            timer: 1500,
-            showConfirmButton: true
+            Swal.fire({
+                icon: 'info',
+                title: 'Cambios descartados',
+                text: 'Se han restaurado los valores originales',
+                timer: 1500,
+                showConfirmButton: true
+            });
         });
-    });
+    }
 
     botonesIndividuales.forEach(boton => {
-        boton.addEventListener('click', function() {
+        boton.addEventListener('click', function () {
             const idRequisito = this.getAttribute('data-requisito');
             const cumplido = this.getAttribute('data-cumplido');
 
@@ -373,89 +379,91 @@ function manejarRequisitos(idInscripcion) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `action=toggleRequisito&idInscripcion=${idInscripcion}&idRequisito=${idRequisito}&cumplido=${cumplido}`
             })
-            .then(res => res.json())
-            .then(data => {
-                Swal.close();
+                .then(res => res.json())
+                .then(data => {
+                    Swal.close();
 
-                if (data.success) {
-                    const checkbox = document.getElementById(`req-${idRequisito}`);
-                    checkbox.checked = cumplido === '1';
-                    checkbox.setAttribute('data-original', cumplido);
+                    if (data.success) {
+                        const checkbox = document.getElementById(`req-${idRequisito}`);
+                        checkbox.checked = cumplido === '1';
+                        checkbox.setAttribute('data-original', cumplido);
 
-                    this.setAttribute('data-cumplido', cumplido === '1' ? '0' : '1');
-                    this.innerHTML = cumplido === '1' 
-                        ? '<i class="fas fa-times me-1"></i> Desmarcar' 
-                        : '<i class="fas fa-check me-1"></i> Marcar';
+                        this.setAttribute('data-cumplido', cumplido === '1' ? '0' : '1');
+                        this.innerHTML = cumplido === '1'
+                            ? '<i class="fas fa-times me-1"></i> Desmarcar'
+                            : '<i class="fas fa-check me-1"></i> Marcar';
 
-                    actualizarContador();
-                    verificarCambios();
+                        actualizarContador();
+                        verificarCambios();
 
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Actualizado!',
+                            text: data.message,
+                            timer: 1500,
+                            showConfirmButton: true
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
                     Swal.fire({
-                        icon: 'success',
-                        title: '¡Actualizado!',
-                        text: data.message,
-                        timer: 1500,
-                        showConfirmButton: true
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message
                     });
-                } else {
-                    throw new Error(data.message);
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.message
                 });
-            });
         });
     });
 
-    formRequisitos.addEventListener('submit', function(e) {
-        e.preventDefault();
+    if (formRequisitos) {
+        formRequisitos.addEventListener('submit', function (e) {
+            e.preventDefault();
 
-        Swal.fire({
-            title: 'Guardando...',
-            text: 'Actualizando múltiples requisitos',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
-
-        const formData = new FormData(this);
-
-        fetch('/fermin_toro/controladores/InscripcionController.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            Swal.close();
-
-            if (data.success) {
-                checkboxes.forEach(checkbox => {
-                    checkbox.setAttribute('data-original', checkbox.checked ? 1 : 0);
-                });
-                verificarCambios();
-
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Guardado!',
-                    text: data.message,
-                    timer: 2000,
-                    showConfirmButton: true
-                });
-            } else {
-                throw new Error(data.message);
-            }
-        })
-        .catch(error => {
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message
+                title: 'Guardando...',
+                text: 'Actualizando múltiples requisitos',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
             });
+
+            const formData = new FormData(this);
+
+            fetch('/fermin_toro/controladores/InscripcionController.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    Swal.close();
+
+                    if (data.success) {
+                        checkboxes.forEach(checkbox => {
+                            checkbox.setAttribute('data-original', checkbox.checked ? 1 : 0);
+                        });
+                        verificarCambios();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Guardado!',
+                            text: data.message,
+                            timer: 2000,
+                            showConfirmButton: true
+                        });
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message
+                    });
+                });
         });
-    });
+    }
 
     actualizarContador();
     // Evaluar inmediatamente si hay cambios (no debería haberlos al cargar)
@@ -477,65 +485,78 @@ function manejarCambioSeccion(idInscripcion) {
     if (!btnCambiarSeccion) return;
 
     // Mostrar/ocultar selector
-    btnCambiarSeccion.addEventListener('click', function() {
-        selectorSeccion.style.display = selectorSeccion.style.display === 'none' ? 'block' : 'none';
+    btnCambiarSeccion.addEventListener('click', function () {
+        if (selectorSeccion) {
+            selectorSeccion.style.display = selectorSeccion.style.display === 'none' ? 'block' : 'none';
+        }
     });
 
     // Cancelar cambio
-    btnCancelarCambio.addEventListener('click', function() {
-        selectorSeccion.style.display = 'none';
-        selectNuevaSeccion.value = '';
-        infoSeccion.style.display = 'none';
-    });
+    if (btnCancelarCambio) {
+        btnCancelarCambio.addEventListener('click', function () {
+            selectorSeccion.style.display = 'none';
+            if (selectNuevaSeccion) selectNuevaSeccion.value = '';
+            if (infoSeccion) infoSeccion.style.display = 'none';
+        });
+    }
 
     // Mostrar información de la sección seleccionada
-        selectNuevaSeccion.addEventListener('change', function() {
-        if (this.value) {
-            const option = this.options[this.selectedIndex];
-            const capacidad = option.getAttribute('data-capacidad') || '0';
-            const estudiantes = option.getAttribute('data-estudiantes') || '0';
-            const urbanismo = option.getAttribute('data-urbanismo') || '0';
-            
-            document.getElementById('info-capacidad').textContent = capacidad;
-            document.getElementById('info-ocupacion').textContent = `${estudiantes}/${capacidad}`;
-            document.getElementById('info-urbanismo').textContent = urbanismo;
-            
-            infoSeccion.style.display = 'block';
-        } else {
-            infoSeccion.style.display = 'none';
-        }
-    });
+    if (selectNuevaSeccion) {
+        selectNuevaSeccion.addEventListener('change', function () {
+            if (this.value) {
+                const option = this.options[this.selectedIndex];
+                const capacidad = option.getAttribute('data-capacidad') || '0';
+                const estudiantes = option.getAttribute('data-estudiantes') || '0';
+                const urbanismo = option.getAttribute('data-urbanismo') || '0';
 
-    // Confirmar cambio de sección
-    btnConfirmarCambio.addEventListener('click', function() {
-        const nuevaSeccionId = selectNuevaSeccion.value;
-        const nuevaSeccionTexto = selectNuevaSeccion.options[selectNuevaSeccion.selectedIndex].text;
-        
-        if (!nuevaSeccionId) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Selección requerida',
-                text: 'Por favor selecciona una sección',
-                confirmButtonColor: '#c90000'
-            });
-            return;
-        }
+                const capEl = document.getElementById('info-capacidad');
+                const ocuEl = document.getElementById('info-ocupacion');
+                const urbEl = document.getElementById('info-urbanismo');
 
-        Swal.fire({
-            title: '¿Cambiar sección?',
-            html: `¿Estás seguro de cambiar la sección a:<br><strong>${nuevaSeccionTexto}</strong>?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, cambiar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#c90000',
-            cancelButtonColor: '#6c757d'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTexto);
+                if (capEl) capEl.textContent = capacidad;
+                if (ocuEl) ocuEl.textContent = `${estudiantes}/${capacidad}`;
+                if (urbEl) urbEl.textContent = urbanismo;
+
+                if (infoSeccion) infoSeccion.style.display = 'block';
+            } else {
+                if (infoSeccion) infoSeccion.style.display = 'none';
             }
         });
-    });
+    }
+
+    // Confirmar cambio de sección
+    if (btnConfirmarCambio) {
+        btnConfirmarCambio.addEventListener('click', function () {
+            if (!selectNuevaSeccion) return;
+            const nuevaSeccionId = selectNuevaSeccion.value;
+            const nuevaSeccionTexto = selectNuevaSeccion.options[selectNuevaSeccion.selectedIndex].text;
+
+            if (!nuevaSeccionId) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Selección requerida',
+                    text: 'Por favor selecciona una sección',
+                    confirmButtonColor: '#c90000'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: '¿Cambiar sección?',
+                html: `¿Estás seguro de cambiar la sección a:<br><strong>${nuevaSeccionTexto}</strong>?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#c90000',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTexto);
+                }
+            });
+        });
+    }
 }
 
 // Función para cambiar la sección via AJAX
@@ -556,35 +577,35 @@ function cambiarSeccionInscripcion(idInscripcion, nuevaSeccionId, nuevaSeccionTe
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        Swal.close();
-        
-        if (data.success) {
-            // Actualizar la UI
-            document.getElementById('texto-seccion-actual').textContent = nuevaSeccionTexto.split(' - ')[0];
-            document.getElementById('selector-seccion').style.display = 'none';
-            document.getElementById('select-nueva-seccion').value = '';
-            document.getElementById('info-seccion').style.display = 'none';
+        .then(response => response.json())
+        .then(data => {
+            Swal.close();
 
+            if (data.success) {
+                // Actualizar la UI
+                document.getElementById('texto-seccion-actual').textContent = nuevaSeccionTexto.split(' - ')[0];
+                document.getElementById('selector-seccion').style.display = 'none';
+                document.getElementById('select-nueva-seccion').value = '';
+                document.getElementById('info-seccion').style.display = 'none';
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Sección cambiada!',
+                    text: 'La sección se ha actualizado correctamente',
+                    timer: 2000,
+                    showConfirmButton: true
+                });
+            } else {
+                throw new Error(data.message || 'Error al cambiar sección');
+            }
+        })
+        .catch(error => {
             Swal.fire({
-                icon: 'success',
-                title: '¡Sección cambiada!',
-                text: 'La sección se ha actualizado correctamente',
-                timer: 2000,
-                showConfirmButton: true
+                icon: 'error',
+                title: 'Error',
+                text: error.message
             });
-        } else {
-            throw new Error(data.message || 'Error al cambiar sección');
-        }
-    })
-    .catch(error => {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message
         });
-    });
 }
 
 // ==============================
@@ -606,7 +627,7 @@ function manejarValidacionPago(idInscripcion, idInscrito) {
     });
 
     // Validar al presionar Enter en el input
-    inputCodigoPago.addEventListener('keypress', function(e) {
+    inputCodigoPago.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             btnConfirmarPago.click();
@@ -614,7 +635,7 @@ function manejarValidacionPago(idInscripcion, idInscrito) {
     });
 
     // Confirmar pago
-    btnConfirmarPago.addEventListener('click', async function() {
+    btnConfirmarPago.addEventListener('click', async function () {
         const codigoPago = inputCodigoPago.value.trim();
 
         // Validar que no esté vacío
@@ -900,11 +921,11 @@ function manejarHistorial(idInscripcion) {
     const historialContainer = document.getElementById('historial-container');
     const historialContent = document.getElementById('historial-content');
 
-    if (!btnToggleHistorial || !historialContainer) return;
+    if (!btnToggleHistorial || !historialContainer || !historialContent) return;
 
     let historialCargado = false;
 
-    btnToggleHistorial.addEventListener('click', async function() {
+    btnToggleHistorial.addEventListener('click', async function () {
         const isExpanded = historialContainer.classList.contains('show');
 
         if (!isExpanded && !historialCargado) {
@@ -915,7 +936,7 @@ function manejarHistorial(idInscripcion) {
                 const response = await fetch(`/fermin_toro/controladores/InscripcionController.php?action=obtenerHistorial&idInscripcion=${idInscripcion}`);
                 const data = await response.json();
 
-                if (data.success && data.historial.length > 0) {
+                if (data.success && data.historial && data.historial.length > 0) {
                     let html = '<div class="timeline-historial">';
                     data.historial.forEach((item, index) => {
                         const fecha = new Date(item.fecha_cambio);
@@ -956,30 +977,36 @@ function manejarHistorial(idInscripcion) {
         }
 
         // Toggle collapse y clase expanded para estilos
-        if (isExpanded) {
-            historialContainer.classList.remove('show');
-            btnToggleHistorial.classList.remove('expanded');
-        } else {
-            historialContainer.classList.add('show');
-            btnToggleHistorial.classList.add('expanded');
-        }
+        historialContainer.classList.toggle('show');
+        btnToggleHistorial.classList.toggle('expanded');
     });
 }
 
 // ==============================
 // Inicialización global
 // ==============================
-document.addEventListener('DOMContentLoaded', function () {
+function inicializarInscripcion() {
     if (typeof ID_INSCRIPCION !== 'undefined' && typeof ID_INSCRITO !== 'undefined') {
-        manejarStatusBar(ID_INSCRIPCION, ID_INSCRITO);
-        manejarRequisitos(ID_INSCRIPCION);
-        manejarCambioSeccion(ID_INSCRIPCION);
-        manejarValidacionPago(ID_INSCRIPCION, ID_INSCRITO);
-        manejarHistorial(ID_INSCRIPCION);
+        console.log('Inicializando scripts de inscripción...', { ID_INSCRIPCION, ID_INSCRITO });
+
+        try {
+            manejarStatusBar(ID_INSCRIPCION, ID_INSCRITO);
+            manejarRequisitos(ID_INSCRIPCION);
+            manejarCambioSeccion(ID_INSCRIPCION);
+            manejarValidacionPago(ID_INSCRIPCION, ID_INSCRITO);
+            manejarHistorial(ID_INSCRIPCION);
+            console.log('Scripts de inscripción inicializados correctamente.');
+        } catch (error) {
+            console.error('Error durante la inicialización de scripts:', error);
+        }
     } else {
-        console.error('Variables no definidas:', {
-            ID_INSCRIPCION: typeof ID_INSCRIPCION,
-            ID_INSCRITO: typeof ID_INSCRITO
-        });
+        console.warn('Variables ID_INSCRIPCION o ID_INSCRITO no definidas. Saltando inicialización.');
     }
-});
+}
+
+// Ejecutar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarInscripcion);
+} else {
+    inicializarInscripcion();
+}
