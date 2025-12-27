@@ -248,7 +248,7 @@ foreach ($statuses as $st) {
                                         <tr>
                                             <th>Código Insc.</th>
                                             <th>Estudiante</th>
-                                            <th>Responsable</th>
+                                            <th>Fecha Reunión</th>
                                             <th>Tipo</th>
                                             <th>Sección</th>
                                             <th>Año Escolar</th>
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         columns: [
             { label: 'Código Insc.', key: 'codigo_inscripcion' },
             { label: 'Estudiante', key: 'nombreCompleto' },
-            { label: 'Responsable', key: 'nombreResponsable' },
+            { label: 'Fecha Reunión', key: 'fechaReunionFormateada' },
             { label: 'Tipo', key: 'tipo_inscripcion' },
             { label: 'Sección', key: 'curso_seccion' },
             { label: 'Fecha Escolar', key: 'fecha_escolar' },
@@ -305,12 +305,28 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // === Añadimos campos auxiliares ===
-    config.data = allData.map(item => ({
-        ...item,
-        nombreCompleto: `${item.nombre_estudiante} ${item.apellido_estudiante}`,
-        nombreResponsable: `${item.nombre_responsable} ${item.apellido_responsable}`,
-        curso_seccion: `${item.curso} - ${item.seccion}`
-    }));
+    config.data = allData.map(item => {
+        // Formatear fecha de reunión
+        let fReunion = '<em class="text-muted">No programada</em>';
+        if (item.fecha_reunion) {
+            const date = new Date(item.fecha_reunion);
+            fReunion = date.toLocaleString('es-VE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            }).toUpperCase();
+        }
+
+        return {
+            ...item,
+            nombreCompleto: `${item.nombre_estudiante} ${item.apellido_estudiante} <br><small class="text-muted">C.I: ${item.cedula_estudiante || 'N/A'}</small>`,
+            fechaReunionFormateada: fReunion,
+            curso_seccion: `${item.curso} - ${item.seccion}`
+        };
+    });
 
     window.tablaInscripciones = new TablaDinamica(config);
 
@@ -421,7 +437,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             let matchBuscar = true;
             if (textoBuscar) {
-                const combo = `${item.codigo_inscripcion} ${item.nombre_estudiante} ${item.apellido_estudiante} ${item.nombre_responsable} ${item.apellido_responsable} ${item.curso} ${item.seccion}`.toLowerCase();
+                const combo = `${item.codigo_inscripcion} ${item.nombre_estudiante} ${item.apellido_estudiante} ${item.cedula_estudiante} ${item.curso} ${item.seccion}`.toLowerCase();
                 matchBuscar = combo.includes(textoBuscar);
             }
 
@@ -442,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         });
 
-        window.tablaInscripciones.updateData(filtered);
+        window.tablaInscripciones.updateData(filtered, true);
     }
 
     // === FUNCIÓN PARA ACTUALIZAR CONTEOS DE BADGES ===

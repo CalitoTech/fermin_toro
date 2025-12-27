@@ -391,6 +391,9 @@ if (empty($action)) {
         case 'actualizarFechaReunion':
             actualizarFechaReunion($conexion);
             break;
+        case 'cancelarInscripcion':
+            cancelarInscripcion($conexion);
+            break;
         case 'verificar':
             $anio = intval($_GET['anio'] ?? 0);
             $cedula = trim($_GET['cedula'] ?? '');
@@ -1638,7 +1641,9 @@ function cambiarStatus($conexion) {
             exit();
         }
 
-        $resultado = activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $idUsuario);
+        $silent = isset($_POST['silent']) && ($_POST['silent'] === 'true' || $_POST['silent'] === '1');
+
+        $resultado = activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $idUsuario, $silent);
         echo json_encode($resultado);
         exit();
 
@@ -1648,7 +1653,7 @@ function cambiarStatus($conexion) {
     }
 }
 
-function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $idUsuario = null) {
+function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $idUsuario = null, $silent = false) {
     try {
         // Obtener datos de inscripción
         $queryInscripcion = "SELECT i.*, e.IdUrbanismo, cs.IdCurso, i.IdEstudiante, i.IdStatus as status_actual
@@ -1671,18 +1676,11 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
         $seccionNueva = null;
 
         // ======================================================
-        // === ACTIVAR ESTUDIANTE Y REPRESENTANTES ===============
+        // === ACTIVAR REPRESENTANTES Y CREAR CREDENCIALES =======
+        // === Esto permite acceso al portal apenas solicitan ===
         // ======================================================
-        if ($nuevoStatus == 11) { // 11 = inscrito
+        if (!in_array($nuevoStatus, [12, 13])) { 
             $idEstudiante = $inscripcionData['IdEstudiante'];
-
-            // Activar estudiante
-            $conexion->prepare("UPDATE persona 
-                SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 
-                WHERE IdPersona = :id")
-                ->execute([':id' => $idEstudiante]);
-
-            // Activar representantes
             $stmtRep = $conexion->prepare("
                 SELECT r.IdPersona, p.cedula,
                     CASE WHEN dp.IdPerfil = 5 THEN 1 ELSE 0 END AS es_contacto_emergencia
@@ -1699,23 +1697,38 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
                 $cedula = trim($rep['cedula']);
                 $esEmergencia = (int)$rep['es_contacto_emergencia'];
 
-                // Activar persona
-                $conexion->prepare("UPDATE persona 
-                    SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 
-                    WHERE IdPersona = :id")
-                    ->execute([':id' => $idPersona]);
-
-                // Crear credenciales si no existen
                 if ($idPersona != $idEstudiante && !$esEmergencia) {
-                    $persona = new Persona($conexion);
-                    $persona->IdPersona = $idPersona;
-                    $credenciales = $persona->obtenerCredenciales();
+                    // Activar acceso para que puedan loguear
+                    $conexion->prepare("UPDATE persona 
+                        SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 
+                        WHERE IdPersona = :id")
+                        ->execute([':id' => $idPersona]);
+
+                    // Crear credenciales si no existen
+                    $personaCred = new Persona($conexion); // Cambiado nombre para evitar conflicto si se usa abajo
+                    $personaCred->IdPersona = $idPersona;
+                    $credenciales = $personaCred->obtenerCredenciales();
 
                     if (empty($credenciales['usuario']) || empty($credenciales['password'])) {
-                        $persona->actualizarCredenciales($cedula, $cedula);
+                        $personaCred->actualizarCredenciales($cedula, $cedula);
                     }
                 }
             }
+        }
+
+        // ======================================================
+        // === ACCIONES ESPECÍFICAS POR STATUS ===================
+        // ======================================================
+        if ($nuevoStatus == 11) { // 11 = inscrito
+            $idEstudiante = $inscripcionData['IdEstudiante'];
+
+            // Activar estudiante (solo cuando ya está inscrito formalmente)
+            $conexion->prepare("UPDATE persona 
+                SET IdEstadoAcceso = 1, IdEstadoInstitucional = 1 
+                WHERE IdPersona = :id")
+                ->execute([':id' => $idEstudiante]);
+
+            // (La activación de representantes ya se hizo arriba para permitir acceso temprano)
 
             // ======================================================
             // === CHEQUEAR CAPACIDAD DE AULAS ======================
@@ -1838,13 +1851,15 @@ function activarInscripcionCompleta($conexion, $idInscripcion, $nuevoStatus, $id
         // ======================================================
         // === ENVIAR WHATSAPP ==================================
         // ======================================================
-        try {
-            require_once __DIR__ . '/WhatsAppController.php';
-            $whatsappController = new WhatsAppController($conexion);
-            $whatsappController->enviarMensajesCambioEstado($idInscripcion, $nuevoStatus, $estadoAnterior);
-            $mensajesEnviados = true;
-        } catch (Exception $e) {
-            error_log("Error enviando WhatsApp (no crítico): " . $e->getMessage());
+        if (!$silent) {
+            try {
+                require_once __DIR__ . '/WhatsAppController.php';
+                $whatsappController = new WhatsAppController($conexion);
+                $whatsappController->enviarMensajesCambioEstado($idInscripcion, $nuevoStatus, $estadoAnterior);
+                $mensajesEnviados = true;
+            } catch (Exception $e) {
+                error_log("Error enviando WhatsApp (no crítico): " . $e->getMessage());
+            }
         }
 
         return [
@@ -2632,3 +2647,78 @@ function obtenerHistorial($conexion) {
     }
     exit();
 }
+
+/**
+ * Cancela una solicitud de inscripción (Status 13)
+ * Solo si no está inscrita (Status 11)
+ */
+function cancelarInscripcion($conexion) {
+    header('Content-Type: application/json');
+    
+    // Iniciar sesión si no está iniciada
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $idInscripcion = intval($_POST['idInscripcion'] ?? 0);
+    $idUsuario = $_SESSION['idPersona'] ?? null;
+
+    if ($idInscripcion <= 0) {
+        echo json_encode(['success' => false, 'message' => 'ID de inscripción inválido']);
+        exit();
+    }
+
+    try {
+        require_once __DIR__ . '/../modelos/Inscripcion.php';
+        $inscripcionModel = new Inscripcion($conexion);
+        
+        // Obtener datos actuales
+        $inscripcion = $inscripcionModel->obtenerPorId($idInscripcion);
+        if (!$inscripcion) {
+            throw new Exception("La inscripción no existe.");
+        }
+
+        // Validar que no esté inscrito
+        if ((int)$inscripcion['IdStatus'] === 11) {
+            throw new Exception("No se puede cancelar una inscripción que ya ha sido formalizada.");
+        }
+
+        // Ya está cancelada
+        if ((int)$inscripcion['IdStatus'] === 13) {
+            echo json_encode(['success' => true, 'message' => 'La solicitud ya se encuentra cancelada.']);
+            exit();
+        }
+
+        // Actualizar status a 13 (Cancelada)
+        $sql = "UPDATE inscripcion SET IdStatus = 13 WHERE IdInscripcion = :id";
+        $stmt = $conexion->prepare($sql);
+        $stmt->execute([':id' => $idInscripcion]);
+
+        // Registrar en historial
+        require_once __DIR__ . '/../modelos/InscripcionHistorial.php';
+        InscripcionHistorial::registrarCambio(
+            $conexion,
+            $idInscripcion,
+            'IdStatus',
+            $inscripcion['IdStatus'],
+            13,
+            "Solicitud cancelada por el representante",
+            $idUsuario
+        );
+
+        // Enviar WhatsApp de cancelación
+        try {
+            require_once __DIR__ . '/WhatsAppController.php';
+            $whatsapp = new WhatsAppController($conexion);
+            $whatsapp->enviarMensajesCambioEstado($idInscripcion, 13, $inscripcion['IdStatus']);
+        } catch (Exception $e) {
+            error_log("Error enviando WhatsApp de cancelación: " . $e->getMessage());
+        }
+
+        echo json_encode(['success' => true, 'message' => 'Solicitud cancelada correctamente.']);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit();
+}
+

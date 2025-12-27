@@ -175,7 +175,10 @@ $data_options = [
                                     <label for="IdStatus" class="form-label">Status</label>
                                     <select class="form-select" id="IdStatus" name="idStatus" required>
                                         <option value="">Seleccione un status</option>
-                                        <?php foreach ($listaStatus as $status): ?>
+                                        <?php foreach ($listaStatus as $status): 
+                                            // No permitir crear inscripciones directamente en Rechazada (12) o Cancelada (13)
+                                            if (in_array($status['IdStatus'], [12, 13])) continue;
+                                        ?>
                                             <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
                                                 <?= htmlspecialchars($status['status']) ?>
                                             </option>
@@ -327,7 +330,10 @@ $data_options = [
                                     </label>
                                     <select id="statusReinscripcion" class="form-control" required>
                                         <option value="">Seleccione un status</option>
-                                        <?php foreach ($listaStatus as $status): ?>
+                                        <?php foreach ($listaStatus as $status): 
+                                            // No permitir crear inscripciones directamente en Rechazada (12) o Cancelada (13)
+                                            if (in_array($status['IdStatus'], [12, 13])) continue;
+                                        ?>
                                             <option value="<?= htmlspecialchars($status['IdStatus']) ?>">
                                                 <?= htmlspecialchars($status['status']) ?>
                                             </option>

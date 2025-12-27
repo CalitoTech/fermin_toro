@@ -585,6 +585,33 @@ function tieneGrupoInteresActivo($idEstudiante, $idFechaEscolar, $conn) {
                                             </div>
                                         </div>
                                     </div>
+
+                                    <?php 
+                                    $tieneInscripcion = tieneInscripcionEnAnoActivo($estudiante);
+                                    if ($tieneInscripcion): 
+                                        $idStatus = intval($estudiante['IdStatus']);
+                                        $bgStatus = '#ffc107'; // Amarillo por defecto (Pendiente/Proceso)
+                                        $textStatus = 'black';
+                                        
+                                        if ($idStatus == 11) { $bgStatus = '#28a745'; $textStatus = 'white'; } // Inscrito - Verde
+                                        elseif ($idStatus == 13) { $bgStatus = '#6c757d'; $textStatus = 'white'; } // Cancelada - Gris
+                                        elseif (in_array($idStatus, [9, 10])) { $bgStatus = '#17a2b8'; $textStatus = 'white'; } // Aprobado/Pendiente Pago - Azul
+                                        elseif ($idStatus == 12) { $bgStatus = '#dc3545'; $textStatus = 'white'; } // Rechazada - Rojo
+                                    ?>
+                                    <div class="info-row">
+                                        <div class="info-icon">
+                                            <i class='bx bx-info-circle'></i>
+                                        </div>
+                                        <div class="info-content">
+                                            <span class="info-label">Status Solicitud</span>
+                                            <div class="info-value">
+                                                <span class="badge" style="background-color: <?= $bgStatus ?>; color: <?= $textStatus ?>;">
+                                                    <?= mostrar($estudiante['status_inscripcion']) ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="student-footer">
@@ -593,6 +620,14 @@ function tieneGrupoInteresActivo($idEstudiante, $idFechaEscolar, $conn) {
                                             <i class='bx bx-show'></i>
                                             Ver Detalles Completos
                                         </a>
+
+                                        <?php if ($tieneInscripcion && !in_array($estudiante['IdStatus'], [11, 12, 13])): ?>
+                                            <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2" onclick="cancelarInscripcion(<?= $estudiante['IdInscripcion'] ?>, '<?= addslashes($estudiante['nombre'] . ' ' . $estudiante['apellido']) ?>')">
+                                                <i class='bx bx-x-circle'></i>
+                                                Cancelar Solicitud
+                                            </button>
+                                        <?php endif; ?>
+
                                         <?php
                                         $tieneInscripcion = tieneInscripcionEnAnoActivo($estudiante);
 
@@ -723,6 +758,70 @@ function tieneGrupoInteresActivo($idEstudiante, $idFechaEscolar, $conn) {
             confirmButtonText: 'Aceptar'
         });
     <?php endif; ?>
+
+    function cancelarInscripcion(idInscripcion, nombreEstudiante) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Esta acción cancelará la solicitud de cupo para ${nombreEstudiante}. No podrá deshacerse.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#c90000',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, cancelar solicitud',
+            cancelButtonText: 'No, mantener'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar cargando
+                Swal.fire({
+                    title: 'Procesando...',
+                    text: 'Espere un momento por favor',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Enviar petición al controlador
+                const formData = new FormData();
+                formData.append('action', 'cancelarInscripcion');
+                formData.append('idInscripcion', idInscripcion);
+
+                fetch('../../../controladores/InscripcionController.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Cancelada!',
+                            text: data.message,
+                            confirmButtonColor: '#28a745'
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message,
+                            confirmButtonColor: '#c90000'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'No se pudo comunicar con el servidor',
+                        confirmButtonColor: '#c90000'
+                    });
+                });
+            }
+        });
+    }
 </script>
 
 <?php include '../../layouts/footer.php'; ?>

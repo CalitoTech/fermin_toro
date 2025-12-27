@@ -230,26 +230,32 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                         $mostrarRechazado = true;
                         $idStatusInscrito = 11;
                         $idStatusRechazado = 12;
+                        $idStatusCancelada = 13;
                         $estaRechazado = $inscripcion['IdStatus'] == $idStatusRechazado;
+                        $estaCancelada = $inscripcion['IdStatus'] == $idStatusCancelada;
                         
-                        if ($estaRechazado): ?>
+                        if ($estaRechazado || $estaCancelada): ?>
                             <div class="status-step rejected-mode active" 
-                                data-id="<?= $idStatusRechazado ?>" 
-                                data-nombre="Rechazada">
+                                data-id="<?= $estaRechazado ? $idStatusRechazado : $idStatusCancelada ?>" 
+                                data-nombre="<?= $estaRechazado ? 'Rechazada' : 'Cancelada' ?>">
                                 <span class="status-icon">
-                                    <i class="fas fa-times-circle"></i>
+                                    <i class="fas <?= $estaRechazado ? 'fa-times-circle' : 'fa-ban' ?>"></i>
                                 </span>
-                                <span class="status-label">Rechazada</span>
+                                <span class="status-label"><?= $estaRechazado ? 'Rechazada' : 'Cancelada' ?></span>
                                 <div class="rejected-message">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Inscripción rechazada
+                                    <i class="fas <?= $estaRechazado ? 'fa-exclamation-triangle' : 'fa-info-circle' ?> me-2"></i>
+                                    Inscripción <?= $estaRechazado ? 'rechazada' : 'cancelada' ?>
                                 </div>
                             </div>
                         <?php else: ?>
                             <?php foreach ($todosStatus as $index => $status): 
                                 $esInscrito = $inscripcion['IdStatus'] == $idStatusInscrito;
                                 $esRechazado = $status['status'] === 'Rechazada' || $status['IdStatus'] == $idStatusRechazado;
+                                $esCancelada = $status['IdStatus'] == $idStatusCancelada;
                                 
+                                // No mostrar 'Cancelada' a menos que sea el estado actual
+                                if ($esCancelada) continue;
+
                                 if ($esInscrito && $esRechazado) {
                                     $mostrarRechazado = false;
                                     continue;
@@ -293,6 +299,38 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
+
+                    <?php if ($esSuperAdmin && ($estaRechazado || $estaCancelada)): ?>
+                    <div class="alert alert-warning border-warning shadow-sm d-flex justify-content-between align-items-center mb-4 reactivar-panel">
+                        <div class="d-flex align-items-center">
+                            <div class="reactivar-icon-bg me-3">
+                                <i class="fas fa-unlock-alt text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">Modo de Recuperación Administrativa</h6>
+                                <p class="mb-0 text-muted small">Como superusuario, puedes reactivar esta inscripción cambiando su estado manualmente sin enviar notificaciones.</p>
+                            </div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-warning dropdown-toggle shadow-sm" type="button" id="dropdownReactivar" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-redo me-1"></i> Reactivar / Cambiar Estado
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" aria-labelledby="dropdownReactivar">
+                                <li><h6 class="dropdown-header text-uppercase small fw-bold">Seleccionar nuevo estado</h6></li>
+                                <?php foreach ($todosStatus as $st): 
+                                    if (in_array($st['IdStatus'], [12, 13])) continue;
+                                ?>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center btn-override-status" href="#" data-id="<?= $st['IdStatus'] ?>" data-nombre="<?= htmlspecialchars($st['status']) ?>">
+                                        <i class="fas fa-arrow-right me-2 text-muted small"></i>
+                                        <?= htmlspecialchars($st['status']) ?>
+                                    </a>
+                                </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Información de modificación + Historial -->
                     <div class="row mb-3">
@@ -1062,6 +1100,33 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
     font-size: 0.875rem;
     color: #0d6efd;
 }
+
+/* Panel de reactivación */
+.reactivar-panel {
+    background: #fffdf5;
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.reactivar-icon-bg {
+    width: 45px;
+    height: 45px;
+    background: #fff3cd;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.btn-override-status:hover {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.dropdown-item.btn-override-status i {
+    width: 20px;
+}
 </style>
 
 <?php include '../../layouts/footer.php'; ?>
@@ -1180,6 +1245,77 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
     const ES_ANO_ESCOLAR_ACTIVO = <?= $esAñoEscolarActivo ? 'true' : 'false' ?>;
 </script>
 <script src="../../../assets/js/inscripcion.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejo de reactivación por superusuario
+    const btnOverrides = document.querySelectorAll('.btn-override-status');
+    btnOverrides.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const nuevoId = this.dataset.id;
+            const nuevoNombre = this.dataset.nombre;
+
+            Swal.fire({
+                title: '¿Reactivar inscripción?',
+                html: `Vas a cambiar el estado a <strong>${nuevoNombre}</strong>.<br><br><small class="text-muted">Este cambio será silencioso (no se enviará mensaje de WhatsApp).</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, reactivar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                textColor: '#000'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Procesando...',
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('action', 'cambiarStatus');
+                    formData.append('idInscripcion', ID_INSCRIPCION);
+                    formData.append('nuevoStatus', nuevoId);
+                    formData.append('silent', 'true');
+
+                    fetch('../../../controladores/InscripcionController.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Inscripción reactivada',
+                                text: data.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: data.message
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo procesar la solicitud'
+                        });
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
 
 </body>
 </html>

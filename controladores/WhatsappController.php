@@ -368,7 +368,9 @@ class WhatsAppController {
                 'curso' => $curso,
                 'seccion' => $seccion,
                 'cedula_representante' => $cedulaRep,
-                'fecha_reunion' => $fechaReunion
+                'fecha_reunion' => $fechaReunion,
+                'usuario' => $representante['usuario'] ?? '',
+                'password' => $cedulaRep
             ];
 
             // Obtener requisitos si el mensaje los incluye (sin uniformes)

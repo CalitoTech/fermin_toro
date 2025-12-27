@@ -362,7 +362,8 @@ INSERT INTO `status` (`IdStatus`, `IdTipo_Status`, `status`) VALUES
 (9, 2, 'Aprobada para reunión'),
 (10, 2, 'En espera de pago'),
 (11, 2, 'Inscrito'),
-(12, 2, 'Rechazada');
+(12, 2, 'Rechazada'),
+(13, 2, 'Cancelada');
 
 CREATE TABLE parentesco (
     IdParentesco int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -763,7 +764,15 @@ Estimado(a) *{nombre_representante}*,
 
 La solicitud de inscripción de *{nombre_estudiante}* ha sido recibida y está en revisión inicial.
 
-Nuestro equipo administrativo verificará la documentación y le notificará los próximos pasos en un plazo de 48 horas hábiles.
+*🌐 Acceso al Portal:*
+Ya puede ingresar a nuestro portal para hacer seguimiento a su solicitud:
+
+👤 Usuario: {usuario}
+🔑 Contraseña: {contrasena}
+
+⚠️ *Importante:* Por seguridad, cambie su contraseña después de iniciar sesión por primera vez.
+
+{login_url}
 
 Código de Seguimiento: {codigo_inscripcion}',
 FALSE, TRUE);
@@ -825,14 +834,7 @@ Estimado(a) *{nombre_representante}*,
 Primera semana de noviembre
 
 *🌐 Información importante:*
-Ahora puede consultar el horario y demás información en nuestro sitio web.
-
-👤 Usuario: {cedula_representante}
-🔑 Contraseña: {cedula_representante}
-
-⚠️ *Importante:* Por seguridad, cambie su contraseña después de iniciar sesión por primera vez.
-
-{login_url}
+Ahora puede inscribir a su alumno en un grupo de interés.
 
 ¡Bienvenido(a) a nuestra familia fermintoriana!',
 FALSE, TRUE);
@@ -854,6 +856,20 @@ Luego de revisar la documentación de *{nombre_estudiante}*, lamentamos informar
 Horario de atención: Lunes a Viernes 7:00 AM - 3:00 PM
 
 Código de Seguimiento: {codigo_inscripcion}',
+FALSE, TRUE);
+
+-- Status 13: Cancelada
+INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
+(13, 'Solicitud Cancelada',
+'🚫 *Solicitud Cancelada*
+
+Estimado(a) *{nombre_representante}*,
+
+Le confirmamos que la solicitud de inscripción de *{nombre_estudiante}* ha sido cancelada correctamente.
+
+Si desea realizar una nueva solicitud más adelante, puede hacerlo a través de nuestro portal.
+
+Gracias por su interés en nuestra institución.',
 FALSE, TRUE);
 
 -- Índices para búsquedas rápidas
