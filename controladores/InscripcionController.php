@@ -2560,8 +2560,8 @@ function actualizarFechaReunion($conexion) {
             // Registrar en historial
             if ($fechaAnterior != $fecha) {
                 $descrip = $fechaAnterior 
-                    ? "Se cambió la fecha de reunión de " . date('d/m/Y', strtotime($fechaAnterior)) . " a " . date('d/m/Y', strtotime($fecha))
-                    : "Se asignó fecha de reunión para el " . date('d/m/Y', strtotime($fecha));
+                    ? "Se cambió la reunión del " . date('d/m/Y h:i A', strtotime($fechaAnterior)) . " al " . date('d/m/Y h:i A', strtotime($fecha))
+                    : "Se programó reunión para el " . date('d/m/Y h:i A', strtotime($fecha));
                 
                 InscripcionHistorial::registrarCambio(
                     $conexion,

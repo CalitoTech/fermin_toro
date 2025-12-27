@@ -210,6 +210,7 @@ if (!in_array(1, $todosLosPerfiles)) {
                                         <li><code>{curso}</code> - Nombre del curso</li>
                                         <li><code>{seccion}</code> - Sección asignada</li>
                                         <li><code>{fecha_reunion}</code> - Fecha de la reunión programada</li>
+                                        <li><code>{hora_reunion}</code> - Hora de la reunión programada</li>
                                     </ul>
                                 </div>
                                 <div class="col-md-6">

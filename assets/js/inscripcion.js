@@ -110,6 +110,8 @@ function manejarStatusBar(idInscripcion, idInscrito) {
                 // Limpiar modal
                 const inputFecha = document.getElementById('fecha-reunion');
                 if (inputFecha) inputFecha.value = '';
+                const inputHora = document.getElementById('hora-reunion');
+                if (inputHora) inputHora.value = '08:00';
                 const infoOcupacion = document.getElementById('info-ocupacion-reunion');
                 if (infoOcupacion) infoOcupacion.style.display = 'none';
 
@@ -851,6 +853,7 @@ async function procesarInscripcionConRepitiente(idInscripcion, codigoPago, repit
 function manejarFechaReunion(idInscripcion) {
     const modalElement = document.getElementById('modalFechaReunion');
     const inputFecha = document.getElementById('fecha-reunion');
+    const inputHora = document.getElementById('hora-reunion');
     const btnConfirmar = document.getElementById('btn-confirmar-fecha-reunion');
     const infoOcupacion = document.getElementById('info-ocupacion-reunion');
     const totalReuniones = document.getElementById('total-reuniones-dia');
@@ -858,7 +861,7 @@ function manejarFechaReunion(idInscripcion) {
     const btnEditar = document.getElementById('btn-editar-fecha-reunion');
     const textoFecha = document.getElementById('texto-fecha-reunion');
 
-    if (!modalElement || !inputFecha || !btnConfirmar) return;
+    if (!modalElement || !inputFecha || !inputHora || !btnConfirmar) return;
 
     const modal = new bootstrap.Modal(modalElement);
     let modoEdicion = false;
@@ -896,12 +899,16 @@ function manejarFechaReunion(idInscripcion) {
     // Confirmar Fecha
     btnConfirmar.addEventListener('click', async function () {
         const fecha = inputFecha.value;
-        if (!fecha) {
-            inputFecha.classList.add('is-invalid');
+        const hora = inputHora.value;
+        if (!fecha || !hora) {
+            if (!fecha) inputFecha.classList.add('is-invalid');
+            if (!hora) inputHora.classList.add('is-invalid');
             return;
         }
 
+        const datetime = `${fecha} ${hora}:00`;
         inputFecha.classList.remove('is-invalid');
+        inputHora.classList.remove('is-invalid');
         modal.hide();
 
         Swal.fire({
@@ -916,7 +923,7 @@ function manejarFechaReunion(idInscripcion) {
             const formData = new FormData();
             formData.append('action', 'actualizarFechaReunion');
             formData.append('idInscripcion', idInscripcion);
-            formData.append('fecha', fecha);
+            formData.append('fecha', datetime);
 
             const resFecha = await fetch('/fermin_toro/controladores/InscripcionController.php', {
                 method: 'POST',
@@ -949,7 +956,14 @@ function manejarFechaReunion(idInscripcion) {
                 }).then(() => window.location.reload());
             } else {
                 // Actualizar texto en la UI si es edición
-                const fechaLegible = new Date(fecha + 'T00:00:00').toLocaleDateString();
+                const fechaLegible = new Date(`${fecha}T${hora}`).toLocaleString('es-VE', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
                 if (textoFecha) textoFecha.textContent = fechaLegible;
 
                 Swal.fire({

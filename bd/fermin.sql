@@ -485,7 +485,7 @@ CREATE TABLE inscripcion (
     codigo_pago varchar(50) DEFAULT NULL COMMENT 'Código de factura/pago del sistema administrativo',
     fecha_validacion_pago datetime DEFAULT NULL COMMENT 'Fecha en que se validó el pago',
     validado_por int DEFAULT NULL COMMENT 'IdPersona del usuario que validó el pago',
-    fecha_reunion date DEFAULT NULL COMMENT 'Fecha programada para la reunión presencial',
+    fecha_reunion datetime DEFAULT NULL COMMENT 'Fecha programada para la reunión presencial',
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
     FOREIGN KEY (IdTipo_Inscripcion) REFERENCES tipo_inscripcion(IdTipo_Inscripcion),
     FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
@@ -778,7 +778,7 @@ Estimado(a) *{nombre_representante}*,
 ¡Buenas noticias! La solicitud de *{nombre_estudiante}* ha pasado a la siguiente etapa.
 
 *📅 Fecha de su Cita:*
-Usted ha sido programado para asistir a la institución el día: *{fecha_reunion}*
+Usted ha sido programado para asistir a la institución el día: *{fecha_reunion}* a las *{hora_reunion}*
 
 Su asistencia es indispensable para continuar con el proceso.
 

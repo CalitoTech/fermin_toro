@@ -408,7 +408,7 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <div class="mb-2 d-flex align-items-center">
                                             <strong>Fecha de Reunión:</strong> 
                                             <span id="texto-fecha-reunion" class="ms-1">
-                                                <?= !empty($inscripcion['fecha_reunion']) ? date('d/m/Y', strtotime($inscripcion['fecha_reunion'])) : '<em class="text-muted">No programada</em>' ?>
+                                                <?= !empty($inscripcion['fecha_reunion']) ? date('d/m/Y h:i A', strtotime($inscripcion['fecha_reunion'])) : '<em class="text-muted">No programada</em>' ?>
                                             </span>
                                             <?php if ($puedeAprobarReunion): ?>
                                             <button type="button" class="btn btn-sm btn-link p-0 ms-2" id="btn-editar-fecha-reunion" title="Editar fecha de reunión">
@@ -1127,15 +1127,26 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                     <strong>Máximo 1 mes</strong> a partir de hoy.
                 </div>
                 <form id="form-fecha-reunion">
-                    <div class="mb-3">
-                        <label for="fecha-reunion" class="form-label fw-bold">Fecha de Reunión</label>
-                        <input type="date" 
-                               class="form-control form-control-lg" 
-                               id="fecha-reunion" 
-                               name="fechaReunion" 
-                               required
-                               min="<?= date('Y-m-d') ?>"
-                               max="<?= date('Y-m-d', strtotime('+1 month')) ?>">
+                    <div class="row">
+                        <div class="col-md-7 mb-3">
+                            <label for="fecha-reunion" class="form-label fw-bold">Fecha</label>
+                            <input type="date" 
+                                   class="form-control form-control-lg" 
+                                   id="fecha-reunion" 
+                                   name="fechaReunion" 
+                                   required
+                                   min="<?= date('Y-m-d') ?>"
+                                   max="<?= date('Y-m-d', strtotime('+1 month')) ?>">
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label for="hora-reunion" class="form-label fw-bold">Hora</label>
+                            <input type="time" 
+                                   class="form-control form-control-lg" 
+                                   id="hora-reunion" 
+                                   name="horaReunion" 
+                                   required
+                                   value="08:00">
+                        </div>
                     </div>
                     <div id="info-ocupacion-reunion" class="p-3 border rounded bg-light" style="display: none;">
                         <div class="d-flex align-items-center">
