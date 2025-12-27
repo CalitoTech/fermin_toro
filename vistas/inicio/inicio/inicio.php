@@ -185,20 +185,20 @@ if ($showDashboard) {
     <main class="rep-wrapper">
         <img src="../../../assets/images/fermin.png" alt="Logo UECFT Araure" class="img-logo">
         <h1 class="rep-welcome">¡Hola, <?php echo htmlspecialchars($userNombre ?: 'Representante'); ?>! 👋</h1>
-        <p class="rep-subtitle">Bienvenido/a al portal del representante. Gestiona inscripciones, consulta información de tus representados y recibe comunicados oficiales.</p>
+        <p class="rep-subtitle">Bienvenido/a al portal del representante. Gestiona Solicitudes y consulta información de tus representados.</p>
 
         <div class="rep-card-container">
             <a href="../../representantes/representados/ver_representado.php" class="rep-card" title="Mis Representados">
                 <div class="icon"><i class="fas fa-user-graduate"></i></div>
                 <h3>Mis Representados</h3>
-                <p>Accede al perfil académico y contacta con el colegio.</p>
+                <p>Accede al perfil académico.</p>
             </a>
 
-            <a href="#" class="rep-card" title="Comunicados">
+            <!-- <a href="#" class="rep-card" title="Comunicados">
                 <div class="icon"><i class="fas fa-bullhorn"></i></div>
                 <h3>Comunicados</h3>
                 <p>Últimas noticias y avisos del instituto.</p>
-            </a>
+            </a> -->
         </div>
     </main>
 
