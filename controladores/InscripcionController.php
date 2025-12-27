@@ -385,6 +385,12 @@ if (empty($action)) {
         case 'obtenerHistorial':
             obtenerHistorial($conexion);
             break;
+        case 'contarReuniones':
+            contarReuniones($conexion);
+            break;
+        case 'actualizarFechaReunion':
+            actualizarFechaReunion($conexion);
+            break;
         case 'verificar':
             $anio = intval($_GET['anio'] ?? 0);
             $cedula = trim($_GET['cedula'] ?? '');
@@ -2515,6 +2521,86 @@ function confirmarRepitiente($conexion) {
     } catch (Exception $e) {
         error_log("Error al confirmar repitiente: " . $e->getMessage());
         echo json_encode(['success' => false, 'message' => 'Error interno del servidor: ' . $e->getMessage()]);
+    }
+    exit();
+}
+
+/**
+ * Actualiza la fecha de reunión de una inscripción
+ */
+function actualizarFechaReunion($conexion) {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+        exit();
+    }
+
+    $idInscripcion = $_POST['idInscripcion'] ?? 0;
+    $fecha = $_POST['fecha'] ?? '';
+
+    if ($idInscripcion <= 0 || empty($fecha)) {
+        echo json_encode(['success' => false, 'message' => 'Datos inválidos']);
+        exit();
+    }
+
+    try {
+        $idUsuario = obtenerIdUsuario();
+        if (!$idUsuario) {
+            echo json_encode(['success' => false, 'message' => 'Usuario no autenticado']);
+            exit();
+        }
+
+        $inscripcionModel = new Inscripcion($conexion);
+        
+        // Obtener fecha anterior para el historial
+        $stmtAnterior = $conexion->prepare("SELECT fecha_reunion FROM inscripcion WHERE IdInscripcion = :id");
+        $stmtAnterior->execute([':id' => $idInscripcion]);
+        $fechaAnterior = $stmtAnterior->fetchColumn();
+
+        if ($inscripcionModel->actualizarFechaReunion($idInscripcion, $fecha)) {
+            // Registrar en historial
+            if ($fechaAnterior != $fecha) {
+                $descrip = $fechaAnterior 
+                    ? "Se cambió la fecha de reunión de " . date('d/m/Y', strtotime($fechaAnterior)) . " a " . date('d/m/Y', strtotime($fecha))
+                    : "Se asignó fecha de reunión para el " . date('d/m/Y', strtotime($fecha));
+                
+                InscripcionHistorial::registrarCambio(
+                    $conexion,
+                    $idInscripcion,
+                    'fecha_reunion',
+                    $fechaAnterior,
+                    $fecha,
+                    $descrip,
+                    $idUsuario
+                );
+            }
+
+            echo json_encode(['success' => true, 'message' => 'Fecha de reunión actualizada']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Error al actualizar fecha']);
+        }
+    } catch (Exception $e) {
+        error_log("Error al actualizar fecha reunion: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit();
+}
+
+/**
+ * Cuenta cuántas inscripciones tienen reunión el mismo día
+ */
+function contarReuniones($conexion) {
+    $fecha = $_GET['fecha'] ?? '';
+    if (empty($fecha)) {
+        echo json_encode(['success' => false, 'message' => 'Fecha requerida']);
+        exit();
+    }
+
+    try {
+        $inscripcionModel = new Inscripcion($conexion);
+        $total = $inscripcionModel->contarReunionesPorFecha($fecha);
+        echo json_encode(['success' => true, 'total' => $total]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit();
 }

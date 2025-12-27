@@ -485,6 +485,7 @@ CREATE TABLE inscripcion (
     codigo_pago varchar(50) DEFAULT NULL COMMENT 'Código de factura/pago del sistema administrativo',
     fecha_validacion_pago datetime DEFAULT NULL COMMENT 'Fecha en que se validó el pago',
     validado_por int DEFAULT NULL COMMENT 'IdPersona del usuario que validó el pago',
+    fecha_reunion date DEFAULT NULL COMMENT 'Fecha programada para la reunión presencial',
     FOREIGN KEY (IdCurso_Seccion) REFERENCES curso_seccion(IdCurso_Seccion),
     FOREIGN KEY (IdTipo_Inscripcion) REFERENCES tipo_inscripcion(IdTipo_Inscripcion),
     FOREIGN KEY (IdStatus) REFERENCES status(IdStatus),
@@ -735,7 +736,7 @@ CREATE TABLE config_whatsapp (
 
 -- Insertar configuración inicial (api_key vacía, se configura desde la interfaz)
 INSERT INTO config_whatsapp (api_url, api_key, nombre_instancia, login_url, activo) VALUES
-('http://localhost:8080', '04E444271B95-471D-8CFA-47254AC4208C', 'Test', NULL, TRUE);
+('http://localhost:8080', '07PlSJYl2yWqH+p5OJdkvXVuMDlKYVhjY3JLa2NsRWUyNVhBdFczcHRZeUh3RzNtdXNhU3NqajN2aktVbVR3OGJMeTg5dldUWDJFenEzeko=', 'Test', NULL, TRUE);
 
 -- Tabla para mensajes parametrizables de WhatsApp por status de inscripción
 CREATE TABLE mensaje_whatsapp (
@@ -774,36 +775,38 @@ INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, a
 
 Estimado(a) *{nombre_representante}*,
 
-La solicitud de *{nombre_estudiante}* ha sido pre-aprobada.
+¡Buenas noticias! La solicitud de *{nombre_estudiante}* ha pasado a la siguiente etapa.
 
-*📅 Próximo paso:* Asistir a la reunión de formalización entre el *1 y 31 de octubre* en horario de oficina.
+*📅 Fecha de su Cita:*
+Usted ha sido programado para asistir a la institución el día: *{fecha_reunion}*
 
-*📋 Debe traer:*
-{requisitos}
+Su asistencia es indispensable para continuar con el proceso.
 
 Código de seguimiento: {codigo_inscripcion}',
-TRUE, TRUE);
+FALSE, TRUE);
 
 -- Status 10: En espera de pago
 INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES
 (10, 'Pendiente de Pago',
-'💳 *Pendiente de Pago*
+'💳 *Etapa de Pago*
 
 Estimado(a) *{nombre_representante}*,
 
-*{nombre_estudiante}* ha sido *aceptado oficialmente* en nuestra institución.
+*{nombre_estudiante}* ha sido *Aceptado(a) Oficialmente* en nuestra institución luego de su entrevista.
 
-*📅 Próximo paso:* Diríjase a la caja para realizar el pago de:
-• Matrícula de inscripción
-• Primera mensualidad
+*📅 Próximo paso:* Diríjase a la caja para formalizar el pago correspondiente.
+
+*📋 Requisitos:*
+Recuerde que debe tener al día la siguiente documentación:
+{requisitos}
 
 *⏰ Horario de caja:*
 Lunes a Viernes: 7:00 AM - 2:00 PM
 
-Una vez realizado el pago, la inscripción se completará automáticamente.
+Una vez procesado el pago, debe dirigirse a coordinación para formalizar la inscripción.
 
 Código de Seguimiento: {codigo_inscripcion}',
-FALSE, TRUE);
+TRUE, TRUE);
 
 -- Status 11: Inscrito
 INSERT INTO mensaje_whatsapp (IdStatus, titulo, contenido, incluir_requisitos, activo) VALUES

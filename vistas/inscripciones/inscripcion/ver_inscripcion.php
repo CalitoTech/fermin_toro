@@ -405,6 +405,17 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                                         <div class="mb-2">
                                             <strong>Año Escolar:</strong> <?= htmlspecialchars($inscripcion['fecha_escolar']) ?>
                                         </div>
+                                        <div class="mb-2 d-flex align-items-center">
+                                            <strong>Fecha de Reunión:</strong> 
+                                            <span id="texto-fecha-reunion" class="ms-1">
+                                                <?= !empty($inscripcion['fecha_reunion']) ? date('d/m/Y', strtotime($inscripcion['fecha_reunion'])) : '<em class="text-muted">No programada</em>' ?>
+                                            </span>
+                                            <?php if ($puedeAprobarReunion): ?>
+                                            <button type="button" class="btn btn-sm btn-link p-0 ms-2" id="btn-editar-fecha-reunion" title="Editar fecha de reunión">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <?php endif; ?>
+                                        </div>
 
                                         <!-- Selector de sección (oculto inicialmente) -->
                                         <?php if ($inscripcion['IdStatus'] == $idInscrito && !empty($seccionesDisponibles) && $puedeCambiarSeccion): ?>
@@ -1093,6 +1104,57 @@ if ($idCursoActual && $inscripcion['IdStatus'] == $idInscrito) {
                 </button>
                 <button type="button" class="btn btn-primary" id="btn-confirmar-pago">
                     <i class="fas fa-check me-1"></i>Validar y Completar Inscripción
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Fecha de Reunión -->
+<div class="modal fade" id="modalFechaReunion" tabindex="-1" aria-labelledby="modalFechaReunionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalFechaReunionLabel">
+                    <i class="fas fa-calendar-alt me-2"></i>Programar Fecha de Reunión
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Seleccione la fecha para la reunión presencial con el representante. 
+                    <strong>Máximo 1 mes</strong> a partir de hoy.
+                </div>
+                <form id="form-fecha-reunion">
+                    <div class="mb-3">
+                        <label for="fecha-reunion" class="form-label fw-bold">Fecha de Reunión</label>
+                        <input type="date" 
+                               class="form-control form-control-lg" 
+                               id="fecha-reunion" 
+                               name="fechaReunion" 
+                               required
+                               min="<?= date('Y-m-d') ?>"
+                               max="<?= date('Y-m-d', strtotime('+1 month')) ?>">
+                    </div>
+                    <div id="info-ocupacion-reunion" class="p-3 border rounded bg-light" style="display: none;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            <span>Reuniones programadas para este día: <strong id="total-reuniones-dia">0</strong></span>
+                        </div>
+                        <div id="aviso-ocupacion" class="mt-2 small text-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            Atención: Ya hay 5 o más personas agendadas para este día.
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" id="btn-confirmar-fecha-reunion">
+                    <i class="fas fa-check me-1"></i>Confirmar Fecha
                 </button>
             </div>
         </div>

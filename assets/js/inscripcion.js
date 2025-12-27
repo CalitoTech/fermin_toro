@@ -104,6 +104,22 @@ function manejarStatusBar(idInscripcion, idInscrito) {
             }
 
             // ========================
+            // Si es cambio a "Aprobada para reunión", mostrar modal de fecha
+            // ========================
+            if (nuevoId === 9) { // 9 = Aprobada para reunión
+                // Limpiar modal
+                const inputFecha = document.getElementById('fecha-reunion');
+                if (inputFecha) inputFecha.value = '';
+                const infoOcupacion = document.getElementById('info-ocupacion-reunion');
+                if (infoOcupacion) infoOcupacion.style.display = 'none';
+
+                // Mostrar modal
+                const modalFecha = new bootstrap.Modal(document.getElementById('modalFechaReunion'));
+                modalFecha.show();
+                return;
+            }
+
+            // ========================
             // Para otros estados, flujo normal
             // ========================
             let titulo = '¿Cambiar estado?';
@@ -829,6 +845,134 @@ async function procesarInscripcionConRepitiente(idInscripcion, codigoPago, repit
     }
 }
 
+// ==============================
+// Gestión de Fecha de Reunión
+// ==============================
+function manejarFechaReunion(idInscripcion) {
+    const modalElement = document.getElementById('modalFechaReunion');
+    const inputFecha = document.getElementById('fecha-reunion');
+    const btnConfirmar = document.getElementById('btn-confirmar-fecha-reunion');
+    const infoOcupacion = document.getElementById('info-ocupacion-reunion');
+    const totalReuniones = document.getElementById('total-reuniones-dia');
+    const avisoOcupacion = document.getElementById('aviso-ocupacion');
+    const btnEditar = document.getElementById('btn-editar-fecha-reunion');
+    const textoFecha = document.getElementById('texto-fecha-reunion');
+
+    if (!modalElement || !inputFecha || !btnConfirmar) return;
+
+    const modal = new bootstrap.Modal(modalElement);
+    let modoEdicion = false;
+
+    // Botón Editar Fecha
+    if (btnEditar) {
+        btnEditar.addEventListener('click', function () {
+            modoEdicion = true;
+            modal.show();
+        });
+    }
+
+    // Verificar ocupación al cambiar fecha
+    inputFecha.addEventListener('change', async function () {
+        const fecha = this.value;
+        if (!fecha) {
+            infoOcupacion.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/fermin_toro/controladores/InscripcionController.php?action=contarReuniones&fecha=${fecha}`);
+            const data = await response.json();
+
+            if (data.success) {
+                totalReuniones.textContent = data.total;
+                infoOcupacion.style.display = 'block';
+                avisoOcupacion.style.display = data.total >= 5 ? 'block' : 'none';
+            }
+        } catch (error) {
+            console.error('Error al contar reuniones:', error);
+        }
+    });
+
+    // Confirmar Fecha
+    btnConfirmar.addEventListener('click', async function () {
+        const fecha = inputFecha.value;
+        if (!fecha) {
+            inputFecha.classList.add('is-invalid');
+            return;
+        }
+
+        inputFecha.classList.remove('is-invalid');
+        modal.hide();
+
+        Swal.fire({
+            title: 'Procesando...',
+            text: 'Guardando fecha de reunión',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        try {
+            // 1. Guardar la fecha
+            const formData = new FormData();
+            formData.append('action', 'actualizarFechaReunion');
+            formData.append('idInscripcion', idInscripcion);
+            formData.append('fecha', fecha);
+
+            const resFecha = await fetch('/fermin_toro/controladores/InscripcionController.php', {
+                method: 'POST',
+                body: formData
+            });
+            const dataFecha = await resFecha.json();
+
+            if (!dataFecha.success) throw new Error(dataFecha.message);
+
+            // 2. Si no es modo edición, cambiar el status a 9 (Aprobada para reunión)
+            if (!modoEdicion) {
+                const formDataStatus = new FormData();
+                formDataStatus.append('action', 'cambiarStatus');
+                formDataStatus.append('idInscripcion', idInscripcion);
+                formDataStatus.append('nuevoStatus', 9); // ID Status Aprobada para reunión
+
+                const resStatus = await fetch('/fermin_toro/controladores/InscripcionController.php', {
+                    method: 'POST',
+                    body: formDataStatus
+                });
+                const dataStatus = await resStatus.json();
+
+                if (!dataStatus.success) throw new Error(dataStatus.message);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Programada!',
+                    text: 'Inscripción aprobada y reunión programada correctamente',
+                    timer: 2000
+                }).then(() => window.location.reload());
+            } else {
+                // Actualizar texto en la UI si es edición
+                const fechaLegible = new Date(fecha + 'T00:00:00').toLocaleDateString();
+                if (textoFecha) textoFecha.textContent = fechaLegible;
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Actualizada!',
+                    text: 'Fecha de reunión actualizada correctamente',
+                    timer: 1500
+                });
+            }
+
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'No se pudo procesar la solicitud'
+            });
+        } finally {
+            modoEdicion = false;
+        }
+    });
+}
+
 // Procesar inscripción normal (sin verificación de repitiente)
 async function procesarInscripcionNormal(idInscripcion, codigoPago, modal, inputCodigoPago) {
     Swal.fire({
@@ -994,6 +1138,7 @@ function inicializarInscripcion() {
             manejarRequisitos(ID_INSCRIPCION);
             manejarCambioSeccion(ID_INSCRIPCION);
             manejarValidacionPago(ID_INSCRIPCION, ID_INSCRITO);
+            manejarFechaReunion(ID_INSCRIPCION);
             manejarHistorial(ID_INSCRIPCION);
             console.log('Scripts de inscripción inicializados correctamente.');
         } catch (error) {

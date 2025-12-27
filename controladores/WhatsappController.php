@@ -209,7 +209,9 @@ class WhatsAppController {
                 $datosInscripcion['codigo_inscripcion'],
                 $datosInscripcion['curso'],
                 $datosInscripcion['seccion'],
-                $datosInscripcion['IdNivel'] 
+                $datosInscripcion['IdNivel'],
+                null,
+                $datosInscripcion['fecha_reunion']
             );
 
             // 4. Enviar mensajes a todos los destinatarios
@@ -223,7 +225,8 @@ class WhatsAppController {
                     $datosInscripcion['curso'],
                     $datosInscripcion['seccion'],
                     $datosInscripcion['IdNivel'],
-                    $destinatario
+                    $destinatario,
+                    $datosInscripcion['fecha_reunion']
                 );
 
                 // Solo enviar si hay un mensaje activo configurado
@@ -273,7 +276,8 @@ class WhatsAppController {
             c.curso,
             s.seccion,
             n.IdNivel,
-            st.status AS nombre_estado
+            st.status AS nombre_estado,
+            i.fecha_reunion
         FROM inscripcion i
         INNER JOIN persona e ON i.IdEstudiante = e.IdPersona
         INNER JOIN curso_seccion cs ON i.IdCurso_Seccion = cs.IdCurso_Seccion
@@ -346,7 +350,8 @@ class WhatsAppController {
         $curso,
         $seccion,
         $idNivel = null,
-        $representante = null
+        $representante = null,
+        $fechaReunion = null
     ) {
         $nombreRep = $representante['nombre'] ?? 'Representante';
         $cedulaRep = $representante['cedula'] ?? 'No asignada';
@@ -362,7 +367,8 @@ class WhatsAppController {
                 'codigo_inscripcion' => $codigoInscripcion,
                 'curso' => $curso,
                 'seccion' => $seccion,
-                'cedula_representante' => $cedulaRep
+                'cedula_representante' => $cedulaRep,
+                'fecha_reunion' => $fechaReunion
             ];
 
             // Obtener requisitos si el mensaje los incluye (sin uniformes)

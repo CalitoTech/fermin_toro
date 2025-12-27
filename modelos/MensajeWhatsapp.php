@@ -248,7 +248,8 @@ class MensajeWhatsapp {
             '{codigo_inscripcion}' => $datos['codigo_inscripcion'] ?? '',
             '{curso}' => $datos['curso'] ?? '',
             '{seccion}' => $datos['seccion'] ?? '',
-            '{cedula_representante}' => $datos['cedula_representante'] ?? ''
+            '{cedula_representante}' => $datos['cedula_representante'] ?? '',
+            '{fecha_reunion}' => !empty($datos['fecha_reunion']) ? date('d/m/Y', strtotime($datos['fecha_reunion'])) : ''
         ];
 
         foreach ($variables as $variable => $valor) {

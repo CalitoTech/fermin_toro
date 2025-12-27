@@ -151,7 +151,7 @@ if (empty(array_intersect($todosLosPerfiles, $perfilesPermitidos))) {
                                         <textarea class="form-control" name="contenido" id="contenido"
                                                   rows="12" required><?= htmlspecialchars($mensaje['contenido']) ?></textarea>
                                         <small class="text-muted">
-                                            Use las variables: {nombre_representante}, {nombre_estudiante}, {codigo_inscripcion}, {curso}, {seccion}, {cedula_representante}, {requisitos}, {login_url}
+                                            Use las variables: {nombre_representante}, {nombre_estudiante}, {codigo_inscripcion}, {curso}, {seccion}, {cedula_representante}, {fecha_reunion}, {requisitos}, {login_url}
                                         </small>
                                     </div>
 
@@ -233,6 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
         texto = texto.replace(/{curso}/g, '1er Grado');
         texto = texto.replace(/{seccion}/g, 'A');
         texto = texto.replace(/{cedula_representante}/g, '12345678');
+        texto = texto.replace(/{fecha_reunion}/g, '30/12/2024');
         texto = texto.replace(/{requisitos}/g, '\n- Partida de nacimiento\n- Foto tipo carnet\n- Constancia de estudios');
         texto = texto.replace(/{login_url}/g, 'Acceda aquí: https://ejemplo.com/login');
 

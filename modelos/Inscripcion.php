@@ -17,6 +17,7 @@ class Inscripcion {
     public $codigo_pago;
     public $fecha_validacion_pago;
     public $validado_por;
+    public $fecha_reunion;
 
     public function __construct($db) {
         $this->conn = $db;
@@ -216,6 +217,8 @@ class Inscripcion {
             fe.fecha_escolar,
             st.status AS status_inscripcion,
             st.IdStatus,
+            i.fecha_reunion,
+            i.IdStatus AS status_id,
             i.IdTipo_Inscripcion,
             ti.tipo_inscripcion,
 
@@ -614,5 +617,36 @@ class Inscripcion {
             error_log("Error al obtener curso siguiente: " . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Actualiza la fecha de reunión de una inscripción
+     *
+     * @param int $idInscripcion ID de la inscripción
+     * @param string $fecha Fecha format YYYY-MM-DD
+     * @return bool
+     */
+    public function actualizarFechaReunion($idInscripcion, $fecha) {
+        $query = "UPDATE inscripcion SET fecha_reunion = :fecha WHERE IdInscripcion = :IdInscripcion";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":fecha", $fecha);
+        $stmt->bindParam(":IdInscripcion", $idInscripcion, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * Cuenta cuántas inscripciones tienen reunión el mismo día
+     *
+     * @param string $fecha Fecha format YYYY-MM-DD
+     * @return int
+     */
+    public function contarReunionesPorFecha($fecha) {
+        $query = "SELECT COUNT(*) as total FROM inscripcion WHERE fecha_reunion = :fecha";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":fecha", $fecha);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)$row['total'];
     }
 }
